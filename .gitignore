@@ -1,0 +1,6 @@
+# System and IDE files
+.DS_Store
+.idea
+*.suo
+*.sublime-project
+*.sublime-workspace
