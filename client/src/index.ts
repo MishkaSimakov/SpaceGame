@@ -1,6 +1,10 @@
 import 'phaser';
 import Game from "./scenes/game";
 import Controls from "./scenes/controls";
+import SocketManager from "./helpers/SocketManager";
+
+let gameScene = new Game();
+let controlsScene = new Controls();
 
 const config = {
     type: Phaser.AUTO,
@@ -9,7 +13,7 @@ const config = {
         width: window.innerWidth,
         height: window.innerHeight
     },
-    scene: [Game, Controls],
+    scene: [gameScene, controlsScene],
     fps: {
         forceSetTimeOut: true,
         target: 30
@@ -17,3 +21,5 @@ const config = {
 };
 
 const game = new Phaser.Game(config);
+
+let socketManager = new SocketManager(gameScene, controlsScene);

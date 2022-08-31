@@ -3,10 +3,6 @@ import Controls from "../scenes/controls";
 import io, {Socket} from "socket.io-client";
 import Player from "../../../common/Player";
 import {plainToClass} from "../../../common/PlainToClass";
-import SpaceshipDrawer from "./SpaceshipDrawer";
-import Vector2 from "../../../common/Vector2";
-import HandDrawer from "./HandDrawer";
-import DragManager from "./DragManager";
 import Module, {ModuleTypes} from "../../../common/modules/Module";
 
 export default class SocketManager {
@@ -15,7 +11,7 @@ export default class SocketManager {
     socket: Socket;
 
     player: Player;
-    otherPlayers: Record<string, Player>;
+    otherPlayers: Record<string, Player> = {};
 
     constructor(game: Game, controls: Controls) {
         this.game = game;
@@ -74,57 +70,36 @@ export default class SocketManager {
                     attackedPlayerId: id
                 });
             });
-        })
+        });
 
         this.socket.on('chooseProtectors', (callback: (response: { protector?: [number, number] }) => void) => {
-            let selectedProtector: Phaser.GameObjects.Container;
+            let selectedProtector: Module;
 
             this.controls.setStatus("Select protector");
-            this.controls.addButton("Next", )
-            let helpText = this.add.text(500, 10, "Select protector")
-                .setDepth(1)
-                .setScrollFactor(0);
+            this.controls.addButton("Next", () => {
+                if (selectedProtector !== undefined)
+                    callback({
+                        protector: [selectedProtector.x, selectedProtector.y]
+                    });
+                else
+                    callback({});
 
-            let nextButton = this.add.text(750, 10, "Next")
-                .setDepth(1)
-                .setScrollFactor(0)
-                .setInteractive()
-                .on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-                    if (selectedProtector === undefined) {
-                        callback({});
-                    } else {
-                        let protector: Module = selectedProtector.getData('module');
+                this.controls.removeButtons();
 
-                        callback({
-                            protector: [protector.x, protector.y]
-                        });
-                    }
+                this.game.endChoosingModule();
+            });
 
-                    helpText.destroy();
-                    nextButton.destroy();
+            this.game.chooseModule((module?: Module, playerId?: string) => {
+                selectedProtector = module;
+            }, (module?: Module, playerId?: string) => {
+                if (playerId !== this.player.id)
+                    return false;
 
-                    for (let shape of this.spaceshipDrawers[this.player.id].moduleShapes) {
-                        shape.removeAllListeners('pointerdown');
-                    }
-                });
+                if (module.type !== ModuleTypes.SmallQuantumProtector && module.type !== ModuleTypes.QuantumProtector)
+                    return false;
 
-            for (let shape of this.spaceshipDrawers[this.player.id].moduleShapes) {
-                shape.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-                    if (shape.getData('module').type !== ModuleTypes.SmallQuantumProtector && shape.getData('module').type !== ModuleTypes.QuantumProtector)
-                        return;
-
-                    if (selectedProtector !== undefined)
-                        (selectedProtector.getAll()[0] as Phaser.GameObjects.Rectangle).setStrokeStyle(0);
-
-                    if (selectedProtector === shape) {
-                        selectedProtector = undefined;
-                        return;
-                    }
-
-                    selectedProtector = shape;
-                    (shape.getAll()[0] as Phaser.GameObjects.Rectangle).setStrokeStyle(5, 0xa3b18a);
-                });
-            }
+                return true;
+            }, false, 0xa3b18a);
         });
 
         this.socket.on('willYouRunaway', (callback: (response: { tryToRunaway: boolean }) => void) => {
@@ -134,64 +109,41 @@ export default class SocketManager {
         });
 
         this.socket.on('chooseWeaponAndTarget', (targetPlayerId: string, callback: (response: { weapon: [number, number], target: [number, number] }) => void) => {
-            let selectedWeapon: Phaser.GameObjects.Container;
-            let selectedTarget: Phaser.GameObjects.Container;
+            let selectedWeapon: Module;
+            let selectedTarget: Module;
 
-            let helpText = this.add.text(500, 10, "Choose weapon and target")
-                .setDepth(1)
-                .setScrollFactor(0);
+            this.controls.setStatus("Choose weapon and target");
 
-            let nextButton = this.add.text(750, 10, "Next")
-                .setDepth(1)
-                .setScrollFactor(0)
-                .setInteractive()
-                .on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-                    if (selectedWeapon === undefined && selectedTarget === undefined)
-                        return;
+            this.controls.addButton("Next", () => {
+                if (selectedWeapon === undefined && selectedTarget === undefined)
+                    return;
 
-                    let weapon: Module = selectedWeapon.getData('module');
-                    let target: Module = selectedTarget.getData('module');
-
-                    callback({
-                        weapon: [weapon.x, weapon.y],
-                        target: [target.x, target.y]
-                    });
-
-                    helpText.destroy();
-                    nextButton.destroy();
-
-                    for (let [id, spaceshipDrawer] of Object.entries(this.spaceshipDrawers)) {
-                        for (let shape of spaceshipDrawer.moduleShapes) {
-                            shape.removeAllListeners('pointerdown');
-                        }
-                    }
+                callback({
+                    weapon: [selectedWeapon.x, selectedWeapon.y],
+                    target: [selectedTarget.x, selectedTarget.y]
                 });
 
-            for (let [id, spaceshipDrawer] of Object.entries(this.spaceshipDrawers)) {
-                if (id !== this.player.id && id !== targetPlayerId)
-                    continue;
+                this.controls.removeButtons();
+                this.game.endChoosingModule();
+            });
 
-                for (let shape of spaceshipDrawer.moduleShapes) {
-                    shape.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-                        if (id === this.player.id) {
-                            if (shape.getData('module').strength === 0)
-                                return;
+            this.game.chooseModule((module?: Module, playerId?: string) => {
+                selectedWeapon = module;
+            }, (module?: Module, playerId?: string) => {
+                if (playerId !== this.player.id)
+                    return false;
 
-                            if (selectedWeapon !== undefined)
-                                (selectedWeapon.getAll()[0] as Phaser.GameObjects.Rectangle).setStrokeStyle(0);
+                if (module.strength === 0)
+                    return false;
 
-                            selectedWeapon = shape;
-                            (shape.getAll()[0] as Phaser.GameObjects.Rectangle).setStrokeStyle(5, 0xa3b18a);
-                        } else {
-                            if (selectedTarget !== undefined)
-                                (selectedTarget.getAll()[0] as Phaser.GameObjects.Rectangle).setStrokeStyle(0);
+                return true;
+            }, true, 0xa3b18a);
 
-                            selectedTarget = shape;
-                            (shape.getAll()[0] as Phaser.GameObjects.Rectangle).setStrokeStyle(5, 0xe76f51);
-                        }
-                    });
-                }
-            }
+            this.game.chooseModule((module?: Module, playerId?: string) => {
+                selectedTarget = module;
+            }, (module?: Module, playerId?: string) => {
+                return playerId === targetPlayerId;
+            }, true, 0xe76f51);
         });
     }
 

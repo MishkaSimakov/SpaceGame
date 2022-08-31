@@ -56,6 +56,8 @@ export default class Controls extends Phaser.Scene {
     }
 
     addButton(text: string, onClick: () => void): void {
+        console.log("here");
+
         this.buttons.push(
             this.add.text(500 + this.buttons.length * 50, 10, text)
                 .setInteractive()
