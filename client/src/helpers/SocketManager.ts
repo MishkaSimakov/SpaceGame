@@ -4,6 +4,7 @@ import io, {Socket} from "socket.io-client";
 import Player from "../../../common/Player";
 import {plainToClass} from "../../../common/PlainToClass";
 import Module, {ModuleTypes} from "../../../common/modules/Module";
+import RebuildSpaceshipManager from "./RebuildSpaceshipManager";
 
 export default class SocketManager {
     game: Game;
@@ -13,11 +14,15 @@ export default class SocketManager {
     player: Player;
     otherPlayers: Record<string, Player> = {};
 
+    rebuildSpaceshipManager: RebuildSpaceshipManager;
+
     constructor(game: Game, controls: Controls) {
         this.game = game;
         this.controls = controls;
 
-        this.initSocket('http://localhost:3000')
+        this.rebuildSpaceshipManager = new RebuildSpaceshipManager(this.game, this.controls);
+
+        this.initSocket('http://localhost:3000');
     }
 
     initSocket(uri: string) {
@@ -33,6 +38,8 @@ export default class SocketManager {
 
                 if (key === this.socket.id) {
                     this.player = player;
+
+                    this.rebuildSpaceshipManager.player = this.player;
                 } else {
                     this.otherPlayers[key] = player;
                 }
@@ -103,8 +110,10 @@ export default class SocketManager {
         });
 
         this.socket.on('willYouRunaway', (callback: (response: { tryToRunaway: boolean }) => void) => {
-            callback({
-                tryToRunaway: confirm("Will you runaway?")
+            this.controls.askForRunaway().then((isRunningAway: boolean) => {
+                callback({
+                    tryToRunaway: isRunningAway
+                });
             });
         });
 
@@ -148,6 +157,10 @@ export default class SocketManager {
     }
 
     setRebuildSpaceshipAllowed(allowed: boolean): void {
-
+        if (allowed) {
+            this.rebuildSpaceshipManager.allowRebuildSpaceship();
+        } else {
+            this.rebuildSpaceshipManager.disallowRebuildSpaceship();
+        }
     }
 }

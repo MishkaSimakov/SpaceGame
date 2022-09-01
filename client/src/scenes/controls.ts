@@ -3,17 +3,94 @@ import HandDrawer from "../helpers/HandDrawer";
 import Vector2 from "../../../common/Vector2";
 import Player from "../../../common/Player";
 
+class Modal {
+    scene: Phaser.Scene;
+
+    backgroundShape: Phaser.GameObjects.Rectangle;
+    titleShape: Phaser.GameObjects.Text;
+
+    lines: Phaser.GameObjects.Text[] = [];
+    bottomTextShape: Phaser.GameObjects.Text;
+
+    constructor(scene: Phaser.Scene) {
+        this.scene = scene;
+
+        this.backgroundShape = this.scene.add.rectangle(
+            this.scene.game.canvas.width / 2,
+            this.scene.game.canvas.height / 2,
+            500, 500, 0x000000
+        )
+            .setOrigin(0.5)
+            .setStrokeStyle(2, 0x555555)
+            .setDepth(2);
+    }
+
+    setTitle(title: string): Phaser.GameObjects.Text {
+        this.titleShape = this.scene.add.text(
+            this.scene.game.canvas.width / 2 - 250 + 10,
+            this.scene.game.canvas.height / 2 - 250 + 10,
+            title
+        )
+            .setDepth(3);
+
+        return this.titleShape;
+    }
+
+    addLine(text: string): Phaser.GameObjects.Text {
+        this.lines.push(
+            this.scene.add.text(
+                this.scene.game.canvas.width / 2 - 250 + 10,
+                this.scene.game.canvas.height / 2 - 250 + 10 + 20 + this.lines.length * 20,
+                text
+            )
+                .setDepth(3)
+        );
+
+        return this.lines[this.lines.length - 1];
+    }
+
+    setBottomText(text: string): Phaser.GameObjects.Text {
+        this.bottomTextShape = this.scene.add.text(
+            this.scene.game.canvas.width / 2 - 250 + 10,
+            this.scene.game.canvas.height / 2 + 250 - 10,
+            text
+        )
+            .setOrigin(0, 1)
+            .setDepth(3);
+
+        return this.bottomTextShape;
+    }
+
+    destroy() {
+        if (this.titleShape !== undefined)
+            this.titleShape.destroy();
+
+        for (let shape of this.lines) {
+            shape.destroy();
+        }
+
+        this.backgroundShape.destroy();
+
+        if (this.bottomTextShape !== undefined)
+            this.bottomTextShape.destroy();
+    }
+}
+
 export default class Controls extends Phaser.Scene {
     handDrawer: HandDrawer;
     energyText: Phaser.GameObjects.Text;
     statusText: Phaser.GameObjects.Text;
-    buttons: Phaser.GameObjects.Text[];
+    buttons: Phaser.GameObjects.Text[] = [];
 
-    constructor() {
+    bus: Phaser.Events.EventEmitter;
+
+    constructor(bus: Phaser.Events.EventEmitter) {
         super({
             key: 'Controls',
             active: true
         });
+
+        this.bus = bus;
     }
 
     // this.playersList.push(
@@ -73,44 +150,51 @@ export default class Controls extends Phaser.Scene {
     }
 
     choosePlayerForAttack(players: string[]) {
-        return new Promise(function (resolve: (player?: string) => void, reject) {
-            let modalRect = this.add.rectangle(this.game.canvas.width / 2, this.game.canvas.height / 2, 500, 500, 0x000000)
-                .setOrigin(0.5)
-                .setStrokeStyle(2, 0x555555)
-                .setDepth(2)
-                .setScrollFactor(0);
+        return new Promise((resolve: (player?: string) => void, reject) => {
+            let modal = new Modal(this);
 
-            let title = this.add.text(this.game.canvas.width / 2 - 250 + 10, this.game.canvas.height / 2 - 250 + 10, "Do you want to fight with someone?")
-                .setScrollFactor(0)
-                .setDepth(3);
-
-            let close_text = this.add.text(this.game.canvas.width / 2 - 250 + 10, this.game.canvas.height / 2 + 250 - 10, "No, I'm peaceful")
-                .setOrigin(0, 1)
+            modal.setTitle("Do you want to fight with someone?");
+            modal.setBottomText("No, I'm peaceful")
                 .setInteractive()
                 .on('pointerdown', () => {
                     resolve();
+
+                    modal.destroy();
                 });
 
-            let list = [];
-
             for (let index in players) {
-                list.push(
-                    this.add.text(this.game.canvas.width / 2 - 250 + 10, this.game.canvas.height / 2 - 250 + 10 + 20 + parseInt(index) * 20, players[index])
-                        .setInteractive()
-                        .on('pointerdown', () => {
-                            resolve(players[index]);
+                modal.addLine(players[index])
+                    .setInteractive()
+                    .on('pointerdown', () => {
+                        resolve(players[index]);
 
-                            deleteInterface();
-                        })
-                );
+                        modal.destroy();
+                    });
             }
+        });
+    }
 
-            let deleteInterface = () => {
-                modalRect.destroy();
-                title.destroy();
-                list.forEach(s => s.destroy());
-                close_text.destroy();
-            };
+    askForRunaway() {
+        return new Promise((resolve: (isRunningAway: boolean) => void, reject) => {
+            let modal = new Modal(this);
+
+            modal.setTitle("Will you runaway?");
+
+            modal.addLine("No, I will turn my enemy into dust")
+                .setInteractive()
+                .on('pointerdown', () => {
+                    resolve(false);
+
+                    modal.destroy();
+                });
+
+            modal.addLine("Yes, I think I will be turned into dust")
+                .setInteractive()
+                .on('pointerdown', () => {
+                    resolve(true);
+
+                    modal.destroy();
+                });
         });
     }
 }

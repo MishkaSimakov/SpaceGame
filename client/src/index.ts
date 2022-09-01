@@ -3,8 +3,10 @@ import Game from "./scenes/game";
 import Controls from "./scenes/controls";
 import SocketManager from "./helpers/SocketManager";
 
-let gameScene = new Game();
-let controlsScene = new Controls();
+let bus = new Phaser.Events.EventEmitter();
+
+let gameScene = new Game(bus);
+let controlsScene = new Controls(bus);
 
 const config = {
     type: Phaser.AUTO,

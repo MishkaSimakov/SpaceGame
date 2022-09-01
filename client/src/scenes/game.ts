@@ -1,7 +1,6 @@
 import Player from "../../../common/Player";
 import SpaceshipDrawer from "../helpers/SpaceshipDrawer";
 import Vector2 from "../../../common/Vector2";
-import DragManager from "../helpers/DragManager";
 import Module from "../../../common/modules/Module";
 
 let spaceshipConfigurations: Vector2[][] = [
@@ -15,24 +14,26 @@ export default class Game extends Phaser.Scene {
     full_scale = 0.75;
     hand_scale = 0.5;
 
-    dragManager: DragManager;
     spaceshipDrawers: Record<string, SpaceshipDrawer> = {};
 
-    constructor() {
+    isDragging: boolean = false;
+
+    bus: Phaser.Events.EventEmitter;
+
+    constructor(bus: Phaser.Events.EventEmitter) {
         super({
             key: 'Game',
             active: true
         });
+
+        this.bus = bus;
     }
 
     create() {
-        // this.dragManager = new DragManager(this.spaceshipDrawers[this.player.id], this.handDrawer, this);
-        // this.dragManager.setupEvents();
-
         this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => {
             if (!pointer.isDown) return;
 
-            // if (this.dragManager.isDragging) return;
+            if (this.isDragging) return;
 
             let cam = this.cameras.main;
 
@@ -85,7 +86,8 @@ export default class Game extends Phaser.Scene {
                     if (!check(module, id))
                         return;
 
-                    (selected.getAll()[0] as Phaser.GameObjects.Rectangle).setStrokeStyle(0);
+                    if (selected !== undefined)
+                        (selected.getAll()[0] as Phaser.GameObjects.Rectangle).setStrokeStyle(0);
 
                     if (!required && shape === selected) {
                         onSelected();
