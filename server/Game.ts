@@ -28,6 +28,7 @@ export default class Game {
         player.spaceship.addModule(new SpaceSolver(1, 1, 1, 1), 1, 0);
 
         player.hand = this.gameData.popModuleCards(this.gameData.startCardsCount);
+        player.hand.push(this.gameData.popEventCard());
 
         this.players[id] = player;
 

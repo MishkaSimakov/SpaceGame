@@ -4,6 +4,7 @@ import Player from "../../../common/Player";
 import Module from "../../../common/modules/Module";
 import Spaceship from "../../../common/Spaceship";
 import Vector2 from "../../../common/Vector2";
+import {Event} from "../../../common/events/Event";
 
 export default class RebuildSpaceshipManager {
     game: Game;
@@ -32,7 +33,7 @@ export default class RebuildSpaceshipManager {
 
     protected addEvents() {
         let spaceship: Spaceship = this.player.spaceship;
-        let hand: Module[] = this.player.hand;
+        let hand: (Module|Event)[] = this.player.hand;
         let spaceshipDrawer = this.game.spaceshipDrawers[this.player.id];
 
         for (let shape of spaceshipDrawer.moduleShapes) {

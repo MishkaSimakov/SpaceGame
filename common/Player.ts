@@ -1,6 +1,6 @@
 import Spaceship from "./Spaceship";
 import Module from "./modules/Module";
-import Event from "./events/Event";
+import {Event} from "./events/Event";
 import {Options} from "./PlainToClass";
 
 function isObject(object) {
@@ -50,7 +50,7 @@ export default class Player {
     id: string;
     spaceship: Spaceship;
 
-    hand: (Module)[] = [];
+    hand: (Module|Event)[] = [];
     energy: number = 0;
 
     protected lose: boolean = false;

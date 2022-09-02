@@ -2,6 +2,7 @@ import Module from "../../../common/modules/Module";
 import HandDrawer from "../helpers/HandDrawer";
 import Vector2 from "../../../common/Vector2";
 import Player from "../../../common/Player";
+import {Event} from "../../../common/events/Event";
 
 class Modal {
     scene: Phaser.Scene;
@@ -102,7 +103,7 @@ export default class Controls extends Phaser.Scene {
     //         })
     // )
 
-    drawHand(hand: Module[]) {
+    drawHand(hand: (Module|Event)[]) {
         if (this.handDrawer === undefined) {
             this.handDrawer = new HandDrawer(hand, new Vector2(128, 128), this);
         } else {

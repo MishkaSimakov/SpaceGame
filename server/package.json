@@ -2,10 +2,10 @@
   "name": "space-game-server",
   "version": "0.0.1",
   "dependencies": {
+    "array-shuffle": "^3.0.0",
     "cors": "^2.8.5",
     "express": "^4.18.1",
     "serve-static": "^1.15.0",
-    "shuffle-array": "^1.0.1",
     "socket.io": "^4.5.1",
     "ts-node": "^10.9.1"
   },

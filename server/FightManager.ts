@@ -105,6 +105,8 @@ export default class FightManager {
                 target.hand.push(...unconnectedModules)
             }
 
+            target.spaceship.activatedProtector = undefined;
+
             if (!target.spaceship.hasWeapon() && !attacker.spaceship.hasWeapon()) {
                 this.endFight();
             }
