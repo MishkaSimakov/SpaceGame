@@ -46,20 +46,28 @@ function drawModuleCard(scene: Phaser.Scene, module: Module, position: Vector2):
 }
 
 function drawEventCard(scene: Phaser.Scene, event: Event, position: Vector2): Phaser.GameObjects.Container {
-    let backgroundImage = scene.add.rectangle(0, 0, cardWidth, cardHeight, 0xf8b195);
+    let backgroundShape = scene.add.rectangle(0, 0, cardWidth, cardHeight, 0xf8b195);
 
-    // TODO: add auto carry
-    // let fontSize = 16;
-    // let symbolsPerLine = (cardWidth - 50) / fontSize;
-    // let lines: string[] = [];
-    //
-    // while (lines[lines.length - 1].length +  > symbolsPerLine) {
-    //
-    // }
+    let description = event.description;
+    let fontSize = 16;
+    let symbolsPerLine = (cardWidth - 10) / fontSize;
+    let lines: string[] = [];
 
-    let description = scene.add.text(0, 0, event.description, {align: 'center'}).setOrigin(0.5);
+    while (description.length > 10) {
+        let nextWord = description.split(" ")[0];
 
-    return scene.add.container(position.x, position.y, [backgroundImage, description])
+        if (lines.length === 0 || lines[lines.length - 1].length + nextWord.length + 1 > symbolsPerLine) {
+            lines.push(nextWord);
+        } else {
+            lines[lines.length - 1] += " " + nextWord;
+        }
+
+        description = description.substring(nextWord.length + 1);
+    }
+
+    let descriptionShape = scene.add.text(0, 0, lines, {align: 'center'}).setOrigin(0.5);
+    
+    return scene.add.container(position.x, position.y, [backgroundShape, descriptionShape])
         .setSize(cardWidth, cardHeight)
         .setInteractive()
         .setData('type', 'event')
