@@ -1,8 +1,9 @@
-import Module from "../../../common/modules/Module";
+import Module, {isModule} from "../../../common/modules/Module";
 import HandDrawer from "../helpers/HandDrawer";
 import Vector2 from "../../../common/Vector2";
 import Player from "../../../common/Player";
 import {Event} from "../../../common/events/Event";
+import {drawEventCard, drawModuleCard} from "../helpers/cards/CardsDrawer";
 
 class Modal {
     scene: Phaser.Scene;
@@ -103,7 +104,7 @@ export default class Controls extends Phaser.Scene {
     //         })
     // )
 
-    drawHand(hand: (Module|Event)[]) {
+    drawHand(hand: (Module | Event)[]) {
         if (this.handDrawer === undefined) {
             this.handDrawer = new HandDrawer(hand, new Vector2(128, 128), this);
         } else {
@@ -134,8 +135,6 @@ export default class Controls extends Phaser.Scene {
     }
 
     addButton(text: string, onClick: () => void): void {
-        console.log("here");
-
         this.buttons.push(
             this.add.text(500 + this.buttons.length * 50, 10, text)
                 .setInteractive()
@@ -193,6 +192,83 @@ export default class Controls extends Phaser.Scene {
                 .setInteractive()
                 .on('pointerdown', () => {
                     resolve(true);
+
+                    modal.destroy();
+                });
+        });
+    }
+
+    showCard(card: Module | Event) {
+        let image: Phaser.GameObjects.Container;
+
+        if (isModule(card)) {
+            image = drawModuleCard(this, card as Module, new Vector2(this.game.canvas.width / 2, this.game.canvas.height / 2));
+        } else {
+            image = drawEventCard(this, card as Event, new Vector2(this.game.canvas.width / 2, this.game.canvas.height / 2));
+        }
+
+        image.setScale(2);
+        (image.getAll()[0] as Phaser.GameObjects.Rectangle).setInteractive().on('pointerdown', () => {
+            image.destroy();
+        });
+    }
+
+    chooseCardType() {
+        return new Promise(resolve => {
+            let modal = new Modal(this);
+
+            modal.setTitle("Choose card type");
+
+            modal.addLine("Module")
+                .setInteractive()
+                .on('pointerdown', () => {
+                    resolve("module");
+
+                    modal.destroy();
+                });
+
+            modal.addLine("Event")
+                .setInteractive()
+                .on('pointerdown', () => {
+                    resolve("event");
+
+                    modal.destroy();
+                });
+        });
+    }
+
+    discardCards(requiredDiscardCount: number): Promise<number[]> {
+        return new Promise(resolve => {
+            let selected: number[] = [];
+
+            let modal = new Modal(this);
+
+            modal.setTitle("Choose cards to discard");
+
+            for (let [index, card] of Object.entries(this.handDrawer.hand)) {
+                let line = modal.addLine(isModule(card) ? (card as Module).name : 'event')
+                    .setInteractive();
+
+                line.on('pointerdown', () => {
+                    if (selected.indexOf(parseInt(index)) !== -1) {
+                        selected = selected.filter((s) => s !== parseInt(index));
+
+                        line.setBackgroundColor('#000000');
+                    } else {
+                        selected.push(parseInt(index));
+
+                        line.setBackgroundColor('#808080');
+                    }
+                });
+            }
+
+            modal.setBottomText("Discard")
+                .setInteractive()
+                .on('pointerdown', () => {
+                    if (selected.length < requiredDiscardCount)
+                        return;
+
+                    resolve(selected);
 
                     modal.destroy();
                 });

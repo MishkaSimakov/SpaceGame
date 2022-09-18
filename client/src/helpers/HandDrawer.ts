@@ -49,6 +49,8 @@ export default class HandDrawer {
             if (shape.getData('type') === 'event')
                 continue;
 
+            console.log(shape);
+
             this.scene.input.setDraggable(shape, true);
         }
     }

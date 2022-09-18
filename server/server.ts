@@ -6,6 +6,7 @@ import Game from "./Game";
 import {TurnPhase} from "../common/TurnPhase";
 import Module from "../common/modules/Module";
 import FightManager from "./FightManager";
+import {Event, EventTypes} from "../common/events/Event";
 
 const server = require('express')();
 const http = require('http').createServer(server);
@@ -23,90 +24,63 @@ const io: Server = require("socket.io")(http, {
 server.use(cors());
 server.use(serveStatic(__dirname + "/client/dist"));
 
-function setRebuildSpaceshipData(player: Player) {
-    if (game.currentPlayer.id !== player.id) {
-        throw new Error("Wrong player has rebuilt spaceship");
-    }
-
-    if (game.turnPhase !== TurnPhase.RebuildSpaceship) {
-        throw new Error(`Player has rebuilt his spaceship in wrong turn phase (expected: ${TurnPhase.RebuildSpaceship}, got: ${game.turnPhase})`);
-    }
-
-    if (!player.canBeTurnedInto(player)) {
-        throw new Error("Changed player has wrong cards or energy count");
-    }
-
-    if (!Spaceship.checkConfiguration(player.spaceship)) {
-        throw new Error("Changed player has wrong spaceship configuration");
-    }
-
-    game.changePlayerData(player.id, player);
-}
-
-function askForFight(player: Player) {
-    console.log(`Player ${player.id} had been asked for attack`);
-
-    game.getSocket(player).emit('willYouFight', (response: { attackedPlayerId?: string }) => {
-        if (response.attackedPlayerId !== undefined) {
-            console.log(`Player ${player.id} has attacked player ${response.attackedPlayerId}`);
-
-            let fightManager = new FightManager(player, game.players[response.attackedPlayerId], (destroyedPlayer) => {
-                if (destroyedPlayer !== undefined) {
-                    game.setDestroyed(destroyedPlayer);
-
-                    if (Object.entries(game.players).filter(([key, player]) => !player.isLose()).length === 1) {
-                        game.end();
-
-                        return;
-                    }
-                }
-
-                turn(game.getNextTurnPlayer());
-            }, game);
-
-            fightManager.makeFightIteration();
-        } else {
-            console.log(`Player ${player.id} is peaceful`);
-
-            turn(game.getNextTurnPlayer());
-        }
-    });
-}
-
-function turn(player: Player) {
+async function turn(player: Player) {
+    // set current turn player
+    console.log(`Turn of player ${player.id}`);
     game.currentPlayer = player;
 
-    game.getSocket(player).emit('startTurn', player, (changedPlayer: Player) => {
-        setRebuildSpaceshipData(plainToClass(changedPlayer, Player.getPropertiesMap()));
+    // collect energy
+    game.collectEnergyPhase();
 
-        game.setPlayersData();
+    // rebuild spaceship
+    await game.rebuildSpaceshipPhase();
 
-        if (game.currentPlayer.spaceship.canAttack()) {
-            askForFight(game.currentPlayer);
+    // fix spaceship
+    if (game.currentPlayer.spaceship.hasRepairModule())
+        await game.fixSpaceshipPhase();
+
+    // ask for attack
+    if (game.currentPlayer.spaceship.canAttack()) {
+        let result = await game.attackPhase();
+
+        if (result.destroyedPlayer !== undefined) {
+            console.log(`   Player ${result.destroyedPlayer.id} was destroyed`);
+            game.setDestroyed(result.destroyedPlayer);
+        }
+
+        if (Object.entries(game.players).filter(([key, player]) => !player.isLose()).length === 1) {
+            game.end();
 
             return;
         }
+    }
 
-        turn(game.getNextTurnPlayer());
-    });
+    // take cards
+    await game.drawCardsPhase();
+
+    // discard extra cards
+    if (game.currentPlayer.hand.length > 5)
+        await game.discardExtraCardsPhase();
+
+    await turn(game.getNextTurnPlayer());
 }
 
 let game: Game = new Game(2, io);
 
-io.on('connection', function (socket: Socket) {
+io.on('connection', async function (socket: Socket) {
     let player = game.addPlayer(socket.id);
+
+    socket.on('disconnect', function () {
+        console.log("disconnected");
+    });
 
     if (game.isFull()) {
         game.setPlayersData();
 
         game.start();
 
-        turn(game.currentPlayer)
+        await turn(game.currentPlayer)
     }
-
-    socket.on('disconnect', function () {
-
-    });
 });
 
 http.listen(3000, function () {

@@ -52,6 +52,7 @@ export default class Player {
 
     hand: (Module|Event)[] = [];
     energy: number = 0;
+    skipNextTurn: boolean;
 
     protected lose: boolean = false;
 

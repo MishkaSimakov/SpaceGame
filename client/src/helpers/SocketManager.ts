@@ -5,6 +5,7 @@ import Player from "../../../common/Player";
 import {plainToClass} from "../../../common/PlainToClass";
 import Module, {ModuleTypes} from "../../../common/modules/Module";
 import RebuildSpaceshipManager from "./RebuildSpaceshipManager";
+import {Event} from "../../../common/events/Event";
 
 export default class SocketManager {
     game: Game;
@@ -38,8 +39,6 @@ export default class SocketManager {
 
                 if (key === this.socket.id) {
                     this.player = player;
-
-                    this.rebuildSpaceshipManager.player = this.player;
                 } else {
                     this.otherPlayers[key] = player;
                 }
@@ -49,11 +48,24 @@ export default class SocketManager {
 
             this.controls.drawHand(this.player.hand);
             this.controls.drawStatusBar(this.player);
+
+            this.rebuildSpaceshipManager.player = this.player;
+            this.rebuildSpaceshipManager.controls = this.controls;
         });
 
-        this.socket.on('startTurn', (player: Player, callback: (Player) => void) => {
-            this.controls.setStatus("Your turn");
+        this.socket.on('rebuildSpaceship', (player: Player, callback: (Player) => void) => {
+            // this.player = plainToClass(player, Player.getPropertiesMap());
+            //
+            // this.controls.drawHand(this.player.hand);
+            // this.controls.drawStatusBar(this.player);
+            //
+            // this.rebuildSpaceshipManager.player = this.player;
+            // this.rebuildSpaceshipManager.controls = this.controls;
+
+            this.player.energy = player.energy;
             this.controls.setEnergy(this.player.energy);
+
+            this.controls.setStatus("Your turn");
 
             this.setRebuildSpaceshipAllowed(true);
 
@@ -63,6 +75,24 @@ export default class SocketManager {
                 this.setRebuildSpaceshipAllowed(false);
 
                 callback(this.player);
+            });
+        });
+
+        this.socket.on('discardCards', (callback: (discardedCardsIndexes: number[]) => void) => {
+            let requiredDiscardCount = this.player.hand.length - 5;
+
+            this.controls.discardCards(requiredDiscardCount).then((discardedCardsIndexes: number[]) => {
+                callback(discardedCardsIndexes);
+            });
+        });
+
+        this.socket.on('showCard', (card: Module | Event) => {
+            this.controls.showCard(card);
+        })
+
+        this.socket.on('chooseCardType', (callback: (cardType: string) => void) => {
+            this.controls.chooseCardType().then((cardType: string) => {
+                callback(cardType);
             });
         });
 
@@ -157,6 +187,8 @@ export default class SocketManager {
     }
 
     setRebuildSpaceshipAllowed(allowed: boolean): void {
+        console.log("rebuild spaceship allowed", allowed);
+
         if (allowed) {
             this.rebuildSpaceshipManager.allowRebuildSpaceship();
         } else {

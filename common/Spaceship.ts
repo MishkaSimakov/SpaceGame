@@ -130,13 +130,12 @@ export default class Spaceship {
         return connectedModules;
     }
 
-    canAttack(): boolean {
-        for (let module of this.modules) {
-            if (module.type === ModuleTypes.AttackModule)
-                return true;
-        }
+    getModulesByType(type: ModuleTypes): Module[] {
+        return this.modules.filter((m) => m.type === type);
+    }
 
-        return false;
+    canAttack(): boolean {
+        return this.getModulesByType(ModuleTypes.AttackModule).length !== 0;
     }
 
     damage(target: Module, weapon: Module): Module[] {
@@ -173,12 +172,8 @@ export default class Spaceship {
     }
 
     hasProtectors(): boolean {
-        for (let module of this.modules) {
-            if (module.type === ModuleTypes.SmallQuantumProtector || module.type === ModuleTypes.QuantumProtector)
-                return true;
-        }
-
-        return false;
+        return this.getModulesByType(ModuleTypes.SmallQuantumProtector).length !== 0
+            || this.getModulesByType(ModuleTypes.QuantumProtector).length !== 0;
     }
 
     setProtector(protector: Module) {
@@ -206,6 +201,10 @@ export default class Spaceship {
         } while (addedModules.length !== 0);
 
         return unconnectedModules;
+    }
+
+    hasRepairModule(): boolean {
+        return this.getModulesByType(ModuleTypes.RepairModule).length !== 0;
     }
 
     static checkConfiguration(spaceship: Spaceship): boolean {

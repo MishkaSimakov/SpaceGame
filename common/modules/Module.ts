@@ -1,3 +1,5 @@
+import {Event} from "../events/Event";
+
 enum ModuleTypes {
     MainModule,
 
@@ -42,9 +44,14 @@ class Module {
     }
 }
 
+function isModule(card: Module|Event) {
+    return (card as Module).name !== undefined;
+}
+
 export default Module;
 
 export {
     Module,
-    ModuleTypes
+    ModuleTypes,
+    isModule
 }

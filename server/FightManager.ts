@@ -3,7 +3,6 @@ import {Socket} from "socket.io";
 import Module, {ModuleTypes} from "../common/modules/Module";
 import Game from "./Game";
 
-
 // chooseProtectors -> willYouRunaway -> chooseWeaponAndTarget -> updateOtherPlayerData
 export default class FightManager {
     first: Player;

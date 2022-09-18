@@ -38,7 +38,7 @@ export default class GameData {
         ...addEvents(EventTypes.TakeTwoBuildingCards, "Возьмите 2 карты строительства", 2),
         ...addEvents(EventTypes.LooseFiveEnergy, "Сбросьте 5 энергии", 2),
         ...addEvents(EventTypes.TakeFiveEnergy, "Получите 5 энергии", 2),
-        ...addEvents(EventTypes.SkipYourTurn, "Пропустите ход", 2),
+        ...addEvents(EventTypes.SkipNextTurn, "Пропустите следующий ход", 2),
         ...addEvents(EventTypes.LooseAllYourCards, "Скиньте все свои карты", 2),
         ...addEvents(EventTypes.DestroyAnyModuleOnYourSpaceship, "Уничтожьте любой модуль вашей станции на ваш выбор", 2),
         ...addEvents(EventTypes.DestroyTwoSolarPanelsOnYourSpaceship, "Уничтожьте 2 солнечные батареи вашей станции", 2),
@@ -67,6 +67,9 @@ export default class GameData {
         new MainModule()
     ];
 
+    protected moduleDiscards: Module[] = [];
+    protected eventDiscards: Event[] = [];
+
     readonly startCardsCount: number = 4;
 
     constructor() {
@@ -90,5 +93,15 @@ export default class GameData {
 
     popEventCard(): Event {
         return this.eventsStack.pop();
+    }
+
+    discardCards(cards: (Module|Event)[]) {
+        for (let card of cards) {
+            if ((card as Module).name === undefined) {
+                this.eventDiscards.push(card as Event);
+            } else {
+                this.moduleDiscards.push(card as Module);
+            }
+        }
     }
 }

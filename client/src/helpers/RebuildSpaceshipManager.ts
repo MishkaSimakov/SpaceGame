@@ -20,13 +20,15 @@ export default class RebuildSpaceshipManager {
         this.game.spaceshipDrawers[this.player.id].allowDrag();
         this.controls.handDrawer.allowDrag();
 
+        console.log(this.game.spaceshipDrawers[this.player.id]);
+
         this.removeEvents();
         this.addEvents();
     }
 
     disallowRebuildSpaceship() {
-        this.game.spaceshipDrawers[this.player.id].allowDrag();
-        this.controls.handDrawer.allowDrag();
+        this.game.spaceshipDrawers[this.player.id].disallowDrag();
+        this.controls.handDrawer.disallowDrag();
 
         this.removeEvents();
     }
@@ -102,9 +104,6 @@ export default class RebuildSpaceshipManager {
 
         for (let shape of this.controls.handDrawer.cardShapes) {
             let module: Module = shape.getData('module');
-
-            if (module.isMain)
-                continue;
 
             shape.on('dragstart', () => {
                 this.game.isDragging = true;

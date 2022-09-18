@@ -66,7 +66,7 @@ function drawEventCard(scene: Phaser.Scene, event: Event, position: Vector2): Ph
     }
 
     let descriptionShape = scene.add.text(0, 0, lines, {align: 'center'}).setOrigin(0.5);
-    
+
     return scene.add.container(position.x, position.y, [backgroundShape, descriptionShape])
         .setSize(cardWidth, cardHeight)
         .setInteractive()
