@@ -47,18 +47,27 @@ function arrayCompare<T>(arr1: Array<T>, arr2: Array<T>) {
 
 
 export default class Player {
-    id: string;
-    spaceship: Spaceship;
+    link: number;
+    socketId: string;
 
+    spaceship: Spaceship;
     hand: (Module|Event)[] = [];
+
     energy: number = 0;
     skipNextTurn: boolean;
 
+    online: boolean;
+
     protected lose: boolean = false;
 
-    constructor(id: string, spaceship: Spaceship) {
-        this.id = id;
-        this.spaceship = spaceship;
+    constructor() {
+        this.link = this.generateLink();
+    }
+
+    protected generateLink(): number {
+        const linkSize = 6;
+
+        return Math.floor(Math.pow(10, linkSize - 1) * (Math.random() * 9 + 1));
     }
 
     canBeTurnedInto(changedPlayer: Player): boolean {
@@ -70,6 +79,15 @@ export default class Player {
 
     collectEnergy() {
         this.energy = Math.min(this.energy + this.spaceship.getTotalEnergyIncrease(), this.spaceship.getTotalCapacity());
+    }
+
+    canDamage(): boolean {
+        let weaponCost = this.spaceship.modules.filter(m => m.strength > 0).map(m => m.energyCost);
+
+        if (weaponCost.length === 0)
+            return false;
+
+        return Math.min(...weaponCost) <= this.energy;
     }
 
     static getPropertiesMap(): Options {

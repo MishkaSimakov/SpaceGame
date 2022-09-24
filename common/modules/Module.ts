@@ -30,6 +30,7 @@ class Module {
     connectors: Record<string, number>;
     strength: number = 0;
     capacity: number = 0;
+    energyCost: number = 0;
     energyIncrease: number = 0;
     x: number = 0;
     y: number = 0;

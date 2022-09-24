@@ -14,5 +14,7 @@ export default class SmallQuantumProtector extends Module {
 
         this.health = 10;
         this.totalHealth = 10;
+
+        this.energyCost = 10;
     }
 }

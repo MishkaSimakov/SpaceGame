@@ -1,18 +1,12 @@
 import {Server, Socket} from "socket.io";
 import Player from "../common/Player";
-import Spaceship from "../common/Spaceship";
-import {plainToClass} from "../common/PlainToClass";
 import Game from "./Game";
-import {TurnPhase} from "../common/TurnPhase";
-import Module from "../common/modules/Module";
-import FightManager from "./FightManager";
-import {Event, EventTypes} from "../common/events/Event";
 
 const server = require('express')();
 const http = require('http').createServer(server);
 const cors = require('cors');
 const path = require('path');
-const serveStatic = require('serve-static');
+import serveStatic = require("serve-static");
 
 const io: Server = require("socket.io")(http, {
     cors: {
@@ -22,65 +16,70 @@ const io: Server = require("socket.io")(http, {
 });
 
 server.use(cors());
-server.use(serveStatic(__dirname + "/client/dist"));
+server.use(serveStatic(path.join(__dirname, '../client/dist')))
 
-async function turn(player: Player) {
-    // set current turn player
-    console.log(`Turn of player ${player.id}`);
-    game.currentPlayer = player;
+server.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+});
 
-    // collect energy
-    game.collectEnergyPhase();
+server.get('/game/:link', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+});
 
-    // rebuild spaceship
-    await game.rebuildSpaceshipPhase();
-
-    // fix spaceship
-    if (game.currentPlayer.spaceship.hasRepairModule())
-        await game.fixSpaceshipPhase();
-
-    // ask for attack
-    if (game.currentPlayer.spaceship.canAttack()) {
-        let result = await game.attackPhase();
-
-        if (result.destroyedPlayer !== undefined) {
-            console.log(`   Player ${result.destroyedPlayer.id} was destroyed`);
-            game.setDestroyed(result.destroyedPlayer);
-        }
-
-        if (Object.entries(game.players).filter(([key, player]) => !player.isLose()).length === 1) {
-            game.end();
-
-            return;
-        }
-    }
-
-    // take cards
-    await game.drawCardsPhase();
-
-    // discard extra cards
-    if (game.currentPlayer.hand.length > 5)
-        await game.discardExtraCardsPhase();
-
-    await turn(game.getNextTurnPlayer());
-}
+server.get('/check/:link', (req, res) => {
+    res.send(
+        game.getLinks().indexOf(parseInt(req.params.link)) !== -1
+    );
+});
 
 let game: Game = new Game(2, io);
 
+console.log(game.getLinks().join(', '));
+
 io.on('connection', async function (socket: Socket) {
-    let player = game.addPlayer(socket.id);
+    console.log("User connected");
+
+    let player: Player;
 
     socket.on('disconnect', function () {
-        console.log("disconnected");
+        if (player === undefined) {
+            console.log("disconnected");
+            return;
+        }
+
+        console.log(`disconnected user with link: ${player.link}`)
+        player.socketId = undefined;
+        player.online = false;
+
+        game.updatePlayersStatus();
     });
 
-    if (game.isFull()) {
-        game.setPlayersData();
+    io.sockets.sockets.get(socket.id).emit('getLink', async (link: number) => {
+        if (game.getLinks().indexOf(link) === -1) {
+            console.log("Connected user doesn't exist in this game");
 
-        game.start();
+            socket.disconnect();
 
-        await turn(game.currentPlayer)
-    }
+            return;
+        }
+
+        player = game.playerConnected(link, socket.id);
+
+        if (game.isStarted()) {
+            game.getSocketByLink(link).emit('setPlayersData', game.players);
+
+            game.tryToEmitEvent();
+
+            return;
+        }
+
+        if (game.isAllPlayersConnected()) {
+            await game.start();
+
+            for (let player of game.players)
+                game.getSocket(player).disconnect();
+        }
+    });
 });
 
 http.listen(3000, function () {

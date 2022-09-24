@@ -56,7 +56,12 @@ export default {
         }),
 
         //  See https://www.npmjs.com/package/rollup-plugin-typescript2 for config options
-        typescript(),
+        typescript({
+            include: [
+                './**/*.ts+(|x)',
+                '../common/**/*.ts+(|x)'
+            ]
+        }),
 
     ]
 };

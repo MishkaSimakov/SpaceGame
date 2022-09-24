@@ -2,7 +2,7 @@ import Spaceship from "../../../common/Spaceship";
 import Vector2 from "../../../common/Vector2";
 import * as Phaser from "phaser";
 import Module from "../../../common/modules/Module";
-import {drawModuleCard} from "./cards/CardsDrawer";
+import {drawModuleCard} from "./CardsDrawer";
 
 export default class SpaceshipDrawer {
     spaceship: Spaceship;

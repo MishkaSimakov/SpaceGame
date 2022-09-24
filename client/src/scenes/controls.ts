@@ -3,7 +3,7 @@ import HandDrawer from "../helpers/HandDrawer";
 import Vector2 from "../../../common/Vector2";
 import Player from "../../../common/Player";
 import {Event} from "../../../common/events/Event";
-import {drawEventCard, drawModuleCard} from "../helpers/cards/CardsDrawer";
+import {drawEventCard, drawModuleCard} from "../helpers/CardsDrawer";
 
 class Modal {
     scene: Phaser.Scene;
@@ -84,15 +84,13 @@ export default class Controls extends Phaser.Scene {
     statusText: Phaser.GameObjects.Text;
     buttons: Phaser.GameObjects.Text[] = [];
 
-    bus: Phaser.Events.EventEmitter;
+    usersListText: Phaser.GameObjects.Text[] = [];
 
-    constructor(bus: Phaser.Events.EventEmitter) {
+    constructor() {
         super({
             key: 'Controls',
             active: true
         });
-
-        this.bus = bus;
     }
 
     // this.playersList.push(
@@ -149,8 +147,8 @@ export default class Controls extends Phaser.Scene {
         this.buttons = [];
     }
 
-    choosePlayerForAttack(players: string[]) {
-        return new Promise((resolve: (player?: string) => void, reject) => {
+    choosePlayerForAttack(links: number[]) {
+        return new Promise((resolve: (link?: number) => void, reject) => {
             let modal = new Modal(this);
 
             modal.setTitle("Do you want to fight with someone?");
@@ -162,11 +160,11 @@ export default class Controls extends Phaser.Scene {
                     modal.destroy();
                 });
 
-            for (let index in players) {
-                modal.addLine(players[index])
+            for (let link of links) {
+                modal.addLine(link.toString())
                     .setInteractive()
                     .on('pointerdown', () => {
-                        resolve(players[index]);
+                        resolve(link);
 
                         modal.destroy();
                     });
@@ -273,5 +271,35 @@ export default class Controls extends Phaser.Scene {
                     modal.destroy();
                 });
         });
+    }
+
+    drawPlayersList(data: { link: number, online: boolean, isMe: boolean }[], onclick: (link: number) => void) {
+        for (let text of this.usersListText)
+            text.destroy();
+
+        this.usersListText = [];
+
+        data.sort((a, b) => {
+            if (a.isMe)
+                return -1;
+            if (b.isMe)
+                return 1;
+            return 0;
+        })
+
+        this.usersListText.push(this.add.text(1000, 10, "Players:"));
+
+        for (let index in data) {
+            let player = data[index];
+
+            let text: string = player.isMe ? "You" : player.link.toString();
+            text += player.online ? "(online)" : "(offline)";
+
+            this.usersListText.push(
+                this.add.text(1000, 10 + (parseInt(index) + 1) * 25, text)
+                    .setInteractive()
+                    .on('pointerdown', () => onclick(player.link))
+            );
+        }
     }
 }

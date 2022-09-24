@@ -7,89 +7,193 @@ import {Server, Socket} from "socket.io";
 import {plainToClass} from "../common/PlainToClass";
 import FightManager from "./FightManager";
 import Module from "../common/modules/Module";
-import {Event, performEvent} from "../common/events/Event";
+import {Event} from "../common/events/Event";
+
+enum GameState {
+    WAIT_FOR_PLAYERS,
+    STARTED,
+    ENDED
+}
 
 export default class Game {
     gameData: GameData;
 
     size: number;
 
-    players: Record<string, Player> = {};
+    players: Player[] = [];
+
     currentPlayer: Player;
 
     turnPhase: TurnPhase;
 
     io: Server;
 
+    state: GameState = GameState.WAIT_FOR_PLAYERS;
+
+    currentEmitPlayerLink: number;
+    currentEmitFunction: () => void;
+
     constructor(size: number, io: Server) {
         this.size = size;
         this.gameData = new GameData();
 
         this.io = io;
+
+        for (let i = 0; i < size; ++i)
+            this.players.push(new Player());
+
+        this.currentPlayer = this.players[0];
     }
 
-    addPlayer(id: string): Player {
-        let player = new Player(id, new Spaceship(this.gameData.popMainModule()));
-        player.spaceship.addModule(new SpaceSolver(1, 1, 1, 1), 1, 0);
+    emitToPlayerAndWaitForAnswer(player: Player, event: string, ...args) {
+        // generate function that must be called when player connected
 
-        player.hand = this.gameData.popModuleCards(this.gameData.startCardsCount);
+        let emitFunction = () => {
+            if (typeof args[args.length - 1] === 'function') {
+                let acknowledgement = args[args.length - 1];
 
-        this.players[id] = player;
+                let newAcknowledgement = (...ackArgs) => {
+                    this.currentEmitFunction = undefined;
+                    this.currentEmitPlayerLink = undefined;
 
-        if (this.currentPlayer === undefined)
-            this.currentPlayer = player;
+                    acknowledgement(...ackArgs);
+                };
 
-        console.log(`User connected (${Object.keys(this.players).length}/${this.size})`);
+                this.getSocketByLink(player.link).emit(event, ...args.slice(0, args.length - 1), newAcknowledgement);
+            } else {
+                this.currentEmitFunction = undefined;
+                this.currentEmitPlayerLink = undefined;
 
-        return player;
+                this.getSocketByLink(player.link).emit(event, ...args);
+            }
+        };
+
+        this.currentEmitFunction = emitFunction;
+        this.currentEmitPlayerLink = player.link;
+
+        if (this.getSocketByLink(player.link) !== undefined && !this.getSocketByLink(player.link).disconnected)
+            emitFunction();
     }
 
-    start() {
+    tryToEmitEvent() {
+        if (this.currentEmitPlayerLink === undefined)
+            return;
+
+        if (this.getSocketByLink(this.currentEmitPlayerLink) === undefined || this.getSocketByLink(this.currentEmitPlayerLink).disconnected)
+            return;
+
+        this.currentEmitFunction();
+    }
+
+    getLinks(): number[] {
+        return this.players.map(p => p.link);
+    }
+
+    getPlayerByLink(link: number): Player {
+        return this.players.filter(p => p.link === link)[0];
+    }
+
+    playerConnected(link: number, socketId: string): Player {
+        console.log(`User with link ${link} connected`);
+
+        // check whether player connected for the first time
+        let connectedPlayer = this.getPlayerByLink(link);
+        let isConnectedForTheFirstTime = connectedPlayer.spaceship === undefined;
+
+        // if first time
+        if (isConnectedForTheFirstTime) {
+            console.log("User connected for the first time. Creating spaceship...");
+
+            //  create spaceship
+            connectedPlayer.spaceship = new Spaceship(this.gameData.popMainModule());
+            connectedPlayer.spaceship.addModule(new SpaceSolver(1, 1, 1, 1), 1, 0);
+
+            connectedPlayer.hand = this.gameData.popModuleCards(this.gameData.startCardsCount);
+        }
+
+        // set socket id
+        connectedPlayer.socketId = socketId;
+
+        connectedPlayer.online = true;
+
+        this.updatePlayersStatus();
+
+        return connectedPlayer;
+    }
+
+    updatePlayersStatus() {
+        this.io.emit('setPlayersStatus', this.players.map(p => {
+            return {link: p.link, online: p.online}
+        }));
+    }
+
+    async start() {
         console.log("Game started");
 
+        this.state = GameState.STARTED;
+
         this.turnPhase = TurnPhase.RebuildSpaceship;
+
+        while (true) {
+            this.setPlayersData();
+
+            let isGameContinue = await this.makeGameIteration();
+
+            if (!isGameContinue)
+                break;
+
+            this.currentPlayer = this.getNextTurnPlayer();
+        }
+
+        this.state = GameState.ENDED;
     }
 
-    changePlayerData(player: Player): boolean {
-        if (this.players[player.id] === undefined)
-            return false;
+    isStarted(): boolean {
+        return this.state === GameState.STARTED;
+    }
 
-        this.players[player.id] = player;
+    changePlayerData(player: Player) {
+        for (let i = 0; i < this.players.length; ++i) {
+            if (this.players[i].link === player.link) {
+                this.players[i] = player;
+                break;
+            }
+        }
 
-        if (this.currentPlayer.id === player.id)
-            this.currentPlayer = this.players[player.id];
-
-        return true;
+        if (this.currentPlayer.link === player.link)
+            this.currentPlayer = this.getPlayerByLink(player.link);
     }
 
     setPlayersData() {
         this.io.emit('setPlayersData', this.players);
     }
 
-    isFull(): boolean {
-        return Object.keys(this.players).length === this.size;
+    isAllPlayersConnected(): boolean {
+        return this.players.every(p => p.spaceship !== undefined);
+    }
+
+    getSocketByLink(link: number): Socket {
+        return this.getSocket(this.getPlayerByLink(link));
     }
 
     getSocket(player: Player): Socket;
     getSocket(id: string): Socket;
     getSocket(value: Player | string): Socket {
-        if (typeof value === 'string')
-            return this.io.sockets.sockets.get(value);
-
-        return this.io.sockets.sockets.get(value.id);
+        return this.io.sockets.sockets.get(
+            typeof value === 'string' ? value : value.socketId
+        );
     }
 
     getNextTurnPlayer() {
-        let currentPlayerId = Object.keys(this.players).indexOf(this.currentPlayer.id);
+        let currentPlayerId = this.players.indexOf(this.currentPlayer);
 
         do {
             currentPlayerId++;
 
-            if (currentPlayerId === Object.keys(this.players).length)
-                currentPlayerId = 0;
-        } while (this.getPlayerByIndex(currentPlayerId).isLose());
+            currentPlayerId %= this.players.length;
+        } while (this.players[currentPlayerId].isLose());
 
-        return this.getPlayerByIndex(currentPlayerId);
+        return this.players[currentPlayerId];
     }
 
     getPlayerByIndex(index: number) {
@@ -97,19 +201,19 @@ export default class Game {
     }
 
     setDestroyed(player: Player) {
-        let destroyedPlayerData = this.players[player.id];
+        let destroyedPlayerData = this.getPlayerByLink(player.link);
 
         destroyedPlayerData.setLose();
 
         this.changePlayerData(destroyedPlayerData);
 
-        console.log(`Player ${destroyedPlayerData.id} lose`);
+        console.log(`Player ${destroyedPlayerData.link} lose`);
     }
 
     end() {
         let winner = Object.entries(this.players).filter(([key, player]) => !player.isLose())[0][1];
 
-        console.log(`Game end. Player ${winner.id} has won`);
+        console.log(`Game end. Player ${winner.link} has won`);
     }
 
     collectEnergyPhase() {
@@ -121,12 +225,10 @@ export default class Game {
     }
 
     async rebuildSpaceshipPhase() {
-        await new Promise((resolve, reject) => {
+        await new Promise(resolve => {
             console.log("   Player start rebuilding spaceship");
 
-            this.getSocket(this.currentPlayer).emit('rebuildSpaceship', this.currentPlayer, (changedPlayer: Player) => {
-                console.log(plainToClass(changedPlayer, Player.getPropertiesMap()).spaceship.modules.length);
-
+            this.emitToPlayerAndWaitForAnswer(this.currentPlayer, 'rebuildSpaceship', this.currentPlayer, (changedPlayer: Player) => {
                 this.setRebuildSpaceshipData(plainToClass(changedPlayer, Player.getPropertiesMap()));
 
                 console.log("   Player end rebuilding spaceship");
@@ -137,7 +239,7 @@ export default class Game {
     }
 
     setRebuildSpaceshipData(player: Player) {
-        if (this.currentPlayer.id !== player.id) {
+        if (this.currentPlayer.socketId !== player.socketId) {
             throw new Error("Wrong player has rebuilt spaceship");
         }
 
@@ -163,22 +265,21 @@ export default class Game {
     }
 
     async attackPhase(): Promise<{ destroyedPlayer: Player | undefined }> {
-        return await new Promise((resolve, reject) => {
+        return await new Promise(resolve => {
             console.log("   Player asked for attack")
 
-            this.getSocket(this.currentPlayer).emit('willYouFight', (response: { attackedPlayerId?: string }) => {
-                if (response.attackedPlayerId !== undefined) {
-                    console.log(`   Player ${this.currentPlayer.id} has attacked player ${response.attackedPlayerId}`);
+            this.emitToPlayerAndWaitForAnswer(this.currentPlayer, 'willYouFight', async (response: { attackedPlayerLink?: number }) => {
+                if (response.attackedPlayerLink !== undefined) {
+                    console.log(`   Player ${this.currentPlayer.link} has attacked player ${response.attackedPlayerLink}`);
 
-                    let fightManager = new FightManager(this.currentPlayer, this.players[response.attackedPlayerId], (destroyedPlayer) => {
-                        resolve({
-                            destroyedPlayer: destroyedPlayer
-                        });
-                    }, this);
+                    let target = this.getPlayerByLink(response.attackedPlayerLink);
+                    let destroyedPlayer = await (new FightManager(this.currentPlayer, target, this)).fight();
 
-                    fightManager.makeFightIteration();
+                    resolve({
+                        destroyedPlayer: destroyedPlayer
+                    });
                 } else {
-                    console.log(`   Player ${this.currentPlayer.id} is peaceful`);
+                    console.log(`   Player ${this.currentPlayer.link} is peaceful`);
 
                     resolve({
                         destroyedPlayer: undefined
@@ -191,37 +292,48 @@ export default class Game {
     async drawCardsPhase() {
         console.log("   Player asked to choose card type");
 
-        return await new Promise(resolve => {
-            this.getSocket(this.currentPlayer).emit('chooseCardType', (cardType: string) => {
-                console.log(`   Player choose ${cardType} card`);
+        // TODO: return events
+        // return await new Promise(resolve => {
+        //     this.getSocket(this.currentPlayer).emit('chooseCardType', (cardType: string) => {
+        //         console.log(`   Player choose ${cardType} card`);
+        //
+        //         if (cardType === 'event') {
+        //             let event = this.gameData.popEventCard();
+        //
+        //             this.showCardToPlayer(event, this.currentPlayer);
+        //
+        //             console.log(`   Player get event card: ${event.description}. Start performing`);
+        //
+        //             performEvent(event, this);
+        //
+        //             console.log(`   Event performed`);
+        //         } else if (cardType === 'module') {
+        //             let module = this.gameData.popModuleCards(1)[0];
+        //
+        //             console.log(`   Player get module: ${module.name}`);
+        //
+        //             this.showCardToPlayer(module, this.currentPlayer);
+        //
+        //             this.currentPlayer.hand.push(module);
+        //
+        //             this.changePlayerData(this.currentPlayer);
+        //         }
+        //
+        //         this.setPlayersData();
+        //
+        //         resolve(true);
+        //     });
+        // });
 
-                if (cardType === 'event') {
-                    let event = this.gameData.popEventCard();
+        let module = this.gameData.popModuleCards(1)[0];
 
-                    this.showCardToPlayer(event, this.currentPlayer);
+        console.log(`   Player get module: ${module.name}`);
 
-                    console.log(`   Player get event card: ${event.description}. Start performing`);
+        this.showCardToPlayer(module, this.currentPlayer);
 
-                    performEvent(event, this);
-
-                    console.log(`   Event performed`);
-                } else if (cardType === 'module') {
-                    let module = this.gameData.popModuleCards(1)[0];
-
-                    console.log(`   Player get module: ${module.name}`);
-
-                    this.showCardToPlayer(module, this.currentPlayer);
-
-                    this.currentPlayer.hand.push(module);
-
-                    this.changePlayerData(this.currentPlayer);
-                }
-
-                this.setPlayersData();
-
-                resolve(true);
-            });
-        });
+        this.currentPlayer.hand.push(module);
+        this.changePlayerData(this.currentPlayer);
+        this.setPlayersData();
     }
 
     async discardExtraCardsPhase() {
@@ -257,7 +369,7 @@ export default class Game {
     }
 
     getPlayerByOffsetFromCurrent(offset: number): Player {
-        let currentPlayerId = Object.keys(this.players).indexOf(this.currentPlayer.id);
+        let currentPlayerId = Object.keys(this.players).indexOf(this.currentPlayer.socketId);
 
         do {
             currentPlayerId += Math.sign(offset);
@@ -270,5 +382,45 @@ export default class Game {
         } while (offset !== 0);
 
         return this.getPlayerByIndex(currentPlayerId);
+    }
+
+    async makeGameIteration(): Promise<boolean> {
+        // set current turn player
+        console.log(`Turn of player ${this.currentPlayer.link}`);
+
+        // collect energy
+        this.collectEnergyPhase();
+
+        // rebuild spaceship
+        await this.rebuildSpaceshipPhase();
+
+        // fix spaceship
+        if (this.currentPlayer.spaceship.hasRepairModule())
+            await this.fixSpaceshipPhase();
+
+        // ask for attack
+        if (this.currentPlayer.spaceship.canAttack()) {
+            let result = await this.attackPhase();
+
+            if (result.destroyedPlayer !== undefined) {
+                console.log(`   Player ${result.destroyedPlayer.link} was destroyed`);
+                this.setDestroyed(result.destroyedPlayer);
+            }
+
+            if (Object.entries(this.players).filter(([key, player]) => !player.isLose()).length === 1) {
+                this.end();
+
+                return false;
+            }
+        }
+
+        // take cards
+        await this.drawCardsPhase();
+
+        // discard extra cards
+        if (this.currentPlayer.hand.length > 5)
+            await this.discardExtraCardsPhase();
+
+        return true;
     }
 }

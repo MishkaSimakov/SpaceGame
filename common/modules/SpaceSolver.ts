@@ -17,5 +17,7 @@ export default class SpaceSolver extends Module {
         this.strength = 10;
         this.health = 10;
         this.totalHealth = 10;
+
+        this.energyCost = 5;
     }
 }

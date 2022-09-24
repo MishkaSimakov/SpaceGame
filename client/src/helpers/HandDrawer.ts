@@ -2,7 +2,7 @@ import Module from "../../../common/modules/Module";
 import * as Phaser from "phaser";
 import Vector2 from "../../../common/Vector2";
 import {Event} from "../../../common/events/Event";
-import {drawModuleCard, drawEventCard} from "./cards/CardsDrawer";
+import {drawModuleCard, drawEventCard} from "./CardsDrawer";
 
 
 export default class HandDrawer {
@@ -48,8 +48,6 @@ export default class HandDrawer {
         for (let shape of this.cardShapes) {
             if (shape.getData('type') === 'event')
                 continue;
-
-            console.log(shape);
 
             this.scene.input.setDraggable(shape, true);
         }

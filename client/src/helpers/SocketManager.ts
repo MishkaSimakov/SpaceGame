@@ -8,16 +8,18 @@ import RebuildSpaceshipManager from "./RebuildSpaceshipManager";
 import {Event} from "../../../common/events/Event";
 
 export default class SocketManager {
+    link: number;
     game: Game;
     controls: Controls;
     socket: Socket;
 
-    player: Player;
-    otherPlayers: Record<string, Player> = {};
+    players: Record<number, Player> = {};
 
     rebuildSpaceshipManager: RebuildSpaceshipManager;
 
     constructor(game: Game, controls: Controls) {
+        this.link = parseInt(window.location.href.split('/').pop());
+
         this.game = game;
         this.controls = controls;
 
@@ -33,24 +35,48 @@ export default class SocketManager {
             console.log('connected!');
         });
 
-        this.socket.on('setPlayersData', (players: { [index: string]: Player }) => {
-            for (let [index, key] of Object.entries(Object.keys(players))) {
-                let player = plainToClass(players[key], Player.getPropertiesMap());
+        this.socket.on('disconnect', () => {
+            location.href = 'http://localhost:3000';
+        })
 
-                if (key === this.socket.id) {
-                    this.player = player;
-                } else {
-                    this.otherPlayers[key] = player;
-                }
+        this.socket.on('getLink', (callback: (link: number) => void) => {
+            callback(this.link);
+        });
 
-                this.game.drawSpaceshipOf(player, parseInt(index), Object.keys(players).length);
+        this.socket.on('setPlayersStatus', (players: { link: number, online: boolean }[]) => {
+            if (Object.keys(this.players).length === 0)
+                return;
+
+            for (let player of players)
+                this.players[player.link].online = player.online;
+
+            this.controls.drawPlayersList(players.map(p => {
+                return {link: p.link, online: p.online, isMe: p.link === this.link}
+            }), (link) => {
+                this.game.panToPlayerWithLink(link);
+            });
+        });
+
+        this.socket.on('setPlayersData', (players: Player[]) => {
+            for (let [index, player] of players.entries()) {
+                player = plainToClass(player, Player.getPropertiesMap());
+
+                this.players[player.link] = player;
+
+                this.game.drawSpaceshipOf(player, index, Object.keys(players).length);
             }
 
-            this.controls.drawHand(this.player.hand);
-            this.controls.drawStatusBar(this.player);
+            this.controls.drawHand(this.getCurrentPlayer().hand);
+            this.controls.drawStatusBar(this.getCurrentPlayer());
 
-            this.rebuildSpaceshipManager.player = this.player;
+            this.rebuildSpaceshipManager.player = this.getCurrentPlayer();
             this.rebuildSpaceshipManager.controls = this.controls;
+
+            this.controls.drawPlayersList(players.map(p => {
+                return {link: p.link, online: p.online, isMe: p.link === this.link}
+            }), (link) => {
+                this.game.panToPlayerWithLink(link);
+            });
         });
 
         this.socket.on('rebuildSpaceship', (player: Player, callback: (Player) => void) => {
@@ -62,8 +88,8 @@ export default class SocketManager {
             // this.rebuildSpaceshipManager.player = this.player;
             // this.rebuildSpaceshipManager.controls = this.controls;
 
-            this.player.energy = player.energy;
-            this.controls.setEnergy(this.player.energy);
+            this.getCurrentPlayer().energy = player.energy;
+            this.controls.setEnergy(this.getCurrentPlayer().energy);
 
             this.controls.setStatus("Your turn");
 
@@ -74,12 +100,12 @@ export default class SocketManager {
 
                 this.setRebuildSpaceshipAllowed(false);
 
-                callback(this.player);
+                callback(this.getCurrentPlayer());
             });
         });
 
         this.socket.on('discardCards', (callback: (discardedCardsIndexes: number[]) => void) => {
-            let requiredDiscardCount = this.player.hand.length - 5;
+            let requiredDiscardCount = this.getCurrentPlayer().hand.length - 5;
 
             this.controls.discardCards(requiredDiscardCount).then((discardedCardsIndexes: number[]) => {
                 callback(discardedCardsIndexes);
@@ -97,14 +123,18 @@ export default class SocketManager {
         });
 
         this.socket.on('willYouFight', (callback) => {
-            let otherPlayersNames: string[] = [];
+            let otherPlayersLinks: number[] = [];
 
-            for (let [id, player] of Object.entries(this.otherPlayers))
-                otherPlayersNames.push(player.id);
+            for (let [id, player] of Object.entries(this.players)) {
+                if (player.link === this.link)
+                    continue;
 
-            this.controls.choosePlayerForAttack(otherPlayersNames).then((id?: string) => {
+                otherPlayersLinks.push(player.link);
+            }
+
+            this.controls.choosePlayerForAttack(otherPlayersLinks).then((link?: number) => {
                 callback({
-                    attackedPlayerId: id
+                    attackedPlayerLink: link
                 });
             });
         });
@@ -126,10 +156,10 @@ export default class SocketManager {
                 this.game.endChoosingModule();
             });
 
-            this.game.chooseModule((module?: Module, playerId?: string) => {
+            this.game.chooseModule((module?: Module) => {
                 selectedProtector = module;
-            }, (module?: Module, playerId?: string) => {
-                if (playerId !== this.player.id)
+            }, (module?: Module, playerLink?: number) => {
+                if (playerLink !== this.link)
                     return false;
 
                 if (module.type !== ModuleTypes.SmallQuantumProtector && module.type !== ModuleTypes.QuantumProtector)
@@ -147,7 +177,7 @@ export default class SocketManager {
             });
         });
 
-        this.socket.on('chooseWeaponAndTarget', (targetPlayerId: string, callback: (response: { weapon: [number, number], target: [number, number] }) => void) => {
+        this.socket.on('chooseWeaponAndTarget', (targetPlayerLink: number, callback: (response: { weapon: [number, number], target: [number, number] }) => void) => {
             let selectedWeapon: Module;
             let selectedTarget: Module;
 
@@ -166,22 +196,19 @@ export default class SocketManager {
                 this.game.endChoosingModule();
             });
 
-            this.game.chooseModule((module?: Module, playerId?: string) => {
+            this.game.chooseModule((module?: Module) => {
                 selectedWeapon = module;
-            }, (module?: Module, playerId?: string) => {
-                if (playerId !== this.player.id)
+            }, (module?: Module, playerLink?: number) => {
+                if (playerLink !== this.link)
                     return false;
 
-                if (module.strength === 0)
-                    return false;
-
-                return true;
+                return module.strength > 0;
             }, true, 0xa3b18a);
 
-            this.game.chooseModule((module?: Module, playerId?: string) => {
+            this.game.chooseModule((module?: Module) => {
                 selectedTarget = module;
-            }, (module?: Module, playerId?: string) => {
-                return playerId === targetPlayerId;
+            }, (module?: Module, playerLink?: number) => {
+                return playerLink === targetPlayerLink;
             }, true, 0xe76f51);
         });
     }
@@ -194,5 +221,9 @@ export default class SocketManager {
         } else {
             this.rebuildSpaceshipManager.disallowRebuildSpaceship();
         }
+    }
+
+    getCurrentPlayer() {
+        return this.players[this.link];
     }
 }

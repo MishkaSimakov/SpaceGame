@@ -17,17 +17,17 @@ export default class RebuildSpaceshipManager {
     }
 
     allowRebuildSpaceship() {
-        this.game.spaceshipDrawers[this.player.id].allowDrag();
+        this.game.spaceshipDrawers[this.player.link].allowDrag();
         this.controls.handDrawer.allowDrag();
 
-        console.log(this.game.spaceshipDrawers[this.player.id]);
+        console.log(this.game.spaceshipDrawers[this.player.link]);
 
         this.removeEvents();
         this.addEvents();
     }
 
     disallowRebuildSpaceship() {
-        this.game.spaceshipDrawers[this.player.id].disallowDrag();
+        this.game.spaceshipDrawers[this.player.link].disallowDrag();
         this.controls.handDrawer.disallowDrag();
 
         this.removeEvents();
@@ -36,7 +36,7 @@ export default class RebuildSpaceshipManager {
     protected addEvents() {
         let spaceship: Spaceship = this.player.spaceship;
         let hand: (Module|Event)[] = this.player.hand;
-        let spaceshipDrawer = this.game.spaceshipDrawers[this.player.id];
+        let spaceshipDrawer = this.game.spaceshipDrawers[this.player.link];
 
         for (let shape of spaceshipDrawer.moduleShapes) {
             let module: Module = shape.getData('module');
@@ -144,7 +144,7 @@ export default class RebuildSpaceshipManager {
     }
 
     protected removeEvents() {
-        for (let shape of this.game.spaceshipDrawers[this.player.id].moduleShapes) {
+        for (let shape of this.game.spaceshipDrawers[this.player.link].moduleShapes) {
             shape.removeAllListeners('drag');
             shape.removeAllListeners('dragend');
             shape.removeAllListeners('dragstart');

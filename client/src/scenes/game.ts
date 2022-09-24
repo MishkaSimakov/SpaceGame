@@ -14,19 +14,15 @@ export default class Game extends Phaser.Scene {
     full_scale = 0.75;
     hand_scale = 0.5;
 
-    spaceshipDrawers: Record<string, SpaceshipDrawer> = {};
+    spaceshipDrawers: Record<number, SpaceshipDrawer> = {};
 
     isDragging: boolean = false;
 
-    bus: Phaser.Events.EventEmitter;
-
-    constructor(bus: Phaser.Events.EventEmitter) {
+    constructor() {
         super({
             key: 'Game',
             active: true
         });
-
-        this.bus = bus;
     }
 
     create() {
@@ -58,32 +54,33 @@ export default class Game extends Phaser.Scene {
         });
     }
 
+
     drawSpaceshipOf(player: Player, index: number, count: number): void {
-        if (this.spaceshipDrawers[player.id] === undefined) {
+        if (this.spaceshipDrawers[player.link] === undefined) {
             const spaceshipPosition = spaceshipConfigurations[count - 1][index];
 
-            this.spaceshipDrawers[player.id] = new SpaceshipDrawer(
+            this.spaceshipDrawers[player.link] = new SpaceshipDrawer(
                 player.spaceship,
                 spaceshipPosition,
                 new Vector2(256, 256),
                 this
             );
         } else {
-            this.spaceshipDrawers[player.id].spaceship = player.spaceship;
+            this.spaceshipDrawers[player.link].spaceship = player.spaceship;
         }
 
-        this.spaceshipDrawers[player.id].draw();
+        this.spaceshipDrawers[player.link].draw();
     }
 
-    chooseModule(onSelected: (module?: Module, playerId?: string) => void, check: (module: Module, playerId: string) => boolean, required: boolean, outlineColor: number): void {
+    chooseModule(onSelected: (module?: Module, playerLink?: number) => void, check: (module: Module, playerLink: number) => boolean, required: boolean, outlineColor: number): void {
         let selected: Phaser.GameObjects.Container;
 
-        for (let [id, spaceshipDrawer] of Object.entries(this.spaceshipDrawers)) {
-            for (let shape of spaceshipDrawer.moduleShapes) {
+        for (let link of Object.keys(this.spaceshipDrawers)) {
+            for (let shape of this.spaceshipDrawers[link].moduleShapes) {
                 shape.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
                     let module = shape.getData('module') as Module;
 
-                    if (!check(module, id))
+                    if (!check(module, parseInt(link)))
                         return;
 
                     if (selected !== undefined)
@@ -97,7 +94,7 @@ export default class Game extends Phaser.Scene {
                     selected = shape;
                     (selected.getAll()[0] as Phaser.GameObjects.Rectangle).setStrokeStyle(5, outlineColor);
 
-                    onSelected(module, id);
+                    onSelected(module, parseInt(link));
                 });
             }
         }
@@ -109,5 +106,11 @@ export default class Game extends Phaser.Scene {
                 shape.removeAllListeners('pointerdown');
             }
         }
+    }
+
+    panToPlayerWithLink(link: number) {
+        let position = this.spaceshipDrawers[link].center;
+
+        this.cameras.main.pan(position.x, position.y, 500, 'Sine.easeInOut');
     }
 }
