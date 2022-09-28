@@ -7,6 +7,7 @@ import MainModule from "../common/modules/MainModule";
 import SmallQuantumProtector from "../common/modules/SmallQuantumProtector";
 
 import arrayShuffle from "array-shuffle";
+import RepairModule from "../common/modules/RepairModule";
 
 export default class GameData {
     protected readonly none = 0;
@@ -28,6 +29,7 @@ export default class GameData {
         new SolarPanel(1, 0, 1, 0),
         new SolarPanel(2, 0, 2, 0),
 
+        new RepairModule(1, 1, 1, 1),
         new AttackModule(1, 1, 1, 1),
     ];
 
@@ -95,7 +97,7 @@ export default class GameData {
         return this.eventsStack.pop();
     }
 
-    discardCards(cards: (Module|Event)[]) {
+    discardCards(cards: (Module | Event)[]) {
         for (let card of cards) {
             if ((card as Module).name === undefined) {
                 this.eventDiscards.push(card as Event);

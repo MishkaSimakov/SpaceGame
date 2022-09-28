@@ -211,6 +211,31 @@ export default class SocketManager {
                 return playerLink === targetPlayerLink;
             }, true, 0xe76f51);
         });
+
+        this.socket.on('chooseModuleToRepair', (callback: (modulePosition?: [number, number]) => void) => {
+            let chosenModule: Module;
+
+            this.game.chooseModule((module) => {
+                chosenModule = module;
+            }, (module, playerLink) => {
+                if (playerLink !== this.getCurrentPlayer().link)
+                    return false;
+
+                if (module.health === module.totalHealth)
+                    return false;
+
+                return true;
+            }, false, 0xe76f51);
+
+            this.controls.addButton("Repair", () => {
+                this.controls.removeButtons();
+                this.game.endChoosingModule();
+
+                callback([
+                    chosenModule.x, chosenModule.y
+                ]);
+            });
+        });
     }
 
     setRebuildSpaceshipAllowed(allowed: boolean): void {

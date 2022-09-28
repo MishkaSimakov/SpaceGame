@@ -6,7 +6,7 @@ import {TurnPhase} from "../common/TurnPhase";
 import {Server, Socket} from "socket.io";
 import {plainToClass} from "../common/PlainToClass";
 import FightManager from "./FightManager";
-import Module from "../common/modules/Module";
+import Module, {ModuleTypes} from "../common/modules/Module";
 import {Event} from "../common/events/Event";
 
 enum GameState {
@@ -259,9 +259,21 @@ export default class Game {
     }
 
     async fixSpaceshipPhase() {
-        console.log("   Player asked for repair spaceship")
+        return await new Promise(resolve => {
+            console.log("   Player asked for repair spaceship")
 
-        return;
+            this.emitToPlayerAndWaitForAnswer(this.currentPlayer, 'chooseModuleToRepair', (modulePosition?: [number, number]) => {
+                if (modulePosition !== undefined) {
+                    let module = this.currentPlayer.spaceship.getModuleByPosition(...modulePosition);
+                    let repairModule = this.currentPlayer.spaceship.getModulesByType(ModuleTypes.RepairModule)[0];
+
+                    this.currentPlayer.energy -= repairModule.energyCost;
+                    module.health = Math.min(module.health + 2, module.totalHealth);
+                }
+
+                resolve(true);
+            });
+        });
     }
 
     async attackPhase(): Promise<{ destroyedPlayer: Player | undefined }> {
