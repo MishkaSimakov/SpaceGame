@@ -1,4 +1,6 @@
 import Module, {ModuleTypes} from "./modules/Module";
+import {MainModule} from "./modules/MainModule";
+import Vector2 from "./Vector2";
 
 export default class Spaceship {
     directions: Record<string, [number, number]> = {
@@ -23,6 +25,10 @@ export default class Spaceship {
         mainModule.x = 0;
         mainModule.y = 0;
         this.modules.push(mainModule);
+    }
+
+    getMainModule(): MainModule {
+        return this.getModulesByType(ModuleTypes.MainModule)[0] as MainModule;
     }
 
     getTotalCapacity(): number {
@@ -89,8 +95,14 @@ export default class Spaceship {
         this.removeModule(x.x, x.y);
     }
 
-    getModuleByPosition(x: number, y: number): Module {
-        return this.modules.filter(card => card.x === x && card.y === y)[0];
+    getModuleByPosition(x: number, y: number);
+    getModuleByPosition(position: Vector2);
+    getModuleByPosition(x: (number|Vector2), y?: number): Module {
+        if (typeof x == "number") {
+            return this.modules.filter(card => card.x === x && card.y === y)[0];
+        } else {
+            return this.modules.filter(card => card.x === x.x && card.y === x.y)[0];
+        }
     }
 
     getPossibleConnectionsFor(module: Module): number[][] {
@@ -174,6 +186,16 @@ export default class Spaceship {
     hasProtectors(): boolean {
         return this.getModulesByType(ModuleTypes.SmallQuantumProtector).length !== 0
             || this.getModulesByType(ModuleTypes.QuantumProtector).length !== 0;
+    }
+
+    hasDamagedModules(): boolean {
+        for (let module of this.modules) {
+            if (module.health != module.totalHealth) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     setProtector(protector: Module) {

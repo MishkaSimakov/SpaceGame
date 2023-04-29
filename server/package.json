@@ -10,6 +10,6 @@
     "ts-node": "^10.9.1"
   },
   "scripts": {
-    "serve": "nodemon server.ts"
+    "serve": "nodemon src/server.ts"
   }
 }

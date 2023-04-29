@@ -1,5 +1,6 @@
 export default class Menu extends Phaser.Scene {
     joinExistingGameTitle: Phaser.GameObjects.Text;
+
     createNewGameTitle: Phaser.GameObjects.Text;
 
     inputDigits: Phaser.GameObjects.Text[] = [];
@@ -59,28 +60,15 @@ export default class Menu extends Phaser.Scene {
         this.createNewGameTitle
             .on('pointerdown', () => {
                 this.tweens.add({
-                    targets: [this.joinExistingGameTitle],
-                    y: -1000 + this.joinExistingGameTitle.y,
-                    duration: 1000,
-                });
-                this.tweens.add({
-                    targets: this.inputDigitsUnderscore,
-                    y: -1000 + this.inputDigitsUnderscore[0].y,
-                    duration: 1000,
-                });
-
-                if (this.inputDigits.length)
-                    this.tweens.add({
-                        targets: this.inputDigits,
-                        y: -1000 + this.inputDigits[0].y,
-                        duration: 1000,
-                    });
-
-                this.tweens.add({
-                    targets: this.createNewGameTitle,
-                    y: 100,
-                    duration: 1000,
-                });
+                    targets: [
+                        ...this.inputDigits,
+                        ...this.inputDigitsUnderscore,
+                        this.createNewGameTitle,
+                        this.joinExistingGameTitle
+                    ],
+                    y: "-=500",
+                    duration: 1000
+                })
 
                 this.tweens.addCounter({
                     from: 50,

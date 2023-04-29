@@ -43,9 +43,13 @@ class Module {
     constructor(connectors: Record<string, number>) {
         this.connectors = connectors;
     }
+
+    isDamaged(): boolean {
+        return this.health !== this.totalHealth;
+    }
 }
 
-function isModule(card: Module|Event) {
+function isModule(card: Module | Event) {
     return (card as Module).name !== undefined;
 }
 

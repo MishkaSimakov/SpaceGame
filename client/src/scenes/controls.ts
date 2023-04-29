@@ -211,6 +211,25 @@ export default class Controls extends Phaser.Scene {
         });
     }
 
+    // return index of chosen value
+    chooseFromList(title: string, values: string[]): Promise<number> {
+        return new Promise(resolve => {
+            let modal = new Modal(this);
+
+            modal.setTitle(title);
+
+            for (let index = 0; index < values.length; ++index) {
+                modal.addLine(values[index])
+                    .setInteractive()
+                    .on('pointerdown', () => {
+                        resolve(index);
+
+                        modal.destroy();
+                    });
+            }
+        });
+    }
+
     chooseCardType() {
         return new Promise(resolve => {
             let modal = new Modal(this);
@@ -270,6 +289,74 @@ export default class Controls extends Phaser.Scene {
 
                     modal.destroy();
                 });
+        });
+    }
+
+    chooseCards(cards: (Module | Event)[], count: number): Promise<number[]> {
+        return new Promise<number[]>((resolve, reject) => {
+            let outlineColor = 0xa3b18a;
+            let cardShapes: Phaser.GameObjects.Container[] = [];
+            let cardWidth = 256;
+
+            let selected: number[] = [];
+
+            let backgroundShape = this.add.rectangle(
+                this.game.canvas.width / 2,
+                this.game.canvas.height / 2,
+                (cardWidth + 50) * cards.length, cardWidth + 100, 0x000000
+            )
+                .setOrigin(0.5)
+                .setStrokeStyle(2, 0x555555)
+                .setDepth(2);
+
+            let buttonShape = this.add.text(this.game.canvas.width / 2, this.game.canvas.height / 2 + cardWidth / 2 + 20, "Next")
+                .setInteractive()
+                .setDepth(3)
+                .on('pointerdown', () => {
+                    backgroundShape.destroy();
+                    for (let cardShape of cardShapes) {
+                        cardShape.destroy();
+                    }
+                    buttonShape.destroy();
+
+                    resolve(selected);
+                });
+
+            for (let [index, card] of cards.entries()) {
+                let cardShape: Phaser.GameObjects.Container;
+                let position = new Vector2(
+                    this.game.canvas.width / 2 - ((cardWidth + 50) * cards.length - 50) / 2 + (cardWidth + 50) * index + cardWidth / 2,
+                    this.game.canvas.height / 2
+                );
+
+                if (isModule(card)) {
+                    cardShape = drawModuleCard(this, card as Module, position);
+                } else {
+                    cardShape = drawEventCard(this, card as Event, position);
+                }
+
+                cardShape.setDepth(3);
+
+                (cardShape.getAll()[0] as Phaser.GameObjects.Rectangle).setInteractive().on('pointerdown', () => {
+                    if (selected.includes(index)) {
+                        (cardShape.getAll()[0] as Phaser.GameObjects.Rectangle).setStrokeStyle(0);
+
+                        selected = selected.filter((s) => s != index);
+                        return;
+                    }
+
+                    if (selected.length == count) {
+                        (cardShapes[selected[count - 1]].getAll()[0] as Phaser.GameObjects.Rectangle).setStrokeStyle(0);
+                        selected[count - 1] = index;
+                    } else {
+                        selected.push(index);
+                    }
+
+                    (cardShape.getAll()[0] as Phaser.GameObjects.Rectangle).setStrokeStyle(5, outlineColor);
+                });
+
+                cardShapes.push(cardShape);
+            }
         });
     }
 

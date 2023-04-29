@@ -1,13 +1,21 @@
 import {Module, ModuleTypes} from "./Module";
 
-export default class MainModule extends Module {
-    constructor() {
+enum MainModuleType {
+    AttackOrRunaway,
+}
+
+class MainModule extends Module {
+    mainModuleType: MainModuleType;
+
+    constructor(type: MainModuleType) {
         super({
             'left': 1,
             'top': 1,
             'right': 1,
             'bottom': 1
         });
+
+        this.mainModuleType = type;
 
         this.name = 'Главный модуль';
         this.type = ModuleTypes.MainModule;
@@ -19,3 +27,5 @@ export default class MainModule extends Module {
         this.totalHealth = 25;
     }
 }
+
+export {MainModule, MainModuleType};

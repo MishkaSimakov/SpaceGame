@@ -6,6 +6,8 @@ import {plainToClass} from "../../../common/PlainToClass";
 import Module, {ModuleTypes} from "../../../common/modules/Module";
 import RebuildSpaceshipManager from "./RebuildSpaceshipManager";
 import {Event} from "../../../common/events/Event";
+import EventCardsListener from "../listeners/EventCardsListener";
+import BaseListener from "../listeners/BaseListener";
 
 export default class SocketManager {
     link: number;
@@ -16,6 +18,7 @@ export default class SocketManager {
     players: Record<number, Player> = {};
 
     rebuildSpaceshipManager: RebuildSpaceshipManager;
+    listeners: any[] = [EventCardsListener];
 
     constructor(game: Game, controls: Controls) {
         this.link = parseInt(window.location.href.split('/').pop());
@@ -26,6 +29,14 @@ export default class SocketManager {
         this.rebuildSpaceshipManager = new RebuildSpaceshipManager(this.game, this.controls);
 
         this.initSocket('http://localhost:3000');
+
+        // register another socket listeners
+        console.log("Register listeners");
+        for (let listener of this.listeners) {
+            console.log("Registering: ", listener.toString());
+
+            new listener(this.game, this.controls, this.socket, this.link);
+        }
     }
 
     initSocket(uri: string) {
@@ -133,9 +144,7 @@ export default class SocketManager {
             }
 
             this.controls.choosePlayerForAttack(otherPlayersLinks).then((link?: number) => {
-                callback({
-                    attackedPlayerLink: link
-                });
+                callback(link);
             });
         });
 
@@ -231,11 +240,15 @@ export default class SocketManager {
                 this.controls.removeButtons();
                 this.game.endChoosingModule();
 
-                callback([
-                    chosenModule.x, chosenModule.y
-                ]);
+                if (chosenModule !== undefined) {
+                    callback([chosenModule.x, chosenModule.y]);
+                } else {
+                    callback();
+                }
             });
         });
+
+
     }
 
     setRebuildSpaceshipAllowed(allowed: boolean): void {
