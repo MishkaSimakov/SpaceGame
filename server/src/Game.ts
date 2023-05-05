@@ -7,8 +7,8 @@ import {plainToClass} from "../../common/PlainToClass";
 import FightManager from "./Fight/FightManager";
 import Module, {ModuleTypes} from "../../common/modules/Module";
 import {Event} from "../../common/events/Event";
-import {MainModuleType} from "../../common/modules/MainModule";
 import performEvent from "./EventsPerformManager";
+import SolarPanel from "../../common/modules/SolarPanel";
 
 enum GameState {
     WAIT_FOR_PLAYERS,
@@ -108,6 +108,7 @@ export default class Game {
         //  create spaceship
         player.spaceship = new Spaceship(this.gameData.popMainModule());
         player.spaceship.addModule(new SpaceSolver(1, 1, 1, 1), 1, 0);
+        player.spaceship.addModule(new SolarPanel(1, 1, 1, 1), 2, 0);
 
         player.hand = this.gameData.popModuleCards(this.gameData.startCardsCount);
 
@@ -137,7 +138,7 @@ export default class Game {
     }
 
     async start() {
-        console.log("Game started");
+        console.log("Spaceships started");
 
         this.state = GameState.STARTED;
 
@@ -217,7 +218,7 @@ export default class Game {
     }
 
     end() {
-        let winner = Object.entries(this.players).filter(([key, player]) => !player.isLose())[0][1];
+        let winner = Object.entries(this.players).filter(([_, player]) => !player.isLose())[0][1];
 
         console.log(`Game end. Player ${winner.link} has won`);
     }
@@ -271,9 +272,11 @@ export default class Game {
     }
 
     async attackPhase(): Promise<Player | undefined> {
-        console.log("   Player asked for attack")
+        console.log("   Player asked for attack");
 
-        return await this.emitToPlayerAndWait(this.currentPlayer, 'willYouFight', async (attackedPlayerLink?: number) => {
+        let otherPlayersLinks = this.players.map((p) => p.link).filter((link) => link !== this.currentPlayer.link);
+
+        return await this.emitToPlayerAndWait(this.currentPlayer, 'willYouFight', otherPlayersLinks, async (attackedPlayerLink?: number) => {
             if (attackedPlayerLink === null) {
                 console.log(`   Player ${this.currentPlayer.link} is peaceful`);
 
@@ -294,15 +297,15 @@ export default class Game {
             console.log(`   Player choose ${cardType} card`);
 
             if (cardType === 'event') {
-                let event: Event = this.gameData.popEventCard();
+                let event: Event = this.gameData.popEventCards()[0];
 
-                this.showCardToPlayer(event, this.currentPlayer);
+                await this.showCardToPlayer(event, this.currentPlayer);
 
                 console.log(`   Player get event card: ${event.description}. Start performing`);
 
                 await performEvent(event, this);
 
-                this.showCardToPlayer(event, this.currentPlayer);
+                await this.showCardToPlayer(event, this.currentPlayer);
 
                 console.log(`   Event performed`);
             } else if (cardType === 'module') {
@@ -310,7 +313,7 @@ export default class Game {
 
                 console.log(`   Player get module: ${module.name}`);
 
-                this.showCardToPlayer(module, this.currentPlayer);
+                await this.showCardToPlayer(module, this.currentPlayer);
 
                 this.currentPlayer.hand.push(module);
             }
@@ -344,21 +347,18 @@ export default class Game {
         });
     }
 
-    showCardToPlayer(card: Module | Event, player: Player) {
-        this.getSocket(player).emit('showCard', card);
+    async showCardToPlayer(card: Module | Event, player: Player) {
+        await this.emitToPlayerAndWait(player, 'showCard', card);
     }
 
     getPlayerByOffsetFromCurrent(offset: number): Player {
-        let currentPlayerId = Object.keys(this.players).indexOf(this.currentPlayer.socketId);
+        let currentPlayerId = this.players.findIndex(p => p.link === this.currentPlayer.link);
 
         do {
-            currentPlayerId += Math.sign(offset);
+            currentPlayerId = (currentPlayerId + Math.sign(offset) + this.players.length) % this.players.length;
 
             if (!this.getPlayerByIndex(currentPlayerId).isLose())
                 offset += -Math.sign(offset);
-
-            if (currentPlayerId === Object.keys(this.players).length || currentPlayerId === -1)
-                currentPlayerId = 0;
         } while (offset !== 0);
 
         return this.getPlayerByIndex(currentPlayerId);
@@ -379,22 +379,6 @@ export default class Game {
             await this.fixSpaceshipPhase();
 
         // ask for attack
-        if (this.currentPlayer.spaceship.getMainModule().mainModuleType === MainModuleType.AttackOrRunaway) {
-            let destroyedPlayer = await this.attackPhase();
-
-            if (destroyedPlayer !== undefined) {
-                console.log(`   Player ${destroyedPlayer.link} was destroyed`);
-                this.setDestroyed(destroyedPlayer);
-            }
-
-            if (Object.entries(this.players).filter(([key, player]) => !player.isLose()).length === 1) {
-                this.end();
-
-                return false;
-            }
-        }
-
-
         if (this.currentPlayer.spaceship.canAttack()) {
             let destroyedPlayer = await this.attackPhase();
 
@@ -403,7 +387,7 @@ export default class Game {
                 this.setDestroyed(destroyedPlayer);
             }
 
-            if (Object.entries(this.players).filter(([key, player]) => !player.isLose()).length === 1) {
+            if (Object.entries(this.players).filter(([_, player]) => !player.isLose()).length === 1) {
                 this.end();
 
                 return false;

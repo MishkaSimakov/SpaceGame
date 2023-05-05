@@ -10,49 +10,44 @@ function tossDice(): number {
 }
 
 async function attackPlayer(game: Game, attackedPlayer: Player) {
-    console.log(`Player ${game.currentPlayer.socketId} has attacked player ${attackedPlayer}`);
+    console.log(`   Player ${game.currentPlayer.link} has attacked player ${attackedPlayer.link}`);
 
-    let result: { destroyedPlayer: Player | undefined } = await new Promise(() => {
-        let fightManager = new FightManager(game.currentPlayer, attackedPlayer, game);
+    let fightManager = new FightManager(game.currentPlayer, attackedPlayer, game);
 
-        return fightManager.fight();
-    })
+    let destroyedPlayer: Player | undefined = await fightManager.fight();
 
-    if (result.destroyedPlayer)
-        game.setDestroyed(result.destroyedPlayer);
+    if (destroyedPlayer)
+        game.setDestroyed(destroyedPlayer);
 }
 
 let eventsPerformFunctions: Record<EventTypes, (game: Game, event: Event) => Promise<void>> = {
     [EventTypes.PutTopThreeCardsInAnyOrder]: async (game: Game) => {
-        let topThreeCards: Module[] = game.gameData.popModuleCards(3);
+        let topThreeCards: Event[] = game.gameData.popEventCards(3);
 
         await game.emitToCurrentPlayerAndWait('permuteThreeCards', async (order: number[]) => {
-            let newOrderedCards: Module[] = [];
+            let newOrderedCards: Event[] = [];
 
             for (let i = 0; i < 3; ++i) {
                 newOrderedCards.push(topThreeCards[order[i]]);
             }
 
-            game.gameData.pushModuleCards(newOrderedCards);
+            game.gameData.pushEventCards(newOrderedCards);
         });
     },
     [EventTypes.PutTopThreeCardsInAnyOrderAndTakeTop]: async (game: Game) => {
-        let topThreeCards: Module[] = game.gameData.popModuleCards(3);
+        let topThreeCards: Event[] = game.gameData.popEventCards(3);
 
-        await game.emitToCurrentPlayerAndWait('permuteThreeCardsAndChooseOne', async (order: number[], selected: number) => {
-            let newOrderedCards: Module[] = [];
-            let selectedCard: Module;
+        await game.emitToCurrentPlayerAndWait('permuteThreeCardsAndChooseOne', topThreeCards, async (order: number[]) => {
+            let newOrderedCards: Event[] = [];
+            let selectedCard: Event = topThreeCards[order[0]];
 
-            for (let i = 0; i < 3; ++i) {
-                if (order[i] == selected) {
-                    selectedCard = topThreeCards[selected];
-                } else {
-                    newOrderedCards.push(topThreeCards[order[i]]);
-                }
+            for (let i = 1; i < 3; ++i) {
+                newOrderedCards.push(topThreeCards[order[i]]);
             }
 
-            game.gameData.pushModuleCards(newOrderedCards);
-            game.currentPlayer.hand.push(selectedCard);
+            game.gameData.pushEventCards(newOrderedCards);
+
+            await performEvent(selectedCard, this);
         });
     },
     [EventTypes.TakeOneBuildingCard]: async (game: Game) => {
@@ -87,14 +82,17 @@ let eventsPerformFunctions: Record<EventTypes, (game: Game, event: Event) => Pro
         });
     },
     [EventTypes.DestroyTwoSolarPanelsOnYourSpaceship]: async (game: Game) => {
-        if (game.currentPlayer.spaceship.getModulesByType(ModuleTypes.SolarPanel).length < 2)
+        if (game.currentPlayer.spaceship.getModulesByType(ModuleTypes.SolarPanel).length === 0)
             return;
 
-        await game.emitToCurrentPlayerAndWait('destroyTwoSolarPanelsOnYourSpaceshipEvent', (firstPosition: Vector2, secondPosition: Vector2) => {
+        await game.emitToCurrentPlayerAndWait('destroyTwoSolarPanelsOnYourSpaceshipEvent', (firstPosition: Vector2, secondPosition?: Vector2) => {
             let solarPanels: Module[] = [
-                game.currentPlayer.spaceship.getModuleByPosition(firstPosition),
-                game.currentPlayer.spaceship.getModuleByPosition(secondPosition)
+                game.currentPlayer.spaceship.getModuleByPosition(firstPosition)
             ];
+
+            if (secondPosition !== undefined) {
+                solarPanels.push(game.currentPlayer.spaceship.getModuleByPosition(secondPosition));
+            }
 
             game.currentPlayer.spaceship.removeModule(solarPanels);
             game.gameData.discardCards(solarPanels);
@@ -111,21 +109,21 @@ let eventsPerformFunctions: Record<EventTypes, (game: Game, event: Event) => Pro
         await attackPlayer(game, attackedPlayer);
     },
     [EventTypes.AttackNextToRight]: async (game: Game) => {
-        let attackedPlayer = game.getPlayerByOffsetFromCurrent(2);
+        let attackedPlayer = game.getPlayerByOffsetFromCurrent(game.players.length > 2 ? 2 : 1);
 
         await attackPlayer(game, attackedPlayer);
     },
     [EventTypes.AttackNextToLeft]: async (game: Game) => {
-        let attackedPlayer = game.getPlayerByOffsetFromCurrent(-2);
+        let attackedPlayer = game.getPlayerByOffsetFromCurrent(game.players.length > 2 ? -2 : -1);
 
         await attackPlayer(game, attackedPlayer);
     },
     [EventTypes.AttackAny]: async (game: Game) => {
-        let chosenPlayerId: string = await game.emitToCurrentPlayerAndWait('choosePlayerForAttack', (attackedPlayerId: string) => {
-            return attackedPlayerId;
+        let chosenPlayerLink: number = await game.emitToCurrentPlayerAndWait('choosePlayerForAttack', (attackedPlayerLink: number) => {
+            return attackedPlayerLink;
         });
 
-        let chosenPlayer = game.players[chosenPlayerId];
+        let chosenPlayer = game.getPlayerByLink(chosenPlayerLink);
 
         await attackPlayer(game, chosenPlayer);
     },
@@ -137,13 +135,15 @@ let eventsPerformFunctions: Record<EventTypes, (game: Game, event: Event) => Pro
     [EventTypes.TossDiceAndDealDamage]: async (game: Game) => {
         let damageToDeal = tossDice() <= 4 ? 2 : 4;
 
-        let damageData: { playerId: string, modulePosition: Vector2 } = await game.emitToCurrentPlayerAndWait('chooseModuleToDamageEvent', (playerId: string, module: Vector2) => {
+        let damageData: { playerLink: number, modulePosition: Vector2 } = await game.emitToCurrentPlayerAndWait('chooseModuleToDamageEvent', (playerLink?: number, module?: Vector2) => {
             return {
-                playerId: playerId, modulePosition: module
+                playerLink: playerLink, modulePosition: module
             };
         });
 
-        let playerToDamage: Player = game.players[damageData.playerId];
+        if (damageData.playerLink === undefined) return;
+
+        let playerToDamage: Player = game.getPlayerByLink(damageData.playerLink);
         let moduleToDamage: Module = playerToDamage.spaceship.getModuleByPosition(damageData.modulePosition);
 
         moduleToDamage.health -= damageToDeal;
@@ -168,9 +168,12 @@ let eventsPerformFunctions: Record<EventTypes, (game: Game, event: Event) => Pro
     [EventTypes.TossDiceAndRepairYourModule]: async (game: Game) => {
         let diceResult = tossDice();
 
-        let moduleToRepairPosition: Vector2 = await game.emitToCurrentPlayerAndWait('chooseModuleToRepairEvent', (module: Vector2) => {
+        let moduleToRepairPosition: Vector2 = await game.emitToCurrentPlayerAndWait('chooseModuleToRepairEvent', (module?: Vector2) => {
             return module;
         });
+
+        if (moduleToRepairPosition === undefined)
+            return;
 
         let moduleToRepair = game.currentPlayer.spaceship.getModuleByPosition(moduleToRepairPosition);
 
@@ -204,12 +207,14 @@ let eventsPerformFunctions: Record<EventTypes, (game: Game, event: Event) => Pro
         game.currentPlayer.hand.push(chosenCard);
     },
     [EventTypes.DiscardCardAndRepairSpaceship]: async (game: Game) => {
-        let discardedCardsIndexes: number[] = await game.emitToCurrentPlayerAndWait('chooseCardsForRepairSpaceshipEvent', (discardedCards: number[]) => {
+        let discardedCardsIndexes: number[] = await game.emitToCurrentPlayerAndWait('chooseCardsForRepairSpaceshipEvent', game.currentPlayer.hand, (discardedCards: number[]) => {
             if (discardedCards.length > 2)
                 throw new Error('Too many discarded cards in DiscardCardAndRepairSpaceship event');
 
             return discardedCards;
         });
+
+        if (discardedCardsIndexes.length === 0) return;
 
         let discardedCards = discardedCardsIndexes.map(index => game.currentPlayer.hand[index]);
 
@@ -220,10 +225,7 @@ let eventsPerformFunctions: Record<EventTypes, (game: Game, event: Event) => Pro
         game.gameData.discardCards(discardedCards);
 
         let modulesToRepairPositions: Vector2[] = await game.emitToCurrentPlayerAndWait('chooseModulesToRepairByDiscardedCards', discardedCardsIndexes.length, (modules: Vector2[]) => {
-            if (modules.length !== discardedCardsIndexes.length)
-                throw new Error('Wrong modules to repair count in DiscardCardAndRepairSpaceship event');
-
-            return modules;
+            return modules.slice(0, 2);
         });
 
         for (let modulePosition of modulesToRepairPositions) {
@@ -237,7 +239,7 @@ let eventsPerformFunctions: Record<EventTypes, (game: Game, event: Event) => Pro
             return;
         }
 
-        let moveDamageData: { from: Vector2, to: Vector2 } = await game.emitToCurrentPlayerAndWait('chooseModulesToMoveDamage', (from: Vector2, to: Vector2) => {
+        let moveDamageData: { from?: Vector2, to?: Vector2 } = await game.emitToCurrentPlayerAndWait('chooseModulesToMoveDamage', (from?: Vector2, to?: Vector2) => {
             return {
                 from: from, to: to
             };
@@ -274,7 +276,7 @@ let eventsPerformFunctions: Record<EventTypes, (game: Game, event: Event) => Pro
             return cardIndexes.slice(0, 2);
         });
 
-        let cardsToDiscard: (Module|Event)[] = cardsToDiscardIndexes.map((index) => game.currentPlayer.hand[index]);
+        let cardsToDiscard: (Module | Event)[] = cardsToDiscardIndexes.map((index) => game.currentPlayer.hand[index]);
 
         game.currentPlayer.hand = game.currentPlayer.hand.filter((card) => !cardsToDiscard.includes(card));
         game.currentPlayer.hand.push(...game.gameData.popModuleCards(cardsToDiscard.length));

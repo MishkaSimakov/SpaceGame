@@ -1,5 +1,5 @@
 import Game from "../../server/src/Game";
-import Game2 from "../../client/src/scenes/game";
+import Game2 from "../../client/src/graphics/scenes/game/spaceships";
 
 export default class PutTopThreeCardsInAnyOrderEvent {
     public description: string;

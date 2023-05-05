@@ -26,11 +26,15 @@ export default class FightManager {
 
             let destroyed = await this.makeFightIteration();
 
-            if (destroyed !== undefined)
+            if (destroyed !== undefined) {
+                console.log(`Fight has ended. Player ${destroyed.link} was destroyed`);
                 return destroyed;
+            }
 
             this.isFirstPlayerTurn = !this.isFirstPlayerTurn;
         }
+
+        console.log(`Fight has ended. No one destroyed`);
     }
 
     protected async makeFightIteration(): Promise<Player | undefined> {

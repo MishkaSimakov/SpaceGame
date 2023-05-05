@@ -30,35 +30,56 @@ export default class GameData {
         new SolarPanel(2, 0, 2, 0),
 
         new RepairModule(1, 1, 1, 1),
-        new AttackModule(1, 1, 1, 1),
+        new AttackModule(1, 2, 0, 1),
     ];
 
     protected eventsStack: Event[] = [
-        ...addEvents(EventTypes.PutTopThreeCardsInAnyOrder, "Положите верхние 3 карточки действия в произвольном порядке", 2),
-        ...addEvents(EventTypes.PutTopThreeCardsInAnyOrderAndTakeTop, "Положите верхние 3 карточки действия в произвольном порядке. Возьмите верхнюю из них", 2),
-        ...addEvents(EventTypes.TakeOneBuildingCard, "Возьмите 1 карту строительства", 2),
-        ...addEvents(EventTypes.TakeTwoBuildingCards, "Возьмите 2 карты строительства", 2),
-        ...addEvents(EventTypes.LooseFiveEnergy, "Сбросьте 5 энергии", 2),
-        ...addEvents(EventTypes.TakeFiveEnergy, "Получите 5 энергии", 2),
-        ...addEvents(EventTypes.SkipNextTurn, "Пропустите следующий ход", 2),
-        ...addEvents(EventTypes.LooseAllYourCards, "Скиньте все свои карты", 2),
-        ...addEvents(EventTypes.DestroyAnyModuleOnYourSpaceship, "Уничтожьте любой модуль вашей станции на ваш выбор", 2),
-        ...addEvents(EventTypes.DestroyTwoSolarPanelsOnYourSpaceship, "Уничтожьте 2 солнечные батареи вашей станции", 2),
-        ...addEvents(EventTypes.AttackRight, "Атакуйте игрока справа от вас", 2),
-        ...addEvents(EventTypes.AttackLeft, "Атакуйте игрока слева от вас", 2),
-        ...addEvents(EventTypes.AttackNextToRight, "Атакуйте игрока через одного справа от вac", 1),
-        ...addEvents(EventTypes.AttackNextToLeft, "Атакуйте игрока через одного слева от ваc", 1),
-        ...addEvents(EventTypes.AttackAny, "Атакуйте игрока на ваш выбор", 1),
-        ...addEvents(EventTypes.TossDiceAndTakeBuildingCards, "Киньте кубик. При выпадении <= 4 возьмите 1 карту строительства, иначе - 2 карты строительства (2)\n", 2),
-        ...addEvents(EventTypes.TossDiceAndDealDamage, "Киньте кубик. При выпадении <= 4 нанесите 2 урона, иначе - 4 урона", 1),
-        ...addEvents(EventTypes.TossDiceAndGetEnergy, "Киньте кубик. При выпадении <= 4 возьмите 5 энергии, иначе - 10 энергии", 2),
-        ...addEvents(EventTypes.TossDiceAndRepairYourModule, "Киньте кубик. Можете восстановить один модуль вашей станции на столько урона, сколько выпало на кубике", 2),
-        ...addEvents(EventTypes.SaveCardAndThenAttack, "Сохраните эту карточку у себя на руке. Перед своим ходом можете скинуть её и напасть на игрока по вашему выбору", 2),
-        ...addEvents(EventTypes.SaveCardAndThenDealDamage, "Сохраните эту карточку у себя на руке. В бою вы можете скинуть её, нанося 2 урона любому модулю соперника на ваш выбор", 2),
-        ...addEvents(EventTypes.DiscardCardAndRepairSpaceship, "Вы можете, скинув 2 карты с руки, восстановить по 2 урона с 2 модулей на ваш выбор", 3),
-        ...addEvents(EventTypes.MoveDamage, "Перенесите до 2-х урона с одного вашего модуля на другой", 2),
-        ...addEvents(EventTypes.ChoosePlayerAndStealHisCard, "Выберите любого игрока, у которого на руках есть карточки. Возьмите себе одну из его карточек на ваш выбор", 2),
-        ...addEvents(EventTypes.DiscardCardsAndTakeBuildingCards, "Если у вас есть карты на руках, скиньте в сброс до 2-х карт из них на ваш выбор, а затем возьмите столько же карт строительства", 2),
+        ...addEvents(EventTypes.TakeOneBuildingCard, "Возьмите 1 карту\nстроительства", 1),
+        ...addEvents(EventTypes.TakeTwoBuildingCards, "Возьмите 2 карты\nстроительства", 1),
+        ...addEvents(EventTypes.LooseFiveEnergy, "Сбросьте 1 энергию", 1),
+        ...addEvents(EventTypes.TakeFiveEnergy, "Получите 1 энергию", 1),
+        ...addEvents(EventTypes.SkipNextTurn, "Пропустите ход", 1),
+        ...addEvents(EventTypes.LooseAllYourCards, "Скиньте все свои карты", 1),
+        ...addEvents(EventTypes.DestroyAnyModuleOnYourSpaceship, "Уничтожьте любой\nмодуль вашего корабля\nна ваш выбор", 1),
+        ...addEvents(EventTypes.DestroyTwoSolarPanelsOnYourSpaceship, "Уничтожьте 2 солнечные\nбатареи вашего корабля", 1),
+        ...addEvents(EventTypes.AttackRight, "Атакуйте игрока\nсправа от вас", 1),
+        ...addEvents(EventTypes.AttackLeft, "Атакуйте игрока\nслева от вас", 1),
+        ...addEvents(EventTypes.AttackNextToRight, "Атакуйте игрока\nчерез одного справа\nот вас", 1),
+        ...addEvents(EventTypes.AttackNextToLeft, "Атакуйте игрока\nчерез одного слева\nот вас", 1),
+        ...addEvents(EventTypes.AttackAny, "Атакуйте игрока\nна ваш выбор", 1),
+        ...addEvents(EventTypes.TossDiceAndTakeBuildingCards, "Киньте кубик.\nПри выпадении ≤4\nвозьмите 1 карту\nстроительства,\nиначе - 2 карты\nстроительства", 1),
+        ...addEvents(EventTypes.TossDiceAndDealDamage, "Киньте кубик.\nНанесите любому\nмодулю соперника\n(кроме командного)\n1 урон \nпри выпадении ≤4, \nа иначе - 2 урона", 1),
+        ...addEvents(EventTypes.TossDiceAndGetEnergy, "Киньте кубик.\nПри выпадении ≤4\nвозьмите 1 энергию,\nиначе - 2 энергии", 1),
+        ...addEvents(EventTypes.TossDiceAndRepairYourModule, "Киньте кубик.\nМожете восстановить\nодин модуль вашего корабля на 1 урон\nпри выпадении ≤4, \nа иначе - на 2 урона", 1),
+        ...addEvents(EventTypes.SaveCardAndThenDealDamage, "Сохраните эту карточку\n" +
+            "у себя на руке.\n" +
+            "В свой бой вы можете\n" +
+            "скинуть её,\n" +
+            "нанося 1 урон любому модулю корабля соперника\n" +
+            "(кроме командного)", 1),
+        ...addEvents(EventTypes.DiscardCardAndRepairSpaceship, "Вы можете, скинув до 2\n" +
+            "карт с руки,\n" +
+            "восстановить по 1 урона\n" +
+            "с модулей вашего корабля за каждую\nскинутую карту", 1),
+        ...addEvents(EventTypes.MoveDamage, "Можете перенести\n" +
+            "1 урон с\n" +
+            "одного вашего модуля\n" +
+            "на другой", 1),
+        ...addEvents(EventTypes.ChoosePlayerAndStealHisCard, "Выберите любого игрока,\nу которого на руках есть карточки.\n" +
+            "Посмотрите его карты и\nвозьмите себе одну из\nних на ваш выбор", 1),
+        ...addEvents(EventTypes.DiscardCardsAndTakeBuildingCards, "Если у вас есть карты на\nруках, скиньте в сброс до\n" +
+            "2 из них на ваш выбор,\n" +
+            "а затем возьмите столько\nже карт строительства", 1),
+        ...addEvents(EventTypes.PutTopThreeCardsInAnyOrder, "Положите верхние 3\n" +
+            "карточки действия в\n" +
+            "произвольном порядке", 1),
+        ...addEvents(EventTypes.PutTopThreeCardsInAnyOrderAndTakeTop, "Положите верхние 3\n" +
+            "карточки действия в\n" +
+            "произвольном порядке.\n" +
+            "Возьмите верхнюю\n" +
+            "из них", 1),
+        ...addEvents(EventTypes.SaveCardAndThenAttack, "Сохраните эту карточку\nу себя на руке.\n" +
+            "Перед своим ходом\nможете скинуть её и\nнапасть на игрока по\nвашему выбору", 1),
     ];
 
     protected mainModules: MainModule[] = [
@@ -85,7 +106,7 @@ export default class GameData {
         return this.mainModules.pop();
     }
 
-    popModuleCards(count: number): Module[] {
+    popModuleCards(count: number = 1): Module[] {
         let cards = this.modulesStack.slice(-count);
 
         this.modulesStack = this.modulesStack.slice(0, -count);
@@ -93,12 +114,16 @@ export default class GameData {
         return cards;
     }
 
-    popEventCard(): Event {
-        return this.eventsStack.pop();
+    popEventCards(count: number = 1): Event[] {
+        let cards = this.eventsStack.slice(-count);
+
+        this.eventsStack = this.eventsStack.slice(0, -count);
+
+        return cards;
     }
 
-    pushModuleCards(cards: Module[]) {
-        this.modulesStack.push(...cards);
+    pushEventCards(cards: Event[]) {
+        this.eventsStack.push(...cards);
     }
 
     discardCards(cards: (Module | Event)[]) {

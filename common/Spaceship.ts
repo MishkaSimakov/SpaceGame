@@ -5,9 +5,9 @@ import Vector2 from "./Vector2";
 export default class Spaceship {
     directions: Record<string, [number, number]> = {
         'left': [-1, 0],
-        'top': [0, 1],
+        'top': [0, -1],
         'right': [1, 0],
-        'bottom': [0, -1]
+        'bottom': [0, 1]
     }
 
     opposites: Record<string, string> = {
@@ -66,11 +66,11 @@ export default class Spaceship {
 
             if (!module_in_direction) continue;
 
-            if (module.connectors[key] !== module_in_direction.connectors[this.opposites[key]]) {
+            if (module.getConnector(key) !== module_in_direction.getConnector(this.opposites[key])) {
                 return false;
             }
 
-            if (module.connectors[key] !== 0)
+            if (module.getConnector(key) !== 0)
                 hasConnection = true;
         }
 
@@ -133,7 +133,7 @@ export default class Spaceship {
             if (!this.getModuleByPosition(module.x + direction[0], module.y + direction[1]))
                 continue;
 
-            if (module.connectors[index] === 0)
+            if (module.getConnector(index) === 0)
                 continue;
 
             connectedModules.push(this.getModuleByPosition(module.x + direction[0], module.y + direction[1]));

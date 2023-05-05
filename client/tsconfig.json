@@ -4,7 +4,8 @@
     "moduleResolution": "node"
   },
   "include": [
-    "./src/**/*"
+    "./src/**/*",
+    "node_modules/phaser/scripts/tsgen/test/src/game.ts"
   ],
   "rootDirs": [
     ".",
