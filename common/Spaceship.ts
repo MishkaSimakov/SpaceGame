@@ -1,5 +1,5 @@
 import Module, {ModuleTypes} from "./modules/Module";
-import {MainModule} from "./modules/MainModule";
+import {MainModule, MainModuleType} from "./modules/MainModule";
 import Vector2 from "./Vector2";
 
 export default class Spaceship {
@@ -29,6 +29,10 @@ export default class Spaceship {
 
     getMainModule(): MainModule {
         return this.getModulesByType(ModuleTypes.MainModule)[0] as MainModule;
+    }
+
+    getMainModuleType(): MainModuleType {
+        return (this.getMainModule() as MainModule).mainModuleType;
     }
 
     getTotalCapacity(): number {

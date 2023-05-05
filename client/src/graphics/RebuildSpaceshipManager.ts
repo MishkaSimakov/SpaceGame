@@ -5,6 +5,7 @@ import Module from "../../../common/modules/Module";
 import Spaceship from "../../../common/Spaceship";
 import Vector2 from "../../../common/Vector2";
 import {Event} from "../../../common/events/Event";
+import SpaceshipDrawer from "./SpaceshipDrawer";
 
 export default class RebuildSpaceshipManager {
     game: Spaceships;
@@ -42,21 +43,7 @@ export default class RebuildSpaceshipManager {
     }
 
     protected addEvents() {
-        let spaceship: Spaceship = this.player.spaceship;
-        let hand: (Module | Event)[] = this.player.hand;
-        let spaceshipDrawer = this.game.spaceshipDrawers[this.player.link];
-
-        let rotateModuleButton: Phaser.GameObjects.Text;
-        let currentModuleHover: Module = undefined;
-
-        let isSame = (a: Module, b: Module) => {
-            if (a === undefined || b === undefined)
-                return true;
-
-            return a.x === b.x && a.y === b.y;
-        }
-
-        for (let shape of spaceshipDrawer.moduleShapes) {
+        for (let shape of this.spaceshipDrawer().moduleShapes) {
             let module: Module = shape.getData('module');
 
             if (module.isMain)
@@ -64,7 +51,7 @@ export default class RebuildSpaceshipManager {
 
             shape.on('dragstart', () => {
                 this.game.isDragging = true;
-            })
+            });
 
             shape.on('drag', (pointer: Phaser.Input.Pointer, x: number, y: number) => {
                 shape.setPosition(x, y);
@@ -73,21 +60,21 @@ export default class RebuildSpaceshipManager {
             shape.on('dragend', (pointer: Phaser.Input.Pointer) => {
                 this.game.isDragging = false;
 
-                let localPosition = spaceshipDrawer.getLocalPosition(new Vector2(pointer.worldX, pointer.worldY));
+                let localPosition = this.spaceshipDrawer().getLocalPosition(new Vector2(pointer.worldX, pointer.worldY));
 
-                spaceship.removeModule(module.x, module.y);
+                this.spaceship().removeModule(module.x, module.y);
 
-                if (spaceship.addModule(module, localPosition.x, localPosition.y)) {
-                    let newPosition = spaceshipDrawer.getGlobalPosition(localPosition);
+                if (this.spaceship().addModule(module, localPosition.x, localPosition.y)) {
+                    let newPosition = this.spaceshipDrawer().getGlobalPosition(localPosition);
                     shape.setPosition(newPosition.x, newPosition.y);
 
-                    let unconnected = spaceship.getUnconnectedModules();
-                    spaceship.removeModule(unconnected);
+                    let unconnected = this.spaceship().getUnconnectedModules();
+                    this.spaceship().removeModule(unconnected);
 
-                    spaceshipDrawer.draw();
-                    spaceshipDrawer.allowDrag();
+                    this.spaceshipDrawer().draw();
+                    this.spaceshipDrawer().allowDrag();
 
-                    hand.push(...unconnected);
+                    this.hand().push(...unconnected);
 
                     this.controls.handDrawer.draw();
                     this.controls.handDrawer.allowDrag();
@@ -102,14 +89,14 @@ export default class RebuildSpaceshipManager {
                 // remove from spaceship shapes
 
                 // find modules that become unconnected to main module
-                let unconnected = spaceship.getUnconnectedModules();
-                spaceship.removeModule(unconnected);
+                let unconnected = this.spaceship().getUnconnectedModules();
+                this.spaceship().removeModule(unconnected);
 
-                spaceshipDrawer.draw();
-                spaceshipDrawer.allowDrag();
+                this.spaceshipDrawer().draw();
+                this.spaceshipDrawer().allowDrag();
 
                 // add to hand cards
-                hand.push(module, ...unconnected);
+                this.hand().push(module, ...unconnected);
 
                 // add to hand shapes
                 this.controls.handDrawer.draw();
@@ -149,11 +136,11 @@ export default class RebuildSpaceshipManager {
                 this.game.isDragging = false;
 
                 let position = this.game.cameras.main.getWorldPoint(pointer.x, pointer.y);
-                let localPosition = spaceshipDrawer.getLocalPosition(new Vector2(position.x, position.y));
+                let localPosition = this.spaceshipDrawer().getLocalPosition(new Vector2(position.x, position.y));
 
-                if (spaceship.addModule(module, localPosition.x, localPosition.y)) {
+                if (this.spaceship().addModule(module, localPosition.x, localPosition.y)) {
                     // remove from hand cards
-                    hand.splice(hand.indexOf(module), 1);
+                    this.hand().splice(this.hand().indexOf(module), 1);
 
                     // remove from hand shapes
                     this.controls.handDrawer.cardShapes = this.controls.handDrawer.cardShapes.filter(s => s !== shape);
@@ -161,8 +148,8 @@ export default class RebuildSpaceshipManager {
 
                     // add to spaceship modules
                     // add to spaceship shapes
-                    spaceshipDrawer.draw();
-                    spaceshipDrawer.allowDrag();
+                    this.spaceshipDrawer().draw();
+                    this.spaceshipDrawer().allowDrag();
 
                     this.removeEvents();
                     this.addEvents();
@@ -189,5 +176,17 @@ export default class RebuildSpaceshipManager {
             shape.removeAllListeners('dragend');
             shape.removeAllListeners('dragstart');
         }
+    }
+
+    private spaceshipDrawer(): SpaceshipDrawer {
+        return this.game.spaceshipDrawers[this.player.link];
+    }
+
+    private hand(): (Event|Module)[] {
+        return this.player.hand;
+    }
+
+    private spaceship(): Spaceship {
+        return this.player.spaceship;
     }
 }

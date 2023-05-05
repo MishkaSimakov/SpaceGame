@@ -1,23 +1,12 @@
 import Game from "./Game";
 import Player from "../../common/Player";
-import FightManager from "./Fight/FightManager";
 import Module, {ModuleTypes} from "../../common/modules/Module";
 import {EventTypes, Event} from "../../common/events/Event";
 import Vector2 from "../../common/Vector2";
+import {AttackReason, MoveDamageReason} from "../../common/Types";
 
 function tossDice(): number {
     return Math.floor(Math.random() * 6) + 1;
-}
-
-async function attackPlayer(game: Game, attackedPlayer: Player) {
-    console.log(`   Player ${game.currentPlayer.link} has attacked player ${attackedPlayer.link}`);
-
-    let fightManager = new FightManager(game.currentPlayer, attackedPlayer, game);
-
-    let destroyedPlayer: Player | undefined = await fightManager.fight();
-
-    if (destroyedPlayer)
-        game.setDestroyed(destroyedPlayer);
 }
 
 let eventsPerformFunctions: Record<EventTypes, (game: Game, event: Event) => Promise<void>> = {
@@ -101,31 +90,31 @@ let eventsPerformFunctions: Record<EventTypes, (game: Game, event: Event) => Pro
     [EventTypes.AttackRight]: async (game: Game) => {
         let attackedPlayer = game.getPlayerByOffsetFromCurrent(1);
 
-        await attackPlayer(game, attackedPlayer);
+        await game.attackPlayer(attackedPlayer);
     },
     [EventTypes.AttackLeft]: async (game: Game) => {
         let attackedPlayer = game.getPlayerByOffsetFromCurrent(-1);
 
-        await attackPlayer(game, attackedPlayer);
+        await game.attackPlayer(attackedPlayer);
     },
     [EventTypes.AttackNextToRight]: async (game: Game) => {
         let attackedPlayer = game.getPlayerByOffsetFromCurrent(game.players.length > 2 ? 2 : 1);
 
-        await attackPlayer(game, attackedPlayer);
+        await game.attackPlayer(attackedPlayer);
     },
     [EventTypes.AttackNextToLeft]: async (game: Game) => {
         let attackedPlayer = game.getPlayerByOffsetFromCurrent(game.players.length > 2 ? -2 : -1);
 
-        await attackPlayer(game, attackedPlayer);
+        await game.attackPlayer(attackedPlayer);
     },
     [EventTypes.AttackAny]: async (game: Game) => {
-        let chosenPlayerLink: number = await game.emitToCurrentPlayerAndWait('choosePlayerForAttack', (attackedPlayerLink: number) => {
-            return attackedPlayerLink;
-        });
+        let attackedPlayer = await game.choosePlayerForAttack(AttackReason.AttackAnyEventCard);
 
-        let chosenPlayer = game.getPlayerByLink(chosenPlayerLink);
+        if (!attackedPlayer) {
+            throw new Error("Attacked player is undefined in choosing player for attack in AttackAny event card");
+        }
 
-        await attackPlayer(game, chosenPlayer);
+        await game.attackPlayer(attackedPlayer);
     },
     [EventTypes.TossDiceAndTakeBuildingCards]: async (game: Game) => {
         let cardsCount = tossDice() <= 4 ? 1 : 2;
@@ -135,7 +124,10 @@ let eventsPerformFunctions: Record<EventTypes, (game: Game, event: Event) => Pro
     [EventTypes.TossDiceAndDealDamage]: async (game: Game) => {
         let damageToDeal = tossDice() <= 4 ? 2 : 4;
 
-        let damageData: { playerLink: number, modulePosition: Vector2 } = await game.emitToCurrentPlayerAndWait('chooseModuleToDamageEvent', (playerLink?: number, module?: Vector2) => {
+        let damageData: {
+            playerLink: number,
+            modulePosition: Vector2
+        } = await game.emitToCurrentPlayerAndWait('chooseModuleToDamageEvent', (playerLink?: number, module?: Vector2) => {
             return {
                 playerLink: playerLink, modulePosition: module
             };
@@ -176,7 +168,6 @@ let eventsPerformFunctions: Record<EventTypes, (game: Game, event: Event) => Pro
             return;
 
         let moduleToRepair = game.currentPlayer.spaceship.getModuleByPosition(moduleToRepairPosition);
-
         moduleToRepair.health = Math.min(moduleToRepair.health + diceResult, moduleToRepair.totalHealth);
     },
     [EventTypes.SaveCardAndThenAttack]: async (game: Game, event: Event) => {
@@ -239,13 +230,16 @@ let eventsPerformFunctions: Record<EventTypes, (game: Game, event: Event) => Pro
             return;
         }
 
-        let moveDamageData: { from?: Vector2, to?: Vector2 } = await game.emitToCurrentPlayerAndWait('chooseModulesToMoveDamage', (from?: Vector2, to?: Vector2) => {
-            return {
-                from: from, to: to
-            };
+        type MoveData = {
+            from: Vector2,
+            to: Vector2
+        }
+
+        let moveDamageData: MoveData = await game.emitToCurrentPlayerAndWait('chooseModulesToMoveDamage', MoveDamageReason.EventCard, (moveDamage?: MoveData) => {
+            return moveDamage;
         });
 
-        if (moveDamageData.to === undefined) {
+        if (moveDamageData === undefined) {
             return;
         }
 

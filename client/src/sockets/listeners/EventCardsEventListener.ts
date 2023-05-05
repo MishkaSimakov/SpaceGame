@@ -5,7 +5,7 @@ import {Event} from "../../../../common/events/Event";
 import Game from "../../Game";
 import Vector2 from "../../../../common/Vector2";
 import {COLORS} from "../../graphics/constants";
-import {Vector} from "matter";
+import {MoveDamageReason} from "../../../../common/Types";
 
 export default class EventCardsEventListener extends BaseEventListener {
     socket: Socket;
@@ -55,63 +55,8 @@ export default class EventCardsEventListener extends BaseEventListener {
             this.game.controlsScene.chooseCards(cards, 2).then(callback);
         });
 
-        this.socket.on('chooseModulesToMoveDamage', (callback: (from?: Vector2, to?: Vector2) => void) => {
-            this.controls().topBarDrawer.setStatus("Выберите модуль, с которого переместить урон");
-
-            let moveDamageFrom: Module;
-            let moveDamageTo: Module;
-
-            this.game.spaceshipsScene.chooseModule((module?: Module) => {
-                moveDamageFrom = module;
-            }, (module?: Module, playerLink?: number) => {
-                if (playerLink !== this.game.link)
-                    return false;
-
-                if (!module.isDamaged())
-                    return false;
-
-                return true;
-            }, true, 0xa3b18a);
-
-            this.controls().topBarDrawer.addButtons([{
-                text: "Далее",
-                color: COLORS.BUTTON.PRIMARY,
-                onClick: () => {
-                    if (moveDamageFrom === undefined)
-                        return;
-
-                    this.game.spaceshipsScene.endChoosingModule();
-                    this.controls().topBarDrawer.removeButtons();
-
-                    this.controls().topBarDrawer.setStatus("Выберите модуль, на который переместить урон");
-
-                    this.game.spaceshipsScene.chooseModule((module?: Module) => {
-                        moveDamageTo = module;
-                    }, (module?: Module, playerLink?: number) => {
-                        return playerLink === this.game.link;
-                    }, true, 0xa3b18a);
-
-                    this.controls().topBarDrawer.addButtons([{
-                        text: "Далее",
-                        color: COLORS.BUTTON.PRIMARY,
-                        onClick: () => {
-                            if (moveDamageTo === undefined)
-                                return;
-
-                            this.game.spaceshipsScene.endChoosingModule();
-                            this.controls().topBarDrawer.removeButtons();
-
-                            callback(moveDamageFrom.getPosition(), moveDamageTo.getPosition());
-                        }
-                    }]);
-                }
-            }, {
-                text: "Пропустить",
-                color: COLORS.BUTTON.PRIMARY,
-                onClick: () => {
-                    callback();
-                }
-            }]);
+        this.socket.on('chooseModulesToMoveDamage', (moveDamageReason: MoveDamageReason, callback?: (modules?: {from: Vector2, to: Vector2}) => void) => {
+            this.controls().chooseModulesToMoveDamage(moveDamageReason).then(callback);
         });
 
         this.socket.on('chooseCardsForRepairSpaceshipEvent', (cards: (Event | Module)[], callback: (discardedCards: number[]) => void) => {
@@ -225,19 +170,6 @@ export default class EventCardsEventListener extends BaseEventListener {
                 }
             }]);
         });
-
-        this.socket.on('choosePlayerForAttack', (callback: (playerLink: number) => void) => {
-            this.controls().topBarDrawer.setStatus("Выберите игрока для атаки");
-
-            let playersToAttack = this.game.players
-                .filter(p => p.link !== this.game.link)
-                .map(v => v.link.toString());
-
-            this.game.controlsScene.chooseFromList("Choose player", playersToAttack).then((index: number) => {
-                callback(parseInt(playersToAttack[index]));
-            });
-        });
-
 
         this.socket.on('destroyTwoSolarPanelsOnYourSpaceshipEvent', (callback: (firstPosition: Vector2, secondPosition?: Vector2) => void) => {
             let count = Math.min(

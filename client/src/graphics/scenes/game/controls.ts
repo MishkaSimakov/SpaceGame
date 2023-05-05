@@ -8,6 +8,7 @@ import TopBarDrawer from "../../TopBarDrawer";
 import Game from "../../../Game";
 import Modal from "../../Modal";
 import {COLORS} from "../../constants";
+import {AttackReason, MoveDamageReason} from "../../../../../common/Types";
 
 
 export default class Controls extends Phaser.Scene {
@@ -62,11 +63,18 @@ export default class Controls extends Phaser.Scene {
         });
     }
 
-    choosePlayerForAttack(players: Player[]) {
-        return new Promise((resolve: (link?: number) => void) => {
-            this.topBarDrawer.setStatus("Будете ли вы атаковать?");
+    choosePlayerForAttack(players: Player[], attackReason: AttackReason) {
+        let reasonStatus: Record<AttackReason, string> = {
+            [AttackReason.AttackModule]: "Используйте абордажный модуль, чтобы напасть",
+            [AttackReason.MainModule]: "Используйте командный модуль, чтобы напасть",
+            [AttackReason.AttackAnyEventCard]: "Выберите игрока для нападения",
+            [AttackReason.AttackLaterEventCard]: "Используйте карточку, чтобы напасть"
+        }
 
-            this.topBarDrawer.addButtons([{
+        return new Promise((resolve: (link?: number) => void) => {
+            this.topBarDrawer.setStatus(reasonStatus[attackReason]);
+
+            let buttons = [{
                 text: "Да",
                 color: COLORS.BUTTON.DANGER,
                 onClick: () => {
@@ -81,8 +89,10 @@ export default class Controls extends Phaser.Scene {
                         this.topBarDrawer.buttons.forEach((b) => b.background.setInteractive());
                     });
                 }
-            },
-                {
+            }];
+
+            if (attackReason != AttackReason.AttackAnyEventCard) {
+                buttons.push({
                     text: "Нет",
                     color: COLORS.BUTTON.PRIMARY,
                     onClick: () => {
@@ -90,7 +100,10 @@ export default class Controls extends Phaser.Scene {
 
                         resolve();
                     }
-                }]);
+                });
+            }
+
+            this.topBarDrawer.addButtons(buttons);
         });
     }
 
@@ -417,6 +430,75 @@ export default class Controls extends Phaser.Scene {
                 }
             }
         );
+    }
+
+    chooseModulesToMoveDamage(moveDamageReason: MoveDamageReason): Promise<{ from: Vector2, to: Vector2 } | undefined> {
+        let reasonStatus: Record<MoveDamageReason, string> = {
+            [MoveDamageReason.MainModule]: "Используйте командный модуль, чтобы перенести урон",
+            [MoveDamageReason.EventCard]: "Выберите модуль, с которого переместить урон"
+        }
+
+        this.topBarDrawer.setStatus(reasonStatus[moveDamageReason]);
+
+        return new Promise((resolve) => {
+            let moveDamageFrom: Module;
+            let moveDamageTo: Module;
+
+            this.gameManager.spaceshipsScene.chooseModule((module?: Module) => {
+                moveDamageFrom = module;
+            }, (module?: Module, playerLink?: number) => {
+                if (playerLink !== this.gameManager.link)
+                    return false;
+
+                if (!module.isDamaged())
+                    return false;
+
+                return true;
+            }, true, 0xa3b18a);
+
+            this.topBarDrawer.addButtons([{
+                text: "Далее",
+                color: COLORS.BUTTON.PRIMARY,
+                onClick: () => {
+                    if (moveDamageFrom === undefined)
+                        return;
+
+                    this.gameManager.spaceshipsScene.endChoosingModule();
+                    this.topBarDrawer.removeButtons();
+
+                    this.topBarDrawer.setStatus("Выберите модуль, на который переместить урон");
+
+                    this.gameManager.spaceshipsScene.chooseModule((module?: Module) => {
+                        moveDamageTo = module;
+                    }, (module?: Module, playerLink?: number) => {
+                        return playerLink === this.gameManager.link;
+                    }, true, 0xa3b18a);
+
+                    this.topBarDrawer.addButtons([{
+                        text: "Далее",
+                        color: COLORS.BUTTON.PRIMARY,
+                        onClick: () => {
+                            if (moveDamageTo === undefined)
+                                return;
+
+                            this.gameManager.spaceshipsScene.endChoosingModule();
+                            this.topBarDrawer.removeButtons();
+
+                            resolve({
+                                from: moveDamageFrom.getPosition(),
+                                to: moveDamageTo.getPosition()
+                            });
+                        }
+                    }]);
+                }
+            }, {
+                text: "Пропустить",
+                color: COLORS.BUTTON.PRIMARY,
+                onClick: () => {
+                    resolve(undefined);
+                }
+            }]);
+        });
     }
 
     getCurrentPlayer(): Player {

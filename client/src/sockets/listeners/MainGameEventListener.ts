@@ -1,12 +1,11 @@
 import BaseEventListener from "./BaseEventListener";
-import Spaceships from "../../graphics/scenes/game/spaceships";
-import Controls from "../../graphics/scenes/game/controls";
 import {Socket} from "socket.io-client";
 import Module from "../../../../common/modules/Module";
-import {Event} from "../../../../common/events/Event";
 import Game from "../../Game";
 import Player from "../../../../common/Player";
 import {COLORS} from "../../graphics/constants";
+import {AttackReason} from "../../../../common/Types";
+import {plainToClass} from "../../../../common/PlainToClass";
 
 export default class MainGameEventListener extends BaseEventListener {
     socket: Socket;
@@ -18,16 +17,10 @@ export default class MainGameEventListener extends BaseEventListener {
 
     addListeners(): void {
         this.socket.on('rebuildSpaceship', (player: Player, callback: (player: Player) => void) => {
-            this.rebuildSpaceshipManager().setIsRebuildSpaceshipAllowed(true);
+            this.game.changePlayerData(
+                plainToClass(player, Player.getPropertiesMap())
+            );
 
-            this.controls().rebuildSpaceship().then(() => {
-                this.rebuildSpaceshipManager().setIsRebuildSpaceshipAllowed(false);
-
-                callback(this.game.getCurrentPlayer());
-            });
-
-            // this.player = plainToClass(player, Player.getPropertiesMap());
-            //
             // this.controls.drawHand(this.player.hand);
             // this.controls.drawStatusBar(this.player);
             //
@@ -39,6 +32,14 @@ export default class MainGameEventListener extends BaseEventListener {
             // this.controls.setEnergy(this.getCurrentPlayer().energy);
 
             // this.controls.setStatus("Your turn");
+
+            this.rebuildSpaceshipManager().setIsRebuildSpaceshipAllowed(true);
+
+            this.controls().rebuildSpaceship().then(() => {
+                this.rebuildSpaceshipManager().setIsRebuildSpaceshipAllowed(false);
+
+                callback(this.game.getCurrentPlayer());
+            });
         });
 
         this.socket.on('chooseModuleToRepair', (callback: (modulePosition?: [number, number]) => void) => {
@@ -74,10 +75,10 @@ export default class MainGameEventListener extends BaseEventListener {
             }]);
         });
 
-        this.socket.on('willYouFight', (playersLinks: number[], callback: (link: number) => {}) => {
-            this.controls().choosePlayerForAttack(
-                this.game.players.filter(p => p.link !== this.game.getCurrentPlayer().link)
-            ).then(callback);
+        this.socket.on('choosePlayerForAttack', (attackReason: AttackReason, callback: (link: number) => {}) => {
+            let otherPlayers = this.game.players.filter(p => p.link !== this.game.getCurrentPlayer().link);
+
+            this.controls().choosePlayerForAttack(otherPlayers, attackReason).then(callback);
         });
 
         this.socket.on('chooseCardType', (callback: (cardType: string) => void) => {

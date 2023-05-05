@@ -138,7 +138,6 @@ export default class Menu extends Phaser.Scene {
         fetch('http://localhost:3000/check/' + link)
             .then(response => response.text())
             .then((text: string) => {
-                console.log(text);
                 if (text === 'true') {
                     window.location.href = 'http://localhost:3000/game/' + link;
                 } else {

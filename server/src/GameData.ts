@@ -83,11 +83,11 @@ export default class GameData {
     ];
 
     protected mainModules: MainModule[] = [
-        new MainModule(MainModuleType.AttackOrRunaway),
-        new MainModule(MainModuleType.AttackOrRunaway),
-        new MainModule(MainModuleType.AttackOrRunaway),
-        new MainModule(MainModuleType.AttackOrRunaway),
-        new MainModule(MainModuleType.AttackOrRunaway)
+        new MainModule(MainModuleType.MoveDamage),
+        new MainModule(MainModuleType.MoveDamage),
+        new MainModule(MainModuleType.MoveDamage),
+        new MainModule(MainModuleType.MoveDamage),
+        new MainModule(MainModuleType.MoveDamage)
     ];
 
     protected moduleDiscards: Module[] = [];

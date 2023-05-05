@@ -1,7 +1,11 @@
 import {Module, ModuleTypes} from "./Module";
 
 enum MainModuleType {
-    AttackOrRunaway,
+    DragAnotherEventCard,
+    DragAdditionalModuleCard,
+    MoveDamage,
+    UseSecondTime,
+    AttackOrRunaway
 }
 
 class MainModule extends Module {

@@ -68,6 +68,11 @@ export default class Spaceships extends Phaser.Scene {
                 new Vector2(256, 256),
                 this
             );
+
+            let currentPlayer = this.gameManager.getCurrentPlayer();
+            if (currentPlayer && player.link === currentPlayer.link) {
+                this.panToPlayerWithLink(currentPlayer.link, 0);
+            }
         } else {
             this.spaceshipDrawers[player.link].spaceship = player.spaceship;
         }
@@ -81,8 +86,6 @@ export default class Spaceships extends Phaser.Scene {
         for (let link of Object.keys(this.spaceshipDrawers)) {
             for (let shape of this.spaceshipDrawers[link].moduleShapes) {
                 shape.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-                    console.log(selected);
-
                     let module = shape.getData('module') as Module;
 
                     if (!check(module, parseInt(link)))
@@ -114,8 +117,6 @@ export default class Spaceships extends Phaser.Scene {
             for (let shape of this.spaceshipDrawers[link].moduleShapes) {
                 shape.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
                     let module = shape.getData('module') as Module;
-
-                    console.log(selected);
 
                     if (!check(module, parseInt(link)))
                         return;
@@ -151,9 +152,9 @@ export default class Spaceships extends Phaser.Scene {
         }
     }
 
-    panToPlayerWithLink(link: number) {
+    panToPlayerWithLink(link: number, duration: number = 500) {
         let position = this.spaceshipDrawers[link].center;
 
-        this.cameras.main.pan(position.x, position.y, 500, 'Sine.easeInOut');
+        this.cameras.main.pan(position.x, position.y, duration, 'Sine.easeInOut');
     }
 }

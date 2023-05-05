@@ -5,10 +5,13 @@ import SpaceSolver from "../../common/modules/SpaceSolver";
 import {Server, Socket} from "socket.io";
 import {plainToClass} from "../../common/PlainToClass";
 import FightManager from "./Fight/FightManager";
-import Module, {ModuleTypes} from "../../common/modules/Module";
-import {Event} from "../../common/events/Event";
+import Module, {isModule, ModuleTypes} from "../../common/modules/Module";
+import {Event, EventTypes} from "../../common/events/Event";
 import performEvent from "./EventsPerformManager";
 import SolarPanel from "../../common/modules/SolarPanel";
+import {MainModuleType} from "../../common/modules/MainModule";
+import {AttackReason, MoveDamageReason} from "../../common/Types";
+import Vector2 from "../../common/Vector2";
 
 enum GameState {
     WAIT_FOR_PLAYERS,
@@ -31,6 +34,9 @@ export default class Game {
 
     currentEmitPlayerLink: number;
     currentEmitFunction: () => void;
+
+    ENERGY_TO_ATTACK_BY_COMMAND_MODULE: number = 7;
+    ENERGY_TO_MOVE_DAMAGE_BY_COMMAND_MODULE: number = 4;
 
     constructor(size: number, io: Server) {
         this.size = size;
@@ -110,7 +116,11 @@ export default class Game {
         player.spaceship.addModule(new SpaceSolver(1, 1, 1, 1), 1, 0);
         player.spaceship.addModule(new SolarPanel(1, 1, 1, 1), 2, 0);
 
+        player.spaceship.getModuleByPosition(1, 0).health -= 5;
+
         player.hand = this.gameData.popModuleCards(this.gameData.startCardsCount);
+
+        player.energy = 10;
 
         return player;
     }
@@ -127,6 +137,7 @@ export default class Game {
         connectedPlayer.online = true;
 
         this.updatePlayersStatus();
+        this.setPlayersData();
 
         return connectedPlayer;
     }
@@ -142,18 +153,13 @@ export default class Game {
 
         this.state = GameState.STARTED;
 
-        while (true) {
+        while (this.state === GameState.STARTED) {
             this.setPlayersData();
 
-            let isGameContinue = await this.makeGameIteration();
-
-            if (!isGameContinue)
-                break;
+            await this.makeGameIteration();
 
             this.currentPlayer = this.getNextTurnPlayer();
         }
-
-        this.state = GameState.ENDED;
     }
 
     changePlayerData(player: Player) {
@@ -221,6 +227,8 @@ export default class Game {
         let winner = Object.entries(this.players).filter(([_, player]) => !player.isLose())[0][1];
 
         console.log(`Game end. Player ${winner.link} has won`);
+
+        this.state = GameState.ENDED;
     }
 
     collectEnergyPhase() {
@@ -271,23 +279,47 @@ export default class Game {
         });
     }
 
-    async attackPhase(): Promise<Player | undefined> {
+    async attackPhase(attackReason: AttackReason) {
         console.log("   Player asked for attack");
 
-        let otherPlayersLinks = this.players.map((p) => p.link).filter((link) => link !== this.currentPlayer.link);
+        let attackedPlayer = await this.choosePlayerForAttack(AttackReason.AttackModule);
 
-        return await this.emitToPlayerAndWait(this.currentPlayer, 'willYouFight', otherPlayersLinks, async (attackedPlayerLink?: number) => {
-            if (attackedPlayerLink === null) {
-                console.log(`   Player ${this.currentPlayer.link} is peaceful`);
+        if (!attackedPlayer) {
+            console.log(`   Player ${this.currentPlayer.link} is peaceful`);
 
-                return undefined;
-            }
+            return undefined;
+        }
 
-            console.log(`   Player ${this.currentPlayer.link} has attacked player ${attackedPlayerLink}`);
+        await this.attackPlayer(attackedPlayer);
+    }
 
-            let target = this.getPlayerByLink(attackedPlayerLink);
-            return await (new FightManager(this.currentPlayer, target, this)).fight();
+    async choosePlayerForAttack(attackReason: AttackReason): Promise<Player | void> {
+        return new Promise((resolve) => {
+            this.emitToPlayerAndWait(this.currentPlayer, 'choosePlayerForAttack', attackReason, async (attackedPlayerLink?: number) => {
+                if (attackedPlayerLink === undefined) {
+                    resolve();
+                } else {
+                    let attackedPlayer = this.getPlayerByLink(attackedPlayerLink);
+                    resolve(attackedPlayer);
+                }
+            });
         });
+    }
+
+    async attackPlayer(attackedPlayer: Player) {
+        console.log(`   Player ${this.currentPlayer.link} has attacked player ${attackedPlayer.link}`);
+
+        let destroyedPlayer = await (new FightManager(this.currentPlayer, attackedPlayer, this)).fight();
+
+        if (destroyedPlayer !== undefined) {
+            console.log(`   Player ${destroyedPlayer.link} was destroyed`);
+            this.setDestroyed(destroyedPlayer);
+        }
+
+        // if all players destroyed except one
+        if (Object.entries(this.players).filter(([_, player]) => !player.isLose()).length === 1) {
+            this.end();
+        }
     }
 
     async drawCardsPhase() {
@@ -364,9 +396,85 @@ export default class Game {
         return this.getPlayerByIndex(currentPlayerId);
     }
 
-    async makeGameIteration(): Promise<boolean> {
+    async beforeTurn() {
+        // attack by event card
+        if (this.currentPlayer.hand.filter((m) => {
+            if (isModule(m))
+                return false;
+
+            return (m as Event).type === EventTypes.SaveCardAndThenAttack;
+        }).length !== 0) {
+            let attackedPlayer: Player | void = await this.choosePlayerForAttack(AttackReason.AttackLaterEventCard);
+
+            if (attackedPlayer) {
+                let eventCardIndex: number = this.currentPlayer.hand.findIndex((c) => {
+                    if (isModule(c)) return false;
+
+                    return (c as Event).type === EventTypes.SaveCardAndThenAttack;
+                });
+
+                let discardedEventCard = this.currentPlayer.hand.splice(eventCardIndex, 1);
+                this.gameData.discardCards(discardedEventCard);
+
+                await this.attackPlayer(attackedPlayer);
+            }
+        }
+
+        // attack by command module
+        if (this.currentPlayer.spaceship.getMainModuleType() === MainModuleType.AttackOrRunaway
+            && this.currentPlayer.energy >= this.ENERGY_TO_ATTACK_BY_COMMAND_MODULE) {
+            let attackedPlayer: Player | void = await this.choosePlayerForAttack(AttackReason.MainModule);
+
+            if (attackedPlayer) {
+                this.currentPlayer.energy -= this.ENERGY_TO_ATTACK_BY_COMMAND_MODULE;
+
+                await this.attackPlayer(attackedPlayer);
+            }
+        }
+
+        // repair module by command module
+        if (this.currentPlayer.spaceship.getMainModuleType() === MainModuleType.MoveDamage
+            && this.currentPlayer.energy >= this.ENERGY_TO_MOVE_DAMAGE_BY_COMMAND_MODULE
+            && this.currentPlayer.spaceship.hasDamagedModules()) {
+
+            type MoveData = {
+                from: Vector2,
+                to: Vector2
+            }
+
+            let moveDamageData: MoveData = await this.emitToCurrentPlayerAndWait('chooseModulesToMoveDamage', MoveDamageReason.MainModule, (moveDamage?: MoveData) => {
+                return moveDamage;
+            });
+
+            if (moveDamageData !== undefined) {
+                let moduleToMoveDamageFrom: Module = this.currentPlayer.spaceship.getModuleByPosition(moveDamageData.from);
+                let moduleToMoveDamageTo: Module = this.currentPlayer.spaceship.getModuleByPosition(moveDamageData.to);
+
+                let newHealth = Math.min(moduleToMoveDamageFrom.totalHealth, moduleToMoveDamageFrom.health + 2);
+
+                moduleToMoveDamageTo.health -= newHealth - moduleToMoveDamageFrom.health;
+                moduleToMoveDamageFrom.health = newHealth;
+
+                if (moduleToMoveDamageTo.health <= 0) {
+                    this.currentPlayer.spaceship.removeModule(moduleToMoveDamageTo);
+
+                    let unconnected = this.currentPlayer.spaceship.getUnconnectedModules();
+                    this.currentPlayer.spaceship.removeModule(unconnected);
+
+                    this.currentPlayer.hand.push(...unconnected);
+
+                    moduleToMoveDamageTo.health = moduleToMoveDamageTo.totalHealth;
+                    this.gameData.discardCards([moduleToMoveDamageTo]);
+                }
+            }
+        }
+    }
+
+    async makeGameIteration() {
         // set current turn player
         console.log(`Turn of player ${this.currentPlayer.link}`);
+
+        await this.beforeTurn();
 
         // collect energy
         this.collectEnergyPhase();
@@ -380,18 +488,10 @@ export default class Game {
 
         // ask for attack
         if (this.currentPlayer.spaceship.canAttack()) {
-            let destroyedPlayer = await this.attackPhase();
+            await this.attackPhase(AttackReason.AttackModule);
 
-            if (destroyedPlayer !== undefined) {
-                console.log(`   Player ${destroyedPlayer.link} was destroyed`);
-                this.setDestroyed(destroyedPlayer);
-            }
-
-            if (Object.entries(this.players).filter(([_, player]) => !player.isLose()).length === 1) {
-                this.end();
-
-                return false;
-            }
+            if (this.state === GameState.ENDED)
+                return;
         }
 
         // take cards
@@ -400,7 +500,5 @@ export default class Game {
         // discard extra cards
         if (this.currentPlayer.hand.length > 5)
             await this.discardExtraCardsPhase();
-
-        return true;
     }
 }

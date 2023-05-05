@@ -44,16 +44,9 @@ export default class Game {
                 plainToClass(player, Player.getPropertiesMap())
             );
         }
-
-        this.rebuildSpaceshipManager.player = this.getCurrentPlayer();
-
-        this.spaceshipsScene.playersDataUpdated();
-
-        // update controls
-        this.controlsScene.playersDataUpdated();
     }
 
-    getCurrentPlayer(): Player {
+    getCurrentPlayer(): Player|undefined {
         return this.getPlayerByLink(this.link);
     }
 
@@ -64,10 +57,18 @@ export default class Game {
         }
     }
 
-    private changePlayerData(player: Player) {
+    changePlayerData(player: Player) {
         for (let i = 0; i < this.players.length; ++i) {
             if (this.players[i].link === player.link) {
                 this.players[i] = player;
+
+                if (this.getCurrentPlayer() && player.link === this.getCurrentPlayer().link) {
+                    this.controlsScene.playersDataUpdated();
+                    this.spaceshipsScene.playersDataUpdated();
+
+                    this.rebuildSpaceshipManager.player = this.getCurrentPlayer();
+                }
+
                 return;
             }
         }
