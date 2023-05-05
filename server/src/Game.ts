@@ -446,7 +446,7 @@ export default class Game {
                 return moveDamage;
             });
 
-            if (moveDamageData !== undefined) {
+            if (moveDamageData) {
                 let moduleToMoveDamageFrom: Module = this.currentPlayer.spaceship.getModuleByPosition(moveDamageData.from);
                 let moduleToMoveDamageTo: Module = this.currentPlayer.spaceship.getModuleByPosition(moveDamageData.to);
 

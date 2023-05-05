@@ -17,9 +17,7 @@ export default class MainGameEventListener extends BaseEventListener {
 
     addListeners(): void {
         this.socket.on('rebuildSpaceship', (player: Player, callback: (player: Player) => void) => {
-            this.game.changePlayerData(
-                plainToClass(player, Player.getPropertiesMap())
-            );
+            this.game.setPlayersData([player]);
 
             // this.controls.drawHand(this.player.hand);
             // this.controls.drawStatusBar(this.player);

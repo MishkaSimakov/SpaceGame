@@ -98,7 +98,7 @@ export default class FightManager {
         });
     }
 
-    protected async chooseWeaponAndTarget(attacker: Player, target: Player) {
+    protected async chooseWeaponAndTarget(attacker: Player, target: Player): Promise<void> {
         return new Promise(resolve => {
             this.gameManager.emitToPlayerAndWait(attacker, 'chooseWeaponAndTarget', target.link, (response: { weapon: [number, number], target: [number, number] }) => {
                 let weapon: Module = attacker.spaceship.getModuleByPosition(response.weapon[0], response.weapon[1]);
@@ -114,10 +114,11 @@ export default class FightManager {
                     target.spaceship.removeModule(module);
 
                     if (module.type === ModuleTypes.MainModule) {
-                        resolve(true);
+                        resolve();
                         return;
                     }
 
+                    module.health = module.totalHealth;
                     attacker.hand.push(module);
                 }
 
@@ -130,7 +131,7 @@ export default class FightManager {
 
                 target.spaceship.activatedProtector = undefined;
 
-                resolve(true);
+                resolve();
             });
         });
     }
