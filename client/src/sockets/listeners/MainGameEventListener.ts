@@ -88,5 +88,29 @@ export default class MainGameEventListener extends BaseEventListener {
 
             this.game.controlsScene.discardCards(requiredDiscardCount).then(callback);
         });
+
+        this.socket.on('drawAnotherEventCard', (callback: (drawAnotherEventCard: boolean) => void) => {
+            this.controls().topBarDrawer.setStatus("Вытянуть другую карточку действия?");
+
+            this.controls().topBarDrawer.addButtons([{
+                text: "Да",
+                color: COLORS.BUTTON.PRIMARY,
+                onClick: () => {
+                    this.controls().topBarDrawer.removeButtons();
+                    this.game.spaceshipsScene.endChoosingModule();
+
+                    callback(true);
+                }
+            }, {
+                text: "Нет",
+                color: COLORS.BUTTON.PRIMARY,
+                onClick: () => {
+                    this.controls().topBarDrawer.removeButtons();
+                    this.game.spaceshipsScene.endChoosingModule();
+
+                    callback(false);
+                }
+            }]);
+        });
     }
 }

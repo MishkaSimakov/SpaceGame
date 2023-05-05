@@ -37,6 +37,7 @@ export default class Game {
 
     ENERGY_TO_ATTACK_BY_COMMAND_MODULE: number = 7;
     ENERGY_TO_MOVE_DAMAGE_BY_COMMAND_MODULE: number = 4;
+    ENERGY_TO_DRAG_ANOTHER_EVENT_CARD_BY_COMMAND_MODULE: number = 4;
 
     constructor(size: number, io: Server) {
         this.size = size;
@@ -322,6 +323,10 @@ export default class Game {
         }
     }
 
+    async performAnotherEvent() {
+
+    }
+
     async drawCardsPhase() {
         console.log("   Player asked to choose card type");
 
@@ -329,15 +334,35 @@ export default class Game {
             console.log(`   Player choose ${cardType} card`);
 
             if (cardType === 'event') {
-                let event: Event = this.gameData.popEventCards()[0];
+                let event: Event;
+                let drawAnother: boolean;
 
-                await this.showCardToPlayer(event, this.currentPlayer);
+                do {
+                    drawAnother = false;
 
-                console.log(`   Player get event card: ${event.description}. Start performing`);
+                    event = this.gameData.popEventCards()[0];
+
+                    await this.showCardToPlayer(event, this.currentPlayer);
+
+                    console.log(`   Player get event card: ${event.description}`);
+
+                    if (this.currentPlayer.spaceship.getMainModuleType() === MainModuleType.DragAnotherEventCard
+                        && this.currentPlayer.energy >= this.ENERGY_TO_DRAG_ANOTHER_EVENT_CARD_BY_COMMAND_MODULE) {
+                        await this.emitToCurrentPlayerAndWait('drawAnotherEventCard', (drawAnotherEventCard: boolean) => {
+                            if (!drawAnotherEventCard)
+                                return;
+
+                            this.gameData.discardCards([event]);
+                            drawAnother = true;
+
+                            console.log(`   Player draw another event card`);
+                        });
+                    }
+                } while (drawAnother);
+
+                console.log(`   Performing event`);
 
                 await performEvent(event, this);
-
-                await this.showCardToPlayer(event, this.currentPlayer);
 
                 console.log(`   Event performed`);
             } else if (cardType === 'module') {
