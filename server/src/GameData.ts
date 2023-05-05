@@ -83,11 +83,11 @@ export default class GameData {
     ];
 
     protected mainModules: MainModule[] = [
-        new MainModule(MainModuleType.DragAnotherEventCard),
-        new MainModule(MainModuleType.DragAnotherEventCard),
-        new MainModule(MainModuleType.DragAnotherEventCard),
-        new MainModule(MainModuleType.DragAnotherEventCard),
-        new MainModule(MainModuleType.DragAnotherEventCard)
+        new MainModule(MainModuleType.DrawAdditionalModuleCard),
+        new MainModule(MainModuleType.DrawAdditionalModuleCard),
+        new MainModule(MainModuleType.DrawAdditionalModuleCard),
+        new MainModule(MainModuleType.DrawAdditionalModuleCard),
+        new MainModule(MainModuleType.DrawAdditionalModuleCard)
     ];
 
     protected moduleDiscards: Module[] = [];

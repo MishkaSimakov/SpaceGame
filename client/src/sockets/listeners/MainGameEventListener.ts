@@ -112,5 +112,29 @@ export default class MainGameEventListener extends BaseEventListener {
                 }
             }]);
         });
+
+        this.socket.on('drawAdditionalModuleCard', (callback: (drawAdditionalModuleCard: boolean) => void) => {
+            this.controls().topBarDrawer.setStatus("Вытянуть дополнительную карточку строительства?");
+
+            this.controls().topBarDrawer.addButtons([{
+                text: "Да",
+                color: COLORS.BUTTON.PRIMARY,
+                onClick: () => {
+                    this.controls().topBarDrawer.removeButtons();
+                    this.game.spaceshipsScene.endChoosingModule();
+
+                    callback(true);
+                }
+            }, {
+                text: "Нет",
+                color: COLORS.BUTTON.PRIMARY,
+                onClick: () => {
+                    this.controls().topBarDrawer.removeButtons();
+                    this.game.spaceshipsScene.endChoosingModule();
+
+                    callback(false);
+                }
+            }]);
+        });
     }
 }

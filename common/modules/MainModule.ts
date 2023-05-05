@@ -1,8 +1,8 @@
 import {Module, ModuleTypes} from "./Module";
 
 enum MainModuleType {
-    DragAnotherEventCard,
-    DragAdditionalModuleCard,
+    DrawAnotherEventCard,
+    DrawAdditionalModuleCard,
     MoveDamage,
     UseSecondTime,
     AttackOrRunaway

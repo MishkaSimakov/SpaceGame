@@ -37,7 +37,8 @@ export default class Game {
 
     ENERGY_TO_ATTACK_BY_COMMAND_MODULE: number = 7;
     ENERGY_TO_MOVE_DAMAGE_BY_COMMAND_MODULE: number = 4;
-    ENERGY_TO_DRAG_ANOTHER_EVENT_CARD_BY_COMMAND_MODULE: number = 4;
+    ENERGY_TO_DRAG_ANOTHER_EVENT_CARD_BY_MAIN_MODULE: number = 4;
+    ENERGY_TO_DRAG_ADDITIONAL_CARD_BY_MAIN_MODULE: number = 4;
 
     constructor(size: number, io: Server) {
         this.size = size;
@@ -346,8 +347,8 @@ export default class Game {
 
                     console.log(`   Player get event card: ${event.description}`);
 
-                    if (this.currentPlayer.spaceship.getMainModuleType() === MainModuleType.DragAnotherEventCard
-                        && this.currentPlayer.energy >= this.ENERGY_TO_DRAG_ANOTHER_EVENT_CARD_BY_COMMAND_MODULE) {
+                    if (this.currentPlayer.spaceship.getMainModuleType() === MainModuleType.DrawAnotherEventCard
+                        && this.currentPlayer.energy >= this.ENERGY_TO_DRAG_ANOTHER_EVENT_CARD_BY_MAIN_MODULE) {
                         await this.emitToCurrentPlayerAndWait('drawAnotherEventCard', (drawAnotherEventCard: boolean) => {
                             if (!drawAnotherEventCard)
                                 return;
@@ -366,13 +367,30 @@ export default class Game {
 
                 console.log(`   Event performed`);
             } else if (cardType === 'module') {
-                let module = this.gameData.popModuleCards(1)[0];
+                let drawAdditional: boolean;
 
-                console.log(`   Player get module: ${module.name}`);
+                do {
+                    drawAdditional = false;
+                    let module = this.gameData.popModuleCards(1)[0];
 
-                await this.showCardToPlayer(module, this.currentPlayer);
+                    console.log(`   Player get module: ${module.name}`);
 
-                this.currentPlayer.hand.push(module);
+                    await this.showCardToPlayer(module, this.currentPlayer);
+
+                    this.currentPlayer.hand.push(module);
+
+                    if (this.currentPlayer.spaceship.getMainModuleType() === MainModuleType.DrawAdditionalModuleCard
+                        && this.currentPlayer.energy >= this.ENERGY_TO_DRAG_ADDITIONAL_CARD_BY_MAIN_MODULE) {
+                        await this.emitToCurrentPlayerAndWait('drawAdditionalModuleCard', (drawAdditionalModuleCard: boolean) => {
+                            if (!drawAdditionalModuleCard)
+                                return;
+
+                            drawAdditional = true;
+
+                            console.log(`   Player draw additional module card`);
+                        });
+                    }
+                } while (drawAdditional);
             }
 
             this.changePlayerData(this.currentPlayer);
