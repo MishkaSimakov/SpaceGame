@@ -1,11 +1,10 @@
 import BaseEventListener from "./BaseEventListener";
 import {Socket} from "socket.io-client";
-import Module from "../../../../common/modules/Module";
+import Module, {ModuleTypes} from "../../../../common/modules/Module";
 import Game from "../../Game";
 import Player from "../../../../common/Player";
 import {COLORS} from "../../graphics/constants";
 import {AttackReason} from "../../../../common/Types";
-import {plainToClass} from "../../../../common/PlainToClass";
 
 export default class MainGameEventListener extends BaseEventListener {
     socket: Socket;
@@ -92,49 +91,28 @@ export default class MainGameEventListener extends BaseEventListener {
         this.socket.on('drawAnotherEventCard', (callback: (drawAnotherEventCard: boolean) => void) => {
             this.controls().topBarDrawer.setStatus("Вытянуть другую карточку действия?");
 
-            this.controls().topBarDrawer.addButtons([{
-                text: "Да",
-                color: COLORS.BUTTON.PRIMARY,
-                onClick: () => {
-                    this.controls().topBarDrawer.removeButtons();
-                    this.game.spaceshipsScene.endChoosingModule();
-
-                    callback(true);
-                }
-            }, {
-                text: "Нет",
-                color: COLORS.BUTTON.PRIMARY,
-                onClick: () => {
-                    this.controls().topBarDrawer.removeButtons();
-                    this.game.spaceshipsScene.endChoosingModule();
-
-                    callback(false);
-                }
-            }]);
+            this.controls().askYesOrNo().then(callback);
         });
 
         this.socket.on('drawAdditionalModuleCard', (callback: (drawAdditionalModuleCard: boolean) => void) => {
             this.controls().topBarDrawer.setStatus("Вытянуть дополнительную карточку строительства?");
 
-            this.controls().topBarDrawer.addButtons([{
-                text: "Да",
-                color: COLORS.BUTTON.PRIMARY,
-                onClick: () => {
-                    this.controls().topBarDrawer.removeButtons();
-                    this.game.spaceshipsScene.endChoosingModule();
+            this.controls().askYesOrNo().then(callback);
+        });
 
-                    callback(true);
-                }
-            }, {
-                text: "Нет",
-                color: COLORS.BUTTON.PRIMARY,
-                onClick: () => {
-                    this.controls().topBarDrawer.removeButtons();
-                    this.game.spaceshipsScene.endChoosingModule();
+        this.socket.on('askForUseModuleForSecondTime', async (module: ModuleTypes, callback: (useForSecondTime: boolean) => void) => {
+            let moduleNames: Partial<Record<ModuleTypes, string>> = {
+                [ModuleTypes.AttackModule]: "абордажный модуль",
+                [ModuleTypes.RepairModule]: "ремонтный модуль",
 
-                    callback(false);
-                }
-            }]);
+                [ModuleTypes.SpaceSolver]: "космический порешатель",
+                [ModuleTypes.IonDestroyer]: "ионный разрушитель",
+                [ModuleTypes.QuantumDestabilizer]: "квантовый дестабилизатор",
+            };
+
+            this.controls().topBarDrawer.setStatus(`Использовать ${moduleNames[module]} второй раз?`);
+
+            this.controls().askYesOrNo().then(callback);
         });
     }
 }

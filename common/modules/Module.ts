@@ -1,4 +1,4 @@
-import {Event, EventTypes} from "../events/Event";
+import {Event} from "../events/Event";
 import Vector2 from "../Vector2";
 
 enum ModuleTypes {
@@ -6,6 +6,8 @@ enum ModuleTypes {
 
     // weapon
     SpaceSolver,
+    IonDestroyer,
+    QuantumDestabilizer,
 
     // energy sources
     SolarPanel,

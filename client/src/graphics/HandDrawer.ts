@@ -1,4 +1,4 @@
-import Module from "../../../common/modules/Module";
+import Module, {isModule} from "../../../common/modules/Module";
 import * as Phaser from "phaser";
 import Vector2 from "../../../common/Vector2";
 import {Event, EventTypes, isEvent} from "../../../common/events/Event";
@@ -33,10 +33,10 @@ export default class HandDrawer {
 
             let cardShape: Phaser.GameObjects.Container;
 
-            if ((card as Module).name === undefined) { // TODO: fix this
-                cardShape = drawEventCard(this.scene, card as Event, position);
-            } else {
+            if (isModule(card)) {
                 cardShape = drawModuleCard(this.scene, card as Module, position);
+            } else {
+                cardShape = drawEventCard(this.scene, card as Event, position);
             }
 
             cardShape.setScale(0.5, 0.5);

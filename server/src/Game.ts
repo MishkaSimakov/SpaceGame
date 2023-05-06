@@ -275,6 +275,8 @@ export default class Game {
     }
 
     async fixSpaceshipPhase() {
+        // TODO: use module second time
+
         console.log("   Player asked for repair spaceship")
 
         await this.emitToPlayerAndWait(this.currentPlayer, 'chooseModuleToRepair', (modulePosition?: [number, number]) => {
@@ -288,7 +290,7 @@ export default class Game {
         });
     }
 
-    async attackPhase(attackReason: AttackReason) {
+    async attackPhase() {
         console.log("   Player asked for attack");
 
         let attackedPlayer = await this.choosePlayerForAttack(AttackReason.AttackModule);
@@ -300,18 +302,21 @@ export default class Game {
         }
 
         await this.attackPlayer(attackedPlayer);
+
+        if (this.currentPlayer.spaceship.getMainModuleType() === MainModuleType.UseModuleSecondTime) {
+            let useSecondTime = this.askForUseModuleForSecondTime(this.currentPlayer, ModuleTypes.AttackModule);
+
+
+        }
     }
 
     async choosePlayerForAttack(attackReason: AttackReason): Promise<Player | void> {
-        return new Promise((resolve) => {
-            this.emitToPlayerAndWait(this.currentPlayer, 'choosePlayerForAttack', attackReason, async (attackedPlayerLink?: number) => {
-                if (attackedPlayerLink === undefined) {
-                    resolve();
-                } else {
-                    let attackedPlayer = this.getPlayerByLink(attackedPlayerLink);
-                    resolve(attackedPlayer);
-                }
-            });
+        return await this.emitToPlayerAndWait(this.currentPlayer, 'choosePlayerForAttack', attackReason, async (attackedPlayerLink?: number) => {
+            if (attackedPlayerLink === undefined) {
+                return;
+            }
+
+            return this.getPlayerByLink(attackedPlayerLink);
         });
     }
 
@@ -339,10 +344,6 @@ export default class Game {
         if (Object.entries(this.players).filter(([_, player]) => !player.isLose()).length === 1) {
             this.end();
         }
-    }
-
-    async performAnotherEvent() {
-
     }
 
     async drawCardsPhase() {
@@ -530,6 +531,12 @@ export default class Game {
         }
     }
 
+    async askForUseModuleForSecondTime(player: Player, module: ModuleTypes): Promise<boolean> {
+        return await this.emitToPlayerAndWait(player, 'askForUseModuleForSecondTime', module, (useForSecondTime: boolean) => {
+            return useForSecondTime;
+        });
+    }
+
     async makeGameIteration() {
         // set current turn player
         console.log(`Turn of player ${this.currentPlayer.link}`);
@@ -548,7 +555,7 @@ export default class Game {
 
         // ask for attack
         if (this.currentPlayer.spaceship.canAttack()) {
-            await this.attackPhase(AttackReason.AttackModule);
+            await this.attackPhase();
 
             if (this.state === GameState.ENDED)
                 return;

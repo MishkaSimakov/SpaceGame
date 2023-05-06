@@ -2,6 +2,7 @@ import Player from "../../../common/Player";
 import Module, {ModuleTypes} from "../../../common/modules/Module";
 import Game from "../Game";
 import Vector2 from "../../../common/Vector2";
+import {MainModuleType} from "../../../common/modules/MainModule";
 
 // chooseProtectors -> willYouRunaway -> chooseWeaponAndTarget -> updateOtherPlayerData
 export default class FightManager {
@@ -54,8 +55,17 @@ export default class FightManager {
             return;
         }
 
-        if (attacker.canDamage())
-            await this.chooseWeaponAndTarget(attacker, target);
+        if (attacker.canDamage()) {
+            let result = await this.chooseWeaponAndTarget(attacker, target);
+
+            if (attacker.spaceship.getMainModuleType() === MainModuleType.UseModuleSecondTime) {
+                let useSecondTime = await this.gameManager.askForUseModuleForSecondTime(attacker, result.weapon.type);
+
+                if (useSecondTime) {
+
+                }
+            }
+        }
 
         if (target.spaceship.getModulesByType(ModuleTypes.MainModule).length === 0) {
             this.isFightEnded = true;
@@ -94,8 +104,11 @@ export default class FightManager {
         });
     }
 
-    protected async chooseWeaponAndTarget(attacker: Player, target: Player) {
-        await this.gameManager.emitToPlayerAndWait(attacker, 'chooseWeaponAndTarget', target.link, (weaponPosition: Vector2, targetPosition: Vector2) => {
+    protected async chooseWeaponAndTarget(attacker: Player, target: Player): Promise<{
+        weapon: Module,
+        target: Module
+    }> {
+        return await this.gameManager.emitToPlayerAndWait(attacker, 'chooseWeaponAndTarget', target.link, (weaponPosition: Vector2, targetPosition: Vector2) => {
             let weapon: Module = attacker.spaceship.getModuleByPosition(weaponPosition);
             let targetModule: Module = target.spaceship.getModuleByPosition(targetPosition);
 
@@ -124,6 +137,8 @@ export default class FightManager {
             }
 
             target.spaceship.activatedProtector = undefined;
+
+            return {weapon: weapon, target: target};
         });
     }
 }

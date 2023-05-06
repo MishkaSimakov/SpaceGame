@@ -496,6 +496,30 @@ export default class Controls extends Phaser.Scene {
         });
     }
 
+    async askYesOrNo(): Promise<boolean> {
+        return new Promise((resolve) => {
+            this.topBarDrawer.addButtons([{
+                text: "Да",
+                color: COLORS.BUTTON.PRIMARY,
+                onClick: () => {
+                    this.topBarDrawer.removeButtons();
+                    this.gameManager.spaceshipsScene.endChoosingModule();
+
+                    resolve(true);
+                }
+            }, {
+                text: "Нет",
+                color: COLORS.BUTTON.PRIMARY,
+                onClick: () => {
+                    this.topBarDrawer.removeButtons();
+                    this.gameManager.spaceshipsScene.endChoosingModule();
+
+                    resolve(false);
+                }
+            }]);
+        });
+    }
+
     getCurrentPlayer(): Player {
         return this.gameManager.getCurrentPlayer();
     }
