@@ -52,6 +52,12 @@ export default class Game {
         this.currentPlayer = this.players[0];
     }
 
+    addUseEventCardEvent(link: number) {
+        this.getSocketByLink(link).on('useEventCard', (event: Event, callback: (isAccepted: boolean) => void) => {
+            callback(true);
+        });
+    }
+
     emitToPlayerAndWait(player: Player, event: string, ...args): Promise<any> {
         return new Promise(resolve => {
             // generate function that must be called when player connected
@@ -121,8 +127,7 @@ export default class Game {
         player.spaceship.getModuleByPosition(1, 0).health -= 5;
 
         player.hand = this.gameData.popModuleCards(this.gameData.startCardsCount);
-
-        player.energy = 10;
+        player.hand.push(...this.gameData.popEventCards(1));
 
         return player;
     }
@@ -137,6 +142,8 @@ export default class Game {
         connectedPlayer.socketId = socketId;
 
         connectedPlayer.online = true;
+
+        this.addUseEventCardEvent(link);
 
         this.updatePlayersStatus();
         this.setPlayersData();
@@ -311,7 +318,17 @@ export default class Game {
     async attackPlayer(attackedPlayer: Player) {
         console.log(`   Player ${this.currentPlayer.link} has attacked player ${attackedPlayer.link}`);
 
+        this.currentPlayer.isInFight = true;
+        this.getPlayerByLink(this.currentPlayer.link).isInFight = true;
+
+        attackedPlayer.isInFight = true;
+
         let destroyedPlayer = await (new FightManager(this.currentPlayer, attackedPlayer, this)).fight();
+
+        this.currentPlayer.isInFight = false;
+        this.getPlayerByLink(this.currentPlayer.link).isInFight = false;
+
+        attackedPlayer.isInFight = false;
 
         if (destroyedPlayer !== undefined) {
             console.log(`   Player ${destroyedPlayer.link} was destroyed`);

@@ -1,19 +1,21 @@
 import Module from "../../../common/modules/Module";
 import * as Phaser from "phaser";
 import Vector2 from "../../../common/Vector2";
-import {Event} from "../../../common/events/Event";
-import {drawModuleCard, drawEventCard} from "./CardsDrawer";
+import {Event, EventTypes, isEvent} from "../../../common/events/Event";
+import {drawEventCard, drawModuleCard} from "./CardsDrawer";
+import Game from "../Game";
 
 
 export default class HandDrawer {
-    hand: (Module | Event)[];
     cardSize: Vector2;
     cardShapes: Phaser.GameObjects.Container[] = [];
 
     scene: Phaser.Scene;
 
-    constructor(hand: (Module | Event)[], cardSize: Vector2, scene: Phaser.Scene) {
-        this.hand = hand;
+    gameManager: Game;
+
+    constructor(game: Game, cardSize: Vector2, scene: Phaser.Scene) {
+        this.gameManager = game;
         this.cardSize = cardSize;
         this.scene = scene;
     }
@@ -23,9 +25,9 @@ export default class HandDrawer {
 
         this.destroy();
 
-        for (let [index, card] of this.hand.entries()) {
+        for (let [index, card] of this.gameManager.getCurrentPlayer().hand.entries()) {
             let position = new Vector2(
-                (sceneWidth - this.hand.length * (this.cardSize.x + 50) + 50) / 2 + index * (this.cardSize.x + 50) + this.cardSize.x / 2,
+                (sceneWidth - this.gameManager.getCurrentPlayer().hand.length * (this.cardSize.x + 50) + 50) / 2 + index * (this.cardSize.x + 50) + this.cardSize.x / 2,
                 this.scene.game.canvas.height - this.cardSize.x / 2 - 10
             );
 
@@ -38,6 +40,30 @@ export default class HandDrawer {
             }
 
             cardShape.setScale(0.5, 0.5);
+
+            if (isEvent(card) && (card as Event).type === EventTypes.SaveCardAndThenDealDamage) {
+                this.scene.input.setDraggable(cardShape, true);
+
+                cardShape.on('drag', (pointer: Phaser.Input.Pointer) => {
+                    cardShape.setPosition(pointer.x, pointer.y);
+                });
+
+                cardShape.on('dragend', async (pointer: Phaser.Input.Pointer) => {
+                    let distance_y = Math.abs(pointer.y - cardShape.input.dragStartY);
+
+                    if (distance_y > 50) {
+                        let isAccepted = await this.gameManager.useEventCard(card as Event);
+
+                        if (isAccepted) {
+                            //
+
+                            return;
+                        }
+                    }
+
+                    cardShape.setPosition(cardShape.input.dragStartX, cardShape.input.dragStartY);
+                });
+            }
 
             this.cardShapes.push(cardShape);
         }

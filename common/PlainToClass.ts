@@ -3,16 +3,21 @@ type ClassConstructor<T> = {
 };
 
 type Options = {
-    class: ClassConstructor<any>;
+    class?: ClassConstructor<any>;
+    classifier?: (plain: any) => ClassConstructor<any>;
 
     [index: string]: any;
-}
+};
 
 function plainToClass<T>(plain: T, options: Options): T {
-    plain = Object.setPrototypeOf(plain, options.class.prototype);
+    if (options.class) {
+        plain = Object.setPrototypeOf(plain, options.class.prototype);
+    } else if (options.classifier) {
+        plain = Object.setPrototypeOf(plain, options.classifier(plain).prototype);
+    }
 
     for (let attribute in options) {
-        if (attribute === 'class')
+        if (attribute === 'class' || attribute === 'classifier')
             continue;
 
         if (Array.isArray(plain[attribute])) {

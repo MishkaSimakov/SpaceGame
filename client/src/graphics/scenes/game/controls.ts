@@ -26,25 +26,20 @@ export default class Controls extends Phaser.Scene {
     }
 
     create() {
-        this.handDrawer = new HandDrawer([], new Vector2(128, 128), this);
+        this.handDrawer = new HandDrawer(this.gameManager, new Vector2(128, 128), this);
         this.topBarDrawer = new TopBarDrawer(this);
 
         this.input.dragDistanceThreshold = 10;
     }
 
     playersDataUpdated() {
-        this.drawHand(this.getCurrentPlayer().hand);
+        this.handDrawer.gameManager = this.gameManager;
+        this.handDrawer.draw();
 
         // this.topBarDrawer.drawPlayersList(this.gameManager.players, this.gameManager.link, (link: number) => {
         //     this.gameManager.spaceshipsScene.panToPlayerWithLink(link);
         // });
         this.topBarDrawer.setCharacteristics(this.getCurrentPlayer());
-    }
-
-    drawHand(hand: (Module | Event)[]) {
-        this.handDrawer.hand = hand;
-
-        this.handDrawer.draw();
     }
 
     rebuildSpaceship(): Promise<void> {
@@ -225,7 +220,7 @@ export default class Controls extends Phaser.Scene {
 
             modal.setTitle("Choose cards to discard");
 
-            for (let [index, card] of Object.entries(this.handDrawer.hand)) {
+            for (let [index, card] of Object.entries(this.gameManager.getCurrentPlayer().hand)) {
                 let line = modal.addLine(isModule(card) ? (card as Module).name : 'event')
                     .setInteractive();
 

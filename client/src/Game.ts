@@ -5,6 +5,7 @@ import RebuildSpaceshipManager from "./graphics/RebuildSpaceshipManager";
 import {plainToClass} from "../../common/PlainToClass";
 import SocketManager from "./sockets/SocketManager";
 import config from "./config";
+import {Event, EventTypes} from "../../common/events/Event";
 
 export default class Game {
     link: number;
@@ -59,6 +60,14 @@ export default class Game {
         for (let i = 0; i < this.players.length; ++i) {
             if (this.players[i].link == link)
                 return this.players[i];
+        }
+    }
+
+    async useEventCard(event: Event): Promise<boolean> {
+        if (event.type === EventTypes.SaveCardAndThenDealDamage) {
+            // if (!this.getCurrentPlayer().isInFight) return false;
+
+            return await this.socketManager.useEventCard(event);
         }
     }
 

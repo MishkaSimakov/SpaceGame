@@ -1,4 +1,4 @@
-import {Event} from "../events/Event";
+import {Event, EventTypes} from "../events/Event";
 import Vector2 from "../Vector2";
 
 enum ModuleTypes {

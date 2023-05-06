@@ -1,5 +1,5 @@
 import Spaceship from "./Spaceship";
-import Module from "./modules/Module";
+import Module, {isModule} from "./modules/Module";
 import {Event} from "./events/Event";
 import {Options} from "./PlainToClass";
 
@@ -57,6 +57,7 @@ export default class Player {
     skipNextTurn: boolean;
 
     online: boolean;
+    isInFight: boolean = false;
 
     protected lose: boolean = false;
 
@@ -102,7 +103,13 @@ export default class Player {
                 }
             },
             hand: {
-                class: Module
+                classifier: (plain) => {
+                    if (isModule(plain)) {
+                        return Module;
+                    } else {
+                        return Event;
+                    }
+                }
             }
         };
     }

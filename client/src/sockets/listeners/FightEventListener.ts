@@ -1,10 +1,9 @@
 import BaseEventListener from "./BaseEventListener";
-import Spaceships from "../../graphics/scenes/game/spaceships";
-import Controls from "../../graphics/scenes/game/controls";
 import {Socket} from "socket.io-client";
 import Module, {ModuleTypes} from "../../../../common/modules/Module";
 import Game from "../../Game";
 import {COLORS} from "../../graphics/constants";
+import Vector2 from "../../../../common/Vector2";
 
 export default class FightEventListener extends BaseEventListener {
     socket: Socket;
@@ -15,23 +14,24 @@ export default class FightEventListener extends BaseEventListener {
     }
 
     addListeners(): void {
-        this.socket.on('chooseProtectors', (callback: (response: { protector?: [number, number] }) => void) => {
+        this.socket.on('chooseProtectors', (callback: (protector?: Vector2) => void) => {
             let selectedProtector: Module;
 
-            // this.topBar().setStatus("Select protector");
+            this.controls().topBarDrawer.setStatus("Выберите протектор");
 
-            // this.game.controlsScene.addButton("Next", () => {
-            //     if (selectedProtector !== undefined)
-            //         callback({
-            //             protector: [selectedProtector.x, selectedProtector.y]
-            //         });
-            //     else
-            //         callback({});
-            //
-            //     this.game.controlsScene.removeButtons();
-            //
-            //     this.game.spaceshipsScene.endChoosingModule();
-            // });
+            this.controls().topBarDrawer.addButtons([{
+                text: "Далее",
+                color: COLORS.BUTTON.PRIMARY,
+                onClick: () => {
+                    if (selectedProtector !== undefined)
+                        callback(selectedProtector.getPosition());
+                    else
+                        callback();
+
+                    this.controls().topBarDrawer.removeButtons();
+                    this.game.spaceshipsScene.endChoosingModule();
+                }
+            }]);
 
             this.game.spaceshipsScene.chooseModule((module?: Module) => {
                 selectedProtector = module;
@@ -46,15 +46,13 @@ export default class FightEventListener extends BaseEventListener {
             }, false, 0xa3b18a);
         });
 
-        this.socket.on('willYouRunaway', (callback: (response: { tryToRunaway: boolean }) => void) => {
-            this.game.controlsScene.askForRunaway().then((isRunningAway: boolean) => {
-                callback({
-                    tryToRunaway: isRunningAway
-                });
+        this.socket.on('willYouRunaway', (callback: (isTryingToRunaway: boolean) => void) => {
+            this.game.controlsScene.askForRunaway().then((isTryingToRunaway: boolean) => {
+                callback(isTryingToRunaway);
             });
         });
 
-        this.socket.on('chooseWeaponAndTarget', (targetPlayerLink: number, callback: (response: { weapon: [number, number], target: [number, number] }) => void) => {
+        this.socket.on('chooseWeaponAndTarget', (targetPlayerLink: number, callback: (weaponPosition: Vector2, targetPosition: Vector2) => void) => {
             let selectedWeapon: Module;
             let selectedTarget: Module;
 
@@ -67,10 +65,7 @@ export default class FightEventListener extends BaseEventListener {
                     if (selectedWeapon === undefined && selectedTarget === undefined)
                         return;
 
-                    callback({
-                        weapon: [selectedWeapon.x, selectedWeapon.y],
-                        target: [selectedTarget.x, selectedTarget.y]
-                    });
+                    callback(selectedWeapon.getPosition(), selectedTarget.getPosition());
 
                     this.controls().topBarDrawer.removeButtons();
                     this.game.spaceshipsScene.endChoosingModule();

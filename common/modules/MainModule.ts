@@ -4,7 +4,7 @@ enum MainModuleType {
     DrawAnotherEventCard,
     DrawAdditionalModuleCard,
     MoveDamage,
-    UseSecondTime,
+    UseModuleSecondTime,
     AttackOrRunaway
 }
 

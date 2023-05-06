@@ -5,6 +5,7 @@ import FightEventListener from "./listeners/FightEventListener";
 import InfoEventListener from "./listeners/InfoEventListener";
 import Game from "../Game";
 import MainGameEventListener from "./listeners/MainGameEventListener";
+import {Event} from "../../../common/events/Event";
 
 export default class SocketManager {
     game: Game;
@@ -55,6 +56,17 @@ export default class SocketManager {
             // this.game.controlsScene.topBarDrawer.drawPlayersList(this.game.players, this.game.link, (link) => {
             //     this.game.spaceshipsScene.panToPlayerWithLink(link);
             // });
+        });
+    }
+
+    // return is event accepted
+    useEventCard(event: Event): Promise<boolean> {
+        console.log("here");
+
+        return new Promise((resolve) => {
+            this.socket.emit('useEventCard', event, (isAccepted: boolean) => {
+                resolve(isAccepted);
+            });
         });
     }
 }

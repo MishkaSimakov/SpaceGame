@@ -51,12 +51,6 @@ export default class GameData {
         ...addEvents(EventTypes.TossDiceAndDealDamage, "Киньте кубик.\nНанесите любому\nмодулю соперника\n(кроме командного)\n1 урон \nпри выпадении ≤4, \nа иначе - 2 урона", 1),
         ...addEvents(EventTypes.TossDiceAndGetEnergy, "Киньте кубик.\nПри выпадении ≤4\nвозьмите 1 энергию,\nиначе - 2 энергии", 1),
         ...addEvents(EventTypes.TossDiceAndRepairYourModule, "Киньте кубик.\nМожете восстановить\nодин модуль вашего корабля на 1 урон\nпри выпадении ≤4, \nа иначе - на 2 урона", 1),
-        ...addEvents(EventTypes.SaveCardAndThenDealDamage, "Сохраните эту карточку\n" +
-            "у себя на руке.\n" +
-            "В свой бой вы можете\n" +
-            "скинуть её,\n" +
-            "нанося 1 урон любому модулю корабля соперника\n" +
-            "(кроме командного)", 1),
         ...addEvents(EventTypes.DiscardCardAndRepairSpaceship, "Вы можете, скинув до 2\n" +
             "карт с руки,\n" +
             "восстановить по 1 урона\n" +
@@ -80,14 +74,20 @@ export default class GameData {
             "из них", 1),
         ...addEvents(EventTypes.SaveCardAndThenAttack, "Сохраните эту карточку\nу себя на руке.\n" +
             "Перед своим ходом\nможете скинуть её и\nнапасть на игрока по\nвашему выбору", 1),
+        ...addEvents(EventTypes.SaveCardAndThenDealDamage, "Сохраните эту карточку\n" +
+            "у себя на руке.\n" +
+            "В свой бой вы можете\n" +
+            "скинуть её,\n" +
+            "нанося 1 урон любому модулю корабля соперника\n" +
+            "(кроме командного)", 1),
     ];
 
     protected mainModules: MainModule[] = [
-        new MainModule(MainModuleType.DrawAdditionalModuleCard),
-        new MainModule(MainModuleType.DrawAdditionalModuleCard),
-        new MainModule(MainModuleType.DrawAdditionalModuleCard),
-        new MainModule(MainModuleType.DrawAdditionalModuleCard),
-        new MainModule(MainModuleType.DrawAdditionalModuleCard)
+        new MainModule(MainModuleType.UseModuleSecondTime),
+        new MainModule(MainModuleType.UseModuleSecondTime),
+        new MainModule(MainModuleType.UseModuleSecondTime),
+        new MainModule(MainModuleType.UseModuleSecondTime),
+        new MainModule(MainModuleType.UseModuleSecondTime)
     ];
 
     protected moduleDiscards: Module[] = [];

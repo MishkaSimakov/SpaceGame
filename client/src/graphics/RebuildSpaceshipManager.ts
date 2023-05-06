@@ -110,6 +110,9 @@ export default class RebuildSpaceshipManager {
         let wasRecentlyDragged: boolean = false;
 
         for (let shape of this.controls.handDrawer.cardShapes) {
+            if (shape.getData('type') === 'event')
+                continue;
+
             let module: Module = shape.getData('module');
 
             shape.on('pointerdown', () => {
@@ -170,6 +173,9 @@ export default class RebuildSpaceshipManager {
         }
 
         for (let shape of this.controls.handDrawer.cardShapes) {
+            if (shape.getData('type') === 'event')
+                continue;
+
             shape.removeAllListeners('pointerup');
             shape.removeAllListeners('pointerdown');
             shape.removeAllListeners('drag');
