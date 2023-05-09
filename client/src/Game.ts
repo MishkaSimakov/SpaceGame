@@ -40,6 +40,9 @@ export default class Game {
     }
 
     setPlayersData(players: Player[]) {
+        if (this.rebuildSpaceshipManager.isRebuildingSpaceship)
+            return;
+
         for (let player of players) {
             this.changePlayerData(
                 plainToClass(player, Player.getPropertiesMap())

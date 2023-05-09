@@ -1,14 +1,14 @@
 import BaseEventListener from "./BaseEventListener";
-import {Socket} from "socket.io-client";
 import Module, {isModule, ModuleTypes} from "../../../../common/modules/Module";
 import {Event} from "../../../../common/events/Event";
 import Game from "../../Game";
 import Vector2 from "../../../../common/Vector2";
 import {COLORS} from "../../graphics/constants";
 import {MoveDamageReason} from "../../../../common/Types";
+import SocketManager from "../SocketManager";
 
 export default class EventCardsEventListener extends BaseEventListener {
-    socket: Socket;
+    socket: SocketManager;
     game: Game;
 
     constructor(...args: ConstructorParameters<typeof BaseEventListener>) {
@@ -55,7 +55,10 @@ export default class EventCardsEventListener extends BaseEventListener {
             this.game.controlsScene.chooseCards(cards, 2).then(callback);
         });
 
-        this.socket.on('chooseModulesToMoveDamage', (moveDamageReason: MoveDamageReason, callback?: (modules?: {from: Vector2, to: Vector2}) => void) => {
+        this.socket.on('chooseModulesToMoveDamage', (moveDamageReason: MoveDamageReason, callback?: (modules?: {
+            from: Vector2,
+            to: Vector2
+        }) => void) => {
             this.controls().chooseModulesToMoveDamage(moveDamageReason).then(callback);
         });
 
@@ -253,6 +256,40 @@ export default class EventCardsEventListener extends BaseEventListener {
             this.controls().permuteCards(cards).then((order: number[]) => {
                 callback(order);
             });
+        });
+
+        this.socket.on('chooseModuleToDealDamage', (enemyLink: number, callback: (position: Vector2) => void) => {
+            this.controls().topBarDrawer.removeButtons();
+            this.game.spaceshipsScene.endChoosingModule();
+
+            this.controls().topBarDrawer.setStatus(`Выберите модуль, чтобы нанести 1 урон`);
+
+            let selectedModule: Module;
+
+            this.game.spaceshipsScene.chooseModule((chosen: Module) => {
+                selectedModule = chosen;
+            }, (module?: Module, playerLink?: number) => {
+                if (playerLink !== enemyLink)
+                    return false;
+
+                if (module.isMain)
+                    return false;
+
+                return true;
+            }, true, 0xa3b18a);
+
+            this.controls().topBarDrawer.addButtons([{
+                text: "Атаковать",
+                color: COLORS.BUTTON.DANGER,
+                onClick: () => {
+                    if (!selectedModule) return;
+
+                    callback(selectedModule.getPosition());
+
+                    this.controls().topBarDrawer.removeButtons();
+                    this.game.spaceshipsScene.endChoosingModule();
+                }
+            }]);
         });
     }
 }

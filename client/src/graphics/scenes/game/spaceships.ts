@@ -58,7 +58,14 @@ export default class Spaceships extends Phaser.Scene {
         });
     }
 
+    preload() {
+        // this.load.image('modules', '/assets/modules.png');
+        this.load.atlas('modules', '/assets/modules-half.png', '/assets/modules-atlas.json');
+    }
+
     drawSpaceshipOf(player: Player, index: number, count: number): void {
+        console.log(this.textures.get('modules'));
+
         if (this.spaceshipDrawers[player.link] === undefined) {
             const spaceshipPosition = spaceshipConfigurations[count - 1][index];
 
@@ -147,6 +154,8 @@ export default class Spaceships extends Phaser.Scene {
     endChoosingModule() {
         for (let [id, spaceshipDrawer] of Object.entries(this.spaceshipDrawers)) {
             for (let shape of spaceshipDrawer.moduleShapes) {
+                (shape.getAll()[0] as Phaser.GameObjects.Rectangle).setStrokeStyle(0);
+
                 shape.removeAllListeners('pointerdown');
             }
         }

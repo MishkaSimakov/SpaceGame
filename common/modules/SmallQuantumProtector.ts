@@ -11,6 +11,7 @@ export default class SmallQuantumProtector extends Module {
 
         this.name = 'Малый квантовый протектор';
         this.type = ModuleTypes.SmallQuantumProtector;
+        this.sprite = 'small-quantum-protector';
 
         this.health = 10;
         this.totalHealth = 10;

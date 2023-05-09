@@ -22,6 +22,15 @@ export default class FightManager {
         this.gameManager = gameManager;
     }
 
+    getEnemyOf(player: Player): Player {
+        if (player.link === this.first.link)
+            return this.second;
+        if (player.link === this.second.link)
+            return this.first
+
+        return undefined;
+    }
+
     async fight(): Promise<Player | undefined> {
         while (!this.isFightEnded) {
             this.gameManager.setPlayersData();
@@ -56,15 +65,24 @@ export default class FightManager {
         }
 
         if (attacker.canDamage()) {
-            let result = await this.chooseWeaponAndTarget(attacker, target);
+            let usedWeapon = await this.chooseWeaponAndTarget(attacker, target);
+
+            if (target.spaceship.getModulesByType(ModuleTypes.MainModule).length === 0) {
+                this.isFightEnded = true;
+                return target;
+            }
 
             if (attacker.spaceship.getMainModuleType() === MainModuleType.UseModuleSecondTime) {
-                let useSecondTime = await this.gameManager.askForUseModuleForSecondTime(attacker, result.weapon.type);
+                let useSecondTime = await this.gameManager.askForUseModuleSecondTime(attacker, usedWeapon.type);
 
                 if (useSecondTime) {
+                    let targetModule = await this.chooseTarget(attacker, target, usedWeapon);
 
+                    this.damage(attacker, target, usedWeapon, targetModule);
                 }
             }
+
+            target.spaceship.activatedProtector = undefined;
         }
 
         if (target.spaceship.getModulesByType(ModuleTypes.MainModule).length === 0) {
@@ -89,12 +107,15 @@ export default class FightManager {
 
     protected async askForRunaway(attacker: Player): Promise<boolean> {
         return await this.gameManager.emitToPlayerAndWait(attacker, 'willYouRunaway', (isTryingToRunaway: boolean) => {
-            if (isTryingToRunaway)
-                console.log(`   Player try to run away`);
-            else
+            if (!isTryingToRunaway) {
                 console.log(`   Player dont try to run away`);
 
-            if (isTryingToRunaway && Math.random() * 6 >= 5) {
+                return false;
+            }
+
+            console.log(`   Player try to run away`);
+
+            if (Math.random() * 6 >= 5) {
                 console.log(`   Player has run away`);
 
                 return true;
@@ -104,41 +125,50 @@ export default class FightManager {
         });
     }
 
-    protected async chooseWeaponAndTarget(attacker: Player, target: Player): Promise<{
-        weapon: Module,
-        target: Module
-    }> {
+    protected async chooseWeaponAndTarget(attacker: Player, target: Player): Promise<Module> {
         return await this.gameManager.emitToPlayerAndWait(attacker, 'chooseWeaponAndTarget', target.link, (weaponPosition: Vector2, targetPosition: Vector2) => {
             let weapon: Module = attacker.spaceship.getModuleByPosition(weaponPosition);
             let targetModule: Module = target.spaceship.getModuleByPosition(targetPosition);
 
             console.log(`   Player has chosen weapon (module at x: ${weapon.x}, y: ${weapon.y}) to attack target (module at x: ${targetModule.x}, y: ${targetModule.y})`);
 
-            let destroyed = target.spaceship.damage(targetModule, weapon);
+            this.damage(attacker, target, weapon, targetModule);
 
-            for (let module of destroyed) {
-                console.log(`   Module at x: ${module.x}, y: ${module.y} has been destroyed`);
-
-                target.spaceship.removeModule(module);
-
-                if (module.type === ModuleTypes.MainModule) {
-                    return;
-                }
-
-                module.health = module.totalHealth;
-                attacker.hand.push(module);
-            }
-
-            if (destroyed.length !== 0) {
-                let unconnectedModules = target.spaceship.getUnconnectedModules();
-
-                target.spaceship.removeModule(unconnectedModules);
-                target.hand.push(...unconnectedModules)
-            }
-
-            target.spaceship.activatedProtector = undefined;
-
-            return {weapon: weapon, target: target};
+            return weapon;
         });
+    }
+
+    protected async chooseTarget(attacker: Player, target: Player, weapon: Module): Promise<Module> {
+        return await this.gameManager.emitToPlayerAndWait(attacker, 'chooseTarget', target.link, weapon, (targetPosition: Vector2) => {
+            let targetModule: Module = target.spaceship.getModuleByPosition(targetPosition);
+
+            console.log(`   Player has chosen attack module at x: ${targetModule.x}, y: ${targetModule.y}`);
+
+            return targetModule;
+        });
+    }
+
+    protected damage(attacker: Player, target: Player, weapon: Module, targetModule: Module) {
+        let destroyed = target.spaceship.damage(targetModule, weapon);
+
+        for (let module of destroyed) {
+            console.log(`   Module at x: ${module.x}, y: ${module.y} has been destroyed`);
+
+            target.spaceship.removeModule(module);
+
+            if (module.type === ModuleTypes.MainModule) {
+                return;
+            }
+
+            module.health = module.totalHealth;
+            attacker.hand.push(module);
+        }
+
+        if (destroyed.length !== 0) {
+            let unconnectedModules = target.spaceship.getUnconnectedModules();
+
+            target.spaceship.removeModule(unconnectedModules);
+            target.hand.push(...unconnectedModules)
+        }
     }
 }

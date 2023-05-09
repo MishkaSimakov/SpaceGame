@@ -101,7 +101,7 @@ export default class Spaceship {
 
     getModuleByPosition(x: number, y: number);
     getModuleByPosition(position: Vector2);
-    getModuleByPosition(x: (number|Vector2), y?: number): Module {
+    getModuleByPosition(x: (number | Vector2), y?: number): Module {
         if (typeof x == "number") {
             return this.modules.filter(card => card.x === x && card.y === y)[0];
         } else {
@@ -154,8 +154,16 @@ export default class Spaceship {
         return this.getModulesByType(ModuleTypes.AttackModule).length !== 0;
     }
 
-    damage(target: Module, weapon: Module): Module[] {
-        let damage = weapon.strength;
+    damage(target: Module, weapon: Module)
+    damage(target: Module, weapon: number)
+    damage(target: Module, weapon: Module | number): Module[] {
+        let damage: number;
+        if (typeof weapon == "number") {
+            damage = weapon;
+        } else {
+            damage = weapon.strength;
+        }
+
         let destroyed: Module[] = [];
 
         if (this.activatedProtector) {

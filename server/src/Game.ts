@@ -12,6 +12,7 @@ import SolarPanel from "../../common/modules/SolarPanel";
 import {MainModuleType} from "../../common/modules/MainModule";
 import {AttackReason, MoveDamageReason} from "../../common/Types";
 import Vector2 from "../../common/Vector2";
+import {HAS_PLAYERS_DATA} from "../../common/Sockets";
 
 enum GameState {
     WAIT_FOR_PLAYERS,
@@ -40,6 +41,8 @@ export default class Game {
     ENERGY_TO_DRAG_ANOTHER_EVENT_CARD_BY_MAIN_MODULE: number = 4;
     ENERGY_TO_DRAG_ADDITIONAL_CARD_BY_MAIN_MODULE: number = 4;
 
+    currentFight?: FightManager;
+
     constructor(size: number, io: Server) {
         this.size = size;
         this.gameData = new GameData();
@@ -52,15 +55,78 @@ export default class Game {
         this.currentPlayer = this.players[0];
     }
 
-    addUseEventCardEvent(link: number) {
-        this.getSocketByLink(link).on('useEventCard', (event: Event, callback: (isAccepted: boolean) => void) => {
-            callback(true);
+    addUseEventCardEvent(player: Player) {
+        this.getSocket(player).on('useEventCard', async (event: Event, callback: (isAccepted: boolean) => void) => {
+            if (event.type === EventTypes.SaveCardAndThenDealDamage) {
+                if (this.isPlayerInFight(player)) {
+                    callback(true);
+
+                    let target = this.currentFight.getEnemyOf(player);
+
+                    this.getSocket(player).emit('chooseModuleToDealDamage', target.link, (position: Vector2) => {
+                        player = this.getPlayerByLink(player.link);
+
+                        let discardedCardIndex = player.hand.findIndex((c) => {
+                            if (isModule(c))
+                                return false;
+
+                            return c.type === EventTypes.SaveCardAndThenDealDamage;
+                        });
+                        let discardedCard = player.hand[discardedCardIndex];
+                        player.hand = player.hand.filter((c) => c != discardedCard);
+
+                        this.changePlayerData(player);
+
+                        let targetModule = target.spaceship.getModuleByPosition(position);
+
+                        // TODO: add check that not main
+
+                        let destroyed = target.spaceship.damage(targetModule, 1);
+
+                        for (let module of destroyed) {
+                            console.log(`   Module at x: ${module.x}, y: ${module.y} has been destroyed`);
+
+                            target.spaceship.removeModule(module);
+
+                            if (module.type === ModuleTypes.MainModule) {
+                                return;
+                            }
+
+                            module.health = module.totalHealth;
+                            this.gameData.discardCards([module]);
+                        }
+
+                        if (destroyed.length !== 0) {
+                            let unconnectedModules = target.spaceship.getUnconnectedModules();
+
+                            target.spaceship.removeModule(unconnectedModules);
+                            target.hand.push(...unconnectedModules)
+                        }
+
+                        if (player.link === this.currentEmitPlayerLink) {
+                            this.currentEmitFunction();
+                        }
+                    });
+                } else {
+                    callback(false);
+                }
+            }
         });
+    }
+
+    isPlayerInFight(player: Player): boolean {
+        if (!this.currentFight) return false;
+
+        return player.link === this.currentFight.first.link || player.link === this.currentFight.second.link;
     }
 
     emitToPlayerAndWait(player: Player, event: string, ...args): Promise<any> {
         return new Promise(resolve => {
             // generate function that must be called when player connected
+
+            // add information that players data contains in this message
+            // add players data to the front to keep state on client online
+            args.unshift(HAS_PLAYERS_DATA, this.players);
 
             let emitFunction = () => {
                 if (typeof args[args.length - 1] === 'function') {
@@ -143,7 +209,7 @@ export default class Game {
 
         connectedPlayer.online = true;
 
-        this.addUseEventCardEvent(link);
+        this.addUseEventCardEvent(connectedPlayer);
 
         this.updatePlayersStatus();
         this.setPlayersData();
@@ -274,20 +340,41 @@ export default class Game {
         this.changePlayerData(player);
     }
 
-    async fixSpaceshipPhase() {
-        // TODO: use module second time
+    async useRepairModule(energyCost: number): Promise<boolean> {
+        return await this.emitToPlayerAndWait(this.currentPlayer, 'chooseModuleToRepair', async (modulePosition?: Vector2) => {
+            if (!modulePosition)
+                return false;
 
+            let module = this.currentPlayer.spaceship.getModuleByPosition(modulePosition);
+            let repairModule = this.currentPlayer.spaceship.getModulesByType(ModuleTypes.RepairModule)[0];
+
+            this.currentPlayer.energy -= repairModule.energyCost;
+            module.health = Math.min(module.health + 2, module.totalHealth);
+
+            return true;
+        });
+    }
+
+    async fixSpaceshipPhase() {
         console.log("   Player asked for repair spaceship")
 
-        await this.emitToPlayerAndWait(this.currentPlayer, 'chooseModuleToRepair', (modulePosition?: [number, number]) => {
-            if (modulePosition !== undefined) {
-                let module = this.currentPlayer.spaceship.getModuleByPosition(...modulePosition);
-                let repairModule = this.currentPlayer.spaceship.getModulesByType(ModuleTypes.RepairModule)[0];
+        let repairModuleCost = this.currentPlayer.spaceship.getModulesByType(ModuleTypes.RepairModule)[0].energyCost;
 
-                this.currentPlayer.energy -= repairModule.energyCost;
-                module.health = Math.min(module.health + 2, module.totalHealth);
-            }
-        });
+        let isRepaired = await this.useRepairModule(repairModuleCost);
+
+        if (!this.currentPlayer.usedRepairOrAttackModuleSecondTimeOnThisTurn && isRepaired
+            && this.currentPlayer.spaceship.getMainModuleType() === MainModuleType.UseModuleSecondTime) {
+            let useSecondTime = await this.askForUseModuleSecondTime(this.currentPlayer, ModuleTypes.RepairModule);
+
+            if (!useSecondTime)
+                return;
+
+            console.log("   Player use repair module for second time");
+
+            this.currentPlayer.usedRepairOrAttackModuleSecondTimeOnThisTurn = true;
+
+            await this.useRepairModule(repairModuleCost * 2);
+        }
     }
 
     async attackPhase() {
@@ -298,15 +385,29 @@ export default class Game {
         if (!attackedPlayer) {
             console.log(`   Player ${this.currentPlayer.link} is peaceful`);
 
-            return undefined;
+            return;
         }
 
         await this.attackPlayer(attackedPlayer);
 
-        if (this.currentPlayer.spaceship.getMainModuleType() === MainModuleType.UseModuleSecondTime) {
-            let useSecondTime = this.askForUseModuleForSecondTime(this.currentPlayer, ModuleTypes.AttackModule);
+        if (!this.currentPlayer.usedRepairOrAttackModuleSecondTimeOnThisTurn
+            && this.currentPlayer.spaceship.getMainModuleType() === MainModuleType.UseModuleSecondTime) {
+            let useSecondTime = await this.askForUseModuleSecondTime(this.currentPlayer, ModuleTypes.AttackModule);
 
+            if (!useSecondTime)
+                return;
 
+            console.log("   Player use attack module for second time");
+
+            this.currentPlayer.usedRepairOrAttackModuleSecondTimeOnThisTurn = true;
+
+            let attackedPlayer = await this.choosePlayerForAttack(AttackReason.UsingAttackModuleSecondTime);
+
+            if (!attackedPlayer) {
+                throw new Error('Attacked player is undefined in UsingAttackModuleSecondTime');
+            }
+
+            await this.attackPlayer(attackedPlayer);
         }
     }
 
@@ -323,17 +424,10 @@ export default class Game {
     async attackPlayer(attackedPlayer: Player) {
         console.log(`   Player ${this.currentPlayer.link} has attacked player ${attackedPlayer.link}`);
 
-        this.currentPlayer.isInFight = true;
-        this.getPlayerByLink(this.currentPlayer.link).isInFight = true;
+        this.currentFight = new FightManager(this.currentPlayer, attackedPlayer, this);
+        let destroyedPlayer = await this.currentFight.fight();
 
-        attackedPlayer.isInFight = true;
-
-        let destroyedPlayer = await (new FightManager(this.currentPlayer, attackedPlayer, this)).fight();
-
-        this.currentPlayer.isInFight = false;
-        this.getPlayerByLink(this.currentPlayer.link).isInFight = false;
-
-        attackedPlayer.isInFight = false;
+        this.currentFight = undefined;
 
         if (destroyedPlayer !== undefined) {
             console.log(`   Player ${destroyedPlayer.link} was destroyed`);
@@ -531,15 +625,17 @@ export default class Game {
         }
     }
 
-    async askForUseModuleForSecondTime(player: Player, module: ModuleTypes): Promise<boolean> {
-        return await this.emitToPlayerAndWait(player, 'askForUseModuleForSecondTime', module, (useForSecondTime: boolean) => {
-            return useForSecondTime;
+    async askForUseModuleSecondTime(player: Player, module: ModuleTypes): Promise<boolean> {
+        return await this.emitToPlayerAndWait(player, 'askForUseModuleSecondTime', module, (useSecondTime: boolean) => {
+            return useSecondTime;
         });
     }
 
     async makeGameIteration() {
         // set current turn player
         console.log(`Turn of player ${this.currentPlayer.link}`);
+
+        this.currentPlayer.usedRepairOrAttackModuleSecondTimeOnThisTurn = false;
 
         await this.beforeTurn();
 

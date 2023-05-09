@@ -2,7 +2,8 @@ enum AttackReason {
     MainModule,
     AttackModule,
     AttackAnyEventCard,
-    AttackLaterEventCard
+    AttackLaterEventCard,
+    UsingAttackModuleSecondTime
 }
 
 enum MoveDamageReason {

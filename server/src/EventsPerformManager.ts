@@ -13,7 +13,7 @@ let eventsPerformFunctions: Record<EventTypes, (game: Game, event: Event) => Pro
     [EventTypes.PutTopThreeCardsInAnyOrder]: async (game: Game) => {
         let topThreeCards: Event[] = game.gameData.popEventCards(3);
 
-        await game.emitToCurrentPlayerAndWait('permuteThreeCards', async (order: number[]) => {
+        await game.emitToCurrentPlayerAndWait('permuteThreeCards', topThreeCards, async (order: number[]) => {
             let newOrderedCards: Event[] = [];
 
             for (let i = 0; i < 3; ++i) {
@@ -36,7 +36,7 @@ let eventsPerformFunctions: Record<EventTypes, (game: Game, event: Event) => Pro
 
             game.gameData.pushEventCards(newOrderedCards);
 
-            await performEvent(selectedCard, this);
+            await performEvent(selectedCard, game);
         });
     },
     [EventTypes.TakeOneBuildingCard]: async (game: Game) => {

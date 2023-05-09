@@ -6,6 +6,7 @@ import InfoEventListener from "./listeners/InfoEventListener";
 import Game from "../Game";
 import MainGameEventListener from "./listeners/MainGameEventListener";
 import {Event} from "../../../common/events/Event";
+import {HAS_PLAYERS_DATA} from "../../../common/Sockets";
 
 export default class SocketManager {
     game: Game;
@@ -23,30 +24,45 @@ export default class SocketManager {
         for (let listener of this.listeners) {
             console.log("Registering: ", listener.toString());
 
-            new listener(this.socket, this.game);
+            new listener(this, this.game);
         }
     }
 
+    on(ev: string, listener: (...args) => any) {
+        let newListener = (...args) => {
+            if (args[0] === HAS_PLAYERS_DATA) {
+                this.game.setPlayersData(args[1]);
+
+                args = args.slice(2);
+            }
+
+            listener(...args);
+        };
+
+        this.socket.on(ev, newListener);
+    }
+
     initSocket(uri: string) {
+
         this.socket = io(uri);
 
-        this.socket.on('connect', () => {
+        this.on('connect', () => {
             console.log('connected!');
         });
 
-        this.socket.on('disconnect', () => {
+        this.on('disconnect', () => {
             location.href = 'http://localhost:3000';
         })
 
-        this.socket.on('getLink', (callback: (link: number) => void) => {
+        this.on('getLink', (callback: (link: number) => void) => {
             callback(this.game.link);
         });
 
-        this.socket.on('setPlayersData', (players: Player[]) => {
+        this.on('setPlayersData', (players: Player[]) => {
             this.game.setPlayersData(players);
         });
 
-        this.socket.on('setPlayersStatus', (players: { link: number, online: boolean }[]) => {
+        this.on('setPlayersStatus', (players: { link: number, online: boolean }[]) => {
             for (let player of players) {
                 if (this.game.getPlayerByLink(player.link)) {
                     this.game.getPlayerByLink(player.link).online = player.online;
@@ -61,8 +77,6 @@ export default class SocketManager {
 
     // return is event accepted
     useEventCard(event: Event): Promise<boolean> {
-        console.log("here");
-
         return new Promise((resolve) => {
             this.socket.emit('useEventCard', event, (isAccepted: boolean) => {
                 resolve(isAccepted);

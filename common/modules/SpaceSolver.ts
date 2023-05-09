@@ -13,6 +13,7 @@ export default class SpaceSolver extends Module {
 
         this.name = 'Космический порешатель';
         this.type = ModuleTypes.SpaceSolver;
+        this.sprite = 'space-solver';
 
         this.strength = 10;
         this.health = 10;

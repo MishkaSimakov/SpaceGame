@@ -11,6 +11,7 @@ export default class SolarPanel extends Module {
 
         this.name = 'Солнечная панель';
         this.type = ModuleTypes.SolarPanel;
+        this.sprite = 'solar-panel';
 
         this.energyIncrease = 10;
         this.health = 10;

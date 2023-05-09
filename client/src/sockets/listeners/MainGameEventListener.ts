@@ -1,13 +1,14 @@
 import BaseEventListener from "./BaseEventListener";
-import {Socket} from "socket.io-client";
 import Module, {ModuleTypes} from "../../../../common/modules/Module";
 import Game from "../../Game";
 import Player from "../../../../common/Player";
 import {COLORS} from "../../graphics/constants";
 import {AttackReason} from "../../../../common/Types";
+import Vector2 from "../../../../common/Vector2";
+import SocketManager from "../SocketManager";
 
 export default class MainGameEventListener extends BaseEventListener {
-    socket: Socket;
+    socket: SocketManager;
     game: Game;
 
     constructor(...args: ConstructorParameters<typeof BaseEventListener>) {
@@ -39,7 +40,7 @@ export default class MainGameEventListener extends BaseEventListener {
             });
         });
 
-        this.socket.on('chooseModuleToRepair', (callback: (modulePosition?: [number, number]) => void) => {
+        this.socket.on('chooseModuleToRepair', (callback: (modulePosition?: Vector2) => void) => {
             let chosenModule: Module;
 
             this.game.spaceshipsScene.chooseModule((module) => {
@@ -63,11 +64,7 @@ export default class MainGameEventListener extends BaseEventListener {
                     this.controls().topBarDrawer.removeButtons();
                     this.game.spaceshipsScene.endChoosingModule();
 
-                    if (chosenModule !== undefined) {
-                        callback([chosenModule.x, chosenModule.y]);
-                    } else {
-                        callback();
-                    }
+                    callback(chosenModule?.getPosition());
                 }
             }]);
         });
@@ -100,7 +97,7 @@ export default class MainGameEventListener extends BaseEventListener {
             this.controls().askYesOrNo().then(callback);
         });
 
-        this.socket.on('askForUseModuleForSecondTime', async (module: ModuleTypes, callback: (useForSecondTime: boolean) => void) => {
+        this.socket.on('askForUseModuleSecondTime', async (module: ModuleTypes, callback: (useSecondTime: boolean) => void) => {
             let moduleNames: Partial<Record<ModuleTypes, string>> = {
                 [ModuleTypes.AttackModule]: "абордажный модуль",
                 [ModuleTypes.RepairModule]: "ремонтный модуль",

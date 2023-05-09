@@ -1,13 +1,11 @@
 import BaseEventListener from "./BaseEventListener";
-import Spaceships from "../../graphics/scenes/game/spaceships";
-import Controls from "../../graphics/scenes/game/controls";
-import {Socket} from "socket.io-client";
 import Module from "../../../../common/modules/Module";
 import {Event} from "../../../../common/events/Event";
 import Game from "../../Game";
+import SocketManager from "../SocketManager";
 
 export default class InfoEventListener extends BaseEventListener {
-    socket: Socket;
+    socket: SocketManager;
     game: Game;
 
     constructor(...args: ConstructorParameters<typeof BaseEventListener>) {

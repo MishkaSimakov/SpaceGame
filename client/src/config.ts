@@ -1,9 +1,8 @@
 let config = {
     type: Phaser.AUTO,
     scale: {
-        mode: Phaser.Scale.FIT,
         width: window.innerWidth,
-        height: window.innerHeight
+        height: window.innerHeight,
     },
     parent: 'app',
     dom: {

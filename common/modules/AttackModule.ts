@@ -11,6 +11,7 @@ export default class AttackModule extends Module {
 
         this.name = 'Абордажный модуль';
         this.type = ModuleTypes.AttackModule;
+        this.sprite = 'attack-module';
 
         this.health = 10;
         this.totalHealth = 10;

@@ -1,4 +1,4 @@
-import Module from "../../common/modules/Module";
+import Module, {isModule} from "../../common/modules/Module";
 import SpaceSolver from "../../common/modules/SpaceSolver";
 import SolarPanel from "../../common/modules/SolarPanel";
 import AttackModule from "../../common/modules/AttackModule";
@@ -10,10 +10,6 @@ import arrayShuffle from "array-shuffle";
 import RepairModule from "../../common/modules/RepairModule";
 
 export default class GameData {
-    protected readonly none = 0;
-    protected readonly red = 1;
-    protected readonly blue = 2;
-
     protected modulesStack: Module[] = [
         new SpaceSolver(1, 0, 1, 0),
         new SpaceSolver(2, 0, 2, 0),
@@ -78,7 +74,7 @@ export default class GameData {
             "у себя на руке.\n" +
             "В свой бой вы можете\n" +
             "скинуть её,\n" +
-            "нанося 1 урон любому модулю корабля соперника\n" +
+            "нанося 1 урон любому\nмодулю корабля\nсоперника\n" +
             "(кроме командного)", 1),
     ];
 
@@ -128,10 +124,10 @@ export default class GameData {
 
     discardCards(cards: (Module | Event)[]) {
         for (let card of cards) {
-            if ((card as Module).name === undefined) {
-                this.eventDiscards.push(card as Event);
-            } else {
+            if (isModule(card)) {
                 this.moduleDiscards.push(card as Module);
+            } else {
+                this.eventDiscards.push(card as Event);
             }
         }
     }

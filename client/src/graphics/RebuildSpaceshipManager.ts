@@ -11,6 +11,7 @@ export default class RebuildSpaceshipManager {
     game: Spaceships;
     controls: Controls;
     player: Player;
+    isRebuildingSpaceship: boolean = false;
 
     constructor(game: Spaceships, controlsScene: Controls) {
         this.game = game;
@@ -19,6 +20,8 @@ export default class RebuildSpaceshipManager {
 
     setIsRebuildSpaceshipAllowed(allowed: boolean): void {
         console.log("rebuild spaceship allowed", allowed);
+
+        this.isRebuildingSpaceship = allowed;
 
         if (allowed) {
             this.allowRebuildSpaceship();
@@ -145,14 +148,14 @@ export default class RebuildSpaceshipManager {
                     // remove from hand cards
                     this.hand().splice(this.hand().indexOf(module), 1);
 
-                    // remove from hand shapes
-                    this.controls.handDrawer.cardShapes = this.controls.handDrawer.cardShapes.filter(s => s !== shape);
-                    shape.destroy();
-
                     // add to spaceship modules
                     // add to spaceship shapes
                     this.spaceshipDrawer().draw();
                     this.spaceshipDrawer().allowDrag();
+
+                    // redraw hand
+                    this.controls.handDrawer.draw();
+                    this.controls.handDrawer.allowDrag();
 
                     this.removeEvents();
                     this.addEvents();

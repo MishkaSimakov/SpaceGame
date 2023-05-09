@@ -1,12 +1,12 @@
 import BaseEventListener from "./BaseEventListener";
-import {Socket} from "socket.io-client";
 import Module, {ModuleTypes} from "../../../../common/modules/Module";
 import Game from "../../Game";
 import {COLORS} from "../../graphics/constants";
 import Vector2 from "../../../../common/Vector2";
+import SocketManager from "../SocketManager";
 
 export default class FightEventListener extends BaseEventListener {
-    socket: Socket;
+    socket: SocketManager;
     game: Game;
 
     constructor(...args: ConstructorParameters<typeof BaseEventListener>) {
@@ -80,6 +80,32 @@ export default class FightEventListener extends BaseEventListener {
 
                 return module.strength > 0;
             }, true, 0xa3b18a);
+
+            this.game.spaceshipsScene.chooseModule((module?: Module) => {
+                selectedTarget = module;
+            }, (module?: Module, playerLink?: number) => {
+                return playerLink === targetPlayerLink;
+            }, true, 0xe76f51);
+        });
+
+        this.socket.on('chooseTarget', (targetPlayerLink: number, usedWeapon: Module, callback: (targetPosition: Vector2) => void) => {
+            let selectedTarget: Module;
+
+            this.controls().topBarDrawer.setStatus("Выберите цель");
+
+            this.controls().topBarDrawer.addButtons([{
+                text: "Атаковать",
+                color: COLORS.BUTTON.DANGER,
+                onClick: () => {
+                    if (selectedTarget === undefined)
+                        return;
+
+                    callback(selectedTarget.getPosition());
+
+                    this.controls().topBarDrawer.removeButtons();
+                    this.game.spaceshipsScene.endChoosingModule();
+                }
+            }]);
 
             this.game.spaceshipsScene.chooseModule((module?: Module) => {
                 selectedTarget = module;

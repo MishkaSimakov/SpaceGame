@@ -57,7 +57,8 @@ export default class Player {
     skipNextTurn: boolean;
 
     online: boolean;
-    isInFight: boolean = false;
+
+    usedRepairOrAttackModuleSecondTimeOnThisTurn: boolean = false;
 
     protected lose: boolean = false;
 

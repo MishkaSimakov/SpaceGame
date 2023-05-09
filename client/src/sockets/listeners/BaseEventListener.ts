@@ -1,14 +1,13 @@
 import Game from "../../Game";
-import {Socket} from "socket.io-client";
-import TopBarDrawer from "../../graphics/TopBarDrawer";
 import RebuildSpaceshipManager from "../../graphics/RebuildSpaceshipManager";
 import Controls from "../../graphics/scenes/game/controls";
+import SocketManager from "../SocketManager";
 
 export default class BaseEventListener {
-    socket: Socket;
+    socket: SocketManager;
     game: Game;
 
-    constructor(socket: Socket, game: Game) {
+    constructor(socket: SocketManager, game: Game) {
         this.socket = socket;
         this.game = game;
 

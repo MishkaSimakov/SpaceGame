@@ -11,10 +11,11 @@ export default class RepairModule extends Module {
 
         this.name = 'Ремонтный модуль';
         this.type = ModuleTypes.RepairModule;
+        this.sprite = 'repair-module';
 
         this.health = 10;
         this.totalHealth = 10;
 
-        this.energyCost = 25;
+        this.energyCost = 5;
     }
 }

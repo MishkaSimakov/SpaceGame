@@ -55,7 +55,11 @@ export default class HandDrawer {
                         let isAccepted = await this.gameManager.useEventCard(card as Event);
 
                         if (isAccepted) {
-                            //
+                            cardShape.destroy();
+
+                            let hand = this.gameManager.getCurrentPlayer().hand;
+                            hand.splice(hand.indexOf(card), 1);
+                            this.draw();
 
                             return;
                         }

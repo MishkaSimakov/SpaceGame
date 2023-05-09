@@ -63,14 +63,17 @@ export default class Controls extends Phaser.Scene {
             [AttackReason.AttackModule]: "Используйте абордажный модуль, чтобы напасть",
             [AttackReason.MainModule]: "Используйте командный модуль, чтобы напасть",
             [AttackReason.AttackAnyEventCard]: "Выберите игрока для нападения",
-            [AttackReason.AttackLaterEventCard]: "Используйте карточку, чтобы напасть"
+            [AttackReason.AttackLaterEventCard]: "Используйте карточку, чтобы напасть",
+            [AttackReason.UsingAttackModuleSecondTime]: "Выберите игрока для нападения"
         }
 
         return new Promise((resolve: (link?: number) => void) => {
             this.topBarDrawer.setStatus(reasonStatus[attackReason]);
 
+            let showNoButton = attackReason != AttackReason.AttackAnyEventCard && attackReason != AttackReason.UsingAttackModuleSecondTime;
+
             let buttons = [{
-                text: "Да",
+                text: showNoButton ? "Да" : "Выбрать",
                 color: COLORS.BUTTON.DANGER,
                 onClick: () => {
                     this.topBarDrawer.buttons.forEach((b) => b.background.disableInteractive());
@@ -86,7 +89,7 @@ export default class Controls extends Phaser.Scene {
                 }
             }];
 
-            if (attackReason != AttackReason.AttackAnyEventCard) {
+            if (showNoButton) {
                 buttons.push({
                     text: "Нет",
                     color: COLORS.BUTTON.PRIMARY,
