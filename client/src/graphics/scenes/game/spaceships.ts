@@ -8,7 +8,8 @@ let spaceshipConfigurations: Vector2[][] = [
     [new Vector2(0, 0)],
     [new Vector2(0, 0), new Vector2(0, -1000)],
     [new Vector2(0, 0), new Vector2(-1000, -1000), new Vector2(1000, -1000)],
-    [new Vector2(0, 0), new Vector2(0, -1000), new Vector2(1000, 0), new Vector2(1000, -1000)]
+    [new Vector2(0, 0), new Vector2(0, -1000), new Vector2(1000, 0), new Vector2(1000, -1000)],
+    [new Vector2(0, 0), new Vector2(0, -1000), new Vector2(1000, 0), new Vector2(1000, -1000), new Vector2(500, 1500)]
 ];
 
 export default class Spaceships extends Phaser.Scene {

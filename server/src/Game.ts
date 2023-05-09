@@ -58,58 +58,64 @@ export default class Game {
     addUseEventCardEvent(player: Player) {
         this.getSocket(player).on('useEventCard', async (event: Event, callback: (isAccepted: boolean) => void) => {
             if (event.type === EventTypes.SaveCardAndThenDealDamage) {
-                if (this.isPlayerInFight(player)) {
-                    callback(true);
-
-                    let target = this.currentFight.getEnemyOf(player);
-
-                    this.getSocket(player).emit('chooseModuleToDealDamage', target.link, (position: Vector2) => {
-                        player = this.getPlayerByLink(player.link);
-
-                        let discardedCardIndex = player.hand.findIndex((c) => {
-                            if (isModule(c))
-                                return false;
-
-                            return c.type === EventTypes.SaveCardAndThenDealDamage;
-                        });
-                        let discardedCard = player.hand[discardedCardIndex];
-                        player.hand = player.hand.filter((c) => c != discardedCard);
-
-                        this.changePlayerData(player);
-
-                        let targetModule = target.spaceship.getModuleByPosition(position);
-
-                        // TODO: add check that not main
-
-                        let destroyed = target.spaceship.damage(targetModule, 1);
-
-                        for (let module of destroyed) {
-                            console.log(`   Module at x: ${module.x}, y: ${module.y} has been destroyed`);
-
-                            target.spaceship.removeModule(module);
-
-                            if (module.type === ModuleTypes.MainModule) {
-                                return;
-                            }
-
-                            module.health = module.totalHealth;
-                            this.gameData.discardCards([module]);
-                        }
-
-                        if (destroyed.length !== 0) {
-                            let unconnectedModules = target.spaceship.getUnconnectedModules();
-
-                            target.spaceship.removeModule(unconnectedModules);
-                            target.hand.push(...unconnectedModules)
-                        }
-
-                        if (player.link === this.currentEmitPlayerLink) {
-                            this.currentEmitFunction();
-                        }
-                    });
-                } else {
+                if (!this.isPlayerInFight(player)) {
                     callback(false);
+                    return;
                 }
+
+                let target = this.currentFight.getEnemyOf(player);
+
+                if (target.spaceship.modules.length === 1) {
+                    callback(false);
+                    return;
+                }
+
+                callback(true);
+
+                this.getSocket(player).emit('chooseModuleToDealDamage', target.link, (position: Vector2) => {
+                    player = this.getPlayerByLink(player.link);
+
+                    let discardedCardIndex = player.hand.findIndex((c) => {
+                        if (isModule(c))
+                            return false;
+
+                        return c.type === EventTypes.SaveCardAndThenDealDamage;
+                    });
+                    let discardedCard = player.hand[discardedCardIndex];
+                    player.hand = player.hand.filter((c) => c != discardedCard);
+
+                    this.changePlayerData(player);
+
+                    let targetModule = target.spaceship.getModuleByPosition(position);
+
+                    // TODO: add check that not main
+
+                    let destroyed = target.spaceship.damage(targetModule, 1);
+
+                    for (let module of destroyed) {
+                        console.log(`   Module at x: ${module.x}, y: ${module.y} has been destroyed`);
+
+                        target.spaceship.removeModule(module);
+
+                        if (module.type === ModuleTypes.MainModule) {
+                            return;
+                        }
+
+                        module.health = module.totalHealth;
+                        this.gameData.discardCards([module]);
+                    }
+
+                    if (destroyed.length !== 0) {
+                        let unconnectedModules = target.spaceship.getUnconnectedModules();
+
+                        target.spaceship.removeModule(unconnectedModules);
+                        target.hand.push(...unconnectedModules)
+                    }
+
+                    if (player.link === this.currentEmitPlayerLink) {
+                        this.currentEmitFunction();
+                    }
+                });
             }
         });
     }

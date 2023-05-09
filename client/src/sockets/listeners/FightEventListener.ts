@@ -62,7 +62,7 @@ export default class FightEventListener extends BaseEventListener {
                 text: "Атаковать",
                 color: COLORS.BUTTON.DANGER,
                 onClick: () => {
-                    if (selectedWeapon === undefined && selectedTarget === undefined)
+                    if (selectedWeapon === undefined || selectedTarget === undefined)
                         return;
 
                     callback(selectedWeapon.getPosition(), selectedTarget.getPosition());

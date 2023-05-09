@@ -7,6 +7,7 @@ const http = require('http').createServer(server);
 const cors = require('cors');
 const path = require('path');
 import * as serveStatic from "serve-static";
+import GamesManager from "./GamesManager";
 
 const io: Server = require("socket.io")(http, {
     cors: {
@@ -15,30 +16,33 @@ const io: Server = require("socket.io")(http, {
     }
 });
 
+let gamesManager = new GamesManager(io);
+
 server.use(cors());
 server.use(serveStatic(path.join(__dirname, '../../client/dist')))
 
 server.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../../client/dist/index.html'));
+    res.sendFile(path.join(__dirname, '../../client/dist/html/index.html'));
+});
+
+server.get('/game/create', (req, res) => {
+    let playersCount: number = req.query.count;
+
+    let createdGame = gamesManager.createGame(playersCount);
+
+    res.send(JSON.stringify(createdGame.getLinks()));
 });
 
 server.get('/game/:link', (req, res) => {
-    res.sendFile(path.join(__dirname, '../../client/dist/index.html'));
+    res.sendFile(path.join(__dirname, '../../client/dist/html/game.html'));
 });
 
 server.get('/check/:link', (req, res) => {
-    res.send(
-        game.getLinks().indexOf(parseInt(req.params.link)) !== -1
-    );
+    res.send(gamesManager.checkPlayerLinkExist(parseInt(req.params.link)));
 });
 
 
-let game: Game = new Game(2, io);
-game.start().then(() => {
-    for (let player of game.players)
-        game.getSocket(player).disconnect();
-});
-
+let game: Game = gamesManager.createGame(2);
 console.log(game.getLinks().join(', '));
 
 io.on('connection', async function (socket: Socket) {
@@ -56,11 +60,13 @@ io.on('connection', async function (socket: Socket) {
         player.socketId = undefined;
         player.online = false;
 
-        game.updatePlayersStatus();
+        gamesManager.getGameByLink(player.link).updatePlayersStatus();
     });
 
     io.sockets.sockets.get(socket.id).emit('getLink', async (link: number) => {
-        if (game.getLinks().indexOf(link) === -1) {
+        let game = gamesManager.getGameByLink(link)
+
+        if (!game) {
             console.log("Connected user doesn't exist in this game");
 
             socket.disconnect();
@@ -69,9 +75,7 @@ io.on('connection', async function (socket: Socket) {
         }
 
         player = game.playerConnected(link, socket.id);
-
         game.getSocketByLink(link).emit('setPlayersData', game.players);
-
         game.tryToEmitEvent();
     });
 });
