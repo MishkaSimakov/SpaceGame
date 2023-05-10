@@ -43,7 +43,6 @@ export default class SocketManager {
     }
 
     initSocket(uri: string) {
-
         this.socket = io(uri);
 
         this.on('connect', () => {
@@ -51,7 +50,7 @@ export default class SocketManager {
         });
 
         this.on('disconnect', () => {
-            location.href = 'http://localhost:3000';
+            window.location.href = '/spaceships/lobby';
         })
 
         this.on('getLink', (callback: (link: number) => void) => {

@@ -9,9 +9,9 @@ const path = require('path');
 import * as serveStatic from "serve-static";
 import GamesManager from "./GamesManager";
 
-const io: Server = require("socket.io")(http, {
+const io: Server = new Server(http, {
     cors: {
-        origin: "http://localhost:10001",
+        origin: "http://localhost:3000",
         methods: ["GET", "POST"]
     }
 });
@@ -21,11 +21,11 @@ let gamesManager = new GamesManager(io);
 server.use(cors());
 server.use(serveStatic(path.join(__dirname, '../../client/dist')))
 
-server.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../../client/dist/html/index.html'));
+server.get('/spaceships/lobby', (req, res) => {
+    res.sendFile(path.join(__dirname, '../../client/dist/spaceships/html/index.html'));
 });
 
-server.get('/game/create', (req, res) => {
+server.get('/spaceships/game/create', (req, res) => {
     let playersCount: number = req.query.count;
 
     let createdGame = gamesManager.createGame(playersCount);
@@ -33,11 +33,11 @@ server.get('/game/create', (req, res) => {
     res.send(JSON.stringify(createdGame.getLinks()));
 });
 
-server.get('/game/:link', (req, res) => {
-    res.sendFile(path.join(__dirname, '../../client/dist/html/game.html'));
+server.get('/spaceships/game/:link', (req, res) => {
+    res.sendFile(path.join(__dirname, '../../client/dist/spaceships/html/game.html'));
 });
 
-server.get('/check/:link', (req, res) => {
+server.get('/spaceships/check/:link', (req, res) => {
     res.send(gamesManager.checkPlayerLinkExist(parseInt(req.params.link)));
 });
 

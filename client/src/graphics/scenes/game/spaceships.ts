@@ -59,11 +59,6 @@ export default class Spaceships extends Phaser.Scene {
         });
     }
 
-    preload() {
-        // this.load.image('modules', '/assets/modules.png');
-        this.load.atlas('modules', '/assets/modules-half.png', '/assets/modules-atlas.json');
-    }
-
     drawSpaceshipOf(player: Player, index: number, count: number): void {
         console.log(this.textures.get('modules'));
 

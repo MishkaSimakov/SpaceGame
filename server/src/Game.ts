@@ -13,6 +13,7 @@ import {MainModuleType} from "../../common/modules/MainModule";
 import {AttackReason, MoveDamageReason} from "../../common/Types";
 import Vector2 from "../../common/Vector2";
 import {HAS_PLAYERS_DATA} from "../../common/Sockets";
+import Logger from "./Logger";
 
 enum GameState {
     WAIT_FOR_PLAYERS,
@@ -43,7 +44,13 @@ export default class Game {
 
     currentFight?: FightManager;
 
+    // logger: Logger;
+
     constructor(size: number, io: Server) {
+        // this.logger = new Logger(this);
+
+        // this.logger.log("game created!");
+
         this.size = size;
         this.gameData = new GameData();
 
