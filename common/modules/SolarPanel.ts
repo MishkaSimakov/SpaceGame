@@ -9,12 +9,12 @@ export default class SolarPanel extends Module {
             'bottom': bottom
         });
 
-        this.name = 'Солнечная панель';
+        this.name = 'Солнечная батарея';
         this.type = ModuleTypes.SolarPanel;
         this.sprite = 'solar-panel';
 
-        this.energyIncrease = 10;
-        this.health = 10;
-        this.totalHealth = 10;
+        this.energyIncrease = 1;
+        this.health = 1;
+        this.totalHealth = 1;
     }
 }

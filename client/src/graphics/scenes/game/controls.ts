@@ -16,6 +16,8 @@ export default class Controls extends Phaser.Scene {
     topBarDrawer: TopBarDrawer;
     gameManager: Game;
 
+    handCardSize: number;
+
     constructor(game: Game) {
         super({
             key: 'Controls',
@@ -26,7 +28,9 @@ export default class Controls extends Phaser.Scene {
     }
 
     create() {
-        this.handDrawer = new HandDrawer(this.gameManager, new Vector2(128, 128), this);
+        this.handCardSize = 128 * 1440 / this.game.canvas.width;
+
+        this.handDrawer = new HandDrawer(this.gameManager, this.handCardSize, this);
         this.topBarDrawer = new TopBarDrawer(this);
 
         this.input.dragDistanceThreshold = 10;
@@ -161,9 +165,9 @@ export default class Controls extends Phaser.Scene {
         let image: Phaser.GameObjects.Container;
 
         if (isModule(card)) {
-            image = drawModuleCard(this, card as Module, new Vector2(this.game.canvas.width / 2, this.game.canvas.height / 2));
+            image = drawModuleCard(this, card as Module, new Vector2(this.game.canvas.width / 2, this.game.canvas.height / 2), 1000);
         } else {
-            image = drawEventCard(this, card as Event, new Vector2(this.game.canvas.width / 2, this.game.canvas.height / 2));
+            image = drawEventCard(this, card as Event, new Vector2(this.game.canvas.width / 2, this.game.canvas.height / 2), 1000);
         }
 
         image.setScale(2);
@@ -257,7 +261,7 @@ export default class Controls extends Phaser.Scene {
         return new Promise<number[]>((resolve, reject) => {
             let outlineColor = 0xa3b18a;
             let cardShapes: Phaser.GameObjects.Container[] = [];
-            let cardWidth = 256;
+            let cardWidth = 256 * this.game.canvas.width / 1440;
 
             let selected: number[] = [];
 
@@ -291,9 +295,9 @@ export default class Controls extends Phaser.Scene {
                 );
 
                 if (isModule(card)) {
-                    cardShape = drawModuleCard(this, card as Module, position);
+                    cardShape = drawModuleCard(this, card as Module, position, cardWidth);
                 } else {
-                    cardShape = drawEventCard(this, card as Event, position);
+                    cardShape = drawEventCard(this, card as Event, position, cardWidth);
                 }
 
                 cardShape.setDepth(3);
@@ -376,9 +380,9 @@ export default class Controls extends Phaser.Scene {
                     );
 
                     if (isModule(card)) {
-                        cardShape = drawModuleCard(this, card as Module, position);
+                        cardShape = drawModuleCard(this, card as Module, position, cardWidth);
                     } else {
-                        cardShape = drawEventCard(this, card as Event, position);
+                        cardShape = drawEventCard(this, card as Event, position, cardWidth);
                     }
 
                     cardShape.setDepth(3);

@@ -8,26 +8,18 @@ import SmallQuantumProtector from "../../common/modules/SmallQuantumProtector";
 
 import arrayShuffle from "array-shuffle";
 import RepairModule from "../../common/modules/RepairModule";
+import * as modules from "./modules.json";
+import DarkMatterGenerator from "../../common/modules/DarkMatterGenerator";
+import QuantumProtector from "../../common/modules/QuantumProtector";
+import NuclearReactor from "../../common/modules/NuclearReactor";
+import SmallBattery from "../../common/modules/SmallBattery";
+import QuantumDestabilizer from "../../common/modules/QuantumDestabilizer";
+import Battery from "../../common/modules/Battery";
+import StructureModule from "../../common/modules/StructureModule";
+import IonDestroyer from "../../common/modules/IonDestroyer";
 
 export default class GameData {
-    protected modulesStack: Module[] = [
-        new SpaceSolver(1, 0, 1, 0),
-        new SpaceSolver(2, 0, 2, 0),
-        new SpaceSolver(0, 1, 0, 1),
-        new SpaceSolver(0, 2, 0, 2),
-
-        new SmallQuantumProtector(1, 1, 1, 1),
-
-        new SolarPanel(1, 2, 1, 2),
-        new SolarPanel(2, 1, 2, 1),
-        new SolarPanel(0, 1, 0, 1),
-        new SolarPanel(0, 2, 0, 2),
-        new SolarPanel(1, 0, 1, 0),
-        new SolarPanel(2, 0, 2, 0),
-
-        new RepairModule(1, 1, 1, 1),
-        new AttackModule(1, 2, 0, 1),
-    ];
+    protected modulesStack: Module[] = [];
 
     protected eventsStack: Event[] = [
         ...addEvents(EventTypes.TakeOneBuildingCard, "Возьмите 1 карту\nстроительства", 1),
@@ -91,10 +83,36 @@ export default class GameData {
 
     readonly startCardsCount: number = 4;
 
+    moduleName = {
+        "dark_matter_generator": DarkMatterGenerator,
+        "small_quantum_protector": SmallQuantumProtector,
+        "quantum_protector": QuantumProtector,
+        "attack_module": AttackModule,
+        "solar_panel": SolarPanel,
+        "space_solver": SpaceSolver,
+        "nuclear_reactor": NuclearReactor,
+        "small_battery": SmallBattery,
+        "quantum_destabilizer": QuantumDestabilizer,
+        "battery": Battery,
+        "repair_module": RepairModule,
+        "structure_module": StructureModule,
+        "ion_destroyer": IonDestroyer,
+    }
+
     constructor() {
         // this.modulesStack = arrayShuffle(this.modulesStack);
         // this.eventsStack = arrayShuffle(this.eventsStack);
         // this.mainModules = arrayShuffle(this.mainModules);
+
+        let modulesObject = Object(modules);
+
+        for (let module in modulesObject) {
+            for (let configuration of modulesObject[module]["configurations"]) {
+                this.modulesStack.push(
+                    new this.moduleName[module](...configuration)
+                );
+            }
+        }
     }
 
 

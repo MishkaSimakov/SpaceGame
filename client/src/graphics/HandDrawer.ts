@@ -7,14 +7,14 @@ import Game from "../Game";
 
 
 export default class HandDrawer {
-    cardSize: Vector2;
+    cardSize: number;
     cardShapes: Phaser.GameObjects.Container[] = [];
 
     scene: Phaser.Scene;
 
     gameManager: Game;
 
-    constructor(game: Game, cardSize: Vector2, scene: Phaser.Scene) {
+    constructor(game: Game, cardSize: number, scene: Phaser.Scene) {
         this.gameManager = game;
         this.cardSize = cardSize;
         this.scene = scene;
@@ -27,16 +27,16 @@ export default class HandDrawer {
 
         for (let [index, card] of this.gameManager.getCurrentPlayer().hand.entries()) {
             let position = new Vector2(
-                (sceneWidth - this.gameManager.getCurrentPlayer().hand.length * (this.cardSize.x + 50) + 50) / 2 + index * (this.cardSize.x + 50) + this.cardSize.x / 2,
-                this.scene.game.canvas.height - this.cardSize.x / 2 - 10
+                (sceneWidth - this.gameManager.getCurrentPlayer().hand.length * (this.cardSize + 50) + 50) / 2 + index * (this.cardSize + 50) + this.cardSize / 2,
+                this.scene.game.canvas.height - this.cardSize / 2 - 10
             );
 
             let cardShape: Phaser.GameObjects.Container;
 
             if (isModule(card)) {
-                cardShape = drawModuleCard(this.scene, card as Module, position);
+                cardShape = drawModuleCard(this.scene, card as Module, position, this.cardSize);
             } else {
-                cardShape = drawEventCard(this.scene, card as Event, position);
+                cardShape = drawEventCard(this.scene, card as Event, position, this.cardSize);
             }
 
             cardShape.setScale(0.5, 0.5);

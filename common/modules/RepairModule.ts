@@ -13,9 +13,9 @@ export default class RepairModule extends Module {
         this.type = ModuleTypes.RepairModule;
         this.sprite = 'repair-module';
 
-        this.health = 10;
-        this.totalHealth = 10;
+        this.health = 3;
+        this.totalHealth = 3;
 
-        this.energyCost = 5;
+        this.energyCost = 2;
     }
 }

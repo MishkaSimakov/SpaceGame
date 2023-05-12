@@ -11,6 +11,8 @@ enum ModuleTypes {
 
     // energy sources
     SolarPanel,
+    NuclearReactor,
+    DarkMatterGenerator,
 
     // energy storage
     SmallBattery,

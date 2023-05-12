@@ -15,10 +15,10 @@ export default class SpaceSolver extends Module {
         this.type = ModuleTypes.SpaceSolver;
         this.sprite = 'space-solver';
 
-        this.strength = 10;
-        this.health = 10;
-        this.totalHealth = 10;
+        this.strength = 1;
+        this.health = 1;
+        this.totalHealth = 1;
 
-        this.energyCost = 5;
+        this.energyCost = 1;
     }
 }

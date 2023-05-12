@@ -7,12 +7,12 @@ import {drawModuleCard} from "./CardsDrawer";
 export default class SpaceshipDrawer {
     spaceship: Spaceship;
     center: Vector2;
-    cardSize: Vector2;
+    cardSize: number;
     moduleShapes: Phaser.GameObjects.Container[] = [];
 
     scene: Phaser.Scene;
 
-    constructor(spaceship: Spaceship, center: Vector2, cardSize: Vector2, scene: Phaser.Scene) {
+    constructor(spaceship: Spaceship, center: Vector2, cardSize: number, scene: Phaser.Scene) {
         this.spaceship = spaceship;
         this.center = center;
         this.cardSize = cardSize;
@@ -34,8 +34,8 @@ export default class SpaceshipDrawer {
 
     getGlobalPosition(localPosition: Vector2): Vector2 {
         return new Vector2(
-            this.center.x + localPosition.x * this.cardSize.x,
-            this.center.y + localPosition.y * this.cardSize.y
+            this.center.x + localPosition.x * this.cardSize,
+            this.center.y + localPosition.y * this.cardSize
         );
     }
 
@@ -44,7 +44,7 @@ export default class SpaceshipDrawer {
 
         for (let module of this.spaceship.modules) {
             this.moduleShapes.push(
-                drawModuleCard(this.scene, module, this.getGlobalPosition(new Vector2(module.x, module.y)))
+                drawModuleCard(this.scene, module, this.getGlobalPosition(new Vector2(module.x, module.y)), this.cardSize)
             );
         }
     }

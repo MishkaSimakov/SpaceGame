@@ -3,6 +3,8 @@ import SpaceshipDrawer from "../../SpaceshipDrawer";
 import Vector2 from "../../../../../common/Vector2";
 import Module from "../../../../../common/modules/Module";
 import Game from "../../../Game";
+import {drawModuleCard} from "../../CardsDrawer";
+import {MainModule, MainModuleType} from "../../../../../common/modules/MainModule";
 
 let spaceshipConfigurations: Vector2[][] = [
     [new Vector2(0, 0)],
@@ -13,13 +15,12 @@ let spaceshipConfigurations: Vector2[][] = [
 ];
 
 export default class Spaceships extends Phaser.Scene {
-    full_scale = 0.75;
-    hand_scale = 0.5;
-
     spaceshipDrawers: Record<number, SpaceshipDrawer> = {};
 
     isDragging: boolean = false;
     gameManager: Game;
+
+    spaceshipsCardSize: number;
 
     constructor(game: Game) {
         super({
@@ -31,6 +32,12 @@ export default class Spaceships extends Phaser.Scene {
     }
 
     create() {
+        for (let i = 32, j = 0; i <= 256; i *= 2, j += 1) {
+            drawModuleCard(this, new MainModule(MainModuleType.AttackOrRunaway), new Vector2(j * (256 + 50), 0), i);
+        }
+
+        this.spaceshipsCardSize = 256 * 1440 / this.game.canvas.width;
+
         this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => {
             if (!pointer.isDown) return;
 
@@ -68,7 +75,7 @@ export default class Spaceships extends Phaser.Scene {
             this.spaceshipDrawers[player.link] = new SpaceshipDrawer(
                 player.spaceship,
                 spaceshipPosition,
-                new Vector2(256, 256),
+                this.spaceshipsCardSize,
                 this
             );
 

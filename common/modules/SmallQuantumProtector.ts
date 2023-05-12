@@ -13,9 +13,9 @@ export default class SmallQuantumProtector extends Module {
         this.type = ModuleTypes.SmallQuantumProtector;
         this.sprite = 'small-quantum-protector';
 
-        this.health = 10;
-        this.totalHealth = 10;
+        this.health = 3;
+        this.totalHealth = 3;
 
-        this.energyCost = 10;
+        this.energyCost = 2;
     }
 }

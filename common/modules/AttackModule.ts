@@ -13,9 +13,9 @@ export default class AttackModule extends Module {
         this.type = ModuleTypes.AttackModule;
         this.sprite = 'attack-module';
 
-        this.health = 10;
-        this.totalHealth = 10;
+        this.health = 3;
+        this.totalHealth = 3;
 
-        this.energyCost = 25;
+        this.energyCost = 5;
     }
 }
