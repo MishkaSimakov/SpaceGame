@@ -14,15 +14,23 @@ export default class TopBarDrawer {
     height: number;
     centerWidth: number;
 
+    scale: number;
+
     constructor(scene: Phaser.Scene) {
         this.scene = scene;
 
-        this.height = 50;
+        this.scale = scene.game.canvas.width / 1440;
+
+        this.height = 50 * this.scale;
         this.centerWidth = 300;
     }
 
     showMessage(message: string) {
 
+    }
+
+    clearStatus() {
+        this.statusShape.setText("");
     }
 
     setStatus(status: string) {
@@ -31,7 +39,7 @@ export default class TopBarDrawer {
                 .setOrigin(0.5)
                 .setStyle({
                     fontFamily: 'Exo2',
-                    fontSize: "25px",
+                    fontSize: (25 * this.scale) + "px",
                     color: '#fff',
                 });
         } else {
@@ -43,7 +51,12 @@ export default class TopBarDrawer {
         let text = `${player.energy}/${player.spaceship.getTotalCapacity()} ⚡`;
 
         if (this.energyShape === undefined) {
-            this.energyShape = this.scene.add.text(10, this.height / 2, text).setOrigin(0, 0.5);
+            this.energyShape = this.scene.add.text(30, this.height / 2, text).setOrigin(0, 0.5)
+                .setStyle({
+                    fontFamily: 'Exo2',
+                    fontSize: (20 * this.scale) + "px",
+                    color: '#fff',
+                });
         } else {
             this.energyShape.setText(text);
         }
@@ -59,7 +72,7 @@ export default class TopBarDrawer {
             this.buttons.push(
                 new Button(
                     this.scene, button.onClick,
-                    (this.scene.game.canvas.width - this.centerWidth) / 2 + offset + (width + offset) * index + width / 2, 75,
+                    (this.scene.game.canvas.width - this.centerWidth) / 2 + offset + (width + offset) * index + width / 2, this.height + 25,
                     width, 50,
                     button.text, 10, button.color,
                     {

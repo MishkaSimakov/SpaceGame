@@ -3,12 +3,10 @@ import SpaceshipDrawer from "../../SpaceshipDrawer";
 import Vector2 from "../../../../../common/Vector2";
 import Module from "../../../../../common/modules/Module";
 import Game from "../../../Game";
-import {drawModuleCard} from "../../CardsDrawer";
-import {MainModule, MainModuleType} from "../../../../../common/modules/MainModule";
 
 let spaceshipConfigurations: Vector2[][] = [
     [new Vector2(0, 0)],
-    [new Vector2(0, 0), new Vector2(0, -1000)],
+    [new Vector2(0, 0), new Vector2(0, -2500)],
     [new Vector2(0, 0), new Vector2(-1000, -1000), new Vector2(1000, -1000)],
     [new Vector2(0, 0), new Vector2(0, -1000), new Vector2(1000, 0), new Vector2(1000, -1000)],
     [new Vector2(0, 0), new Vector2(0, -1000), new Vector2(1000, 0), new Vector2(1000, -1000), new Vector2(500, 1500)]
@@ -31,12 +29,12 @@ export default class Spaceships extends Phaser.Scene {
         this.gameManager = game;
     }
 
-    create() {
-        for (let i = 32, j = 0; i <= 256; i *= 2, j += 1) {
-            drawModuleCard(this, new MainModule(MainModuleType.AttackOrRunaway), new Vector2(j * (256 + 50), 0), i);
-        }
+    preload() {
+        // this.load.atlas('modules', '/spaceships/assets/modules-half.png', '/spaceships/assets/modules-atlas.json');
+    }
 
-        this.spaceshipsCardSize = 256 * 1440 / this.game.canvas.width;
+    create() {
+        this.spaceshipsCardSize = 256 * this.game.canvas.width / 1440;
 
         this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => {
             if (!pointer.isDown) return;
@@ -67,8 +65,6 @@ export default class Spaceships extends Phaser.Scene {
     }
 
     drawSpaceshipOf(player: Player, index: number, count: number): void {
-        console.log(this.textures.get('modules'));
-
         if (this.spaceshipDrawers[player.link] === undefined) {
             const spaceshipPosition = spaceshipConfigurations[count - 1][index];
 
@@ -95,7 +91,7 @@ export default class Spaceships extends Phaser.Scene {
 
         for (let link of Object.keys(this.spaceshipDrawers)) {
             for (let shape of this.spaceshipDrawers[link].moduleShapes) {
-                shape.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+                shape.on('pointerdown', () => {
                     let module = shape.getData('module') as Module;
 
                     if (!check(module, parseInt(link)))

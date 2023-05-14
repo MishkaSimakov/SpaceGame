@@ -19,8 +19,6 @@ export default class RebuildSpaceshipManager {
     }
 
     setIsRebuildSpaceshipAllowed(allowed: boolean): void {
-        console.log("rebuild spaceship allowed", allowed);
-
         this.isRebuildingSpaceship = allowed;
 
         if (allowed) {
@@ -170,6 +168,9 @@ export default class RebuildSpaceshipManager {
 
     protected removeEvents() {
         for (let shape of this.game.spaceshipDrawers[this.player.link].moduleShapes) {
+            if (shape.getData('module').isMain)
+                continue;
+
             shape.removeAllListeners('drag');
             shape.removeAllListeners('dragend');
             shape.removeAllListeners('dragstart');

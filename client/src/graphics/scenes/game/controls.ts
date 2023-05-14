@@ -28,7 +28,7 @@ export default class Controls extends Phaser.Scene {
     }
 
     create() {
-        this.handCardSize = 128 * 1440 / this.game.canvas.width;
+        this.handCardSize = 128 * this.game.canvas.width / 1440;
 
         this.handDrawer = new HandDrawer(this.gameManager, this.handCardSize, this);
         this.topBarDrawer = new TopBarDrawer(this);
@@ -48,12 +48,13 @@ export default class Controls extends Phaser.Scene {
 
     rebuildSpaceship(): Promise<void> {
         return new Promise((resolve) => {
-            this.topBarDrawer.setStatus("Перестрйка корабля");
+            this.topBarDrawer.setStatus("Перестройка корабля");
 
             this.topBarDrawer.addButtons([{
                 text: "Далее",
                 color: COLORS.BUTTON.PRIMARY,
                 onClick: () => {
+                    this.topBarDrawer.clearStatus();
                     this.topBarDrawer.removeButtons();
 
                     resolve();
@@ -85,6 +86,8 @@ export default class Controls extends Phaser.Scene {
                     this.showChoosePlayerForAttackModal(players).then((result?: number) => {
                         if (result !== undefined) {
                             this.topBarDrawer.removeButtons();
+                            this.topBarDrawer.clearStatus();
+
                             resolve(result);
                         }
 
@@ -99,6 +102,7 @@ export default class Controls extends Phaser.Scene {
                     color: COLORS.BUTTON.PRIMARY,
                     onClick: () => {
                         this.topBarDrawer.removeButtons();
+                        this.topBarDrawer.clearStatus();
 
                         resolve();
                     }
@@ -134,30 +138,6 @@ export default class Controls extends Phaser.Scene {
                     }
                 });
             });
-        });
-    }
-
-    askForRunaway() {
-        return new Promise((resolve: (isRunningAway: boolean) => void, reject) => {
-            let modal = new Modal(this);
-
-            modal.setTitle("Will you runaway?");
-
-            modal.addLine("No, I will turn my enemy into dust")
-                .setInteractive()
-                .on('pointerdown', () => {
-                    resolve(false);
-
-                    modal.destroy();
-                });
-
-            modal.addLine("Yes, I think I will be turned into dust")
-                .setInteractive()
-                .on('pointerdown', () => {
-                    resolve(true);
-
-                    modal.destroy();
-                });
         });
     }
 

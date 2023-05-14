@@ -33,6 +33,8 @@ export default class EventCardsEventListener extends BaseEventListener {
             this.controls().topBarDrawer.setStatus("Выберите игрока");
 
             this.game.controlsScene.chooseFromList("Choose player", playersWithCards.map(v => v.toString())).then((index: number) => {
+                this.controls().topBarDrawer.clearStatus();
+
                 callback(playersWithCards[index]);
             });
         });
@@ -46,13 +48,21 @@ export default class EventCardsEventListener extends BaseEventListener {
                 } else {
                     return (card as Event).description;
                 }
-            })).then(callback);
+            })).then((cardIndex: number) => {
+                this.controls().topBarDrawer.clearStatus();
+
+                callback(cardIndex);
+            });
         });
 
         this.socket.on('chooseCardsToDiscardAndTakeAnother', (cards: (Module | Event)[], callback: (indexes: number[]) => void) => {
             this.controls().topBarDrawer.setStatus("Выберите до 2-х карт");
 
-            this.game.controlsScene.chooseCards(cards, 2).then(callback);
+            this.game.controlsScene.chooseCards(cards, 2).then((indexes: number[]) => {
+                this.controls().topBarDrawer.clearStatus();
+
+                callback(indexes);
+            });
         });
 
         this.socket.on('chooseModulesToMoveDamage', (moveDamageReason: MoveDamageReason, callback?: (modules?: {
@@ -90,6 +100,7 @@ export default class EventCardsEventListener extends BaseEventListener {
                         callback(modules.map((m) => m.getPosition()));
 
                         this.controls().topBarDrawer.removeButtons();
+                        this.controls().topBarDrawer.clearStatus();
                         this.game.spaceshipsScene.endChoosingModule();
                     }
                 }]);
@@ -120,6 +131,7 @@ export default class EventCardsEventListener extends BaseEventListener {
                     callback(module.getPosition());
 
                     this.controls().topBarDrawer.removeButtons();
+                    this.controls().topBarDrawer.clearStatus();
                     this.game.spaceshipsScene.endChoosingModule();
                 }
             }, {
@@ -129,6 +141,7 @@ export default class EventCardsEventListener extends BaseEventListener {
                     callback();
 
                     this.controls().topBarDrawer.removeButtons();
+                    this.controls().topBarDrawer.clearStatus();
                     this.game.spaceshipsScene.endChoosingModule();
                 }
             }]);
@@ -160,6 +173,7 @@ export default class EventCardsEventListener extends BaseEventListener {
                     callback(link, module.getPosition());
 
                     this.controls().topBarDrawer.removeButtons();
+                    this.controls().topBarDrawer.clearStatus();
                     this.game.spaceshipsScene.endChoosingModule();
                 }
             }, {
@@ -169,6 +183,7 @@ export default class EventCardsEventListener extends BaseEventListener {
                     callback();
 
                     this.controls().topBarDrawer.removeButtons();
+                    this.controls().topBarDrawer.clearStatus();
                     this.game.spaceshipsScene.endChoosingModule();
                 }
             }]);
@@ -206,6 +221,7 @@ export default class EventCardsEventListener extends BaseEventListener {
                         callback(selectedSolarPanels[0].getPosition(), selectedSolarPanels[1].getPosition());
 
                     this.controls().topBarDrawer.removeButtons();
+                    this.controls().topBarDrawer.clearStatus();
                     this.game.spaceshipsScene.endChoosingModule();
                 }
             }]);
@@ -237,6 +253,7 @@ export default class EventCardsEventListener extends BaseEventListener {
                     callback(selectedModule.getPosition());
 
                     this.controls().topBarDrawer.removeButtons();
+                    this.controls().topBarDrawer.clearStatus();
                     this.game.spaceshipsScene.endChoosingModule();
                 }
             }]);
@@ -246,6 +263,8 @@ export default class EventCardsEventListener extends BaseEventListener {
             this.controls().topBarDrawer.setStatus("Переставьте карточки")
 
             this.controls().permuteCards(cards).then((order: number[]) => {
+                this.controls().topBarDrawer.clearStatus();
+
                 callback(order);
             });
         });
@@ -254,6 +273,8 @@ export default class EventCardsEventListener extends BaseEventListener {
             this.controls().topBarDrawer.setStatus("Переставьте карточки")
 
             this.controls().permuteCards(cards).then((order: number[]) => {
+                this.controls().topBarDrawer.clearStatus();
+
                 callback(order);
             });
         });
@@ -287,6 +308,7 @@ export default class EventCardsEventListener extends BaseEventListener {
                     callback(selectedModule.getPosition());
 
                     this.controls().topBarDrawer.removeButtons();
+                    this.controls().topBarDrawer.clearStatus();
                     this.game.spaceshipsScene.endChoosingModule();
                 }
             }]);

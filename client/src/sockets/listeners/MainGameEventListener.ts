@@ -62,6 +62,7 @@ export default class MainGameEventListener extends BaseEventListener {
                 color: COLORS.BUTTON.PRIMARY,
                 onClick: () => {
                     this.controls().topBarDrawer.removeButtons();
+                    this.controls().topBarDrawer.clearStatus();
                     this.game.spaceshipsScene.endChoosingModule();
 
                     callback(chosenModule?.getPosition());

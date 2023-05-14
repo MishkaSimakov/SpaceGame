@@ -6,7 +6,6 @@ import {Event, EventTypes, addEvents} from "../../common/events/Event";
 import {MainModule, MainModuleType} from "../../common/modules/MainModule";
 import SmallQuantumProtector from "../../common/modules/SmallQuantumProtector";
 
-import arrayShuffle from "array-shuffle";
 import RepairModule from "../../common/modules/RepairModule";
 import * as modules from "./modules.json";
 import DarkMatterGenerator from "../../common/modules/DarkMatterGenerator";
@@ -17,6 +16,25 @@ import QuantumDestabilizer from "../../common/modules/QuantumDestabilizer";
 import Battery from "../../common/modules/Battery";
 import StructureModule from "../../common/modules/StructureModule";
 import IonDestroyer from "../../common/modules/IonDestroyer";
+// import arrayShuffle from "array-shuffle";
+
+export function arrayShuffle<T>(array: T[]): T[] {
+    let currentIndex = array.length,  randomIndex;
+
+    // While there remain elements to shuffle.
+    while (currentIndex != 0) {
+
+        // Pick a remaining element.
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex--;
+
+        // And swap it with the current element.
+        [array[currentIndex], array[randomIndex]] = [
+            array[randomIndex], array[currentIndex]];
+    }
+
+    return array;
+}
 
 export default class GameData {
     protected modulesStack: Module[] = [];
@@ -71,11 +89,11 @@ export default class GameData {
     ];
 
     protected mainModules: MainModule[] = [
-        new MainModule(MainModuleType.UseModuleSecondTime),
-        new MainModule(MainModuleType.UseModuleSecondTime),
-        new MainModule(MainModuleType.UseModuleSecondTime),
-        new MainModule(MainModuleType.UseModuleSecondTime),
-        new MainModule(MainModuleType.UseModuleSecondTime)
+        new MainModule(1, MainModuleType.DrawAnotherEventCard, {top: 1, right: 1, bottom: 1, left: 2}),
+        new MainModule(2, MainModuleType.DrawAdditionalModuleCard, {top: 2, right: 1, bottom: 2, left: 2}),
+        new MainModule(3, MainModuleType.MoveDamage, {top: 2, right: 2, bottom: 1, left: 1}),
+        new MainModule(4, MainModuleType.UseModuleSecondTime, {top: 2, right: 2, bottom: 2, left: 2}),
+        new MainModule(5, MainModuleType.AttackOrRunaway, {top: 1, right: 1, bottom: 1, left: 1})
     ];
 
     protected moduleDiscards: Module[] = [];
@@ -100,19 +118,19 @@ export default class GameData {
     }
 
     constructor() {
-        // this.modulesStack = arrayShuffle(this.modulesStack);
-        // this.eventsStack = arrayShuffle(this.eventsStack);
-        // this.mainModules = arrayShuffle(this.mainModules);
-
         let modulesObject = Object(modules);
 
         for (let module in modulesObject) {
             for (let configuration of modulesObject[module]["configurations"]) {
                 this.modulesStack.push(
-                    new this.moduleName[module](...configuration)
+                    new this.moduleName[module](configuration[3], configuration[0], configuration[1], configuration[2])
                 );
             }
         }
+
+        this.modulesStack = arrayShuffle(this.modulesStack);
+        this.eventsStack = arrayShuffle(this.eventsStack);
+        this.mainModules = arrayShuffle(this.mainModules);
     }
 
 

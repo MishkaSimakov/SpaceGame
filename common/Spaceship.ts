@@ -28,11 +28,16 @@ export default class Spaceship {
     }
 
     getMainModule(): MainModule {
-        return this.getModulesByType(ModuleTypes.MainModule)[0] as MainModule;
+        let filtered = this.getModulesByType(ModuleTypes.MainModule);
+
+        if (!filtered.length)
+            return undefined;
+
+        return filtered[0] as MainModule;
     }
 
     getMainModuleType(): MainModuleType {
-        return (this.getMainModule() as MainModule).mainModuleType;
+        return (this.getMainModule() as MainModule)?.mainModuleType;
     }
 
     getTotalCapacity(): number {
@@ -146,6 +151,15 @@ export default class Spaceship {
         return connectedModules;
     }
 
+    isAdjacent(first: Module, second: Module) {
+        for (let module of this.getModulesConnectedTo(first)) {
+            if (module === second)
+                return true;
+        }
+
+        return false;
+    }
+
     getModulesByType(type: ModuleTypes): Module[] {
         return this.modules.filter((m) => m.type === type);
     }
@@ -154,9 +168,12 @@ export default class Spaceship {
         return this.getModulesByType(ModuleTypes.AttackModule).length !== 0;
     }
 
-    damage(target: Module, weapon: Module)
-    damage(target: Module, weapon: number)
-    damage(target: Module, weapon: Module | number): Module[] {
+    damage(target: Module, weapon: Module, byNuclearReactor: boolean)
+    damage(target: Module, weapon: number, byNuclearReactor: boolean)
+    damage(target: Module, weapon: Module | number, byNuclearReactor: boolean): {
+        module: Module,
+        byNuclearReactor: boolean
+    }[] {
         let damage: number;
         if (typeof weapon == "number") {
             damage = weapon;
@@ -164,9 +181,12 @@ export default class Spaceship {
             damage = weapon.strength;
         }
 
-        let destroyed: Module[] = [];
+        let destroyed: {
+            module: Module,
+            byNuclearReactor: boolean
+        }[] = [];
 
-        if (this.activatedProtector) {
+        if (this.activatedProtector && this.isAdjacent(target, this.activatedProtector)) {
             if (this.activatedProtector.health > damage) {
                 this.activatedProtector.health -= damage;
 
@@ -174,14 +194,35 @@ export default class Spaceship {
             } else {
                 damage -= this.activatedProtector.health;
 
-                destroyed.push(this.activatedProtector);
+                destroyed.push({
+                    module: this.activatedProtector,
+                    byNuclearReactor: byNuclearReactor
+                });
+
+                this.activatedProtector = undefined;
             }
         }
 
         target.health -= damage;
 
-        if (target.health <= 0)
-            destroyed.push(target);
+        if (target.health <= 0) {
+            destroyed.push({
+                module: target,
+                byNuclearReactor: byNuclearReactor
+            });
+
+            if (target.type === ModuleTypes.NuclearReactor) {
+                for (let module of this.getModulesConnectedTo(target)) {
+                    // handle loop made of nuclear reactors (only one damage to all connected modules)
+                    if (destroyed.filter((d) => d.module === module).length)
+                        continue;
+
+                    destroyed.push(
+                        ...this.damage(module, 1, true)
+                    );
+                }
+            }
+        }
 
         return destroyed;
     }

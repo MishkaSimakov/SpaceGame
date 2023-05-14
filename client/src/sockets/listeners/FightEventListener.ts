@@ -29,6 +29,7 @@ export default class FightEventListener extends BaseEventListener {
                         callback();
 
                     this.controls().topBarDrawer.removeButtons();
+                    this.controls().topBarDrawer.clearStatus();
                     this.game.spaceshipsScene.endChoosingModule();
                 }
             }]);
@@ -47,9 +48,29 @@ export default class FightEventListener extends BaseEventListener {
         });
 
         this.socket.on('willYouRunaway', (callback: (isTryingToRunaway: boolean) => void) => {
-            this.game.controlsScene.askForRunaway().then((isTryingToRunaway: boolean) => {
-                callback(isTryingToRunaway);
-            });
+            this.controls().topBarDrawer.setStatus("Будете ли вы сбегать?")
+
+            this.controls().topBarDrawer.addButtons([{
+                text: "Да",
+                color: COLORS.BUTTON.PRIMARY,
+                onClick: () => {
+                    callback(true);
+
+                    this.controls().topBarDrawer.removeButtons();
+                    this.controls().topBarDrawer.clearStatus();
+                    this.game.spaceshipsScene.endChoosingModule();
+                }
+            }, {
+                text: "Нет",
+                color: COLORS.BUTTON.PRIMARY,
+                onClick: () => {
+                    callback(false);
+
+                    this.controls().topBarDrawer.removeButtons();
+                    this.controls().topBarDrawer.clearStatus();
+                    this.game.spaceshipsScene.endChoosingModule();
+                }
+            }]);
         });
 
         this.socket.on('chooseWeaponAndTarget', (targetPlayerLink: number, callback: (weaponPosition: Vector2, targetPosition: Vector2) => void) => {
@@ -68,6 +89,7 @@ export default class FightEventListener extends BaseEventListener {
                     callback(selectedWeapon.getPosition(), selectedTarget.getPosition());
 
                     this.controls().topBarDrawer.removeButtons();
+                    this.controls().topBarDrawer.clearStatus();
                     this.game.spaceshipsScene.endChoosingModule();
                 }
             }]);
@@ -76,6 +98,9 @@ export default class FightEventListener extends BaseEventListener {
                 selectedWeapon = module;
             }, (module?: Module, playerLink?: number) => {
                 if (playerLink !== this.game.link)
+                    return false;
+
+                if (module.energyCost > this.game.getCurrentPlayer().energy)
                     return false;
 
                 return module.strength > 0;
@@ -103,6 +128,7 @@ export default class FightEventListener extends BaseEventListener {
                     callback(selectedTarget.getPosition());
 
                     this.controls().topBarDrawer.removeButtons();
+                    this.controls().topBarDrawer.clearStatus();
                     this.game.spaceshipsScene.endChoosingModule();
                 }
             }]);

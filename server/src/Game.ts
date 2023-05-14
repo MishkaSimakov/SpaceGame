@@ -1,19 +1,16 @@
 import Player from "../../common/Player";
 import GameData from "./GameData";
 import Spaceship from "../../common/Spaceship";
-import SpaceSolver from "../../common/modules/SpaceSolver";
 import {Server, Socket} from "socket.io";
 import {plainToClass} from "../../common/PlainToClass";
 import FightManager from "./Fight/FightManager";
 import Module, {isModule, ModuleTypes} from "../../common/modules/Module";
 import {Event, EventTypes} from "../../common/events/Event";
 import performEvent from "./EventsPerformManager";
-import SolarPanel from "../../common/modules/SolarPanel";
 import {MainModuleType} from "../../common/modules/MainModule";
 import {AttackReason, MoveDamageReason} from "../../common/Types";
 import Vector2 from "../../common/Vector2";
 import {HAS_PLAYERS_DATA} from "../../common/Sockets";
-import Logger from "./Logger";
 
 enum GameState {
     WAIT_FOR_PLAYERS,
@@ -97,27 +94,9 @@ export default class Game {
 
                     // TODO: add check that not main
 
-                    let destroyed = target.spaceship.damage(targetModule, 1);
+                    let destroyed = target.spaceship.damage(targetModule, 1, false);
 
-                    for (let module of destroyed) {
-                        console.log(`   Module at x: ${module.x}, y: ${module.y} has been destroyed`);
-
-                        target.spaceship.removeModule(module);
-
-                        if (module.type === ModuleTypes.MainModule) {
-                            return;
-                        }
-
-                        module.health = module.totalHealth;
-                        this.gameData.discardCards([module]);
-                    }
-
-                    if (destroyed.length !== 0) {
-                        let unconnectedModules = target.spaceship.getUnconnectedModules();
-
-                        target.spaceship.removeModule(unconnectedModules);
-                        target.hand.push(...unconnectedModules)
-                    }
+                    this.handleDestroyedModules(target, player, destroyed, true);
 
                     if (player.link === this.currentEmitPlayerLink) {
                         this.currentEmitFunction();
@@ -125,6 +104,47 @@ export default class Game {
                 });
             }
         });
+    }
+
+    handleDestroyedModules(target: Player, attacker: Player, destroyedModules: { module: Module, byReactor: boolean }[], isEvent: boolean) {
+        for (let destroyedInfo of destroyedModules) {
+            let module = destroyedInfo.module
+
+            console.log(`   Module at x: ${module.x}, y: ${module.y} has been destroyed`);
+
+            target.spaceship.removeModule(module);
+
+            if (module.type === ModuleTypes.MainModule) {
+                return;
+            }
+
+            module.health = module.totalHealth;
+
+            if (isEvent || destroyedInfo.byReactor) {
+                this.gameData.discardCards([module]);
+            } else {
+                attacker.hand.push(module);
+            }
+        }
+
+        if (destroyedModules.length !== 0) {
+            let unconnectedModules = target.spaceship.getUnconnectedModules();
+
+            target.spaceship.removeModule(unconnectedModules);
+            target.hand.push(...unconnectedModules);
+        }
+
+        // dark matter generator destroyed
+        if (destroyedModules.filter((d) => d.module.type === ModuleTypes.DarkMatterGenerator).length) {
+            let modulesExceptMain = target.spaceship.modules.filter(m => m.type !== ModuleTypes.MainModule);
+
+            target.spaceship.removeModule(modulesExceptMain);
+            target.hand.push(...modulesExceptMain);
+        }
+
+        if (!target.spaceship.getMainModule()) {
+            target.setLose();
+        }
     }
 
     isPlayerInFight(player: Player): boolean {
@@ -197,16 +217,8 @@ export default class Game {
 
     createPlayer(): Player {
         let player = new Player();
-
-        //  create spaceship
         player.spaceship = new Spaceship(this.gameData.popMainModule());
-        player.spaceship.addModule(new SpaceSolver(1, 1, 1, 1), 1, 0);
-        player.spaceship.addModule(new SolarPanel(1, 1, 1, 1), 2, 0);
-
-        player.spaceship.getModuleByPosition(1, 0).health -= 5;
-
         player.hand = this.gameData.popModuleCards(this.gameData.startCardsCount);
-        player.hand.push(...this.gameData.popEventCards(1));
 
         return player;
     }
@@ -361,7 +373,7 @@ export default class Game {
             let module = this.currentPlayer.spaceship.getModuleByPosition(modulePosition);
             let repairModule = this.currentPlayer.spaceship.getModulesByType(ModuleTypes.RepairModule)[0];
 
-            this.currentPlayer.energy -= repairModule.energyCost;
+            this.currentPlayer.energy -= energyCost;
             module.health = Math.min(module.health + 2, module.totalHealth);
 
             return true;
@@ -376,7 +388,8 @@ export default class Game {
         let isRepaired = await this.useRepairModule(repairModuleCost);
 
         if (!this.currentPlayer.usedRepairOrAttackModuleSecondTimeOnThisTurn && isRepaired
-            && this.currentPlayer.spaceship.getMainModuleType() === MainModuleType.UseModuleSecondTime) {
+            && this.currentPlayer.spaceship.getMainModuleType() === MainModuleType.UseModuleSecondTime
+            && this.currentPlayer.spaceship.hasDamagedModules()) {
             let useSecondTime = await this.askForUseModuleSecondTime(this.currentPlayer, ModuleTypes.RepairModule);
 
             if (!useSecondTime)
@@ -645,7 +658,6 @@ export default class Game {
     }
 
     async makeGameIteration() {
-        // set current turn player
         console.log(`Turn of player ${this.currentPlayer.link}`);
 
         this.currentPlayer.usedRepairOrAttackModuleSecondTimeOnThisTurn = false;
@@ -659,7 +671,7 @@ export default class Game {
         await this.rebuildSpaceshipPhase();
 
         // fix spaceship
-        if (this.currentPlayer.spaceship.hasRepairModule())
+        if (this.currentPlayer.spaceship.hasRepairModule() && this.currentPlayer.spaceship.hasDamagedModules())
             await this.fixSpaceshipPhase();
 
         // ask for attack

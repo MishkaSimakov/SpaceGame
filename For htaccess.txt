@@ -1,0 +1,40 @@
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        Options -MultiViews -Indexes
+    </IfModule>
+
+    RewriteEngine On
+
+    # Handle Authorization Header
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Redirect Trailing Slashes If Not A Folder...
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} !^/socket.io
+    RewriteCond %{REQUEST_URI} (.+)/$
+    RewriteRule ^ %1 [L,R=301]
+
+    # Send Requests To Front Controller...
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_URI} !^/spaceships
+    RewriteCond %{REQUEST_URI} !^/socket.io
+    RewriteRule ^ index.php [L]
+
+    RewriteCond %{REQUEST_URI} /spaceships(.*)
+    RewriteRule ^(.+) http://127.0.0.1:3000/$1 [NE,P]
+
+    RewriteCond %{REQUEST_URI} /socket.io(.*)
+    RewriteRule ^(.+) http://127.0.0.1:3000/$1 [NE,P]
+</IfModule>
+
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresDefault A0
+    ExpiresByType text/html A0
+    # Set up caching on media files for 1 year
+    <FilesMatch "\.(jpg|png|gif|js|css|ico|woff|woff2|eot|svg|ttf)$">
+        ExpiresDefault A31536000
+    </FilesMatch>
+</IfModule>

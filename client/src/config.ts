@@ -1,8 +1,10 @@
+// let config: Phaser.Types.Core.GameConfig = {
 let config = {
     type: Phaser.AUTO,
     scale: {
-        width: window.innerWidth,
-        height: window.innerHeight,
+        mode: Phaser.Scale.FIT,
+        width: window.innerWidth * window.devicePixelRatio,
+        height: window.innerHeight * window.devicePixelRatio,
     },
     parent: 'app',
     dom: {

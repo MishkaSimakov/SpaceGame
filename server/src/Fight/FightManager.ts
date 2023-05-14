@@ -32,6 +32,11 @@ export default class FightManager {
     }
 
     async fight(): Promise<Player | undefined> {
+        if (!this.first.canDamage() && !this.second.canDamage()) {
+            this.isFightEnded = true;
+            return;
+        }
+
         while (!this.isFightEnded) {
             this.gameManager.setPlayersData();
 
@@ -44,6 +49,14 @@ export default class FightManager {
 
             this.isFirstPlayerTurn = !this.isFirstPlayerTurn;
         }
+
+        if (this.first.spaceship.activatedProtector)
+            this.first.spaceship.activatedProtector.isActivated = false;
+        this.first.spaceship.activatedProtector = undefined;
+
+        if (this.second.spaceship.activatedProtector)
+            this.second.spaceship.activatedProtector.isActivated = false;
+        this.second.spaceship.activatedProtector = undefined;
 
         console.log(`Fight has ended. No one destroyed`);
     }
@@ -67,25 +80,31 @@ export default class FightManager {
         if (attacker.canDamage()) {
             let usedWeapon = await this.chooseWeaponAndTarget(attacker, target);
 
+            attacker.energy -= usedWeapon.energyCost;
+
             if (target.spaceship.getModulesByType(ModuleTypes.MainModule).length === 0) {
                 this.isFightEnded = true;
                 return target;
             }
 
-            if (attacker.spaceship.getMainModuleType() === MainModuleType.UseModuleSecondTime) {
+            if (attacker.spaceship.getMainModuleType() === MainModuleType.UseModuleSecondTime && attacker.energy >= usedWeapon.energyCost * 2) {
                 let useSecondTime = await this.gameManager.askForUseModuleSecondTime(attacker, usedWeapon.type);
 
                 if (useSecondTime) {
+                    attacker.energy -= usedWeapon.energyCost * 2;
+
                     let targetModule = await this.chooseTarget(attacker, target, usedWeapon);
 
                     this.damage(attacker, target, usedWeapon, targetModule);
                 }
             }
-
-            target.spaceship.activatedProtector = undefined;
         }
 
-        if (target.spaceship.getModulesByType(ModuleTypes.MainModule).length === 0) {
+        if (target.spaceship.activatedProtector)
+            target.spaceship.activatedProtector.isActivated = false;
+        target.spaceship.activatedProtector = undefined;
+
+        if (!target.spaceship.getMainModule()) {
             this.isFightEnded = true;
             return target;
         }
@@ -101,6 +120,8 @@ export default class FightManager {
             if (protectorPosition !== undefined) {
                 let protector = target.spaceship.getModuleByPosition(protectorPosition);
                 target.spaceship.setProtector(protector);
+
+                protector.isActivated = true;
             }
         });
     }
@@ -149,26 +170,8 @@ export default class FightManager {
     }
 
     protected damage(attacker: Player, target: Player, weapon: Module, targetModule: Module) {
-        let destroyed = target.spaceship.damage(targetModule, weapon);
+        let destroyed = target.spaceship.damage(targetModule, weapon, false);
 
-        for (let module of destroyed) {
-            console.log(`   Module at x: ${module.x}, y: ${module.y} has been destroyed`);
-
-            target.spaceship.removeModule(module);
-
-            if (module.type === ModuleTypes.MainModule) {
-                return;
-            }
-
-            module.health = module.totalHealth;
-            attacker.hand.push(module);
-        }
-
-        if (destroyed.length !== 0) {
-            let unconnectedModules = target.spaceship.getUnconnectedModules();
-
-            target.spaceship.removeModule(unconnectedModules);
-            target.hand.push(...unconnectedModules)
-        }
+        this.gameManager.handleDestroyedModules(target, attacker, destroyed, false);
     }
 }

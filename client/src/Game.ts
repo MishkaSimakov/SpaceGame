@@ -34,7 +34,7 @@ export default class Game {
         this.rebuildSpaceshipManager = new RebuildSpaceshipManager(this.spaceshipsScene, this.controlsScene);
         this.link = parseInt(window.location.href.split('/').pop());
 
-        // this.socketManager = new SocketManager(this);
+        this.socketManager = new SocketManager(this);
     }
 
     setPlayersData(players: Player[]) {

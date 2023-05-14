@@ -66,8 +66,10 @@ let eventsPerformFunctions: Record<EventTypes, (game: Game, event: Event) => Pro
             // TODO: check if this module doesn't exist
 
             game.currentPlayer.spaceship.removeModule(module);
-
             game.gameData.discardCards([module]);
+
+            let unconnected = game.currentPlayer.spaceship.getUnconnectedModules();
+            game.currentPlayer.hand.push(...unconnected);
         });
     },
     [EventTypes.DestroyTwoSolarPanelsOnYourSpaceship]: async (game: Game) => {
@@ -85,6 +87,9 @@ let eventsPerformFunctions: Record<EventTypes, (game: Game, event: Event) => Pro
 
             game.currentPlayer.spaceship.removeModule(solarPanels);
             game.gameData.discardCards(solarPanels);
+
+            let unconnected = game.currentPlayer.spaceship.getUnconnectedModules();
+            game.currentPlayer.hand.push(...unconnected);
         });
     },
     [EventTypes.AttackRight]: async (game: Game) => {
@@ -138,19 +143,9 @@ let eventsPerformFunctions: Record<EventTypes, (game: Game, event: Event) => Pro
         let playerToDamage: Player = game.getPlayerByLink(damageData.playerLink);
         let moduleToDamage: Module = playerToDamage.spaceship.getModuleByPosition(damageData.modulePosition);
 
-        moduleToDamage.health -= damageToDeal;
+        let destroyed = playerToDamage.spaceship.damage(moduleToDamage, damageToDeal, false);
 
-        if (moduleToDamage.health <= 0) {
-            playerToDamage.spaceship.removeModule(moduleToDamage);
-
-            let unconnected = playerToDamage.spaceship.getUnconnectedModules();
-            playerToDamage.spaceship.removeModule(unconnected);
-
-            playerToDamage.hand.push(...unconnected);
-
-            moduleToDamage.health = moduleToDamage.totalHealth;
-            game.currentPlayer.hand.push(moduleToDamage);
-        }
+        game.handleDestroyedModules(playerToDamage, game.currentPlayer, destroyed, true);
     },
     [EventTypes.TossDiceAndGetEnergy]: async (game: Game) => {
         let energyCount = tossDice() <= 4 ? 5 : 10;

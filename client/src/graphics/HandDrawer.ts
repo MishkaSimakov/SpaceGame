@@ -39,8 +39,6 @@ export default class HandDrawer {
                 cardShape = drawEventCard(this.scene, card as Event, position, this.cardSize);
             }
 
-            cardShape.setScale(0.5, 0.5);
-
             if (isEvent(card) && (card as Event).type === EventTypes.SaveCardAndThenDealDamage) {
                 this.scene.input.setDraggable(cardShape, true);
 

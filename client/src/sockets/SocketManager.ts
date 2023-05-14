@@ -50,7 +50,7 @@ export default class SocketManager {
         });
 
         this.on('disconnect', () => {
-            window.location.href = '/spaceships/lobby';
+            // window.location.href = '/spaceships/lobby';
         })
 
         this.on('getLink', (callback: (link: number) => void) => {

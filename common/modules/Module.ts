@@ -32,7 +32,7 @@ class Module {
     name: string;
     description?: string;
 
-    connectors: Record<string, number>;
+    connectors: { top: number, right: number, bottom: number, left: number };
     strength: number = 0;
     capacity: number = 0;
     energyCost: number = 0;
@@ -45,8 +45,9 @@ class Module {
     totalHealth: number;
     health: number;
     rotation: number = 0;
+    isActivated: boolean = false;
 
-    constructor(connectors: Record<string, number>) {
+    constructor(connectors: { top: number, right: number, bottom: number, left: number }) {
         this.connectors = connectors;
     }
 
