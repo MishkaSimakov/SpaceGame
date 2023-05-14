@@ -1,5 +1,5 @@
 import Spaceship from "./Spaceship";
-import Module, {isModule} from "./modules/Module";
+import Module, {isModule, ModuleTypes} from "./modules/Module";
 import {Event} from "./events/Event";
 import {Options} from "./PlainToClass";
 
@@ -90,6 +90,16 @@ export default class Player {
             return false;
 
         return Math.min(...weaponCost) <= this.energy;
+    }
+
+    canProtect(): boolean {
+        let protectorCost = this.spaceship.modules.filter(m => m.type === ModuleTypes.QuantumProtector || m.type === ModuleTypes.SmallQuantumProtector)
+            .map(m => m.energyCost);
+
+        if (protectorCost.length === 0)
+            return false;
+
+        return Math.min(...protectorCost) <= this.energy;
     }
 
     static getPropertiesMap(): Options {

@@ -67,7 +67,7 @@ export default class FightManager {
 
         console.log(`Fight iteration. Player ${attacker.link} attack player ${target.link}`);
 
-        if (target.spaceship.hasProtectors())
+        if (target.canProtect())
             await this.chooseProtectors(attacker, target);
 
         let isEscaped = await this.askForRunaway(attacker);
@@ -118,10 +118,12 @@ export default class FightManager {
     protected async chooseProtectors(attacker: Player, target: Player) {
         await this.gameManager.emitToPlayerAndWait(target, 'chooseProtectors', (protectorPosition?: Vector2) => {
             if (protectorPosition !== undefined) {
-                let protector = target.spaceship.getModuleByPosition(protectorPosition);
+                let protector: Module = target.spaceship.getModuleByPosition(protectorPosition);
                 target.spaceship.setProtector(protector);
 
                 protector.isActivated = true;
+
+                target.energy -= protector.energyCost;
             }
         });
     }

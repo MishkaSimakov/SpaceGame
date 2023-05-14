@@ -53,7 +53,7 @@ export default class Game {
         this.rebuildSpaceshipManager.player = this.getCurrentPlayer();
     }
 
-    getCurrentPlayer(): Player|undefined {
+    getCurrentPlayer(): Player | undefined {
         return this.getPlayerByLink(this.link);
     }
 

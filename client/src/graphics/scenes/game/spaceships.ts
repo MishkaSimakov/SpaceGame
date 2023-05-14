@@ -3,6 +3,8 @@ import SpaceshipDrawer from "../../SpaceshipDrawer";
 import Vector2 from "../../../../../common/Vector2";
 import Module from "../../../../../common/modules/Module";
 import Game from "../../../Game";
+import { Pinch } from 'phaser3-rex-plugins/plugins/gestures.js';
+import config from "../../../config";
 
 let spaceshipConfigurations: Vector2[][] = [
     [new Vector2(0, 0)],
@@ -34,6 +36,8 @@ export default class Spaceships extends Phaser.Scene {
     }
 
     create() {
+        let pinch = new Pinch(this);
+
         this.spaceshipsCardSize = 256 * this.game.canvas.width / 1440;
 
         this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => {
@@ -61,6 +65,10 @@ export default class Spaceships extends Phaser.Scene {
                     this.cameras.main.zoom = newZoom;
                 }
             }
+        });
+
+        pinch.on('pinch', (pinch) => {
+            this.cameras.main.zoom *= pinch.scaleFactor;
         });
     }
 

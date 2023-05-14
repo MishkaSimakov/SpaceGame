@@ -145,9 +145,9 @@ export default class Controls extends Phaser.Scene {
         let image: Phaser.GameObjects.Container;
 
         if (isModule(card)) {
-            image = drawModuleCard(this, card as Module, new Vector2(this.game.canvas.width / 2, this.game.canvas.height / 2), 1000);
+            image = drawModuleCard(this, card as Module, new Vector2(this.game.canvas.width / 2, this.game.canvas.height / 2), this.handCardSize * 3);
         } else {
-            image = drawEventCard(this, card as Event, new Vector2(this.game.canvas.width / 2, this.game.canvas.height / 2), 1000);
+            image = drawEventCard(this, card as Event, new Vector2(this.game.canvas.width / 2, this.game.canvas.height / 2), this.handCardSize * 3);
         }
 
         image.setScale(2);
@@ -172,30 +172,6 @@ export default class Controls extends Phaser.Scene {
                         modal.destroy();
                     });
             }
-        });
-    }
-
-    chooseCardType(): Promise<string> {
-        return new Promise(resolve => {
-            let modal = new Modal(this);
-
-            modal.setTitle("Выберите тип карты");
-
-            modal.addLine("Карта строительства")
-                .setInteractive()
-                .on('pointerdown', () => {
-                    resolve("module");
-
-                    modal.destroy();
-                });
-
-            modal.addLine("Карта действия")
-                .setInteractive()
-                .on('pointerdown', () => {
-                    resolve("event");
-
-                    modal.destroy();
-                });
         });
     }
 
@@ -490,6 +466,7 @@ export default class Controls extends Phaser.Scene {
                 color: COLORS.BUTTON.PRIMARY,
                 onClick: () => {
                     this.topBarDrawer.removeButtons();
+                    this.topBarDrawer.clearStatus();
                     this.gameManager.spaceshipsScene.endChoosingModule();
 
                     resolve(true);
@@ -499,6 +476,7 @@ export default class Controls extends Phaser.Scene {
                 color: COLORS.BUTTON.PRIMARY,
                 onClick: () => {
                     this.topBarDrawer.removeButtons();
+                    this.topBarDrawer.clearStatus();
                     this.gameManager.spaceshipsScene.endChoosingModule();
 
                     resolve(false);

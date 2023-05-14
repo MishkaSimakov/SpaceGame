@@ -37,7 +37,7 @@ export default class Game {
     ENERGY_TO_ATTACK_BY_COMMAND_MODULE: number = 7;
     ENERGY_TO_MOVE_DAMAGE_BY_COMMAND_MODULE: number = 4;
     ENERGY_TO_DRAG_ANOTHER_EVENT_CARD_BY_MAIN_MODULE: number = 4;
-    ENERGY_TO_DRAG_ADDITIONAL_CARD_BY_MAIN_MODULE: number = 4;
+    ENERGY_TO_DRAG_ADDITIONAL_CARD_BY_MAIN_MODULE: number = 15;
 
     currentFight?: FightManager;
 
@@ -106,7 +106,10 @@ export default class Game {
         });
     }
 
-    handleDestroyedModules(target: Player, attacker: Player, destroyedModules: { module: Module, byReactor: boolean }[], isEvent: boolean) {
+    handleDestroyedModules(target: Player, attacker: Player, destroyedModules: {
+        module: Module,
+        byReactor: boolean
+    }[], isEvent: boolean) {
         for (let destroyedInfo of destroyedModules) {
             let module = destroyedInfo.module
 
@@ -351,7 +354,9 @@ export default class Game {
 
     setRebuildSpaceshipData(player: Player) {
         if (this.currentPlayer.socketId !== player.socketId) {
-            throw new Error("Wrong player has rebuilt spaceship");
+            console.warn(`Wrong player has rebuilt spaceship (expected: ${this.currentPlayer.socketId}, get: ${player.socketId})`)
+
+            // throw new Error("Wrong player has rebuilt spaceship");
         }
 
         if (!this.currentPlayer.canBeTurnedInto(player)) {
@@ -414,10 +419,14 @@ export default class Game {
             return;
         }
 
+        let energyCost = this.currentPlayer.spaceship.getModulesByType(ModuleTypes.AttackModule)[0].energyCost;
+        this.currentPlayer.energy -= energyCost;
+
         await this.attackPlayer(attackedPlayer);
 
         if (!this.currentPlayer.usedRepairOrAttackModuleSecondTimeOnThisTurn
-            && this.currentPlayer.spaceship.getMainModuleType() === MainModuleType.UseModuleSecondTime) {
+            && this.currentPlayer.spaceship.getMainModuleType() === MainModuleType.UseModuleSecondTime
+            && this.currentPlayer.energy >= energyCost * 2) {
             let useSecondTime = await this.askForUseModuleSecondTime(this.currentPlayer, ModuleTypes.AttackModule);
 
             if (!useSecondTime)
@@ -425,6 +434,7 @@ export default class Game {
 
             console.log("   Player use attack module for second time");
 
+            this.currentPlayer.energy -= energyCost * 2;
             this.currentPlayer.usedRepairOrAttackModuleSecondTimeOnThisTurn = true;
 
             let attackedPlayer = await this.choosePlayerForAttack(AttackReason.UsingAttackModuleSecondTime);
@@ -491,6 +501,8 @@ export default class Game {
                             if (!drawAnotherEventCard)
                                 return;
 
+                            this.currentPlayer.energy -= this.ENERGY_TO_DRAG_ANOTHER_EVENT_CARD_BY_MAIN_MODULE;
+
                             this.gameData.discardCards([event]);
                             drawAnother = true;
 
@@ -523,6 +535,7 @@ export default class Game {
                             if (!drawAdditionalModuleCard)
                                 return;
 
+                            this.currentPlayer.energy -= this.ENERGY_TO_DRAG_ADDITIONAL_CARD_BY_MAIN_MODULE;
                             drawAdditional = true;
 
                             console.log(`   Player draw additional module card`);

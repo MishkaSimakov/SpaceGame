@@ -5,6 +5,7 @@
     "array-shuffle": "^3.0.0",
     "cors": "^2.8.5",
     "express": "^4.18.1",
+    "forever": "^4.0.3",
     "serve-static": "^1.15.0",
     "socket.io": "^4.5.1",
     "ts-node": "^10.9.1"

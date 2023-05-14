@@ -46,10 +46,10 @@ let eventsPerformFunctions: Record<EventTypes, (game: Game, event: Event) => Pro
         game.currentPlayer.hand.push(...game.gameData.popModuleCards(2));
     },
     [EventTypes.LooseFiveEnergy]: async (game: Game) => {
-        game.currentPlayer.energy -= 5;
+        game.currentPlayer.energy -= 1;
     },
     [EventTypes.TakeFiveEnergy]: async (game: Game) => {
-        game.currentPlayer.energy += 5;
+        game.currentPlayer.energy += 1;
     },
     [EventTypes.SkipNextTurn]: async (game: Game) => {
         game.currentPlayer.skipNextTurn = true;
@@ -127,7 +127,7 @@ let eventsPerformFunctions: Record<EventTypes, (game: Game, event: Event) => Pro
         game.currentPlayer.hand.push(...game.gameData.popModuleCards(cardsCount));
     },
     [EventTypes.TossDiceAndDealDamage]: async (game: Game) => {
-        let damageToDeal = tossDice() <= 4 ? 2 : 4;
+        let damageToDeal = tossDice() <= 4 ? 1 : 2;
 
         let damageData: {
             playerLink: number,
@@ -148,7 +148,7 @@ let eventsPerformFunctions: Record<EventTypes, (game: Game, event: Event) => Pro
         game.handleDestroyedModules(playerToDamage, game.currentPlayer, destroyed, true);
     },
     [EventTypes.TossDiceAndGetEnergy]: async (game: Game) => {
-        let energyCount = tossDice() <= 4 ? 5 : 10;
+        let energyCount = tossDice() <= 4 ? 1 : 2;
 
         game.currentPlayer.energy += energyCount;
     },
@@ -187,9 +187,7 @@ let eventsPerformFunctions: Record<EventTypes, (game: Game, event: Event) => Pro
         });
 
         let chosenCard = chosenPlayer.hand[chosenCardIndex];
-
-        chosenPlayer.hand = chosenPlayer.hand.slice(chosenCardIndex, 1);
-
+        chosenPlayer.hand.splice(chosenCardIndex, 1);
         game.currentPlayer.hand.push(chosenCard);
     },
     [EventTypes.DiscardCardAndRepairSpaceship]: async (game: Game) => {

@@ -77,7 +77,29 @@ export default class MainGameEventListener extends BaseEventListener {
         });
 
         this.socket.on('chooseCardType', (callback: (cardType: string) => void) => {
-            this.controls().chooseCardType().then(callback);
+            this.controls().topBarDrawer.setStatus("Выберите тип карты")
+
+            this.controls().topBarDrawer.addButtons([{
+                text: "Строительства",
+                color: COLORS.BUTTON.PRIMARY,
+                onClick: () => {
+                    callback('module');
+
+                    this.controls().topBarDrawer.removeButtons();
+                    this.controls().topBarDrawer.clearStatus();
+                    this.game.spaceshipsScene.endChoosingModule();
+                }
+            }, {
+                text: "Действия",
+                color: COLORS.BUTTON.PRIMARY,
+                onClick: () => {
+                    callback('event');
+
+                    this.controls().topBarDrawer.removeButtons();
+                    this.controls().topBarDrawer.clearStatus();
+                    this.game.spaceshipsScene.endChoosingModule();
+                }
+            }]);
         });
 
         this.socket.on('discardCards', (callback: (discardedCardsIndexes: number[]) => void) => {
