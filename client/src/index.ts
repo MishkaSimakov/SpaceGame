@@ -10,6 +10,10 @@ function loadFont(name, url) {
     });
 }
 
+function redirectToLobby() {
+    location.href = '/spaceships/lobby';
+}
+
 loadFont("Exo2", "/spaceships/Exo2-Bold.ttf");
 
 let regex = /spaceships\/game\/[0-9]{6}$/
@@ -23,7 +27,21 @@ if (regex.test(window.location.href)) {
     //     );
     // });
 
-    let game = new Game();
+    let link = parseInt(window.location.href.split('/').pop());
+
+    fetch('/spaceships/check/' + link)
+        .then(response => {
+            return response.text();
+        })
+        .then(text => {
+            if (text === 'true') {
+                let game = new Game();
+            } else {
+                redirectToLobby();
+            }
+        });
+
+
 } else {
-    location.href = '/spaceships/lobby';
+    redirectToLobby();
 }

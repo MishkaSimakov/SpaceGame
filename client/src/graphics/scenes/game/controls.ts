@@ -16,8 +16,6 @@ export default class Controls extends Phaser.Scene {
     topBarDrawer: TopBarDrawer;
     gameManager: Game;
 
-    handCardSize: number;
-
     constructor(game: Game) {
         super({
             key: 'Controls',
@@ -28,9 +26,7 @@ export default class Controls extends Phaser.Scene {
     }
 
     create() {
-        this.handCardSize = 128 * this.game.canvas.width / 1440;
-
-        this.handDrawer = new HandDrawer(this.gameManager, this.handCardSize, this);
+        this.handDrawer = new HandDrawer(this.gameManager, this);
         this.topBarDrawer = new TopBarDrawer(this);
 
         this.input.dragDistanceThreshold = 10;
@@ -43,7 +39,7 @@ export default class Controls extends Phaser.Scene {
         // this.topBarDrawer.drawPlayersList(this.gameManager.players, this.gameManager.link, (link: number) => {
         //     this.gameManager.spaceshipsScene.panToPlayerWithLink(link);
         // });
-        this.topBarDrawer.setCharacteristics(this.getCurrentPlayer());
+        this.topBarDrawer.setCharacteristics(this.gameManager.players, this.getCurrentPlayer());
     }
 
     rebuildSpaceship(): Promise<void> {
@@ -145,9 +141,9 @@ export default class Controls extends Phaser.Scene {
         let image: Phaser.GameObjects.Container;
 
         if (isModule(card)) {
-            image = drawModuleCard(this, card as Module, new Vector2(this.game.canvas.width / 2, this.game.canvas.height / 2), this.handCardSize * 3);
+            image = drawModuleCard(this, card as Module, new Vector2(this.game.canvas.width / 2, this.game.canvas.height / 2), 500);
         } else {
-            image = drawEventCard(this, card as Event, new Vector2(this.game.canvas.width / 2, this.game.canvas.height / 2), this.handCardSize * 3);
+            image = drawEventCard(this, card as Event, new Vector2(this.game.canvas.width / 2, this.game.canvas.height / 2), 500);
         }
 
         image.setScale(2);

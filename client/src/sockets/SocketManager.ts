@@ -19,11 +19,8 @@ export default class SocketManager {
 
         this.initSocket('http://localhost:3000');
 
-        // register another socket listeners
-        console.log("Register listeners");
+        // register socket listeners
         for (let listener of this.listeners) {
-            console.log("Registering: ", listener.toString());
-
             new listener(this, this.game);
         }
     }

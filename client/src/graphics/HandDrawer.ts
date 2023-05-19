@@ -13,23 +13,69 @@ export default class HandDrawer {
     scene: Phaser.Scene;
 
     gameManager: Game;
+    background: Phaser.GameObjects.Graphics;
 
-    constructor(game: Game, cardSize: number, scene: Phaser.Scene) {
+    constructor(game: Game, scene: Phaser.Scene) {
         this.gameManager = game;
-        this.cardSize = cardSize;
+        this.cardSize = Math.max(128 * scene.game.canvas.width / 1440, 75);
         this.scene = scene;
     }
 
     draw() {
-        let sceneWidth = this.scene.game.canvas.width;
-
         this.destroy();
 
-        for (let [index, card] of this.gameManager.getCurrentPlayer().hand.entries()) {
-            let position = new Vector2(
-                (sceneWidth - this.gameManager.getCurrentPlayer().hand.length * (this.cardSize + 50) + 50) / 2 + index * (this.cardSize + 50) + this.cardSize / 2,
-                this.scene.game.canvas.height - this.cardSize / 2 - 10
+        let hand = this.gameManager.getCurrentPlayer().hand;
+
+        if (hand.length === 0)
+            return;
+
+        let sceneWidth = this.scene.game.canvas.width;
+        let sceneHeight = this.scene.game.canvas.height;
+        let center = sceneWidth / 2;
+        let spaceBetween = this.cardSize * 0.1;
+        let handWidth = hand.length * (this.cardSize + spaceBetween) - spaceBetween;
+
+        let startPosition = (sceneWidth - handWidth) / 2;
+        let handHeight = this.cardSize + spaceBetween * 2;
+
+        // draw background
+        this.background = this.scene.add.graphics();
+
+        let strokeWidth = handHeight * 0.05;
+        let borderRadius = 10;
+        this.background.fillStyle(0x0B2545, 0.75);
+        this.background.lineStyle(strokeWidth, 0x3D76BE);
+
+        if (startPosition < spaceBetween * 2) {
+            this.background.fillRect(0, sceneHeight - handHeight, sceneWidth, handHeight);
+            this.background.strokeRect(
+                0 - strokeWidth / 2, sceneHeight - handHeight - strokeWidth / 2,
+                sceneWidth + strokeWidth, handHeight + strokeWidth
             );
+        } else {
+            this.background.fillRoundedRect(
+                startPosition - spaceBetween, sceneHeight - handHeight,
+                handWidth + 2 * spaceBetween, handHeight,
+                {tl: borderRadius, tr: borderRadius, bl: 0, br: 0}
+            );
+            this.background.strokeRoundedRect(
+                startPosition - spaceBetween - strokeWidth / 2, sceneHeight - handHeight - strokeWidth / 2,
+                handWidth + 2 * spaceBetween + strokeWidth, handHeight + strokeWidth,
+                {tl: borderRadius, tr: borderRadius, bl: 0, br: 0}
+            );
+        }
+
+        startPosition = Math.max(startPosition, spaceBetween);
+
+
+        // draw cards
+        for (let [index, card] of hand.entries()) {
+            let position = new Vector2(
+                startPosition + index * (this.cardSize + spaceBetween),
+                sceneHeight - spaceBetween
+            );
+
+            position.add(new Vector2(this.cardSize / 2, -this.cardSize / 2));
 
             let cardShape: Phaser.GameObjects.Container;
 
@@ -90,6 +136,9 @@ export default class HandDrawer {
     }
 
     destroy() {
+        if (this.background)
+            this.background.destroy();
+
         for (let shape of this.cardShapes) {
             shape.destroy();
         }
