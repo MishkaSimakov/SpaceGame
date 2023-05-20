@@ -1,4 +1,4 @@
-import Module from "../../../common/modules/Module";
+import Module, {isModule} from "../../../common/modules/Module";
 import Vector2 from "../../../common/Vector2";
 import {Event} from "../../../common/events/Event";
 
@@ -28,7 +28,7 @@ function drawModuleCard(scene: Phaser.Scene, module: Module, position: Vector2, 
 
     let moduleNameShape = scene.add.text(0, 0, module.name.split(' '))
         .setStyle({
-            fontFamily: 'Exo2',
+            fontFamily: 'Exo2Bold',
             fontSize: headerFontSize + "px",
             color: '#fff',
             align: 'center'
@@ -53,7 +53,7 @@ function drawModuleCard(scene: Phaser.Scene, module: Module, position: Vector2, 
 
     let moduleHealthShape = scene.add.text(0, 50 * scale, statusBarText, {align: 'center'})
         .setStyle({
-            fontFamily: 'Exo2',
+            fontFamily: 'Exo2Bold',
             fontSize: textFontSize + "px",
             color: '#fff',
             align: 'center'
@@ -122,7 +122,17 @@ function drawEventCard(scene: Phaser.Scene, event: Event, position: Vector2, car
     let backgroundShape = scene.add.rectangle(0, 0, cardSize, cardSize, 0xf8b195);
 
     let description = event.description;
-    let descriptionShape = scene.add.text(0, 0, description, {align: 'center'}).setOrigin(0.5);
+    let fontSize = 10
+    let descriptionShape = scene.add.text(0, 0, description)
+        .setStyle({
+            align: 'center',
+            fontFamily: 'Exo2Regular',
+            fontSize: fontSize + 'px'
+        })
+        .setOrigin(0.5);
+
+    console.log((cardSize - 10 * 2) / descriptionShape.getBounds().width * fontSize);
+    descriptionShape.setFontSize((cardSize - 10 * 2) / descriptionShape.getBounds().width * fontSize);
 
     return scene.add.container(position.x, position.y, [backgroundShape, descriptionShape])
         .setSize(cardSize, cardSize)

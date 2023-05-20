@@ -54,7 +54,7 @@ export default class Spaceships extends Phaser.Scene {
         this.input.on("wheel", (pointer, gameObjects, deltaX, deltaY, deltaZ) => {
             if (deltaY > 0) {
                 let newZoom = this.cameras.main.zoom - .1;
-                if (newZoom > 0.3) {
+                if (newZoom > 0.2) {
                     this.cameras.main.zoom = newZoom;
                 }
             }

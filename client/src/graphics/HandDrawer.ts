@@ -4,6 +4,7 @@ import Vector2 from "../../../common/Vector2";
 import {Event, EventTypes, isEvent} from "../../../common/events/Event";
 import {drawEventCard, drawModuleCard} from "./CardsDrawer";
 import Game from "../Game";
+import {SIZES} from "./constants";
 
 
 export default class HandDrawer {
@@ -31,7 +32,6 @@ export default class HandDrawer {
 
         let sceneWidth = this.scene.game.canvas.width;
         let sceneHeight = this.scene.game.canvas.height;
-        let center = sceneWidth / 2;
         let spaceBetween = this.cardSize * 0.1;
         let handWidth = hand.length * (this.cardSize + spaceBetween) - spaceBetween;
 
@@ -41,7 +41,7 @@ export default class HandDrawer {
         // draw background
         this.background = this.scene.add.graphics();
 
-        let strokeWidth = handHeight * 0.05;
+        let strokeWidth = SIZES.STROKE_WIDTH;
         let borderRadius = 10;
         this.background.fillStyle(0x0B2545, 0.75);
         this.background.lineStyle(strokeWidth, 0x3D76BE);

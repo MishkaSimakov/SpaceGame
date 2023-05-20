@@ -1,3 +1,7 @@
+function clamp(value: number, min: number, max: number): number {
+    return Math.max(min, Math.min(max, value));
+}
+
 const COLORS = {
     BACKGROUND: 0x20202A,
     STROKE: 0x474E68,
@@ -21,4 +25,4 @@ let SIZES = {
     CORNER_RADIUS: 10,
 };
 
-export {COLORS, SIZES};
+export {COLORS, SIZES, clamp};

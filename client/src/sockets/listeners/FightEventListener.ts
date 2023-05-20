@@ -17,16 +17,13 @@ export default class FightEventListener extends BaseEventListener {
         this.socket.on('chooseProtectors', (callback: (protector?: Vector2) => void) => {
             let selectedProtector: Module;
 
-            this.controls().topBarDrawer.setStatus("Выберите протектор");
+            this.controls().topBarDrawer.setStatus("выберите протектор");
 
             this.controls().topBarDrawer.addButtons([{
                 text: "Далее",
                 color: COLORS.BUTTON.PRIMARY,
                 onClick: () => {
-                    if (selectedProtector !== undefined)
-                        callback(selectedProtector.getPosition());
-                    else
-                        callback();
+                    callback(selectedProtector?.getPosition());
 
                     this.controls().topBarDrawer.removeButtons();
                     this.controls().topBarDrawer.clearStatus();
@@ -48,7 +45,7 @@ export default class FightEventListener extends BaseEventListener {
         });
 
         this.socket.on('willYouRunaway', (callback: (isTryingToRunaway: boolean) => void) => {
-            this.controls().topBarDrawer.setStatus("Будете ли вы сбегать?")
+            this.controls().topBarDrawer.setStatus("будете ли вы сбегать?")
 
             this.controls().topBarDrawer.addButtons([{
                 text: "Да",
@@ -77,7 +74,7 @@ export default class FightEventListener extends BaseEventListener {
             let selectedWeapon: Module;
             let selectedTarget: Module;
 
-            this.controls().topBarDrawer.setStatus("Выберите цель и оружие");
+            this.controls().topBarDrawer.setStatus("выберите цель и оружие");
 
             this.controls().topBarDrawer.addButtons([{
                 text: "Атаковать",
@@ -94,8 +91,14 @@ export default class FightEventListener extends BaseEventListener {
                 }
             }]);
 
+            this.controls().topBarDrawer.setButtonsVisible(false);
+
             this.game.spaceshipsScene.chooseModule((module?: Module) => {
                 selectedWeapon = module;
+
+                this.controls().topBarDrawer.setButtonsVisible(
+                    (selectedWeapon !== undefined) && (selectedTarget !== undefined)
+                );
             }, (module?: Module, playerLink?: number) => {
                 if (playerLink !== this.game.link)
                     return false;
@@ -108,6 +111,10 @@ export default class FightEventListener extends BaseEventListener {
 
             this.game.spaceshipsScene.chooseModule((module?: Module) => {
                 selectedTarget = module;
+
+                this.controls().topBarDrawer.setButtonsVisible(
+                    (selectedWeapon !== undefined) && (selectedTarget !== undefined)
+                );
             }, (module?: Module, playerLink?: number) => {
                 return playerLink === targetPlayerLink;
             }, true, 0xe76f51);
@@ -116,7 +123,7 @@ export default class FightEventListener extends BaseEventListener {
         this.socket.on('chooseTarget', (targetPlayerLink: number, usedWeapon: Module, callback: (targetPosition: Vector2) => void) => {
             let selectedTarget: Module;
 
-            this.controls().topBarDrawer.setStatus("Выберите цель");
+            this.controls().topBarDrawer.setStatus("выберите цель");
 
             this.controls().topBarDrawer.addButtons([{
                 text: "Атаковать",
@@ -133,8 +140,12 @@ export default class FightEventListener extends BaseEventListener {
                 }
             }]);
 
+            this.controls().topBarDrawer.setButtonsVisible(false);
+
             this.game.spaceshipsScene.chooseModule((module?: Module) => {
                 selectedTarget = module;
+
+                this.controls().topBarDrawer.setButtonsVisible(selectedTarget !== undefined);
             }, (module?: Module, playerLink?: number) => {
                 return playerLink === targetPlayerLink;
             }, true, 0xe76f51);

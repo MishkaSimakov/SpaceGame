@@ -45,7 +45,6 @@ export default class Game {
 
     constructor(size: number, io: Server) {
         // this.logger = new Logger(this);
-
         // this.logger.log("game created!");
 
         this.size = size;
@@ -110,6 +109,8 @@ export default class Game {
         module: Module,
         byReactor: boolean
     }[], isEvent: boolean) {
+        target.energy = Math.min(target.energy, target.spaceship.getTotalCapacity())
+
         for (let destroyedInfo of destroyedModules) {
             let module = destroyedInfo.module
 

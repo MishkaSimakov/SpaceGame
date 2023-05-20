@@ -30,7 +30,7 @@ export default class EventCardsEventListener extends BaseEventListener {
     //  --chooseCardsToDiscardAndTakeAnother
     addListeners(): void {
         this.socket.on('choosePlayerToStealCardEvent', (playersWithCards: number[], callback: (link: number) => void) => {
-            this.controls().topBarDrawer.setStatus("Выберите игрока");
+            this.controls().topBarDrawer.setStatus("выберите игрока");
 
             this.game.controlsScene.chooseFromList("Choose player", playersWithCards.map(v => v.toString())).then((index: number) => {
                 this.controls().topBarDrawer.clearStatus();
@@ -40,9 +40,9 @@ export default class EventCardsEventListener extends BaseEventListener {
         });
 
         this.socket.on('chooseCardOfPlayer', (cards: (Module | Event)[], callback: (cardIndex: number) => void) => {
-            this.controls().topBarDrawer.setStatus("Выберите карту");
+            this.controls().topBarDrawer.setStatus("выберите карту");
 
-            this.game.controlsScene.chooseFromList("Choose card", cards.map((card: Module | Event): string => {
+            this.game.controlsScene.chooseFromList("Выберите карту", cards.map((card: Module | Event): string => {
                 if (isModule(card)) {
                     return (card as Module).name;
                 } else {
@@ -56,7 +56,7 @@ export default class EventCardsEventListener extends BaseEventListener {
         });
 
         this.socket.on('chooseCardsToDiscardAndTakeAnother', (cards: (Module | Event)[], callback: (indexes: number[]) => void) => {
-            this.controls().topBarDrawer.setStatus("Выберите до 2-х карт");
+            this.controls().topBarDrawer.setStatus("выберите до 2-х карт");
 
             this.game.controlsScene.chooseCards(cards, 2).then((indexes: number[]) => {
                 this.controls().topBarDrawer.clearStatus();
@@ -77,7 +77,7 @@ export default class EventCardsEventListener extends BaseEventListener {
         });
 
         this.socket.on('chooseModulesToRepairByDiscardedCards', (count: number, callback: (modules: Vector2[]) => void) => {
-                this.controls().topBarDrawer.setStatus("Выберите модули для починки (" + count + ")");
+                this.controls().topBarDrawer.setStatus("выберите модули для починки (" + count + ")");
 
                 let modules: Module[] = [];
 
@@ -108,7 +108,7 @@ export default class EventCardsEventListener extends BaseEventListener {
         );
 
         this.socket.on('chooseModuleToRepairEvent', (callback: (module?: Vector2) => void) => {
-            this.controls().topBarDrawer.setStatus("Выберите модуль для починки");
+            this.controls().topBarDrawer.setStatus("выберите модуль для починки");
 
             let module: Module;
 
@@ -128,7 +128,7 @@ export default class EventCardsEventListener extends BaseEventListener {
                 text: "Починить",
                 color: COLORS.BUTTON.PRIMARY,
                 onClick: () => {
-                    callback(module.getPosition());
+                    callback(module?.getPosition());
 
                     this.controls().topBarDrawer.removeButtons();
                     this.controls().topBarDrawer.clearStatus();
@@ -148,7 +148,7 @@ export default class EventCardsEventListener extends BaseEventListener {
         });
 
         this.socket.on('chooseModuleToDamageEvent', (callback: (playerLink?: number, module?: Vector2) => void) => {
-            this.controls().topBarDrawer.setStatus("Выберите модуль, чтобы нанести урон");
+            this.controls().topBarDrawer.setStatus("выберите модуль, чтобы нанести урон");
 
             let module: Module;
             let link: number;
@@ -170,7 +170,11 @@ export default class EventCardsEventListener extends BaseEventListener {
                 text: "Атаковать",
                 color: COLORS.BUTTON.DANGER,
                 onClick: () => {
-                    callback(link, module.getPosition());
+                    if (module) {
+                        callback(link, module.getPosition());
+                    } else {
+                        callback();
+                    }
 
                     this.controls().topBarDrawer.removeButtons();
                     this.controls().topBarDrawer.clearStatus();
@@ -193,12 +197,14 @@ export default class EventCardsEventListener extends BaseEventListener {
             let count = Math.min(
                 this.game.getCurrentPlayer().spaceship.getModulesByType(ModuleTypes.SolarPanel).length, 2
             );
-            this.controls().topBarDrawer.setStatus(`Уничтожте солнечные батареи: ${count}`);
+            this.controls().topBarDrawer.setStatus(`уничтожте солнечные батареи: ${count}`);
 
             let selectedSolarPanels: Module[] = [];
 
             this.game.spaceshipsScene.chooseModules((chosen: Module[]) => {
                 selectedSolarPanels = chosen;
+
+                this.controls().topBarDrawer.setButtonsVisible(selectedSolarPanels.length >= count);
             }, (module?: Module, playerLink?: number) => {
                 if (playerLink !== this.game.link)
                     return false;
@@ -208,6 +214,8 @@ export default class EventCardsEventListener extends BaseEventListener {
 
                 return true;
             }, count, 0xa3b18a);
+
+            this.controls().topBarDrawer.setButtonsVisible(false);
 
             this.controls().topBarDrawer.addButtons([{
                 text: "Уничтожить",
@@ -228,12 +236,14 @@ export default class EventCardsEventListener extends BaseEventListener {
         });
 
         this.socket.on('destroyAnyModuleOnYourSpaceshipEvent', (callback: (position: Vector2) => void) => {
-            this.controls().topBarDrawer.setStatus(`Уничтожте модуль`);
+            this.controls().topBarDrawer.setStatus(`уничтожте модуль`);
 
             let selectedModule: Module;
 
             this.game.spaceshipsScene.chooseModule((chosen: Module) => {
                 selectedModule = chosen;
+
+                this.controls().topBarDrawer.setButtonsVisible(selectedModule !== undefined);
             }, (module?: Module, playerLink?: number) => {
                 if (playerLink !== this.game.link)
                     return false;
@@ -243,6 +253,8 @@ export default class EventCardsEventListener extends BaseEventListener {
 
                 return true;
             }, true, 0xa3b18a);
+
+            this.controls().topBarDrawer.setButtonsVisible(false);
 
             this.controls().topBarDrawer.addButtons([{
                 text: "Уничтожить",
@@ -260,7 +272,7 @@ export default class EventCardsEventListener extends BaseEventListener {
         });
 
         this.socket.on('permuteThreeCardsAndChooseOne', (cards: Event[], callback: (order: number[]) => void) => {
-            this.controls().topBarDrawer.setStatus("Переставьте карточки")
+            this.controls().topBarDrawer.setStatus("переставьте карточки")
 
             this.controls().permuteCards(cards).then((order: number[]) => {
                 this.controls().topBarDrawer.clearStatus();
@@ -270,7 +282,7 @@ export default class EventCardsEventListener extends BaseEventListener {
         });
 
         this.socket.on('permuteThreeCards', (cards: Event[], callback: (order: number[]) => void) => {
-            this.controls().topBarDrawer.setStatus("Переставьте карточки")
+            this.controls().topBarDrawer.setStatus("переставьте карточки")
 
             this.controls().permuteCards(cards).then((order: number[]) => {
                 this.controls().topBarDrawer.clearStatus();
@@ -283,12 +295,14 @@ export default class EventCardsEventListener extends BaseEventListener {
             this.controls().topBarDrawer.removeButtons();
             this.game.spaceshipsScene.endChoosingModule();
 
-            this.controls().topBarDrawer.setStatus(`Выберите модуль, чтобы нанести 1 урон`);
+            this.controls().topBarDrawer.setStatus(`выберите модуль, чтобы нанести 1 урон`);
 
             let selectedModule: Module;
 
             this.game.spaceshipsScene.chooseModule((chosen: Module) => {
                 selectedModule = chosen;
+
+                this.controls().topBarDrawer.setButtonsVisible(selectedModule !== undefined);
             }, (module?: Module, playerLink?: number) => {
                 if (playerLink !== enemyLink)
                     return false;
@@ -298,6 +312,8 @@ export default class EventCardsEventListener extends BaseEventListener {
 
                 return true;
             }, true, 0xa3b18a);
+
+            this.controls().topBarDrawer.setButtonsVisible(false);
 
             this.controls().topBarDrawer.addButtons([{
                 text: "Атаковать",

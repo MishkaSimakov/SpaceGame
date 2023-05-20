@@ -14,7 +14,8 @@ function redirectToLobby() {
     location.href = '/spaceships/lobby';
 }
 
-loadFont("Exo2", "/spaceships/Exo2-Bold.ttf");
+loadFont("Exo2Bold", "/spaceships/Exo2-Bold.ttf");
+loadFont("Exo2Regular", "/spaceships/Exo2-Regular.ttf");
 
 let regex = /spaceships\/game\/[0-9]{6}$/
 

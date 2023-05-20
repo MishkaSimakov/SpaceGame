@@ -7,7 +7,7 @@ import {drawEventCard, drawModuleCard} from "../../CardsDrawer";
 import TopBarDrawer from "../../TopBarDrawer";
 import Game from "../../../Game";
 import Modal from "../../Modal";
-import {COLORS} from "../../constants";
+import {COLORS, SIZES} from "../../constants";
 import {AttackReason, MoveDamageReason} from "../../../../../common/Types";
 
 
@@ -30,6 +30,8 @@ export default class Controls extends Phaser.Scene {
         this.topBarDrawer = new TopBarDrawer(this);
 
         this.input.dragDistanceThreshold = 10;
+
+        SIZES.STROKE_WIDTH = 5;
     }
 
     playersDataUpdated() {
@@ -44,7 +46,7 @@ export default class Controls extends Phaser.Scene {
 
     rebuildSpaceship(): Promise<void> {
         return new Promise((resolve) => {
-            this.topBarDrawer.setStatus("Перестройка корабля");
+            this.topBarDrawer.setStatus("перестройка корабля");
 
             this.topBarDrawer.addButtons([{
                 text: "Далее",
@@ -77,7 +79,7 @@ export default class Controls extends Phaser.Scene {
                 text: showNoButton ? "Да" : "Выбрать",
                 color: COLORS.BUTTON.DANGER,
                 onClick: () => {
-                    this.topBarDrawer.buttons.forEach((b) => b.background.disableInteractive());
+                    this.topBarDrawer.setButtonsVisible(true);
 
                     this.showChoosePlayerForAttackModal(players).then((result?: number) => {
                         if (result !== undefined) {
@@ -87,7 +89,7 @@ export default class Controls extends Phaser.Scene {
                             resolve(result);
                         }
 
-                        this.topBarDrawer.buttons.forEach((b) => b.background.setInteractive());
+                        this.topBarDrawer.setButtonsVisible(false);
                     });
                 }
             }];
@@ -138,18 +140,29 @@ export default class Controls extends Phaser.Scene {
     }
 
     showCard(card: Module | Event) {
+        let sceneWidth = this.game.canvas.width;
+        let sceneHeight = this.game.canvas.height;
+
         let image: Phaser.GameObjects.Container;
 
+        let cardSize = Math.min(sceneWidth, sceneHeight) * 0.75;
+
         if (isModule(card)) {
-            image = drawModuleCard(this, card as Module, new Vector2(this.game.canvas.width / 2, this.game.canvas.height / 2), 500);
+            image = drawModuleCard(this, card as Module, new Vector2(sceneWidth / 2, sceneHeight / 2), cardSize);
         } else {
-            image = drawEventCard(this, card as Event, new Vector2(this.game.canvas.width / 2, this.game.canvas.height / 2), 500);
+            image = drawEventCard(this, card as Event, new Vector2(sceneWidth / 2, sceneHeight / 2), cardSize);
         }
 
-        image.setScale(2);
-        (image.getAll()[0] as Phaser.GameObjects.Rectangle).setInteractive().on('pointerdown', () => {
+        let fade = this.add.rectangle(0, 0, sceneWidth, sceneHeight, 0x000000, 0.75)
+            .setOrigin(0, 0)
+            .setDepth(19);
+
+        this.input.on('pointerdown', () => {
             image.destroy();
+            fade.destroy();
         });
+
+        image.setDepth(20);
     }
 
     // return index of chosen value
@@ -177,7 +190,7 @@ export default class Controls extends Phaser.Scene {
 
             let modal = new Modal(this);
 
-            modal.setTitle("Choose cards to discard");
+            modal.setTitle("Выберите, какие карты скинуть");
 
             for (let [index, card] of Object.entries(this.gameManager.getCurrentPlayer().hand)) {
                 let line = modal.addLine(isModule(card) ? (card as Module).name : 'event')
@@ -187,16 +200,16 @@ export default class Controls extends Phaser.Scene {
                     if (selected.indexOf(parseInt(index)) !== -1) {
                         selected = selected.filter((s) => s !== parseInt(index));
 
-                        line.setBackgroundColor('#000000');
+                        line.setText(line.text.slice(2, -2));
                     } else {
                         selected.push(parseInt(index));
 
-                        line.setBackgroundColor('#808080');
+                        line.setText("- " + line.text + " -");
                     }
                 });
             }
 
-            modal.setBottomText("Discard")
+            modal.setBottomText("Скинуть")
                 .setInteractive()
                 .on('pointerdown', () => {
                     if (selected.length < requiredDiscardCount)
@@ -420,7 +433,7 @@ export default class Controls extends Phaser.Scene {
                     this.gameManager.spaceshipsScene.endChoosingModule();
                     this.topBarDrawer.removeButtons();
 
-                    this.topBarDrawer.setStatus("Выберите модуль, на который переместить урон");
+                    this.topBarDrawer.setStatus("выберите модуль, на который переместить урон");
 
                     this.gameManager.spaceshipsScene.chooseModule((module?: Module) => {
                         moveDamageTo = module;

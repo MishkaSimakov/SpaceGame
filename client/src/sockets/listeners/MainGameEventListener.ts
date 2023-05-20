@@ -55,7 +55,7 @@ export default class MainGameEventListener extends BaseEventListener {
                 return true;
             }, false, 0xe76f51);
 
-            this.controls().topBarDrawer.setStatus("Починка модуля");
+            this.controls().topBarDrawer.setStatus("починка модуля");
 
             this.controls().topBarDrawer.addButtons([{
                 text: "Починить",
@@ -77,7 +77,7 @@ export default class MainGameEventListener extends BaseEventListener {
         });
 
         this.socket.on('chooseCardType', (callback: (cardType: string) => void) => {
-            this.controls().topBarDrawer.setStatus("Выберите тип карты")
+            this.controls().topBarDrawer.setStatus("выберите тип карты")
 
             this.controls().topBarDrawer.addButtons([{
                 text: "Строительства",
@@ -109,13 +109,13 @@ export default class MainGameEventListener extends BaseEventListener {
         });
 
         this.socket.on('drawAnotherEventCard', (callback: (drawAnotherEventCard: boolean) => void) => {
-            this.controls().topBarDrawer.setStatus("Вытянуть другую карточку действия?");
+            this.controls().topBarDrawer.setStatus("вытянуть другую карточку действия?");
 
             this.controls().askYesOrNo().then(callback);
         });
 
         this.socket.on('drawAdditionalModuleCard', (callback: (drawAdditionalModuleCard: boolean) => void) => {
-            this.controls().topBarDrawer.setStatus("Вытянуть дополнительную карточку строительства?");
+            this.controls().topBarDrawer.setStatus("вытянуть дополнительную карточку строительства?");
 
             this.controls().askYesOrNo().then(callback);
         });
@@ -130,7 +130,7 @@ export default class MainGameEventListener extends BaseEventListener {
                 [ModuleTypes.QuantumDestabilizer]: "квантовый дестабилизатор",
             };
 
-            this.controls().topBarDrawer.setStatus(`Использовать ${moduleNames[module]} второй раз?`);
+            this.controls().topBarDrawer.setStatus(`использовать ${moduleNames[module]} второй раз?`);
 
             this.controls().askYesOrNo().then(callback);
         });
