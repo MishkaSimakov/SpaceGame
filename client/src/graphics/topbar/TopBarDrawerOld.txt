@@ -1,0 +1,328 @@
+import Player from "../../../../common/Player";
+import Button from "../Button";
+import Controls from "../scenes/game/controls";
+import {SIZES} from "../constants";
+
+type ButtonData = {
+    text: string, onClick: () => void, color: { DEFAULT: number, HOVER: number, ACTIVE: number }
+};
+
+export default class TopBarDrawer {
+    scene: Controls;
+
+    showPlayersData: boolean = false;
+    playersDataBackground: Phaser.GameObjects.Graphics;
+    playersDataText: Phaser.GameObjects.Container[] = [];
+    playersDataCloseText: Phaser.GameObjects.Text;
+    currentPlayerData: Phaser.GameObjects.Container;
+
+    statusStartY: number = 0;
+    status: string;
+    statusShape: Phaser.GameObjects.Text;
+
+    buttons: ButtonData[];
+    buttonsShapes: Button[] = [];
+
+    scale: number;
+
+    players: Player[] = [];
+    currentPlayer: Player;
+
+    currentTime: number = 123;
+
+    constructor(scene: Controls) {
+        this.clearStatus();
+
+        this.scene = scene;
+
+        this.scale = scene.game.canvas.width / 1440;
+    }
+
+    clearStatus() {
+        this.status = "";
+        this.statusShape?.destroy();
+    }
+
+    setStatus(status: string) {
+        this.status = "взять дополнительную карточку строительства?";
+
+        this.drawStatus();
+    }
+
+    private drawStatus() {
+        this.statusShape?.destroy();
+
+        let sceneWidth = this.scene.game.canvas.width;
+        let margin = 10;
+        let statusY = this.statusStartY + margin;
+        let fontSize = 15;
+        let statusWidth = fontSize * this.status.length * 0.56;
+
+        // console.log(statusWidth)
+        // if (statusWidth > sceneWidth - 2 * margin) {
+        //     fontSize = (sceneWidth - 2 * margin) / (this.status.length * 0.56);
+        // }
+
+        this.statusShape = this.scene.add.text(sceneWidth / 2, statusY, this.status)
+            .setOrigin(0.5, 0)
+            .setStyle({
+                fontFamily: 'Exo2Bold',
+                fontSize: fontSize + "px",
+            });
+
+        // console.log(this.statusShape.getBounds().width);
+    }
+
+    setPlayersData(players: Player[], currentPlayer: Player) {
+        this.players = players;
+        this.currentPlayer = currentPlayer;
+
+        if (this.showPlayersData) {
+            this.drawPlayersData();
+        } else {
+            this.drawCurrentPlayerData();
+        }
+    }
+
+    togglePlayerCharacteristics() {
+        this.showPlayersData = !this.showPlayersData;
+
+        if (this.showPlayersData) {
+            this.currentPlayerData?.destroy();
+
+            this.drawPlayersData();
+        } else {
+            this.playersDataBackground?.destroy();
+            this.playersDataCloseText?.destroy();
+            for (let text of this.playersDataText) {
+                text.destroy();
+            }
+            this.playersDataText = [];
+
+            this.drawCurrentPlayerData();
+        }
+
+        this.drawStatus();
+        this.drawButtons();
+    }
+
+    drawCurrentPlayerData() {
+        if (!this.currentPlayer)
+            return;
+
+        this.currentPlayerData?.destroy();
+
+        let margin = 10;
+
+        this.currentPlayerData = this.getPlayerStatusStringShape(this.currentPlayer, false)
+            .setPosition(margin, margin)
+            .on('pointerdown', () => {
+                this.togglePlayerCharacteristics();
+            });
+
+        // if (this.scene.game.canvas.width < )
+    }
+
+    drawPlayersData() {
+        this.playersDataBackground?.destroy();
+        this.playersDataText.forEach(t => t.destroy());
+        this.playersDataCloseText?.destroy();
+        this.playersDataText = [];
+
+        let sceneWidth = this.scene.game.canvas.width;
+        let margin = 15;
+        let padding = margin * 0.5;
+
+        let showFullWidth = sceneWidth < 600;
+
+        let lineOffset = 25;
+        let textStart = showFullWidth ? padding : (margin + padding)
+
+        for (let [index, player] of this.players.entries()) {
+            this.playersDataText.push(
+                this.getPlayerStatusStringShape(player, true)
+                    .setPosition(textStart, textStart + lineOffset * index)
+                    .setDepth(4)
+                    .on('pointerdown', () => {
+                        this.scene.gameManager.spaceshipsScene.panToPlayerWithLink(player.link);
+                    })
+            );
+        }
+
+        this.playersDataCloseText = this.scene.add.text(textStart, this.playersDataText[this.playersDataText.length - 1].getBounds().bottom + lineOffset, "Закрыть")
+            .setStyle({
+                fontFamily: 'Exo2Bold',
+                fontSize: '15px',
+            })
+            .setOrigin(0, 1)
+            .setDepth(4)
+            .setInteractive()
+            .on('pointerdown', () => {
+                this.togglePlayerCharacteristics();
+            });
+
+        let totalTextHeight = this.playersDataCloseText.getBounds().bottom - this.playersDataText[0].getBounds().top;
+        let totalTextWidth = Math.max(...this.playersDataText.map(t => t.getBounds().width));
+
+
+        let width = totalTextWidth + padding * 2;
+        if (showFullWidth) {
+            width = sceneWidth - margin * 2;
+        }
+
+        this.playersDataBackground = this.scene.add.graphics();
+        let strokeWidth = SIZES.STROKE_WIDTH;
+        let backgroundHeight = padding * 2 + totalTextHeight;
+        let borderRadius = 10;
+
+        this.playersDataBackground.fillStyle(0x0B2545, 0.75);
+        this.playersDataBackground.lineStyle(strokeWidth, 0x3D76BE);
+
+        if (showFullWidth) {
+            this.playersDataBackground.fillRect(
+                0, 0, sceneWidth, backgroundHeight
+            );
+            this.playersDataBackground.strokeRect(
+                -strokeWidth / 2, -strokeWidth / 2,
+                sceneWidth + strokeWidth, backgroundHeight + strokeWidth,
+            );
+        } else {
+            this.playersDataBackground.fillRoundedRect(
+                margin, margin, width, backgroundHeight, borderRadius
+            );
+            this.playersDataBackground.strokeRoundedRect(
+                margin - strokeWidth / 2, margin - strokeWidth / 2,
+                width + strokeWidth, backgroundHeight + strokeWidth,
+                borderRadius
+            );
+        }
+
+        // this.statusStartY = backgroundHeight + margin + strokeWidth / 2;
+    }
+
+    addButtons(buttons: ButtonData[]) {
+        this.buttons = buttons;
+
+        this.drawButtons();
+    }
+
+    removeButtons() {
+        for (let button of this.buttonsShapes) {
+            button.destroy();
+        }
+
+        this.buttons = [];
+        this.buttonsShapes = [];
+    }
+
+    setButtonsVisible(visible: boolean) {
+        this.buttonsShapes.forEach(b => b.setVisible(visible));
+    }
+
+    getPlayerStatusStringShape(player: Player, withName: boolean): Phaser.GameObjects.Container {
+        let container = this.scene.add.container();
+        let textStyle = {
+            fontFamily: 'Exo2Bold',
+            fontSize: '15px',
+        };
+
+        let startX = 0;
+
+        container.add(
+            this.scene.add.rectangle(0, 0, 100 + 225, 20, 0xAAAAAA)
+                .setOrigin(0, 0)
+        )
+
+        if (withName) {
+            container.add(
+                this.scene.add.text(0, 0, (player.online ? "🔴 " : "✖️ ") + player.link + ":")
+                    .setStyle(textStyle)
+            );
+
+            startX += 100;
+        }
+
+        container.add(
+            this.scene.add.text(startX, 0, `${player.energy}/${player.spaceship.getTotalCapacity()} ⚡️`)
+                .setStyle(textStyle)
+        );
+
+        container.add(
+            this.scene.add.text(startX + 75, 0, `${this.timeToString(this.currentTime)} ⏰`)
+                .setStyle(textStyle)
+        );
+
+        container.add(
+            this.scene.add.text(startX + 150, 0, `${player.hand.length} 🤚`)
+                .setStyle(textStyle)
+        );
+
+        let offset = 10;
+        container.setInteractive(
+            new Phaser.Geom.Rectangle(
+                -offset, -offset,
+                container.getBounds().width + offset * 2, container.getBounds().height + offset * 2
+            ),
+            Phaser.Geom.Rectangle.Contains
+        );
+
+        return container;
+    }
+
+    private drawButtons() {
+        for (let button of this.buttonsShapes) {
+            button.destroy();
+        }
+        this.buttonsShapes = [];
+
+        if (!this.buttons)
+            return;
+
+        let sceneWidth = this.scene.game.canvas.width;
+        let spaceBetween = 15;
+        let totalWidth = Math.min(600 * this.scale, 300);
+
+        if (sceneWidth < 600) {
+            totalWidth = sceneWidth - 2 * spaceBetween;
+        }
+
+        let buttonWidth = (totalWidth - spaceBetween * (this.buttons.length - 1)) / this.buttons.length;
+        let buttonHeight = 40;
+        let startX = (sceneWidth - totalWidth) / 2;
+        let startY = 10;
+
+        if (this.statusShape) {
+            startY += this.statusShape.getBounds().bottom;
+        }
+
+        for (let [index, button] of this.buttons.entries()) {
+            this.buttonsShapes.push(
+                new Button(
+                    this.scene, button.onClick,
+                    startX + index * (buttonWidth + spaceBetween) + buttonWidth / 2, startY + buttonHeight / 2,
+                    buttonWidth, buttonHeight,
+                    button.text, 10, button.color,
+                    {
+                        fontFamily: 'Exo2Bold',
+                        fontSize: '15px'
+                    }
+                )
+            );
+        }
+    }
+
+    timeToString(time: number): string {
+        function padWithLeadingZeros(num, totalLength) {
+            return String(num).padStart(totalLength, '0');
+        }
+
+        if (time >= 0) {
+            let minutes = Math.floor(time / 60);
+            return minutes + ":" + padWithLeadingZeros(time - minutes * 60, 2);
+        } else {
+            time = -time;
+            let minutes = Math.floor(time / 60);
+            return "-" + minutes + ":" + padWithLeadingZeros(time - minutes * 60, 2);
+        }
+    }
+}

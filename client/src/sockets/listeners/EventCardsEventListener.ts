@@ -204,7 +204,7 @@ export default class EventCardsEventListener extends BaseEventListener {
             this.game.spaceshipsScene.chooseModules((chosen: Module[]) => {
                 selectedSolarPanels = chosen;
 
-                this.controls().topBarDrawer.setButtonsVisible(selectedSolarPanels.length >= count);
+                this.controls().topBarDrawer.setButtonsDisabled(selectedSolarPanels.length >= count);
             }, (module?: Module, playerLink?: number) => {
                 if (playerLink !== this.game.link)
                     return false;
@@ -215,7 +215,7 @@ export default class EventCardsEventListener extends BaseEventListener {
                 return true;
             }, count, 0xa3b18a);
 
-            this.controls().topBarDrawer.setButtonsVisible(false);
+            this.controls().topBarDrawer.setButtonsDisabled(false);
 
             this.controls().topBarDrawer.addButtons([{
                 text: "Уничтожить",
@@ -243,7 +243,7 @@ export default class EventCardsEventListener extends BaseEventListener {
             this.game.spaceshipsScene.chooseModule((chosen: Module) => {
                 selectedModule = chosen;
 
-                this.controls().topBarDrawer.setButtonsVisible(selectedModule !== undefined);
+                this.controls().topBarDrawer.setButtonsDisabled(selectedModule !== undefined);
             }, (module?: Module, playerLink?: number) => {
                 if (playerLink !== this.game.link)
                     return false;
@@ -254,7 +254,7 @@ export default class EventCardsEventListener extends BaseEventListener {
                 return true;
             }, true, 0xa3b18a);
 
-            this.controls().topBarDrawer.setButtonsVisible(false);
+            this.controls().topBarDrawer.setButtonsDisabled(false);
 
             this.controls().topBarDrawer.addButtons([{
                 text: "Уничтожить",
@@ -302,7 +302,7 @@ export default class EventCardsEventListener extends BaseEventListener {
             this.game.spaceshipsScene.chooseModule((chosen: Module) => {
                 selectedModule = chosen;
 
-                this.controls().topBarDrawer.setButtonsVisible(selectedModule !== undefined);
+                this.controls().topBarDrawer.setButtonsDisabled(selectedModule !== undefined);
             }, (module?: Module, playerLink?: number) => {
                 if (playerLink !== enemyLink)
                     return false;
@@ -313,7 +313,7 @@ export default class EventCardsEventListener extends BaseEventListener {
                 return true;
             }, true, 0xa3b18a);
 
-            this.controls().topBarDrawer.setButtonsVisible(false);
+            this.controls().topBarDrawer.setButtonsDisabled(false);
 
             this.controls().topBarDrawer.addButtons([{
                 text: "Атаковать",

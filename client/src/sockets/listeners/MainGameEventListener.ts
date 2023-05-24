@@ -109,13 +109,13 @@ export default class MainGameEventListener extends BaseEventListener {
         });
 
         this.socket.on('drawAnotherEventCard', (callback: (drawAnotherEventCard: boolean) => void) => {
-            this.controls().topBarDrawer.setStatus("вытянуть другую карточку действия?");
+            this.controls().topBarDrawer.setStatus("взять другую карточку действия?");
 
             this.controls().askYesOrNo().then(callback);
         });
 
         this.socket.on('drawAdditionalModuleCard', (callback: (drawAdditionalModuleCard: boolean) => void) => {
-            this.controls().topBarDrawer.setStatus("вытянуть дополнительную карточку строительства?");
+            this.controls().topBarDrawer.setStatus("взять дополнительную карточку строительства?");
 
             this.controls().askYesOrNo().then(callback);
         });

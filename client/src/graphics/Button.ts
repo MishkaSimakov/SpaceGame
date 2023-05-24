@@ -3,7 +3,8 @@ import * as Phaser from "phaser";
 enum ButtonState {
     DEFAULT,
     HOVER,
-    ACTIVE
+    ACTIVE,
+    DISABLED
 }
 
 type ButtonColors = { DEFAULT: number, HOVER: number, ACTIVE: number };
@@ -16,6 +17,7 @@ export default class Button {
     state: ButtonState = ButtonState.DEFAULT;
 
     colors: ButtonColors;
+    disabledColor = 0x716A5C;
 
     constructor(scene: Phaser.Scene, onClick: () => void, x: number, y: number, width: number, height: number, text: string, borderRadius: number, colors: ButtonColors, textStyle?: Phaser.Types.GameObjects.Text.TextStyle) {
         this.scene = scene;
@@ -29,6 +31,9 @@ export default class Button {
         this.text = this.scene.add.text(x, y, text, textStyle).setOrigin(0.5);
 
         this.background.on('pointerover', () => {
+            if (this.state === ButtonState.DISABLED)
+                return;
+
             if (this.state == ButtonState.DEFAULT) {
                 this.state = ButtonState.HOVER;
             }
@@ -37,6 +42,9 @@ export default class Button {
         });
 
         this.background.on('pointerout', () => {
+            if (this.state === ButtonState.DISABLED)
+                return;
+
             this.state = ButtonState.DEFAULT;
 
             this.stateUpdated();
@@ -59,22 +67,24 @@ export default class Button {
         // });
     }
 
-    setVisible(visible: boolean) {
-        if (visible) {
-            this.background.setInteractive();
-        } else {
-            this.background.disableInteractive();
-        }
+    setDisabled(isDisabled: boolean) {
+        if (isDisabled) {
+            this.state = ButtonState.DISABLED;
 
-        this.background.setVisible(visible);
-        this.text.setVisible(visible);
+            this.background.disableInteractive();
+        } else {
+            this.state = ButtonState.DEFAULT;
+
+            this.background.setInteractive();
+        }
     }
 
     stateUpdated() {
         let stateColor: Record<ButtonState, number> = {
             [ButtonState.DEFAULT]: this.colors.DEFAULT,
             [ButtonState.HOVER]: this.colors.HOVER,
-            [ButtonState.ACTIVE]: this.colors.ACTIVE
+            [ButtonState.ACTIVE]: this.colors.ACTIVE,
+            [ButtonState.DISABLED]: this.disabledColor
         }
 
         this.background.setFillStyle(stateColor[this.state]);

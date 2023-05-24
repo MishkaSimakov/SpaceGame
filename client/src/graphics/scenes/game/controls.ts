@@ -4,7 +4,7 @@ import Vector2 from "../../../../../common/Vector2";
 import Player from "../../../../../common/Player";
 import {Event} from "../../../../../common/events/Event";
 import {drawEventCard, drawModuleCard} from "../../CardsDrawer";
-import TopBarDrawer from "../../TopBarDrawer";
+import TopBarDrawer from "../../topbar/TopBarDrawer";
 import Game from "../../../Game";
 import Modal from "../../Modal";
 import {COLORS, SIZES} from "../../constants";
@@ -30,8 +30,6 @@ export default class Controls extends Phaser.Scene {
         this.topBarDrawer = new TopBarDrawer(this);
 
         this.input.dragDistanceThreshold = 10;
-
-        SIZES.STROKE_WIDTH = 5;
     }
 
     playersDataUpdated() {
@@ -41,7 +39,7 @@ export default class Controls extends Phaser.Scene {
         // this.topBarDrawer.drawPlayersList(this.gameManager.players, this.gameManager.link, (link: number) => {
         //     this.gameManager.spaceshipsScene.panToPlayerWithLink(link);
         // });
-        this.topBarDrawer.setCharacteristics(this.gameManager.players, this.getCurrentPlayer());
+        this.topBarDrawer.setPlayersData(this.gameManager.players, this.getCurrentPlayer());
     }
 
     rebuildSpaceship(): Promise<void> {
@@ -79,7 +77,7 @@ export default class Controls extends Phaser.Scene {
                 text: showNoButton ? "Да" : "Выбрать",
                 color: COLORS.BUTTON.DANGER,
                 onClick: () => {
-                    this.topBarDrawer.setButtonsVisible(true);
+                    this.topBarDrawer.setButtonsDisabled(true);
 
                     this.showChoosePlayerForAttackModal(players).then((result?: number) => {
                         if (result !== undefined) {
@@ -89,7 +87,7 @@ export default class Controls extends Phaser.Scene {
                             resolve(result);
                         }
 
-                        this.topBarDrawer.setButtonsVisible(false);
+                        this.topBarDrawer.setButtonsDisabled(false);
                     });
                 }
             }];

@@ -241,7 +241,7 @@ export default class Game {
         this.addUseEventCardEvent(connectedPlayer);
 
         this.updatePlayersStatus();
-        this.setPlayersData();
+        this.syncPlayersData();
 
         return connectedPlayer;
     }
@@ -258,7 +258,7 @@ export default class Game {
         this.state = GameState.STARTED;
 
         while (this.state === GameState.STARTED) {
-            this.setPlayersData();
+            this.syncPlayersData();
 
             await this.makeGameIteration();
 
@@ -278,7 +278,7 @@ export default class Game {
             this.currentPlayer = this.getPlayerByLink(player.link);
     }
 
-    setPlayersData() {
+    syncPlayersData() {
         this.io.emit('setPlayersData', this.players);
     }
 
@@ -349,6 +349,8 @@ export default class Game {
         await this.emitToPlayerAndWait(this.currentPlayer, 'rebuildSpaceship', this.currentPlayer, (changedPlayer: Player) => {
             this.setRebuildSpaceshipData(plainToClass(changedPlayer, Player.getPropertiesMap()));
 
+            this.syncPlayersData();
+
             console.log("   Player end rebuilding spaceship");
         });
     }
@@ -395,7 +397,9 @@ export default class Game {
 
         if (!this.currentPlayer.usedRepairOrAttackModuleSecondTimeOnThisTurn && isRepaired
             && this.currentPlayer.spaceship.getMainModuleType() === MainModuleType.UseModuleSecondTime
-            && this.currentPlayer.spaceship.hasDamagedModules()) {
+            && this.currentPlayer.spaceship.hasDamagedModules()
+            && this.currentPlayer.energy >= repairModuleCost * 2
+        ) {
             let useSecondTime = await this.askForUseModuleSecondTime(this.currentPlayer, ModuleTypes.RepairModule);
 
             if (!useSecondTime)
@@ -546,7 +550,7 @@ export default class Game {
             }
 
             this.changePlayerData(this.currentPlayer);
-            this.setPlayersData();
+            this.syncPlayersData();
         });
     }
 
@@ -570,7 +574,7 @@ export default class Game {
             this.gameData.discardCards(discardedCards);
 
             this.changePlayerData(this.currentPlayer);
-            this.setPlayersData();
+            this.syncPlayersData();
         });
     }
 
@@ -685,11 +689,11 @@ export default class Game {
         await this.rebuildSpaceshipPhase();
 
         // fix spaceship
-        if (this.currentPlayer.spaceship.hasRepairModule() && this.currentPlayer.spaceship.hasDamagedModules())
+        if (this.currentPlayer.spaceship.hasRepairModule() && this.currentPlayer.spaceship.hasDamagedModules() && this.currentPlayer.energy >= 2)
             await this.fixSpaceshipPhase();
 
         // ask for attack
-        if (this.currentPlayer.spaceship.canAttack()) {
+        if (this.currentPlayer.spaceship.canAttack() && this.currentPlayer.energy >= 5) {
             await this.attackPhase();
 
             if (this.state === GameState.ENDED)

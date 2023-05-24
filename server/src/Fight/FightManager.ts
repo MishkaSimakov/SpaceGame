@@ -38,7 +38,7 @@ export default class FightManager {
         }
 
         while (!this.isFightEnded) {
-            this.gameManager.setPlayersData();
+            this.gameManager.syncPlayersData();
 
             let destroyed = await this.makeFightIteration();
 

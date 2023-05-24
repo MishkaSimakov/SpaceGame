@@ -21,7 +21,7 @@ const COLORS = {
 };
 
 let SIZES = {
-    STROKE_WIDTH: 10,
+    STROKE_WIDTH: 5,
     CORNER_RADIUS: 10,
 };
 
