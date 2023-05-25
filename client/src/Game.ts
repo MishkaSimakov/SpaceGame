@@ -16,6 +16,8 @@ export default class Game {
     controlsScene: Controls;
     rebuildSpaceshipManager: RebuildSpaceshipManager;
 
+    withTimeControl: boolean = false;
+
     constructor() {
         this.spaceshipsScene = new Spaceships(this);
         this.controlsScene = new Controls(this);

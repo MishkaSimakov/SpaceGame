@@ -13,6 +13,8 @@ export default class FightManager {
 
     isFightEnded: boolean = false;
 
+    fightTurnStartedAt: number;
+
     gameManager: Game;
 
     constructor(first: Player, second: Player, gameManager: Game) {
@@ -40,7 +42,11 @@ export default class FightManager {
         while (!this.isFightEnded) {
             this.gameManager.syncPlayersData();
 
+            this.fightTurnStartedAt = (new Date()).getTime();
+
             let destroyed = await this.makeFightIteration();
+
+            (this.isFirstPlayerTurn ? this.first : this.second).time += this.gameManager.FIGHT_TIME_INCREASE - this.fightTurnStartedAt;
 
             if (destroyed !== undefined) {
                 console.log(`Fight has ended. Player ${destroyed.link} was destroyed`);

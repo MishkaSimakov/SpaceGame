@@ -62,6 +62,10 @@ export default class Player {
 
     protected lose: boolean = false;
 
+    time: number;
+    // time when turn started for time control
+    turnStartedAt: number;
+
     constructor() {
         this.link = this.generateLink();
     }

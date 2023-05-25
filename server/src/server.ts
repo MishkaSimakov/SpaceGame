@@ -76,6 +76,9 @@ io.on('connection', async function (socket: Socket) {
 
         player = game.playerConnected(link, socket.id);
         game.getSocketByLink(link).emit('setPlayersData', game.players);
+        game.getSocketByLink(link).emit('setGameSettings', {
+            withTimeControl: game.withTimeControl
+        });
         game.tryToEmitEvent();
     });
 });

@@ -41,6 +41,10 @@ export default class Game {
 
     currentFight?: FightManager;
 
+    withTimeControl: boolean = true;
+    DEFAULT_TIME_INCREASE: number = 45;
+    FIGHT_TIME_INCREASE: number = 10;
+
     // logger: Logger;
 
     constructor(size: number, io: Server) {
@@ -223,6 +227,7 @@ export default class Game {
         let player = new Player();
         player.spaceship = new Spaceship(this.gameData.popMainModule());
         player.hand = this.gameData.popModuleCards(this.gameData.startCardsCount);
+        player.time = 300 * 1000;
 
         return player;
     }
@@ -678,6 +683,7 @@ export default class Game {
     async makeGameIteration() {
         console.log(`Turn of player ${this.currentPlayer.link}`);
 
+        this.currentPlayer.turnStartedAt = (new Date()).getTime();
         this.currentPlayer.usedRepairOrAttackModuleSecondTimeOnThisTurn = false;
 
         await this.beforeTurn();
@@ -706,5 +712,8 @@ export default class Game {
         // discard extra cards
         if (this.currentPlayer.hand.length > 5)
             await this.discardExtraCardsPhase();
+
+        this.currentPlayer.time -= (new Date()).getTime() - this.currentPlayer.turnStartedAt;
+        this.currentPlayer.time += this.DEFAULT_TIME_INCREASE;
     }
 }

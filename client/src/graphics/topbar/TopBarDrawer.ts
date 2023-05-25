@@ -2,6 +2,7 @@ import Player from "../../../../common/Player";
 import Button from "../Button";
 import Controls from "../scenes/game/controls";
 import {SIZES} from "../constants";
+import Vector2 from "../../../../common/Vector2";
 
 type ButtonData = {
     text: string, onClick: () => void, color: { DEFAULT: number, HOVER: number, ACTIVE: number }
@@ -30,8 +31,6 @@ export default class TopBarDrawer {
     players: Player[] = [];
     currentPlayer: Player;
 
-    currentTime: number = 123;
-
     sizes = {
         margin: 15,
         fontSize: 15,
@@ -48,6 +47,7 @@ export default class TopBarDrawer {
     };
 
     statusStartY: number = this.sizes.margin;
+    showStatusWithoutMargins: boolean;
 
     constructor(scene: Controls) {
         this.clearStatus();
@@ -55,6 +55,8 @@ export default class TopBarDrawer {
         this.scene = scene;
 
         this.sizes.sceneWidth = scene.game.canvas.width;
+
+        this.showStatusWithoutMargins = this.sizes.sceneWidth < (this.sizes.statusWidth + 2 * this.sizes.margin);
 
         this.scale = scene.game.canvas.width / 1440;
     }
@@ -79,27 +81,48 @@ export default class TopBarDrawer {
     }
 
     private redraw() {
-        // if (this.showPlayersData) {
-        //     this.drawPlayersData();
-        // } else {
-        //     this.drawCurrentPlayerData();
-        // }
-        //
-        // this.drawStatus();
+        this.status.backgroundShape?.destroy();
+        this.status.textShape?.destroy();
+        this.currentPlayerData?.destroy();
+
+        // clear players data background
+        this.playersDataBackground?.destroy();
+        this.playersDataText.forEach(t => t.destroy());
+        this.playersDataCloseText?.destroy();
+        this.playersDataText = [];
+
+        // clear buttons
+        for (let button of this.buttonsShapes) {
+            button.destroy();
+        }
+        this.buttonsShapes = [];
+
+
+        if (this.showPlayersData) {
+            this.drawPlayersData();
+        } else {
+            this.drawCurrentPlayerData();
+        }
+
+        this.drawStatus();
     }
 
     private drawStatus() {
-        this.status.backgroundShape?.destroy();
-        this.status.textShape?.destroy();
-
         if (this.status.text === "")
             return;
 
-        this.status.textShape = this.scene.add.text(
-            this.sizes.sceneWidth - this.sizes.margin - this.sizes.statusWidth / 2,
-            this.sizes.padding + this.statusStartY,
-            this.status.text
-        )
+        let statusPosition: Vector2;
+
+        if (this.showStatusWithoutMargins) {
+            statusPosition = new Vector2(this.sizes.sceneWidth / 2, this.statusStartY + this.sizes.padding);
+        } else {
+            statusPosition = new Vector2(
+                this.sizes.sceneWidth - this.sizes.margin - this.sizes.statusWidth / 2,
+                this.sizes.padding + this.statusStartY
+            );
+        }
+
+        this.status.textShape = this.scene.add.text(statusPosition.x, statusPosition.y, this.status.text)
             .setStyle(this.textStyle)
             .setOrigin(0.5, 0)
             .setDepth(5);
@@ -121,15 +144,26 @@ export default class TopBarDrawer {
         this.status.backgroundShape.fillStyle(0x0B2545, 0.75);
         this.status.backgroundShape.lineStyle(this.sizes.strokeWidth, 0x3D76BE);
 
-        this.status.backgroundShape.fillRoundedRect(
-            this.sizes.sceneWidth - this.sizes.margin - this.sizes.statusWidth, this.statusStartY,
-            this.sizes.statusWidth, statusHeight, this.sizes.cornerRadius
-        );
-        this.status.backgroundShape.strokeRoundedRect(
-            this.sizes.sceneWidth - this.sizes.margin - this.sizes.statusWidth - this.sizes.strokeWidth / 2, this.statusStartY - this.sizes.strokeWidth / 2,
-            this.sizes.statusWidth + this.sizes.strokeWidth, statusHeight + this.sizes.strokeWidth,
-            this.sizes.cornerRadius
-        );
+        if (this.showStatusWithoutMargins) {
+            this.status.backgroundShape.fillRect(
+                0, this.statusStartY,
+                this.sizes.sceneWidth, statusHeight
+            );
+            this.status.backgroundShape.strokeRect(
+                -this.sizes.strokeWidth / 2, -this.sizes.strokeWidth / 2,
+                this.sizes.sceneWidth + this.sizes.strokeWidth, this.statusStartY + statusHeight + this.sizes.strokeWidth
+            );
+        } else {
+            this.status.backgroundShape.fillRoundedRect(
+                this.sizes.sceneWidth - this.sizes.margin - this.sizes.statusWidth, this.statusStartY,
+                this.sizes.statusWidth, statusHeight, this.sizes.cornerRadius
+            );
+            this.status.backgroundShape.strokeRoundedRect(
+                this.sizes.sceneWidth - this.sizes.margin - this.sizes.statusWidth - this.sizes.strokeWidth / 2, this.statusStartY - this.sizes.strokeWidth / 2,
+                this.sizes.statusWidth + this.sizes.strokeWidth, statusHeight + this.sizes.strokeWidth,
+                this.sizes.cornerRadius
+            );
+        }
     }
 
     togglePlayerCharacteristics() {
@@ -142,54 +176,98 @@ export default class TopBarDrawer {
         if (!this.currentPlayer)
             return;
 
-        this.currentPlayerData?.destroy();
+        let textX: number;
+        let textY: number;
 
-        let margin = 10;
+        if (this.showStatusWithoutMargins) {
+            textX = this.sizes.padding;
+            textY = this.sizes.padding;
+        } else {
+            textX = this.sizes.sceneWidth - this.sizes.margin - this.sizes.statusWidth + this.sizes.padding;
+            textY = this.sizes.margin + this.sizes.padding;
+        }
 
         this.currentPlayerData = this.getPlayerStatusStringShape(this.currentPlayer, false)
-            .setPosition(margin, margin)
+            .setPosition(textX, textY)
             .on('pointerdown', () => {
                 this.togglePlayerCharacteristics();
-            });
+            })
+            .setDepth(5);
 
-        // if (this.scene.game.canvas.width < )
+        this.playersDataBackground = this.scene.add.graphics();
+
+        this.playersDataBackground.fillStyle(0x0B2545, 0.75);
+        this.playersDataBackground.lineStyle(this.sizes.strokeWidth, 0x3D76BE);
+
+        let height = 2 * this.sizes.padding + this.currentPlayerData.getBounds().height;
+
+        if (this.showStatusWithoutMargins) {
+            this.playersDataBackground.fillRect(
+                0, 0,
+                this.sizes.sceneWidth, height
+            );
+            // this.playersDataBackground.strokeRect(
+            //     -this.sizes.strokeWidth / 2, -this.sizes.strokeWidth / 2,
+            //     this.sizes.sceneWidth + this.sizes.strokeWidth, height + this.sizes.strokeWidth
+            // );
+
+            this.playersDataBackground.lineStyle(this.sizes.strokeWidth / 2, 0x3D76BE, 0.5);
+            this.playersDataBackground.lineBetween(this.sizes.padding, height, this.sizes.sceneWidth - this.sizes.padding, height)
+                .setDepth(4);
+
+            this.statusStartY = height;
+        } else {
+            this.playersDataBackground.fillRoundedRect(
+                this.sizes.sceneWidth - this.sizes.margin - this.sizes.statusWidth, this.sizes.margin,
+                this.sizes.statusWidth, height, this.sizes.cornerRadius
+            );
+            this.playersDataBackground.strokeRoundedRect(
+                this.sizes.sceneWidth - this.sizes.margin - this.sizes.statusWidth - this.sizes.strokeWidth / 2, this.sizes.margin - this.sizes.strokeWidth / 2,
+                this.sizes.statusWidth + this.sizes.strokeWidth, height + this.sizes.strokeWidth,
+                this.sizes.cornerRadius
+            );
+
+            this.statusStartY = 2 * this.sizes.margin + height;
+        }
     }
 
     drawPlayersData() {
-        this.playersDataBackground?.destroy();
-        this.playersDataText.forEach(t => t.destroy());
-        this.playersDataCloseText?.destroy();
-        this.playersDataText = [];
-
-        let sceneWidth = this.scene.game.canvas.width;
-
         let lineOffset = 25;
 
-        let textStartY = this.sizes.margin + this.sizes.padding;
-        let textStartX = this.sizes.sceneWidth - this.sizes.statusWidth - this.sizes.margin + this.sizes.padding;
+        let textStart: Vector2;
 
+        if (this.showStatusWithoutMargins) {
+            textStart = new Vector2(
+                this.sizes.padding,
+                this.sizes.padding
+            );
+        } else {
+            textStart = new Vector2(
+                this.sizes.sceneWidth - this.sizes.statusWidth - this.sizes.margin + this.sizes.padding,
+                this.sizes.margin + this.sizes.padding
+            );
+        }
         for (let [index, player] of this.players.entries()) {
             this.playersDataText.push(
                 this.getPlayerStatusStringShape(player, true)
-                    .setPosition(textStartX, textStartY + lineOffset * index)
-                    .setDepth(4)
+                    .setPosition(textStart.x, textStart.y + lineOffset * index)
+                    .setDepth(5)
                     .on('pointerdown', () => {
                         this.scene.gameManager.spaceshipsScene.panToPlayerWithLink(player.link);
                     })
             );
         }
 
-        this.playersDataCloseText = this.scene.add.text(textStartX, this.playersDataText[this.playersDataText.length - 1].getBounds().bottom + lineOffset, "Закрыть")
+        this.playersDataCloseText = this.scene.add.text(textStart.x, this.playersDataText[this.playersDataText.length - 1].getBounds().bottom + lineOffset, "Закрыть")
             .setStyle(this.textStyle)
             .setOrigin(0, 1)
-            .setDepth(4)
+            .setDepth(5)
             .setInteractive()
             .on('pointerdown', () => {
                 this.togglePlayerCharacteristics();
             });
 
         let totalTextHeight = this.playersDataCloseText.getBounds().bottom - this.playersDataText[0].getBounds().top;
-        let totalTextWidth = Math.max(...this.playersDataText.map(t => t.getBounds().width));
 
         this.playersDataBackground = this.scene.add.graphics();
         let backgroundHeight = this.sizes.padding * 2 + totalTextHeight;
@@ -198,16 +276,28 @@ export default class TopBarDrawer {
         this.playersDataBackground.fillStyle(0x0B2545, 0.75);
         this.playersDataBackground.lineStyle(this.sizes.strokeWidth, 0x3D76BE);
 
-        this.playersDataBackground.fillRoundedRect(
-            textStartX - this.sizes.padding, this.sizes.margin, this.sizes.statusWidth, backgroundHeight, borderRadius
-        );
-        this.playersDataBackground.strokeRoundedRect(
-            textStartX - this.sizes.padding - this.sizes.strokeWidth / 2, this.sizes.margin - this.sizes.strokeWidth / 2,
-            this.sizes.statusWidth - this.sizes.strokeWidth, backgroundHeight + this.sizes.strokeWidth,
-            borderRadius
-        );
+        if (this.showStatusWithoutMargins) {
+            this.playersDataBackground.fillRect(
+                0, 0, this.sizes.sceneWidth, backgroundHeight
+            );
 
-        this.statusStartY = backgroundHeight + 2 * this.sizes.margin;
+            this.playersDataBackground.lineStyle(this.sizes.strokeWidth / 2, 0x3D76BE, 0.5);
+            this.playersDataBackground.lineBetween(this.sizes.padding, backgroundHeight, this.sizes.sceneWidth - this.sizes.padding, backgroundHeight)
+                .setDepth(4);
+
+            this.statusStartY = backgroundHeight;
+        } else {
+            this.playersDataBackground.fillRoundedRect(
+                textStart.x - this.sizes.padding, this.sizes.margin, this.sizes.statusWidth, backgroundHeight, borderRadius
+            );
+            this.playersDataBackground.strokeRoundedRect(
+                textStart.x - this.sizes.padding - this.sizes.strokeWidth / 2, this.sizes.margin - this.sizes.strokeWidth / 2,
+                this.sizes.statusWidth + this.sizes.strokeWidth, backgroundHeight + this.sizes.strokeWidth,
+                borderRadius
+            );
+
+            this.statusStartY = backgroundHeight + 2 * this.sizes.margin;
+        }
     }
 
     addButtons(buttons: ButtonData[]) {
@@ -250,14 +340,16 @@ export default class TopBarDrawer {
         );
 
         container.add(
-            this.scene.add.text(startX + 75, 0, `${this.timeToString(this.currentTime)} ⏰`)
+            this.scene.add.text(startX + 75, 0, `${player.hand.length} 🤚`)
                 .setStyle(textStyle)
         );
 
-        container.add(
-            this.scene.add.text(startX + 150, 0, `${player.hand.length} 🤚`)
-                .setStyle(textStyle)
-        );
+        if (this.scene.gameManager.withTimeControl) {
+            container.add(
+                this.scene.add.text(startX + 150, 0, `${this.timeToString(player.time)} ⏰`)
+                    .setStyle(textStyle)
+            );
+        }
 
         let offset = 10;
         container.setInteractive(
@@ -272,15 +364,16 @@ export default class TopBarDrawer {
     }
 
     private drawButtons() {
-        for (let button of this.buttonsShapes) {
-            button.destroy();
-        }
-        this.buttonsShapes = [];
-
         if (!this.buttons)
             return;
 
-        let totalWidth = this.sizes.statusWidth - 2 * this.sizes.padding;
+        let totalWidth;
+
+        if (this.showStatusWithoutMargins) {
+            totalWidth = this.sizes.sceneWidth - 2 * this.sizes.padding;
+        } else {
+            totalWidth = this.sizes.statusWidth - 2 * this.sizes.padding;
+        }
 
         let buttonWidth = (totalWidth + this.sizes.padding) / this.buttons.length - this.sizes.padding;
         let buttonHeight = 40;
@@ -292,7 +385,12 @@ export default class TopBarDrawer {
             startY = this.sizes.margin + this.sizes.margin;
         }
 
-        let startX = this.sizes.sceneWidth - this.sizes.margin - this.sizes.statusWidth + this.sizes.padding;
+        let startX;
+        if (this.showStatusWithoutMargins) {
+            startX = this.sizes.padding;
+        } else {
+            startX = this.sizes.sceneWidth - this.sizes.margin - this.sizes.statusWidth + this.sizes.padding;
+        }
 
         for (let [index, button] of this.buttons.entries()) {
             let buttonShape = new Button(
@@ -300,7 +398,7 @@ export default class TopBarDrawer {
                 startX + index * (buttonWidth + this.sizes.padding) + buttonWidth / 2,
                 startY + buttonHeight / 2,
                 buttonWidth, buttonHeight,
-                "Строительства", this.sizes.cornerRadius, button.color,
+                button.text, this.sizes.cornerRadius, button.color,
                 this.textStyle
             );
 
@@ -315,6 +413,8 @@ export default class TopBarDrawer {
         function padWithLeadingZeros(num, totalLength) {
             return String(num).padStart(totalLength, '0');
         }
+
+        time = Math.floor(time / 1000);
 
         if (time >= 0) {
             let minutes = Math.floor(time / 60);

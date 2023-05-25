@@ -69,6 +69,10 @@ export default class SocketManager {
             //     this.game.spaceshipsScene.panToPlayerWithLink(link);
             // });
         });
+
+        this.on('setGameSettings', (gameSettings) => {
+            this.game.withTimeControl = gameSettings.withTimeControl;
+        });
     }
 
     // return is event accepted
