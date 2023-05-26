@@ -16,7 +16,7 @@ export default class InfoEventListener extends BaseEventListener {
         this.socket.on('showCards', (link: number, cards: (Module | Event)[]) => {
             this.controls().showCards(
                 cards,
-                link === this.game.link ? "вы вытянули" : (link + " вытянул")
+                link === this.game.getLink() ? "вы вытянули" : (link + " вытянул")
             );
         });
     }

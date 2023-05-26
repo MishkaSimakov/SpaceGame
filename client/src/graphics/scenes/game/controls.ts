@@ -9,6 +9,7 @@ import Game from "../../../Game";
 import Modal from "../../Modal";
 import {COLORS} from "../../constants";
 import {AttackReason, MoveDamageReason} from "../../../../../common/Types";
+import {OtherPlayer} from "../../../../../common/GameForPlayerDTO";
 
 
 export default class Controls extends Phaser.Scene {
@@ -38,14 +39,10 @@ export default class Controls extends Phaser.Scene {
         this.input.dragDistanceThreshold = 10;
     }
 
-    playersDataUpdated() {
-        this.handDrawer.gameManager = this.gameManager;
-        this.handDrawer.draw();
+    redraw() {
+        this.handDrawer.redraw();
 
-        // this.topBarDrawer.drawPlayersList(this.gameManager.players, this.gameManager.link, (link: number) => {
-        //     this.gameManager.spaceshipsScene.panToPlayerWithLink(link);
-        // });
-        this.topBarDrawer.setPlayersData(this.gameManager.players, this.getCurrentPlayer());
+        this.topBarDrawer.setPlayersData(this.gameManager.currentPlayer, this.gameManager.otherPlayers);
     }
 
     rebuildSpaceship(): Promise<void> {
@@ -65,7 +62,7 @@ export default class Controls extends Phaser.Scene {
         });
     }
 
-    choosePlayerForAttack(players: Player[], attackReason: AttackReason) {
+    choosePlayerForAttack(players: OtherPlayer[], attackReason: AttackReason) {
         let reasonStatus: Record<AttackReason, string> = {
             [AttackReason.AttackModule]: "Используйте абордажный модуль, чтобы напасть",
             [AttackReason.MainModule]: "Используйте командный модуль, чтобы напасть",
@@ -115,7 +112,7 @@ export default class Controls extends Phaser.Scene {
         });
     }
 
-    showChoosePlayerForAttackModal(players: Player[]): Promise<number | undefined> {
+    showChoosePlayerForAttackModal(players: OtherPlayer[]): Promise<number | undefined> {
         return new Promise((resolve) => {
             let modal = new Modal(this);
 
@@ -452,7 +449,7 @@ export default class Controls extends Phaser.Scene {
             this.gameManager.spaceshipsScene.chooseModule((module?: Module) => {
                 moveDamageFrom = module;
             }, (module?: Module, playerLink?: number) => {
-                if (playerLink !== this.gameManager.link)
+                if (playerLink !== this.gameManager.getLink())
                     return false;
 
                 if (!module.isDamaged())
@@ -476,7 +473,7 @@ export default class Controls extends Phaser.Scene {
                     this.gameManager.spaceshipsScene.chooseModule((module?: Module) => {
                         moveDamageTo = module;
                     }, (module?: Module, playerLink?: number) => {
-                        return playerLink === this.gameManager.link;
+                        return playerLink === this.gameManager.getLink();
                     }, true, 0xa3b18a);
 
                     this.topBarDrawer.addButtons([{
@@ -530,9 +527,5 @@ export default class Controls extends Phaser.Scene {
                 }
             }]);
         });
-    }
-
-    getCurrentPlayer(): Player {
-        return this.gameManager.getCurrentPlayer();
     }
 }

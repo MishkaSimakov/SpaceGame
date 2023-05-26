@@ -6,14 +6,12 @@ import {plainToClass} from "../../common/PlainToClass";
 import SocketManager from "./sockets/SocketManager";
 import config from "./config";
 import {Event, EventTypes} from "../../common/events/Event";
-import {GameSettings, OtherPlayer} from "../../common/GameForPlayerDTO";
+import {GameForPlayerDTO, GameSettings, OtherPlayer} from "../../common/GameForPlayerDTO";
 
 export default class Game {
-    // currentPlayer: Player;
-    // otherPlayers: OtherPlayer[];
+    currentPlayer: Player;
+    otherPlayers: OtherPlayer[];
 
-    link: number;
-    players: Player[] = [];
     socketManager: SocketManager;
 
     spaceshipsScene: Spaceships;
@@ -38,38 +36,46 @@ export default class Game {
         });
     }
 
+    getLink(): number {
+        return parseInt(window.location.href.split('/').pop());
+    }
+
     onReady() {
-        this.rebuildSpaceshipManager = new RebuildSpaceshipManager(this.spaceshipsScene, this.controlsScene);
-        this.link = parseInt(window.location.href.split('/').pop());
+        this.rebuildSpaceshipManager = new RebuildSpaceshipManager(this);
 
         this.socketManager = new SocketManager(this);
     }
 
-    setPlayersData(players: Player[]) {
-        if (this.rebuildSpaceshipManager.isRebuildingSpaceship)
-            return;
+    setGameData(gameDTO: GameForPlayerDTO) {
+        console.log(gameDTO);
 
-        for (let player of players) {
-            this.changePlayerData(
-                plainToClass(player, Player.getPropertiesMap())
-            );
-        }
+        if (!this.rebuildSpaceshipManager.isRebuildingSpaceship)
+            this.currentPlayer = plainToClass(gameDTO.player, Player.getPropertiesMap());
 
-        this.controlsScene.playersDataUpdated();
-        this.spaceshipsScene.playersDataUpdated();
+        this.otherPlayers = gameDTO.otherPlayers
+            .map(p => plainToClass(p, OtherPlayer.getPropertiesMap()));
 
-        this.rebuildSpaceshipManager.player = this.getCurrentPlayer();
+        this.settings = gameDTO.settings;
+
+        this.redraw();
+    }
+
+    redraw() {
+        this.controlsScene.redraw();
+        this.spaceshipsScene.redraw();
     }
 
     getCurrentPlayer(): Player | undefined {
-        return this.getPlayerByLink(this.link);
+        return this.currentPlayer;
     }
 
-    getPlayerByLink(link: number): Player {
-        for (let i = 0; i < this.players.length; ++i) {
-            if (this.players[i].link == link)
-                return this.players[i];
-        }
+    getAllPlayers(): OtherPlayer[] {
+        let allPlayers: OtherPlayer[] = [];
+
+        allPlayers.push(...this.otherPlayers);
+        allPlayers.push(this.currentPlayer.getOtherPlayer());
+
+        return allPlayers;
     }
 
     async useEventCard(event: Event): Promise<boolean> {
@@ -78,16 +84,5 @@ export default class Game {
 
             return await this.socketManager.useEventCard(event);
         }
-    }
-
-    private changePlayerData(player: Player) {
-        for (let i = 0; i < this.players.length; ++i) {
-            if (this.players[i].link === player.link) {
-                this.players[i] = player;
-                return;
-            }
-        }
-
-        this.players.push(player);
     }
 }

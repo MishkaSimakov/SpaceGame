@@ -74,7 +74,7 @@ export default class EventCardsEventListener extends BaseEventListener {
                 this.game.spaceshipsScene.chooseModules((chosen: Module[]) => {
                     modules = chosen;
                 }, (module?: Module, playerLink?: number) => {
-                    if (playerLink !== this.game.link)
+                    if (playerLink !== this.game.getLink())
                         return false;
 
                     if (!module.isDamaged())
@@ -105,7 +105,7 @@ export default class EventCardsEventListener extends BaseEventListener {
             this.game.spaceshipsScene.chooseModule((chosen: Module) => {
                 module = chosen;
             }, (module?: Module, playerLink?: number) => {
-                if (playerLink !== this.game.link)
+                if (playerLink !== this.game.getLink())
                     return false;
 
                 if (!module.isDamaged())
@@ -149,7 +149,7 @@ export default class EventCardsEventListener extends BaseEventListener {
 
                 this.controls().topBarDrawer.buttonsShapes[0].setDisabled(module === undefined);
             }, (module?: Module, playerLink?: number) => {
-                if (playerLink === this.game.link)
+                if (playerLink === this.game.getLink())
                     return false;
 
                 if (module.isMain)
@@ -200,7 +200,7 @@ export default class EventCardsEventListener extends BaseEventListener {
 
                 this.controls().topBarDrawer.setButtonsDisabled(selectedSolarPanels.length < count);
             }, (module?: Module, playerLink?: number) => {
-                if (playerLink !== this.game.link)
+                if (playerLink !== this.game.getLink())
                     return false;
 
                 if (module.type !== ModuleTypes.SolarPanel)
@@ -239,7 +239,7 @@ export default class EventCardsEventListener extends BaseEventListener {
 
                 this.controls().topBarDrawer.setButtonsDisabled(selectedModule === undefined);
             }, (module?: Module, playerLink?: number) => {
-                if (playerLink !== this.game.link)
+                if (playerLink !== this.game.getLink())
                     return false;
 
                 if (module.isMain)

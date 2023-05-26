@@ -2,6 +2,7 @@ import Spaceship from "./Spaceship";
 import Module, {isModule, ModuleTypes} from "./modules/Module";
 import {Event} from "./events/Event";
 import {Options} from "./PlainToClass";
+import {OtherPlayer} from "./GameForPlayerDTO";
 
 function isObject(object) {
     return object != null && typeof object === 'object';
@@ -51,7 +52,7 @@ export default class Player {
     socketId: string;
 
     spaceship: Spaceship;
-    hand: (Module|Event)[] = [];
+    hand: (Module | Event)[] = [];
 
     energy: number = 0;
     skipNextTurn: boolean;
@@ -134,6 +135,19 @@ export default class Player {
     }
 
     isLose(): boolean {
-       return this.lose;
+        return this.lose;
+    }
+
+    getOtherPlayer(): OtherPlayer {
+        let otherPlayer = new OtherPlayer();
+
+        otherPlayer.link = this.link;
+        otherPlayer.energy = this.energy;
+        otherPlayer.online = this.online;
+        otherPlayer.spaceship = this.spaceship;
+        otherPlayer.handSize = this.hand.length;
+        otherPlayer.time = this.time;
+
+        return otherPlayer;
     }
 }

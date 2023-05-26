@@ -1,5 +1,4 @@
 import io, {Socket} from "socket.io-client";
-import Player from "../../../common/Player";
 import EventCardsEventListener from "./listeners/EventCardsEventListener";
 import FightEventListener from "./listeners/FightEventListener";
 import InfoEventListener from "./listeners/InfoEventListener";
@@ -29,7 +28,7 @@ export default class SocketManager {
     on(ev: string, listener: (...args) => any) {
         let newListener = (...args) => {
             if (args[0] === HAS_PLAYERS_DATA) {
-                this.game.setPlayersData(args[1]);
+                this.game.setGameData(args[1]);
 
                 args = args.slice(2);
             }
@@ -52,12 +51,11 @@ export default class SocketManager {
         })
 
         this.on('getLink', (callback: (link: number) => void) => {
-            callback(this.game.link);
+            callback(this.game.getLink());
         });
 
-        this.on('setPlayersData', (game: GameForPlayerDTO) => {
-            this.game.settings = game.settings;
-            this.game.
+        this.on('setGameData', (game: GameForPlayerDTO) => {
+            this.game.setGameData(game);
         });
     }
 

@@ -3,8 +3,9 @@ import SpaceshipDrawer from "../../SpaceshipDrawer";
 import Vector2 from "../../../../../common/Vector2";
 import Module from "../../../../../common/modules/Module";
 import Game from "../../../Game";
-import { Pinch } from 'phaser3-rex-plugins/plugins/gestures.js';
+import {Pinch} from 'phaser3-rex-plugins/plugins/gestures.js';
 import config from "../../../config";
+import Spaceship from "../../../../../common/Spaceship";
 
 let spaceshipConfigurations: Vector2[][] = [
     [new Vector2(0, 0)],
@@ -51,7 +52,7 @@ export default class Spaceships extends Phaser.Scene {
             cam.scrollY -= (pointer.y - pointer.prevPosition.y) / cam.zoom;
         });
 
-        this.input.on("wheel", (pointer, gameObjects, deltaX, deltaY, deltaZ) => {
+        this.input.on("wheel", (pointer, gameObjects, deltaX, deltaY) => {
             if (deltaY > 0) {
                 let newZoom = this.cameras.main.zoom - .1;
                 if (newZoom > 0.2) {
@@ -72,26 +73,23 @@ export default class Spaceships extends Phaser.Scene {
         });
     }
 
-    drawSpaceshipOf(player: Player, index: number, count: number): void {
-        if (this.spaceshipDrawers[player.link] === undefined) {
+    drawSpaceship(spaceship: Spaceship, link: number, index: number, count: number): void {
+        if (this.spaceshipDrawers[link] === undefined) {
             const spaceshipPosition = spaceshipConfigurations[count - 1][index];
 
-            this.spaceshipDrawers[player.link] = new SpaceshipDrawer(
-                player.spaceship,
-                spaceshipPosition,
-                this.spaceshipsCardSize,
-                this
+            this.spaceshipDrawers[link] = new SpaceshipDrawer(
+                spaceship, spaceshipPosition, this.spaceshipsCardSize, this
             );
 
             let currentPlayer = this.gameManager.getCurrentPlayer();
-            if (currentPlayer && player.link === currentPlayer.link) {
+            if (currentPlayer && link === currentPlayer.link) {
                 this.panToPlayerWithLink(currentPlayer.link, 0);
             }
         } else {
-            this.spaceshipDrawers[player.link].spaceship = player.spaceship;
+            this.spaceshipDrawers[link].spaceship = spaceship;
         }
 
-        this.spaceshipDrawers[player.link].draw();
+        this.spaceshipDrawers[link].draw();
     }
 
     chooseModule(onSelected: (module?: Module, playerLink?: number) => void, check: (module: Module, playerLink: number) => boolean, required: boolean, outlineColor: number): void {
@@ -129,7 +127,7 @@ export default class Spaceships extends Phaser.Scene {
 
         for (let link of Object.keys(this.spaceshipDrawers)) {
             for (let shape of this.spaceshipDrawers[link].moduleShapes) {
-                shape.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+                shape.on('pointerdown', () => {
                     let module = shape.getData('module') as Module;
 
                     if (!check(module, parseInt(link)))
@@ -152,14 +150,15 @@ export default class Spaceships extends Phaser.Scene {
         }
     }
 
-    playersDataUpdated() {
-        for (let [index, player] of this.gameManager.players.entries()) {
-            this.drawSpaceshipOf(player, index, this.gameManager.players.length);
+    redraw() {
+        let players = this.gameManager.getAllPlayers();
+        for (let [index, player] of players.entries()) {
+            this.drawSpaceship(player.spaceship, player.link, index, players.length);
         }
     }
 
     endChoosingModule() {
-        for (let [id, spaceshipDrawer] of Object.entries(this.spaceshipDrawers)) {
+        for (let spaceshipDrawer of Object.values(this.spaceshipDrawers)) {
             for (let shape of spaceshipDrawer.moduleShapes) {
                 (shape.getAll()[0] as Phaser.GameObjects.Rectangle).setStrokeStyle(0);
 

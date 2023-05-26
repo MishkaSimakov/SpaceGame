@@ -21,7 +21,7 @@ export default class HandDrawer {
         this.scene = scene;
     }
 
-    draw() {
+    redraw() {
         this.destroy();
 
         let hand = this.gameManager.getCurrentPlayer().hand;
@@ -96,7 +96,7 @@ export default class HandDrawer {
 
                             let hand = this.gameManager.getCurrentPlayer().hand;
                             hand.splice(hand.indexOf(card), 1);
-                            this.draw();
+                            this.redraw();
 
                             return;
                         }

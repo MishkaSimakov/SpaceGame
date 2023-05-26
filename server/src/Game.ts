@@ -170,7 +170,7 @@ export default class Game {
 
             // add information that players data contains in this message
             // add players data to the front to keep state on client online
-            args.unshift(HAS_PLAYERS_DATA, this.players);
+            args.unshift(HAS_PLAYERS_DATA, GameToGameForPlayerMapper.getDTO(this, player.link));
 
             let emitFunction = () => {
                 if (typeof args[args.length - 1] === 'function') {
@@ -288,7 +288,7 @@ export default class Game {
 
     syncPlayersData() {
         for (let player of this.players) {
-            this.getSocket(player).emit('setPlayersData', GameToGameForPlayerMapper.getDTO(this, player.link));
+            this.getSocket(player)?.emit('setGameData', GameToGameForPlayerMapper.getDTO(this, player.link));
         }
     }
 
@@ -356,7 +356,7 @@ export default class Game {
     async rebuildSpaceshipPhase() {
         console.log("   Player start rebuilding spaceship");
 
-        await this.emitToPlayerAndWait(this.currentPlayer, 'rebuildSpaceship', this.currentPlayer, (changedPlayer: Player) => {
+        await this.emitToCurrentPlayerAndWait('rebuildSpaceship', (changedPlayer: Player) => {
             this.setRebuildSpaceshipData(plainToClass(changedPlayer, Player.getPropertiesMap()));
 
             this.syncPlayersData();
@@ -384,7 +384,7 @@ export default class Game {
     }
 
     async useRepairModule(energyCost: number): Promise<boolean> {
-        return await this.emitToPlayerAndWait(this.currentPlayer, 'chooseModuleToRepair', async (modulePosition?: Vector2) => {
+        return await this.emitToCurrentPlayerAndWait('chooseModuleToRepair', async (modulePosition?: Vector2) => {
             if (!modulePosition)
                 return false;
 
@@ -463,7 +463,7 @@ export default class Game {
     }
 
     async choosePlayerForAttack(attackReason: AttackReason): Promise<Player | void> {
-        return await this.emitToPlayerAndWait(this.currentPlayer, 'choosePlayerForAttack', attackReason, async (attackedPlayerLink?: number) => {
+        return await this.emitToCurrentPlayerAndWait('choosePlayerForAttack', attackReason, async (attackedPlayerLink?: number) => {
             if (attackedPlayerLink === undefined) {
                 return;
             }
@@ -494,7 +494,7 @@ export default class Game {
     async drawCardsPhase() {
         console.log("   Player asked to choose card type");
 
-        return await this.emitToPlayerAndWait(this.currentPlayer, 'chooseCardType', async (cardType: string) => {
+        return await this.emitToCurrentPlayerAndWait('chooseCardType', async (cardType: string) => {
             console.log(`   Player choose ${cardType} card`);
 
             if (cardType === 'event') {
@@ -567,7 +567,7 @@ export default class Game {
     async discardExtraCardsPhase() {
         console.log("   Player asked to discard cards");
 
-        await this.emitToPlayerAndWait(this.currentPlayer, 'discardCards', (discardedCardsIndexes: number[]) => {
+        await this.emitToCurrentPlayerAndWait('discardCards', (discardedCardsIndexes: number[]) => {
             console.log(`   Player discarded cards with indexes ${discardedCardsIndexes.join(', ')}`);
 
             if (this.currentPlayer.hand.length - discardedCardsIndexes.length > 5)

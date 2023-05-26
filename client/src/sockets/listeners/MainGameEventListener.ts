@@ -16,9 +16,7 @@ export default class MainGameEventListener extends BaseEventListener {
     }
 
     addListeners(): void {
-        this.socket.on('rebuildSpaceship', (player: Player, callback: (player: Player) => void) => {
-            this.game.setPlayersData([player]);
-
+        this.socket.on('rebuildSpaceship', (callback: (player: Player) => void) => {
             // this.controls.drawHand(this.player.hand);
             // this.controls.drawStatusBar(this.player);
             //
@@ -71,9 +69,7 @@ export default class MainGameEventListener extends BaseEventListener {
         });
 
         this.socket.on('choosePlayerForAttack', (attackReason: AttackReason, callback: (link: number) => {}) => {
-            let otherPlayers = this.game.players.filter(p => p.link !== this.game.getCurrentPlayer().link);
-
-            this.controls().choosePlayerForAttack(otherPlayers, attackReason).then(callback);
+            this.controls().choosePlayerForAttack(this.game.otherPlayers, attackReason).then(callback);
         });
 
         this.socket.on('chooseCardType', (callback: (cardType: string) => void) => {

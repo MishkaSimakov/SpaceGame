@@ -3,6 +3,7 @@ import Button from "../Button";
 import Controls from "../scenes/game/controls";
 import {ButtonColors, SIZES} from "../constants";
 import Vector2 from "../../../../common/Vector2";
+import {OtherPlayer} from "../../../../common/GameForPlayerDTO";
 
 type ButtonData = {
     text: string, onClick: () => void, color: ButtonColors
@@ -28,7 +29,7 @@ export default class TopBarDrawer {
 
     scale: number;
 
-    players: Player[] = [];
+    otherPlayers: OtherPlayer[] = [];
     currentPlayer: Player;
 
     sizes = {
@@ -73,9 +74,9 @@ export default class TopBarDrawer {
         this.redraw();
     }
 
-    setPlayersData(players: Player[], currentPlayer: Player) {
-        this.players = players;
+    setPlayersData(currentPlayer: Player, otherPlayers: OtherPlayer[]) {
         this.currentPlayer = currentPlayer;
+        this.otherPlayers = otherPlayers;
 
         this.redraw();
     }
@@ -187,7 +188,7 @@ export default class TopBarDrawer {
             textY = this.sizes.margin + this.sizes.padding;
         }
 
-        this.currentPlayerData = this.getPlayerStatusStringShape(this.currentPlayer, false)
+        this.currentPlayerData = this.getPlayerStatusStringShape(this.currentPlayer.getOtherPlayer(), false)
             .setPosition(textX, textY)
             .on('pointerdown', () => {
                 this.togglePlayerCharacteristics();
@@ -247,7 +248,12 @@ export default class TopBarDrawer {
                 this.sizes.margin + this.sizes.padding
             );
         }
-        for (let [index, player] of this.players.entries()) {
+
+        let players: OtherPlayer[] = [];
+        players.push(...this.otherPlayers);
+        players.push(this.currentPlayer.getOtherPlayer());
+
+        for (let [index, player] of players.entries()) {
             this.playersDataText.push(
                 this.getPlayerStatusStringShape(player, true)
                     .setPosition(textStart.x, textStart.y + lineOffset * index)
@@ -316,7 +322,7 @@ export default class TopBarDrawer {
         this.buttonsShapes.forEach(b => b.setDisabled(isDisabled));
     }
 
-    getPlayerStatusStringShape(player: Player, withName: boolean): Phaser.GameObjects.Container {
+    getPlayerStatusStringShape(player: OtherPlayer, withName: boolean): Phaser.GameObjects.Container {
         let container = this.scene.add.container();
         let textStyle = {
             fontFamily: 'Exo2Bold',
@@ -340,11 +346,11 @@ export default class TopBarDrawer {
         );
 
         container.add(
-            this.scene.add.text(startX + 75, 0, `${player.hand.length} 🤚`)
+            this.scene.add.text(startX + 75, 0, `${player.handSize} 🤚`)
                 .setStyle(textStyle)
         );
 
-        if (this.scene.gameManager.withTimeControl) {
+        if (this.scene.gameManager.settings.withTimeControl) {
             container.add(
                 this.scene.add.text(startX + 150, 0, `${this.timeToString(player.time)} ⏰`)
                     .setStyle(textStyle)
