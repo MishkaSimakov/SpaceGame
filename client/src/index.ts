@@ -11,13 +11,13 @@ function loadFont(name, url) {
 }
 
 function redirectToLobby() {
-    location.href = '/spaceships/lobby';
+    location.href = '/';
 }
 
-loadFont("Exo2Bold", "/spaceships/Exo2-Bold.ttf");
-loadFont("Exo2Regular", "/spaceships/Exo2-Regular.ttf");
+loadFont("Exo2Bold", "/fonts/Exo2-Bold.ttf");
+loadFont("Exo2Regular", "/fonts/Exo2-Regular.ttf");
 
-let regex = /spaceships\/game\/[0-9]{6}$/
+let regex = /game\/[0-9]{6}$/
 
 if (regex.test(window.location.href)) {
     // document.addEventListener('DOMContentLoaded', () => {
@@ -30,7 +30,7 @@ if (regex.test(window.location.href)) {
 
     let link = parseInt(window.location.href.split('/').pop());
 
-    fetch('/spaceships/check/' + link)
+    fetch('/check/' + link)
         .then(response => {
             return response.text();
         })

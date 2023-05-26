@@ -46,7 +46,7 @@ export default class FightManager {
 
             let destroyed = await this.makeFightIteration();
 
-            (this.isFirstPlayerTurn ? this.first : this.second).time += this.gameManager.FIGHT_TIME_INCREASE - this.fightTurnStartedAt;
+            (this.isFirstPlayerTurn ? this.first : this.second).time += this.gameManager.FIGHT_TIME_INCREASE + (new Date()).getTime() - this.fightTurnStartedAt;
 
             if (destroyed !== undefined) {
                 console.log(`Fight has ended. Player ${destroyed.link} was destroyed`);

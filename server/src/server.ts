@@ -21,11 +21,11 @@ let gamesManager = new GamesManager(io);
 server.use(cors());
 server.use(serveStatic(path.join(__dirname, '../../client/dist')))
 
-server.get('/spaceships/lobby', (req, res) => {
-    res.sendFile(path.join(__dirname, '../../client/dist/spaceships/html/index.html'));
+server.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '../../client/dist/html/index.html'));
 });
 
-server.get('/spaceships/game/create', (req, res) => {
+server.get('/create', (req, res) => {
     let playersCount: number = req.query.count;
 
     let createdGame = gamesManager.createGame(playersCount);
@@ -33,11 +33,17 @@ server.get('/spaceships/game/create', (req, res) => {
     res.send(JSON.stringify(createdGame.getLinks()));
 });
 
-server.get('/spaceships/game/:link', (req, res) => {
-    res.sendFile(path.join(__dirname, '../../client/dist/spaceships/html/game.html'));
+server.get('/game/:link', (req, res) => {
+    if (!gamesManager.checkPlayerLinkExist(parseInt(req.params.link))) {
+        res.redirect("/");
+
+        return;
+    }
+
+    res.sendFile(path.join(__dirname, '../../client/dist/html/game.html'));
 });
 
-server.get('/spaceships/check/:link', (req, res) => {
+server.get('/check/:link', (req, res) => {
     res.send(gamesManager.checkPlayerLinkExist(parseInt(req.params.link)));
 });
 
@@ -75,10 +81,7 @@ io.on('connection', async function (socket: Socket) {
         }
 
         player = game.playerConnected(link, socket.id);
-        game.getSocketByLink(link).emit('setPlayersData', game.players);
-        game.getSocketByLink(link).emit('setGameSettings', {
-            withTimeControl: game.withTimeControl
-        });
+
         game.tryToEmitEvent();
     });
 });

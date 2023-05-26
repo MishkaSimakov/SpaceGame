@@ -7,6 +7,7 @@ import Game from "../Game";
 import MainGameEventListener from "./listeners/MainGameEventListener";
 import {Event} from "../../../common/events/Event";
 import {HAS_PLAYERS_DATA} from "../../../common/Sockets";
+import {GameForPlayerDTO} from "../../../common/GameForPlayerDTO";
 
 export default class SocketManager {
     game: Game;
@@ -54,24 +55,9 @@ export default class SocketManager {
             callback(this.game.link);
         });
 
-        this.on('setPlayersData', (players: Player[]) => {
-            this.game.setPlayersData(players);
-        });
-
-        this.on('setPlayersStatus', (players: { link: number, online: boolean }[]) => {
-            for (let player of players) {
-                if (this.game.getPlayerByLink(player.link)) {
-                    this.game.getPlayerByLink(player.link).online = player.online;
-                }
-            }
-
-            // this.game.controlsScene.topBarDrawer.drawPlayersList(this.game.players, this.game.link, (link) => {
-            //     this.game.spaceshipsScene.panToPlayerWithLink(link);
-            // });
-        });
-
-        this.on('setGameSettings', (gameSettings) => {
-            this.game.withTimeControl = gameSettings.withTimeControl;
+        this.on('setPlayersData', (game: GameForPlayerDTO) => {
+            this.game.settings = game.settings;
+            this.game.
         });
     }
 

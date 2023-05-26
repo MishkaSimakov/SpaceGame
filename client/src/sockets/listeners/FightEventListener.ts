@@ -91,13 +91,13 @@ export default class FightEventListener extends BaseEventListener {
                 }
             }]);
 
-            this.controls().topBarDrawer.setButtonsDisabled(false);
+            this.controls().topBarDrawer.setButtonsDisabled(true);
 
             this.game.spaceshipsScene.chooseModule((module?: Module) => {
                 selectedWeapon = module;
 
                 this.controls().topBarDrawer.setButtonsDisabled(
-                    (selectedWeapon !== undefined) && (selectedTarget !== undefined)
+                    (selectedWeapon === undefined) || (selectedTarget === undefined)
                 );
             }, (module?: Module, playerLink?: number) => {
                 if (playerLink !== this.game.link)
@@ -113,7 +113,7 @@ export default class FightEventListener extends BaseEventListener {
                 selectedTarget = module;
 
                 this.controls().topBarDrawer.setButtonsDisabled(
-                    (selectedWeapon !== undefined) && (selectedTarget !== undefined)
+                    (selectedWeapon === undefined) || (selectedTarget === undefined)
                 );
             }, (module?: Module, playerLink?: number) => {
                 return playerLink === targetPlayerLink;
@@ -140,12 +140,12 @@ export default class FightEventListener extends BaseEventListener {
                 }
             }]);
 
-            this.controls().topBarDrawer.setButtonsDisabled(false);
+            this.controls().topBarDrawer.setButtonsDisabled(true);
 
             this.game.spaceshipsScene.chooseModule((module?: Module) => {
                 selectedTarget = module;
 
-                this.controls().topBarDrawer.setButtonsDisabled(selectedTarget !== undefined);
+                this.controls().topBarDrawer.setButtonsDisabled(selectedTarget === undefined);
             }, (module?: Module, playerLink?: number) => {
                 return playerLink === targetPlayerLink;
             }, true, 0xe76f51);

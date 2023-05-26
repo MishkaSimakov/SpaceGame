@@ -18,7 +18,7 @@ class MainModule extends Module {
 
         let indexToRomanian: string[] = ['I', 'II', 'III', 'IV', 'V'];
 
-        this.name = 'Главный модуль ' + indexToRomanian[index - 1];
+        this.name = 'Командный модуль ' + indexToRomanian[index - 1];
         this.type = ModuleTypes.MainModule;
         this.isMain = true;
 

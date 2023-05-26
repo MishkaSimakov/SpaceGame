@@ -11,6 +11,7 @@ import {MainModuleType} from "../../common/modules/MainModule";
 import {AttackReason, MoveDamageReason} from "../../common/Types";
 import Vector2 from "../../common/Vector2";
 import {HAS_PLAYERS_DATA} from "../../common/Sockets";
+import GameToGameForPlayerMapper from "./GameToGameForPlayerMapper";
 
 enum GameState {
     WAIT_FOR_PLAYERS,
@@ -42,8 +43,8 @@ export default class Game {
     currentFight?: FightManager;
 
     withTimeControl: boolean = true;
-    DEFAULT_TIME_INCREASE: number = 45;
-    FIGHT_TIME_INCREASE: number = 10;
+    DEFAULT_TIME_INCREASE: number = 45 * 1000;
+    FIGHT_TIME_INCREASE: number = 10 * 1000;
 
     // logger: Logger;
 
@@ -119,6 +120,8 @@ export default class Game {
             let module = destroyedInfo.module
 
             console.log(`   Module at x: ${module.x}, y: ${module.y} has been destroyed`);
+
+            module.isActivated = false;
 
             target.spaceship.removeModule(module);
 
@@ -284,7 +287,9 @@ export default class Game {
     }
 
     syncPlayersData() {
-        this.io.emit('setPlayersData', this.players);
+        for (let player of this.players) {
+            this.getSocket(player).emit('setPlayersData', GameToGameForPlayerMapper.getDTO(this, player.link));
+        }
     }
 
     getSocketByLink(link: number): Socket {
@@ -501,9 +506,9 @@ export default class Game {
 
                     event = this.gameData.popEventCards()[0];
 
-                    await this.showCardToPlayer(event, this.currentPlayer);
+                    await this.showCardsToPlayer([event], this.currentPlayer, true);
 
-                    console.log(`   Player get event card: ${event.description}`);
+                    console.log(`   Player get event card: ${event.description.replace("\n", " ")}`);
 
                     if (this.currentPlayer.spaceship.getMainModuleType() === MainModuleType.DrawAnotherEventCard
                         && this.currentPlayer.energy >= this.ENERGY_TO_DRAG_ANOTHER_EVENT_CARD_BY_MAIN_MODULE) {
@@ -535,7 +540,7 @@ export default class Game {
 
                     console.log(`   Player get module: ${module.name}`);
 
-                    await this.showCardToPlayer(module, this.currentPlayer);
+                    await this.showCardsToPlayer([module], this.currentPlayer, true);
 
                     this.currentPlayer.hand.push(module);
 
@@ -583,8 +588,14 @@ export default class Game {
         });
     }
 
-    async showCardToPlayer(card: Module | Event, player: Player) {
-        await this.emitToPlayerAndWait(player, 'showCard', card);
+    async showCardsToPlayer(cards: (Module | Event)[], player: Player, showToOther: boolean) {
+        if (!showToOther) {
+            await this.emitToPlayerAndWait(player, 'showCards', player.link, cards);
+        } else {
+            for (let playerToEmit of this.players) {
+                await this.emitToPlayerAndWait(playerToEmit, 'showCards', player.link, cards)
+            }
+        }
     }
 
     getPlayerByOffsetFromCurrent(offset: number): Player {
@@ -690,6 +701,8 @@ export default class Game {
 
         // collect energy
         this.collectEnergyPhase();
+
+        this.syncPlayersData();
 
         // rebuild spaceship
         await this.rebuildSpaceshipPhase();

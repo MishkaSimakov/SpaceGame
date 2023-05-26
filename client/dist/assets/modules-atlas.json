@@ -1,0 +1,139 @@
+{
+    "frames": [
+        {
+            "filename": "dark-matter-generator",
+            "frame": {
+                "w": 512,
+                "h": 512,
+                "x": 0,
+                "y": 0
+            }
+        },
+        {
+            "filename": "space-solver",
+            "frame": {
+                "w": 512,
+                "h": 512,
+                "x": 512,
+                "y": 0
+            }
+        },
+        {
+            "filename": "solar-panel",
+            "frame": {
+                "w": 512,
+                "h": 512,
+                "x": 1024,
+                "y": 0
+            }
+        },
+        {
+            "filename": "small-quantum-protector",
+            "frame": {
+                "w": 512,
+                "h": 512,
+                "x": 1536,
+                "y": 0
+            }
+        },
+        {
+            "filename": "structure-module",
+            "frame": {
+                "w": 512,
+                "h": 512,
+                "x": 2048,
+                "y": 0
+            }
+        },
+        {
+            "filename": "attack-module",
+            "frame": {
+                "w": 512,
+                "h": 512,
+                "x": 2560,
+                "y": 0
+            }
+        },
+        {
+            "filename": "quantum-protector",
+            "frame": {
+                "w": 512,
+                "h": 512,
+                "x": 3072,
+                "y": 0
+            }
+        },
+        {
+            "filename": "nuclear-reactor",
+            "frame": {
+                "w": 512,
+                "h": 512,
+                "x": 3584,
+                "y": 0
+            }
+        },
+        {
+            "filename": "small-battery",
+            "frame": {
+                "w": 512,
+                "h": 512,
+                "x": 4096,
+                "y": 0
+            }
+        },
+        {
+            "filename": "ion-destroyer",
+            "frame": {
+                "w": 512,
+                "h": 512,
+                "x": 4608,
+                "y": 0
+            }
+        },
+        {
+            "filename": "quantum-destabilizer",
+            "frame": {
+                "w": 512,
+                "h": 512,
+                "x": 5120,
+                "y": 0
+            }
+        },
+        {
+            "filename": "battery",
+            "frame": {
+                "w": 512,
+                "h": 512,
+                "x": 5632,
+                "y": 0
+            }
+        },
+        {
+            "filename": "repair-module",
+            "frame": {
+                "w": 512,
+                "h": 512,
+                "x": 6144,
+                "y": 0
+            }
+        },
+        {
+            "filename": "red-connector",
+            "frame": {
+                "w": 49,
+                "h": 318,
+                "x": 9216,
+                "y": 98
+            }
+        },
+        {
+            "filename": "blue-connector",
+            "frame": {
+                "w": 49,
+                "h": 318,
+                "x": 9265,
+                "y": 98
+            }
+        }
+    ]
+}

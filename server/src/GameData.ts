@@ -64,7 +64,7 @@ export default class GameData {
             "1 урон с\n" +
             "одного вашего модуля\n" +
             "на другой", 2),
-        ...addEvents(EventTypes.ChoosePlayerAndStealHisCard, "Выберите любого игрока,\nу которого на руках есть карточки.\n" +
+        ...addEvents(EventTypes.ChoosePlayerAndStealHisCard, "Выберите любого игрока,\nу которого на руках есть\nкарточки.\n" +
             "Посмотрите его карты и\nвозьмите себе одну из\nних на ваш выбор", 2),
         ...addEvents(EventTypes.DiscardCardsAndTakeBuildingCards, "Если у вас есть карты на\nруках, скиньте в сброс до\n" +
             "2 из них на ваш выбор,\n" +

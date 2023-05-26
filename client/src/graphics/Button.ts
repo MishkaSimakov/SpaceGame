@@ -1,13 +1,12 @@
 import * as Phaser from "phaser";
+import {ButtonColors} from "./constants";
 
 enum ButtonState {
+    DISABLED,
     DEFAULT,
     HOVER,
     ACTIVE,
-    DISABLED
 }
-
-type ButtonColors = { DEFAULT: number, HOVER: number, ACTIVE: number };
 
 export default class Button {
     scene: Phaser.Scene;
@@ -17,7 +16,6 @@ export default class Button {
     state: ButtonState = ButtonState.DEFAULT;
 
     colors: ButtonColors;
-    disabledColor = 0x716A5C;
 
     constructor(scene: Phaser.Scene, onClick: () => void, x: number, y: number, width: number, height: number, text: string, borderRadius: number, colors: ButtonColors, textStyle?: Phaser.Types.GameObjects.Text.TextStyle) {
         this.scene = scene;
@@ -66,7 +64,7 @@ export default class Button {
         //     onClick();
         // });
     }
-
+w
     setDisabled(isDisabled: boolean) {
         if (isDisabled) {
             this.state = ButtonState.DISABLED;
@@ -77,6 +75,8 @@ export default class Button {
 
             this.background.setInteractive();
         }
+
+        this.stateUpdated();
     }
 
     stateUpdated() {
@@ -84,7 +84,7 @@ export default class Button {
             [ButtonState.DEFAULT]: this.colors.DEFAULT,
             [ButtonState.HOVER]: this.colors.HOVER,
             [ButtonState.ACTIVE]: this.colors.ACTIVE,
-            [ButtonState.DISABLED]: this.disabledColor
+            [ButtonState.DISABLED]: this.colors.DISABLED
         }
 
         this.background.setFillStyle(stateColor[this.state]);

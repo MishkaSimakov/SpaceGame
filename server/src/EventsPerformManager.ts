@@ -40,10 +40,16 @@ let eventsPerformFunctions: Record<EventTypes, (game: Game, event: Event) => Pro
         });
     },
     [EventTypes.TakeOneBuildingCard]: async (game: Game) => {
-        game.currentPlayer.hand.push(...game.gameData.popModuleCards(1));
+        let cards = game.gameData.popModuleCards(1);
+        game.currentPlayer.hand.push(...cards);
+
+        await game.showCardsToPlayer(cards, game.currentPlayer, false);
     },
     [EventTypes.TakeTwoBuildingCards]: async (game: Game) => {
-        game.currentPlayer.hand.push(...game.gameData.popModuleCards(2));
+        let cards = game.gameData.popModuleCards(2);
+        game.currentPlayer.hand.push(...cards);
+
+        await game.showCardsToPlayer(cards, game.currentPlayer, false);
     },
     [EventTypes.LooseFiveEnergy]: async (game: Game) => {
         game.currentPlayer.energy -= 1;
@@ -124,7 +130,10 @@ let eventsPerformFunctions: Record<EventTypes, (game: Game, event: Event) => Pro
     [EventTypes.TossDiceAndTakeBuildingCards]: async (game: Game) => {
         let cardsCount = tossDice() <= 4 ? 1 : 2;
 
-        game.currentPlayer.hand.push(...game.gameData.popModuleCards(cardsCount));
+        let cards = game.gameData.popModuleCards(cardsCount);
+        game.currentPlayer.hand.push(...cards);
+
+        await game.showCardsToPlayer(cards, game.currentPlayer, false);
     },
     [EventTypes.TossDiceAndDealDamage]: async (game: Game) => {
         let damageToDeal = tossDice() <= 4 ? 1 : 2;
@@ -132,7 +141,7 @@ let eventsPerformFunctions: Record<EventTypes, (game: Game, event: Event) => Pro
         let damageData: {
             playerLink: number,
             modulePosition: Vector2
-        } = await game.emitToCurrentPlayerAndWait('chooseModuleToDamageEvent', (playerLink?: number, module?: Vector2) => {
+        } = await game.emitToCurrentPlayerAndWait('chooseModuleToDamageEvent', damageToDeal, (playerLink?: number, module?: Vector2) => {
             return {
                 playerLink: playerLink, modulePosition: module
             };
@@ -153,6 +162,9 @@ let eventsPerformFunctions: Record<EventTypes, (game: Game, event: Event) => Pro
         game.currentPlayer.energy += energyCount;
     },
     [EventTypes.TossDiceAndRepairYourModule]: async (game: Game) => {
+        if (!game.currentPlayer.spaceship.hasDamagedModules())
+            return;
+
         let diceResult = tossDice();
 
         let moduleToRepairPosition: Vector2 = await game.emitToCurrentPlayerAndWait('chooseModuleToRepairEvent', (module?: Vector2) => {
@@ -266,9 +278,13 @@ let eventsPerformFunctions: Record<EventTypes, (game: Game, event: Event) => Pro
         let cardsToDiscard: (Module | Event)[] = cardsToDiscardIndexes.map((index) => game.currentPlayer.hand[index]);
 
         game.currentPlayer.hand = game.currentPlayer.hand.filter((card) => !cardsToDiscard.includes(card));
-        game.currentPlayer.hand.push(...game.gameData.popModuleCards(cardsToDiscard.length));
+
+        let cards = game.gameData.popModuleCards(cardsToDiscard.length);
+        game.currentPlayer.hand.push(...cards);
 
         game.gameData.discardCards(cardsToDiscard);
+
+        await game.showCardsToPlayer(cards, game.currentPlayer, false);
     }
 }
 

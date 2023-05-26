@@ -3,11 +3,11 @@ import HandDrawer from "../../HandDrawer";
 import Vector2 from "../../../../../common/Vector2";
 import Player from "../../../../../common/Player";
 import {Event} from "../../../../../common/events/Event";
-import {drawEventCard, drawModuleCard} from "../../CardsDrawer";
+import {drawCard} from "../../CardsDrawer";
 import TopBarDrawer from "../../topbar/TopBarDrawer";
 import Game from "../../../Game";
 import Modal from "../../Modal";
-import {COLORS, SIZES} from "../../constants";
+import {COLORS} from "../../constants";
 import {AttackReason, MoveDamageReason} from "../../../../../common/Types";
 
 
@@ -15,6 +15,12 @@ export default class Controls extends Phaser.Scene {
     handDrawer: HandDrawer;
     topBarDrawer: TopBarDrawer;
     gameManager: Game;
+
+    showCardShapes: {
+        cards?: Phaser.GameObjects.Container,
+        title?: Phaser.GameObjects.Text,
+        fade?: Phaser.GameObjects.Rectangle
+    } = {};
 
     constructor(game: Game) {
         super({
@@ -126,8 +132,10 @@ export default class Controls extends Phaser.Scene {
             }
 
             this.input.once('pointerup', () => {
-                this.input.once('pointerdown', (pointer: Phaser.Input.Pointer) => {
+                this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
                     if (!modal.backgroundShape.getBounds().contains(pointer.x, pointer.y)) {
+                        this.input.removeListener("pointerdown");
+
                         resolve(undefined);
 
                         modal.destroy();
@@ -137,33 +145,76 @@ export default class Controls extends Phaser.Scene {
         });
     }
 
-    showCard(card: Module | Event) {
+    showCards(cards: (Module | Event)[], title?: string) {
+        let destroyShowCards = () => {
+            this.showCardShapes.title?.destroy();
+            this.showCardShapes.fade?.destroy();
+            this.showCardShapes.cards?.destroy();
+        }
+
+        destroyShowCards();
+
         let sceneWidth = this.game.canvas.width;
         let sceneHeight = this.game.canvas.height;
 
-        let image: Phaser.GameObjects.Container;
+        let offset = new Vector2(0, 0);
 
-        let cardSize = Math.min(sceneWidth, sceneHeight) * 0.75;
+        let maxCardSize = Math.min(sceneWidth, sceneHeight) * 0.75;
+        let spaceAvailable = Math.max(sceneWidth, sceneHeight) * 0.75;
+        let padding = 20;
 
-        if (isModule(card)) {
-            image = drawModuleCard(this, card as Module, new Vector2(sceneWidth / 2, sceneHeight / 2), cardSize);
+        let cardSize = Math.min(maxCardSize, (spaceAvailable + padding) / cards.length - padding);
+        let wideSideSize = (cardSize + padding) * cards.length - padding;
+
+        if (sceneWidth > sceneHeight) {
+            offset.x = cardSize + padding;
         } else {
-            image = drawEventCard(this, card as Event, new Vector2(sceneWidth / 2, sceneHeight / 2), cardSize);
+            offset.y = cardSize + padding;
         }
 
-        let fade = this.add.rectangle(0, 0, sceneWidth, sceneHeight, 0x000000, 0.75)
+        this.showCardShapes.cards = this.add.container();
+
+        let position = new Vector2(0, 0)
+
+        for (let [index, card] of cards.entries()) {
+            this.showCardShapes.cards.add(
+                drawCard(this, card, position, cardSize)
+            );
+
+            position.add(offset);
+        }
+
+        this.showCardShapes.cards
+            .setDepth(20)
+            .setPosition(
+                (sceneWidth) / 2,
+                (sceneHeight) / 2
+            );
+
+        console.log((sceneWidth - this.showCardShapes.cards.getBounds().width) / 2,
+            (sceneHeight - this.showCardShapes.cards.getBounds().height) / 2);
+        console.log(this.showCardShapes.cards.getBounds().width, this.showCardShapes.cards.getBounds().height)
+
+        this.showCardShapes.fade = this.add.rectangle(0, 0, sceneWidth, sceneHeight, 0x000000, 0.75)
             .setOrigin(0, 0)
             .setDepth(19);
 
-        this.input.on('pointerdown', () => {
-            image.destroy();
-            fade.destroy();
-        });
+        if (title) {
+            this.showCardShapes.title = this.add.text(
+                this.game.canvas.width / 2, this.showCardShapes.cards.getBounds().top - 15,
+                title
+            )
+                .setOrigin(0.5, 1)
+                .setStyle({
+                    fontFamily: 'Exo2Bold',
+                    fontSize: '20px'
+                })
+                .setDepth(20);
+        }
 
-        image.setDepth(20);
+        this.input.once('pointerdown', destroyShowCards);
     }
 
-    // return index of chosen value
     chooseFromList(title: string, values: string[]): Promise<number> {
         return new Promise(resolve => {
             let modal = new Modal(this);
@@ -251,19 +302,13 @@ export default class Controls extends Phaser.Scene {
                 });
 
             for (let [index, card] of cards.entries()) {
-                let cardShape: Phaser.GameObjects.Container;
                 let position = new Vector2(
                     this.game.canvas.width / 2 - ((cardWidth + 50) * cards.length - 50) / 2 + (cardWidth + 50) * index + cardWidth / 2,
                     this.game.canvas.height / 2
                 );
 
-                if (isModule(card)) {
-                    cardShape = drawModuleCard(this, card as Module, position, cardWidth);
-                } else {
-                    cardShape = drawEventCard(this, card as Event, position, cardWidth);
-                }
-
-                cardShape.setDepth(3);
+                let cardShape = drawCard(this, card, position, cardWidth)
+                    .setDepth(3);
 
                 (cardShape.getAll()[0] as Phaser.GameObjects.Rectangle).setInteractive().on('pointerdown', () => {
                     if (selected.includes(index)) {
@@ -336,20 +381,15 @@ export default class Controls extends Phaser.Scene {
                 for (let [indexInOrder, index] of order.entries()) {
                     let card = cards[index];
 
-                    let cardShape: Phaser.GameObjects.Container;
                     let position = new Vector2(
                         this.game.canvas.width / 2 - ((cardWidth + 50) * cards.length - 50) / 2 + (cardWidth + 50) * indexInOrder + cardWidth / 2,
                         this.game.canvas.height / 2
                     );
 
-                    if (isModule(card)) {
-                        cardShape = drawModuleCard(this, card as Module, position, cardWidth);
-                    } else {
-                        cardShape = drawEventCard(this, card as Event, position, cardWidth);
-                    }
+                    let cardShape = drawCard(this, card, position, cardWidth)
+                        .setDepth(3)
+                        .setInteractive();
 
-                    cardShape.setDepth(3);
-                    cardShape.setInteractive();
                     this.input.setDraggable(cardShape, true);
 
                     cardShape.on('dragstart', () => {

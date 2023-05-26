@@ -1,11 +1,11 @@
 import Player from "../../../../common/Player";
 import Button from "../Button";
 import Controls from "../scenes/game/controls";
-import {SIZES} from "../constants";
+import {ButtonColors, SIZES} from "../constants";
 import Vector2 from "../../../../common/Vector2";
 
 type ButtonData = {
-    text: string, onClick: () => void, color: { DEFAULT: number, HOVER: number, ACTIVE: number }
+    text: string, onClick: () => void, color: ButtonColors
 };
 
 export default class TopBarDrawer {

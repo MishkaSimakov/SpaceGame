@@ -1,8 +1,7 @@
-import Module, {isModule} from "../../../common/modules/Module";
 import * as Phaser from "phaser";
 import Vector2 from "../../../common/Vector2";
 import {Event, EventTypes, isEvent} from "../../../common/events/Event";
-import {drawEventCard, drawModuleCard} from "./CardsDrawer";
+import {drawCard} from "./CardsDrawer";
 import Game from "../Game";
 import {SIZES} from "./constants";
 
@@ -77,13 +76,7 @@ export default class HandDrawer {
 
             position.add(new Vector2(this.cardSize / 2, -this.cardSize / 2));
 
-            let cardShape: Phaser.GameObjects.Container;
-
-            if (isModule(card)) {
-                cardShape = drawModuleCard(this.scene, card as Module, position, this.cardSize);
-            } else {
-                cardShape = drawEventCard(this.scene, card as Event, position, this.cardSize);
-            }
+            let cardShape = drawCard(this.scene, card, position, this.cardSize);
 
             if (isEvent(card) && (card as Event).type === EventTypes.SaveCardAndThenDealDamage) {
                 this.scene.input.setDraggable(cardShape, true);

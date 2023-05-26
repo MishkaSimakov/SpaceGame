@@ -6,8 +6,12 @@ import {plainToClass} from "../../common/PlainToClass";
 import SocketManager from "./sockets/SocketManager";
 import config from "./config";
 import {Event, EventTypes} from "../../common/events/Event";
+import {GameSettings, OtherPlayer} from "../../common/GameForPlayerDTO";
 
 export default class Game {
+    // currentPlayer: Player;
+    // otherPlayers: OtherPlayer[];
+
     link: number;
     players: Player[] = [];
     socketManager: SocketManager;
@@ -16,7 +20,9 @@ export default class Game {
     controlsScene: Controls;
     rebuildSpaceshipManager: RebuildSpaceshipManager;
 
-    withTimeControl: boolean = false;
+    settings: GameSettings = {
+        withTimeControl: false
+    };
 
     constructor() {
         this.spaceshipsScene = new Spaceships(this);

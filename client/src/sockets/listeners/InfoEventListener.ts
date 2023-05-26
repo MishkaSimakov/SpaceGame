@@ -13,8 +13,11 @@ export default class InfoEventListener extends BaseEventListener {
     }
 
     addListeners(): void {
-        this.socket.on('showCard', (card: Module | Event) => {
-            this.controls().showCard(card);
+        this.socket.on('showCards', (link: number, cards: (Module | Event)[]) => {
+            this.controls().showCards(
+                cards,
+                link === this.game.link ? "вы вытянули" : (link + " вытянул")
+            );
         });
     }
 }

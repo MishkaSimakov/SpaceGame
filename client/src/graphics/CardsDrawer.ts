@@ -69,7 +69,7 @@ function drawModuleCard(scene: Phaser.Scene, module: Module, position: Vector2, 
             br: 10 * scale,
             tl: 0,
             bl: 0
-        })
+        });
 
         return graphics
     }
@@ -141,4 +141,12 @@ function drawEventCard(scene: Phaser.Scene, event: Event, position: Vector2, car
         .setData('event', event);
 }
 
-export {drawModuleCard, drawEventCard};
+function drawCard(scene: Phaser.Scene, card: Module | Event, position: Vector2, cardSize: number): Phaser.GameObjects.Container {
+    if (isModule(card)) {
+        return drawModuleCard(scene, card as Module, position, cardSize);
+    } else {
+        return drawEventCard(scene, card as Event, position, cardSize);
+    }
+}
+
+export {drawCard, drawModuleCard, drawEventCard};
