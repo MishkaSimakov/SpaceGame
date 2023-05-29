@@ -597,7 +597,7 @@ export default class Game {
         });
     }
 
-    async showCardsToPlayer(cards: (Module | Event)[], player: Player, showToOther: boolean) {
+    showCardsToPlayer(cards: (Module | Event)[], player: Player, showToOther: boolean) {
         if (!showToOther) {
             this.getSocket(player)?.emit('showCards', player.link, cards);
         } else {
@@ -729,19 +729,12 @@ export default class Game {
                 return;
         }
 
-        console.log("3");
-
-
         // take cards
         await this.drawCardsPhase();
-
-        console.log("2");
 
         // discard extra cards
         if (this.currentPlayer.hand.length > 5)
             await this.discardExtraCardsPhase();
-
-        console.log("1");
 
         this.timeManager.addRecord(TimeRecordType.DEFAULT_TURN_ENDED, this.currentPlayer);
     }

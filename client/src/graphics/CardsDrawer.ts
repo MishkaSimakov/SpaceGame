@@ -131,7 +131,6 @@ function drawEventCard(scene: Phaser.Scene, event: Event, position: Vector2, car
         })
         .setOrigin(0.5);
 
-    console.log((cardSize - 10 * 2) / descriptionShape.getBounds().width * fontSize);
     descriptionShape.setFontSize((cardSize - 10 * 2) / descriptionShape.getBounds().width * fontSize);
 
     return scene.add.container(position.x, position.y, [backgroundShape, descriptionShape])

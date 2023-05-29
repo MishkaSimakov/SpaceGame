@@ -65,8 +65,6 @@ export default class Game {
     }
 
     setGameData(gameDTO: GameForPlayerDTO) {
-        console.log(gameDTO);
-
         if (!this.rebuildSpaceshipManager.isRebuildingSpaceship)
             this.currentPlayer = plainToClass(gameDTO.player, Player.getPropertiesMap());
 

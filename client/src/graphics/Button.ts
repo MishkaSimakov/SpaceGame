@@ -63,6 +63,12 @@ export default class Button {
         //     console.log("click!");
         //     onClick();
         // });
+
+        if (this.background.getBounds().contains(scene.input.x, scene.input.y)) {
+            this.state = ButtonState.HOVER;
+
+            this.stateUpdated();
+        }
     }
 w
     setDisabled(isDisabled: boolean) {

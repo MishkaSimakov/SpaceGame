@@ -36,8 +36,6 @@ class TimeManager {
     addRecord(type: TimeRecordType, player: Player) {
         let currentTime = (new Date()).getTime();
 
-        console.log(`Add record: ${type} for player: ${player.link}`);
-
         if (type === TimeRecordType.FIGHT_TURN_ENDED) {
             let prevRecord = this.getLastRecordByLinkAndType(player.link, TimeRecordType.FIGHT_TURN_STARTED);
 

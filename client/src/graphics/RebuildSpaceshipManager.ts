@@ -42,8 +42,6 @@ export default class RebuildSpaceshipManager {
     }
 
     protected addEvents() {
-        console.log("add events!");
-
         for (let shape of this.spaceshipDrawer.moduleShapes) {
             let module: Module = shape.getData('module');
 

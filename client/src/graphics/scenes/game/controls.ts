@@ -1,7 +1,6 @@
 import Module, {isModule} from "../../../../../common/modules/Module";
 import HandDrawer from "../../HandDrawer";
 import Vector2 from "../../../../../common/Vector2";
-import Player from "../../../../../common/Player";
 import {Event} from "../../../../../common/events/Event";
 import {drawCard} from "../../CardsDrawer";
 import TopBarDrawer from "../../topbar/TopBarDrawer";
@@ -153,44 +152,7 @@ export default class Controls extends Phaser.Scene {
 
         let sceneWidth = this.game.canvas.width;
         let sceneHeight = this.game.canvas.height;
-
-        let offset = new Vector2(0, 0);
-
-        let maxCardSize = Math.min(sceneWidth, sceneHeight) * 0.75;
-        let spaceAvailable = Math.max(sceneWidth, sceneHeight) * 0.75;
-        let padding = 20;
-
-        let cardSize = Math.min(maxCardSize, (spaceAvailable + padding) / cards.length - padding);
-        let wideSideSize = (cardSize + padding) * cards.length - padding;
-
-        if (sceneWidth > sceneHeight) {
-            offset.x = cardSize + padding;
-        } else {
-            offset.y = cardSize + padding;
-        }
-
-        this.showCardShapes.cards = this.add.container();
-
-        let position = new Vector2(0, 0)
-
-        for (let [index, card] of cards.entries()) {
-            this.showCardShapes.cards.add(
-                drawCard(this, card, position, cardSize)
-            );
-
-            position.add(offset);
-        }
-
-        this.showCardShapes.cards
-            .setDepth(20)
-            .setPosition(
-                (sceneWidth) / 2,
-                (sceneHeight) / 2
-            );
-
-        console.log((sceneWidth - this.showCardShapes.cards.getBounds().width) / 2,
-            (sceneHeight - this.showCardShapes.cards.getBounds().height) / 2);
-        console.log(this.showCardShapes.cards.getBounds().width, this.showCardShapes.cards.getBounds().height)
+        this.showCardShapes.cards = this.drawCardsOnScreen(cards);
 
         this.showCardShapes.fade = this.add.rectangle(0, 0, sceneWidth, sceneHeight, 0x000000, 0.75)
             .setOrigin(0, 0)
@@ -198,7 +160,7 @@ export default class Controls extends Phaser.Scene {
 
         if (title) {
             this.showCardShapes.title = this.add.text(
-                this.game.canvas.width / 2, this.showCardShapes.cards.getBounds().top - 15,
+                sceneWidth, this.showCardShapes.cards.getBounds().top - 15,
                 title
             )
                 .setOrigin(0.5, 1)
@@ -268,66 +230,134 @@ export default class Controls extends Phaser.Scene {
         });
     }
 
-    chooseCards(cards: (Module | Event)[], count: number): Promise<number[]> {
+    chooseCards(cards: (Module | Event)[], count: number, title: string): Promise<number[]> {
         return new Promise<number[]>((resolve, reject) => {
-            let outlineColor = 0xa3b18a;
-            let cardShapes: Phaser.GameObjects.Container[] = [];
-            let cardWidth = 256 * this.game.canvas.width / 1440;
+            let cardShapes: Phaser.GameObjects.Container;
+            let backgroundShape: Phaser.GameObjects.Rectangle;
+            let fadeShape: Phaser.GameObjects.Rectangle;
+            let titleShape: Phaser.GameObjects.Text;
+            let buttonShape: Phaser.GameObjects.Text;
 
             let selected: number[] = [];
 
-            let backgroundShape = this.add.rectangle(
-                this.game.canvas.width / 2,
-                this.game.canvas.height / 2,
-                (cardWidth + 50) * cards.length, cardWidth + 100, 0x000000
-            )
-                .setOrigin(0.5)
-                .setStrokeStyle(2, 0x555555)
-                .setDepth(2);
+            let offset = 20;
+            let outlineColor = 0xa3b18a;
 
-            let buttonShape = this.add.text(this.game.canvas.width / 2, this.game.canvas.height / 2 + cardWidth / 2 + 20, "Next")
+            let sceneWidth = this.game.canvas.width;
+            let sceneHeight = this.game.canvas.height;
+            cardShapes = this.drawCardsOnScreen(cards)
+                .setDepth(21);
+
+            fadeShape = this.add.rectangle(0, 0, sceneWidth, sceneHeight, 0x000000, 0.75)
+                .setOrigin(0, 0)
+                .setDepth(19);
+
+            if (title) {
+                titleShape = this.add.text(sceneWidth / 2, cardShapes.getBounds().top - 15, title)
+                    .setOrigin(0.5, 1)
+                    .setStyle({
+                        fontFamily: 'Exo2Bold',
+                        fontSize: '20px'
+                    })
+                    .setDepth(21);
+            }
+
+            buttonShape = this.add.text(sceneWidth / 2, cardShapes.getBounds().bottom + 15, "Далее")
+                .setOrigin(0.5, 0)
                 .setInteractive()
-                .setDepth(3)
+                .setDepth(21)
                 .on('pointerdown', () => {
+                    cardShapes.destroy();
                     backgroundShape.destroy();
-                    for (let cardShape of cardShapes) {
-                        cardShape.destroy();
-                    }
+                    fadeShape.destroy();
+                    titleShape.destroy();
                     buttonShape.destroy();
 
                     resolve(selected);
                 });
 
-            for (let [index, card] of cards.entries()) {
-                let position = new Vector2(
-                    this.game.canvas.width / 2 - ((cardWidth + 50) * cards.length - 50) / 2 + (cardWidth + 50) * index + cardWidth / 2,
-                    this.game.canvas.height / 2
-                );
+            let backgroundPosition1 = new Vector2(
+                Math.min(cardShapes.getBounds().left, titleShape.getBounds().left) - offset,
+                titleShape.getBounds().top - offset
+            );
+            let backgroundPosition2 = new Vector2(
+                Math.max(cardShapes.getBounds().right, titleShape.getBounds().right) + offset,
+                buttonShape.getBounds().bottom + offset
+            );
+            backgroundShape = this.add.rectangle(
+                backgroundPosition1.x, backgroundPosition1.y,
+                backgroundPosition2.x - backgroundPosition1.x,
+                backgroundPosition2.y - backgroundPosition1.y,
+                0x0B2545, 0.75
+            )
+                .setOrigin(0, 0)
+                .setStrokeStyle(2, 0x3D76BE)
+                .setDepth(20);
 
-                let cardShape = drawCard(this, card, position, cardWidth)
-                    .setDepth(3);
+            cardShapes.getAll().forEach((shape: Phaser.GameObjects.Container, index: number) => {
+                (shape.getAll()[0] as Phaser.GameObjects.Rectangle)
+                    .setInteractive()
+                    .on('pointerdown', () => {
+                        if (selected.includes(index)) {
+                            (shape.getAll()[0] as Phaser.GameObjects.Rectangle).setStrokeStyle(0);
 
-                (cardShape.getAll()[0] as Phaser.GameObjects.Rectangle).setInteractive().on('pointerdown', () => {
-                    if (selected.includes(index)) {
-                        (cardShape.getAll()[0] as Phaser.GameObjects.Rectangle).setStrokeStyle(0);
+                            selected = selected.filter((s) => s != index);
+                            return;
+                        }
 
-                        selected = selected.filter((s) => s != index);
-                        return;
-                    }
+                        if (selected.length == count) {
+                            (
+                                (cardShapes.getAt(selected[count - 1]) as Phaser.GameObjects.Container)
+                                    .getAll()[0] as Phaser.GameObjects.Rectangle
+                            )
+                                .setStrokeStyle(0);
+                            selected[count - 1] = index;
+                        } else {
+                            selected.push(index);
+                        }
 
-                    if (selected.length == count) {
-                        (cardShapes[selected[count - 1]].getAll()[0] as Phaser.GameObjects.Rectangle).setStrokeStyle(0);
-                        selected[count - 1] = index;
-                    } else {
-                        selected.push(index);
-                    }
-
-                    (cardShape.getAll()[0] as Phaser.GameObjects.Rectangle).setStrokeStyle(5, outlineColor);
-                });
-
-                cardShapes.push(cardShape);
-            }
+                        (shape.getAll()[0] as Phaser.GameObjects.Rectangle).setStrokeStyle(5, outlineColor);
+                    });
+            });
         });
+    }
+
+    drawCardsOnScreen(cards: (Module | Event)[]): Phaser.GameObjects.Container {
+        let sceneWidth = this.game.canvas.width;
+        let sceneHeight = this.game.canvas.height;
+
+        let offset = new Vector2(0, 0);
+
+        let maxCardSize = Math.min(sceneWidth, sceneHeight) * 0.75;
+        let spaceAvailable = Math.max(sceneWidth, sceneHeight) * 0.75;
+        let padding = 20;
+
+        let cardSize = Math.min(maxCardSize, (spaceAvailable + padding) / cards.length - padding);
+
+        if (sceneWidth > sceneHeight) {
+            offset.x = cardSize + padding;
+        } else {
+            offset.y = cardSize + padding;
+        }
+
+        let cardShapes = this.add.container();
+
+        let position = new Vector2(0, 0)
+
+        for (let card of cards) {
+            cardShapes.add(drawCard(this, card, position, cardSize));
+
+            position.add(offset);
+        }
+
+        cardShapes
+            .setDepth(20)
+            .setPosition(
+                (sceneWidth - cardShapes.getBounds().width + cardSize) / 2,
+                (sceneHeight - cardShapes.getBounds().height + cardSize) / 2
+            );
+
+        return cardShapes;
     }
 
     permuteCards(cards: (Event | Module)[]): Promise<number[]> {
@@ -503,7 +533,7 @@ export default class Controls extends Phaser.Scene {
         });
     }
 
-    async askYesOrNo(): Promise<boolean> {
+    askYesOrNo(): Promise<boolean> {
         return new Promise((resolve) => {
             this.topBarDrawer.addButtons([{
                 text: "Да",

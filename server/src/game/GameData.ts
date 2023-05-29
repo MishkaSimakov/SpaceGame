@@ -18,7 +18,7 @@ import StructureModule from "../../../common/modules/StructureModule";
 import IonDestroyer from "../../../common/modules/IonDestroyer";
 
 export function arrayShuffle<T>(array: T[]): T[] {
-    let currentIndex = array.length,  randomIndex;
+    let currentIndex = array.length, randomIndex;
 
     // While there remain elements to shuffle.
     while (currentIndex != 0) {
@@ -130,6 +130,13 @@ export default class GameData {
         this.modulesStack = arrayShuffle(this.modulesStack);
         this.eventsStack = arrayShuffle(this.eventsStack);
         this.mainModules = arrayShuffle(this.mainModules);
+
+        this.eventsStack.push(
+            ...addEvents(EventTypes.DiscardCardAndRepairSpaceship, "Вы можете, скинув до 2\n" +
+                "карт с руки,\n" +
+                "восстановить по 1 урона\n" +
+                "с модулей вашего корабля за каждую\nскинутую карту", 2)
+        );
     }
 
 

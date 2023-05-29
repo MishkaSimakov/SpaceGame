@@ -46,13 +46,7 @@ export default class EventCardsEventListener extends BaseEventListener {
         });
 
         this.socket.on('chooseCardsToDiscardAndTakeAnother', (cards: (Module | Event)[], callback: (indexes: number[]) => void) => {
-            this.controls().topBarDrawer.setStatus("выберите до 2-х карт");
-
-            this.game.controlsScene.chooseCards(cards, 2).then((indexes: number[]) => {
-                this.controls().topBarDrawer.clearStatus();
-
-                callback(indexes);
-            });
+            this.game.controlsScene.chooseCards(cards, 2, "Выберите до 2-х карт").then(callback);
         });
 
         this.socket.on('chooseModulesToMoveDamage', (moveDamageReason: MoveDamageReason, callback?: (modules?: {
@@ -63,7 +57,7 @@ export default class EventCardsEventListener extends BaseEventListener {
         });
 
         this.socket.on('chooseCardsForRepairSpaceshipEvent', (cards: (Event | Module)[], callback: (discardedCards: number[]) => void) => {
-            this.game.controlsScene.chooseCards(cards, 2).then(callback);
+            this.game.controlsScene.chooseCards(cards, 2, "Выберите до 2-х карт").then(callback);
         });
 
         this.socket.on('chooseModulesToRepairByDiscardedCards', (count: number, callback: (modules: Vector2[]) => void) => {
