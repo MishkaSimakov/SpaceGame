@@ -1,9 +1,9 @@
 import Game from "./Game";
-import Player from "../../common/Player";
-import Module, {ModuleTypes} from "../../common/modules/Module";
-import {EventTypes, Event} from "../../common/events/Event";
-import Vector2 from "../../common/Vector2";
-import {AttackReason, MoveDamageReason} from "../../common/Types";
+import Player from "../../../common/Player";
+import Module, {ModuleTypes} from "../../../common/modules/Module";
+import {EventTypes, Event} from "../../../common/events/Event";
+import Vector2 from "../../../common/Vector2";
+import {AttackReason, MoveDamageReason} from "../../../common/Types";
 
 function tossDice(): number {
     return Math.floor(Math.random() * 6) + 1;

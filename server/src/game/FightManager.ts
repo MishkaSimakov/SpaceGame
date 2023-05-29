@@ -1,8 +1,9 @@
 import Player from "../../../common/Player";
 import Module, {ModuleTypes} from "../../../common/modules/Module";
-import Game from "../Game";
+import Game from "./Game";
 import Vector2 from "../../../common/Vector2";
 import {MainModuleType} from "../../../common/modules/MainModule";
+import {TimeRecordType} from "./TimeManager";
 
 // chooseProtectors -> willYouRunaway -> chooseWeaponAndTarget -> updateOtherPlayerData
 export default class FightManager {
@@ -12,8 +13,6 @@ export default class FightManager {
     isFirstPlayerTurn: boolean = true;
 
     isFightEnded: boolean = false;
-
-    fightTurnStartedAt: number;
 
     gameManager: Game;
 
@@ -42,11 +41,14 @@ export default class FightManager {
         while (!this.isFightEnded) {
             this.gameManager.syncPlayersData();
 
-            this.fightTurnStartedAt = (new Date()).getTime();
+            let attacker = this.isFirstPlayerTurn ? this.first : this.second;
+            let target = this.isFirstPlayerTurn ? this.second : this.first;
 
-            let destroyed = await this.makeFightIteration();
+            this.gameManager.timeManager.addRecord(TimeRecordType.FIGHT_TURN_STARTED, attacker);
 
-            (this.isFirstPlayerTurn ? this.first : this.second).time += this.gameManager.FIGHT_TIME_INCREASE + (new Date()).getTime() - this.fightTurnStartedAt;
+            let destroyed = await this.makeFightIteration(attacker, target);
+
+            this.gameManager.timeManager.addRecord(TimeRecordType.FIGHT_TURN_ENDED, attacker);
 
             if (destroyed !== undefined) {
                 console.log(`Fight has ended. Player ${destroyed.link} was destroyed`);
@@ -67,10 +69,7 @@ export default class FightManager {
         console.log(`Fight has ended. No one destroyed`);
     }
 
-    protected async makeFightIteration(): Promise<Player | undefined> {
-        let attacker = this.isFirstPlayerTurn ? this.first : this.second;
-        let target = this.isFirstPlayerTurn ? this.second : this.first;
-
+    protected async makeFightIteration(attacker: Player, target: Player): Promise<Player | undefined> {
         console.log(`Fight iteration. Player ${attacker.link} attack player ${target.link}`);
 
         if (target.canProtect())

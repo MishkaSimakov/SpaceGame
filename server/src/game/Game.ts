@@ -1,17 +1,18 @@
-import Player from "../../common/Player";
+import Player from "../../../common/Player";
 import GameData from "./GameData";
-import Spaceship from "../../common/Spaceship";
+import Spaceship from "../../../common/Spaceship";
 import {Server, Socket} from "socket.io";
-import {plainToClass} from "../../common/PlainToClass";
-import FightManager from "./Fight/FightManager";
-import Module, {isModule, ModuleTypes} from "../../common/modules/Module";
-import {Event, EventTypes} from "../../common/events/Event";
+import {plainToClass} from "../../../common/PlainToClass";
+import FightManager from "./FightManager";
+import Module, {isModule, ModuleTypes} from "../../../common/modules/Module";
+import {Event, EventTypes} from "../../../common/events/Event";
 import performEvent from "./EventsPerformManager";
-import {MainModuleType} from "../../common/modules/MainModule";
-import {AttackReason, MoveDamageReason} from "../../common/Types";
-import Vector2 from "../../common/Vector2";
-import {HAS_PLAYERS_DATA} from "../../common/Sockets";
+import {MainModuleType} from "../../../common/modules/MainModule";
+import {AttackReason, MoveDamageReason} from "../../../common/Types";
+import Vector2 from "../../../common/Vector2";
+import {HAS_PLAYERS_DATA} from "../../../common/Sockets";
 import GameToGameForPlayerMapper from "./GameToGameForPlayerMapper";
+import {TimeManager, TimeRecordType} from "./TimeManager";
 
 enum GameState {
     WAIT_FOR_PLAYERS,
@@ -42,9 +43,8 @@ export default class Game {
 
     currentFight?: FightManager;
 
+    timeManager: TimeManager;
     withTimeControl: boolean = true;
-    DEFAULT_TIME_INCREASE: number = 45 * 1000;
-    FIGHT_TIME_INCREASE: number = 10 * 1000;
 
     // logger: Logger;
 
@@ -61,6 +61,12 @@ export default class Game {
             this.players.push(this.createPlayer());
 
         this.currentPlayer = this.players[0];
+
+        this.timeManager = new TimeManager({
+            START_TIME: 5 * 60 * 1000,
+            DEFAULT_TIME_INCREASE: 45 * 1000,
+            FIGHT_TIME_INCREASE: 10 * 1000,
+        }, this.players);
     }
 
     addUseEventCardEvent(player: Player) {
@@ -164,15 +170,25 @@ export default class Game {
         return player.link === this.currentFight.first.link || player.link === this.currentFight.second.link;
     }
 
+    addPlayersData(message: any[], player: Player) {
+        if (message[0] === HAS_PLAYERS_DATA) {
+            message.splice(0, 2);
+        }
+
+        message.unshift(HAS_PLAYERS_DATA, GameToGameForPlayerMapper.getDTO(this, player.link));
+
+        return message;
+    }
+
     emitToPlayerAndWait(player: Player, event: string, ...args): Promise<any> {
         return new Promise(resolve => {
             // generate function that must be called when player connected
 
-            // add information that players data contains in this message
-            // add players data to the front to keep state on client online
-            args.unshift(HAS_PLAYERS_DATA, GameToGameForPlayerMapper.getDTO(this, player.link));
-
             let emitFunction = () => {
+                // add information that players data contains in this message
+                // add players data to the front to keep state on client online
+                args = this.addPlayersData(args, player);
+
                 if (typeof args[args.length - 1] === 'function') {
                     let acknowledgement = args[args.length - 1];
 
@@ -208,8 +224,8 @@ export default class Game {
         return this.emitToPlayerAndWait(this.currentPlayer, event, ...args);
     }
 
-    tryToEmitEvent() {
-        if (this.currentEmitPlayerLink === undefined)
+    tryToEmitEvent(link: number) {
+        if (this.currentEmitPlayerLink !== link)
             return;
 
         if (this.getSocketByLink(this.currentEmitPlayerLink) === undefined || this.getSocketByLink(this.currentEmitPlayerLink).disconnected)
@@ -230,7 +246,6 @@ export default class Game {
         let player = new Player();
         player.spaceship = new Spaceship(this.gameData.popMainModule());
         player.hand = this.gameData.popModuleCards(this.gameData.startCardsCount);
-        player.time = 300 * 1000;
 
         return player;
     }
@@ -238,26 +253,20 @@ export default class Game {
     playerConnected(link: number, socketId: string): Player {
         console.log(`User with link ${link} connected`);
 
-        // check whether player connected for the first time
         let connectedPlayer = this.getPlayerByLink(link);
 
-        // set socket id
         connectedPlayer.socketId = socketId;
-
         connectedPlayer.online = true;
+
+        this.changePlayerData(connectedPlayer);
 
         this.addUseEventCardEvent(connectedPlayer);
 
-        this.updatePlayersStatus();
         this.syncPlayersData();
 
-        return connectedPlayer;
-    }
+        this.tryToEmitEvent(link);
 
-    updatePlayersStatus() {
-        this.io.emit('setPlayersStatus', this.players.map(p => {
-            return {link: p.link, online: p.online}
-        }));
+        return connectedPlayer;
     }
 
     async start() {
@@ -367,9 +376,7 @@ export default class Game {
 
     setRebuildSpaceshipData(player: Player) {
         if (this.currentPlayer.socketId !== player.socketId) {
-            console.warn(`Wrong player has rebuilt spaceship (expected: ${this.currentPlayer.socketId}, get: ${player.socketId})`)
-
-            // throw new Error("Wrong player has rebuilt spaceship");
+            throw new Error("Wrong player has rebuilt spaceship");
         }
 
         if (!this.currentPlayer.canBeTurnedInto(player)) {
@@ -542,6 +549,8 @@ export default class Game {
 
                     await this.showCardsToPlayer([module], this.currentPlayer, true);
 
+                    console.log("here");
+
                     this.currentPlayer.hand.push(module);
 
                     if (this.currentPlayer.spaceship.getMainModuleType() === MainModuleType.DrawAdditionalModuleCard
@@ -590,10 +599,10 @@ export default class Game {
 
     async showCardsToPlayer(cards: (Module | Event)[], player: Player, showToOther: boolean) {
         if (!showToOther) {
-            await this.emitToPlayerAndWait(player, 'showCards', player.link, cards);
+            this.getSocket(player)?.emit('showCards', player.link, cards);
         } else {
             for (let playerToEmit of this.players) {
-                await this.emitToPlayerAndWait(playerToEmit, 'showCards', player.link, cards)
+                this.getSocket(playerToEmit)?.emit('showCards', player.link, cards);
             }
         }
     }
@@ -694,7 +703,8 @@ export default class Game {
     async makeGameIteration() {
         console.log(`Turn of player ${this.currentPlayer.link}`);
 
-        this.currentPlayer.turnStartedAt = (new Date()).getTime();
+        this.timeManager.addRecord(TimeRecordType.DEFAULT_TURN_STARTED, this.currentPlayer);
+
         this.currentPlayer.usedRepairOrAttackModuleSecondTimeOnThisTurn = false;
 
         await this.beforeTurn();
@@ -719,14 +729,20 @@ export default class Game {
                 return;
         }
 
+        console.log("3");
+
+
         // take cards
         await this.drawCardsPhase();
+
+        console.log("2");
 
         // discard extra cards
         if (this.currentPlayer.hand.length > 5)
             await this.discardExtraCardsPhase();
 
-        this.currentPlayer.time -= (new Date()).getTime() - this.currentPlayer.turnStartedAt;
-        this.currentPlayer.time += this.DEFAULT_TIME_INCREASE;
+        console.log("1");
+
+        this.timeManager.addRecord(TimeRecordType.DEFAULT_TURN_ENDED, this.currentPlayer);
     }
 }

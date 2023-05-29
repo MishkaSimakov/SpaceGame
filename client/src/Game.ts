@@ -22,6 +22,9 @@ export default class Game {
         withTimeControl: false
     };
 
+    playerTime: Record<number, number> = {};
+    timeDecreasingPlayerLink: number;
+
     constructor() {
         this.spaceshipsScene = new Spaceships(this);
         this.controlsScene = new Controls(this);
@@ -34,6 +37,21 @@ export default class Game {
         game.events.once('ready', () => {
             this.onReady();
         });
+
+        let prevTime = (new Date()).getTime();
+        setInterval(() => {
+            if (!this.settings.withTimeControl)
+                return;
+
+            if (!this.timeDecreasingPlayerLink)
+                return;
+
+            let currTime = (new Date()).getTime();
+            this.playerTime[this.timeDecreasingPlayerLink] -= (currTime - prevTime);
+            prevTime = currTime;
+
+            this.controlsScene.topBarDrawer.updateTime(this.playerTime);
+        }, 1000);
     }
 
     getLink(): number {
@@ -57,12 +75,28 @@ export default class Game {
 
         this.settings = gameDTO.settings;
 
+        // time control
+        if (this.settings.withTimeControl) {
+            this.timeDecreasingPlayerLink = gameDTO.timeControl.timeDecreasingPlayerLink;
+
+            for (let player of this.getAllPlayers()) {
+                if (this.timeDecreasingPlayerLink === player.link && this.playerTime[this.timeDecreasingPlayerLink])
+                    continue;
+
+                this.playerTime[player.link] = gameDTO.timeControl.playersTime[player.link];
+            }
+        }
+
         this.redraw();
     }
 
     redraw() {
         this.controlsScene.redraw();
         this.spaceshipsScene.redraw();
+
+        if (this.rebuildSpaceshipManager.isRebuildingSpaceship) {
+            this.rebuildSpaceshipManager.allowRebuildSpaceship();
+        }
     }
 
     getCurrentPlayer(): Player | undefined {

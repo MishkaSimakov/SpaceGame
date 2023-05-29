@@ -1,8 +1,7 @@
 import Player from "./Player";
 import Spaceship from "./Spaceship";
 import {Options} from "./PlainToClass";
-import Module, {isModule} from "./modules/Module";
-import {Event} from "./events/Event";
+import Module from "./modules/Module";
 
 type GameSettings = {
     withTimeControl: boolean,
@@ -14,7 +13,6 @@ class OtherPlayer {
     online: boolean;
     spaceship: Spaceship;
     handSize: number;
-    time: number;
 
     static getPropertiesMap(): Options {
         return {
@@ -33,6 +31,11 @@ class GameForPlayerDTO {
     settings: GameSettings;
     player: Player;
     otherPlayers: OtherPlayer[];
+
+    timeControl: {
+        timeDecreasingPlayerLink: number;
+        playersTime: Record<number, number>
+    };
 }
 
 export { GameSettings, GameForPlayerDTO, OtherPlayer };

@@ -1,6 +1,5 @@
 import Game from "./Game";
-import {GameForPlayerDTO, OtherPlayer} from "../../common/GameForPlayerDTO";
-import Player from "../../common/Player";
+import {GameForPlayerDTO} from "../../../common/GameForPlayerDTO";
 
 export default class GameToGameForPlayerMapper {
     static getDTO(game: Game, forPlayer: number): GameForPlayerDTO {
@@ -15,6 +14,13 @@ export default class GameToGameForPlayerMapper {
         dto.settings = {
             withTimeControl: game.withTimeControl
         };
+
+        if (game.withTimeControl) {
+            dto.timeControl = {
+                timeDecreasingPlayerLink: game.timeManager.getTimeDecreasingPlayerLink(),
+                playersTime: game.timeManager.getPlayersTime()
+            };
+        }
 
         return dto;
     }

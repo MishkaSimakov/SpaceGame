@@ -42,7 +42,7 @@ export default class Controls extends Phaser.Scene {
     redraw() {
         this.handDrawer.redraw();
 
-        this.topBarDrawer.setPlayersData(this.gameManager.currentPlayer, this.gameManager.otherPlayers);
+        this.topBarDrawer.setPlayersData(this.gameManager.currentPlayer, this.gameManager.otherPlayers, this.gameManager.playerTime);
     }
 
     rebuildSpaceship(): Promise<void> {

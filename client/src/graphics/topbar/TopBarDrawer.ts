@@ -31,6 +31,7 @@ export default class TopBarDrawer {
 
     otherPlayers: OtherPlayer[] = [];
     currentPlayer: Player;
+    playerTime: Record<number, number> = {};
 
     sizes = {
         margin: 15,
@@ -74,9 +75,10 @@ export default class TopBarDrawer {
         this.redraw();
     }
 
-    setPlayersData(currentPlayer: Player, otherPlayers: OtherPlayer[]) {
+    setPlayersData(currentPlayer: Player, otherPlayers: OtherPlayer[], playerTime: Record<number, number>) {
         this.currentPlayer = currentPlayer;
         this.otherPlayers = otherPlayers;
+        this.playerTime = playerTime;
 
         this.redraw();
     }
@@ -306,6 +308,12 @@ export default class TopBarDrawer {
         }
     }
 
+    updateTime(playerTime: Record<number, number>) {
+        this.playerTime = playerTime;
+
+        this.redraw();
+    }
+
     addButtons(buttons: ButtonData[]) {
         this.buttons = buttons;
 
@@ -352,7 +360,7 @@ export default class TopBarDrawer {
 
         if (this.scene.gameManager.settings.withTimeControl) {
             container.add(
-                this.scene.add.text(startX + 150, 0, `${this.timeToString(player.time)} ⏰`)
+                this.scene.add.text(startX + 150, 0, `${this.timeToString(this.playerTime[player.link])} ⏰`)
                     .setStyle(textStyle)
             );
         }

@@ -1,4 +1,4 @@
-import Game from "../../server/src/Game";
+import Game from "../../server/src/game/Game";
 import Game2 from "../../client/src/graphics/scenes/game/spaceships";
 
 export default class PutTopThreeCardsInAnyOrderEvent {

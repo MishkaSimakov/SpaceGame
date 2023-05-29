@@ -63,10 +63,6 @@ export default class Player {
 
     protected lose: boolean = false;
 
-    time: number;
-    // time when turn started for time control
-    turnStartedAt: number;
-
     constructor() {
         this.link = this.generateLink();
     }
@@ -146,7 +142,6 @@ export default class Player {
         otherPlayer.online = this.online;
         otherPlayer.spaceship = this.spaceship;
         otherPlayer.handSize = this.hand.length;
-        otherPlayer.time = this.time;
 
         return otherPlayer;
     }
