@@ -11,4 +11,10 @@ enum MoveDamageReason {
     EventCard
 }
 
-export {AttackReason, MoveDamageReason};
+type Message = {
+    playerLink?: number;
+    text: string;
+    time: number;
+}
+
+export {AttackReason, MoveDamageReason, Message};

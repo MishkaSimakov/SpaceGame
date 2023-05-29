@@ -2,8 +2,10 @@ import Player from "./Player";
 import Spaceship from "./Spaceship";
 import {Options} from "./PlainToClass";
 import Module from "./modules/Module";
+import {Message} from "./Types";
 
 type GameSettings = {
+    size: number,
     withTimeControl: boolean,
 };
 
@@ -36,6 +38,8 @@ class GameForPlayerDTO {
         timeDecreasingPlayerLink: number;
         playersTime: Record<number, number>
     };
+
+    messages: Message[];
 }
 
 export { GameSettings, GameForPlayerDTO, OtherPlayer };

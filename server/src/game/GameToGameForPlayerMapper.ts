@@ -11,11 +11,9 @@ export default class GameToGameForPlayerMapper {
             .filter(p => p.link !== forPlayer)
             .map(p => p.getOtherPlayer());
 
-        dto.settings = {
-            withTimeControl: game.withTimeControl
-        };
+        dto.settings = game.settings;
 
-        if (game.withTimeControl) {
+        if (game.settings.withTimeControl) {
             dto.timeControl = {
                 timeDecreasingPlayerLink: game.timeManager.getTimeDecreasingPlayerLink(),
                 playersTime: game.timeManager.getPlayersTime()

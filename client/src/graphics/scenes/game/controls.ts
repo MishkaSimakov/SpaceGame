@@ -141,37 +141,43 @@ export default class Controls extends Phaser.Scene {
         });
     }
 
-    showCards(cards: (Module | Event)[], title?: string) {
-        let destroyShowCards = () => {
-            this.showCardShapes.title?.destroy();
-            this.showCardShapes.fade?.destroy();
-            this.showCardShapes.cards?.destroy();
-        }
+    showCards(cards: (Module | Event)[], title?: string): Promise<void> {
+        return new Promise(resolve => {
+            let destroyShowCards = () => {
+                this.showCardShapes.title?.destroy();
+                this.showCardShapes.fade?.destroy();
+                this.showCardShapes.cards?.destroy();
+            }
 
-        destroyShowCards();
+            destroyShowCards();
 
-        let sceneWidth = this.game.canvas.width;
-        let sceneHeight = this.game.canvas.height;
-        this.showCardShapes.cards = this.drawCardsOnScreen(cards);
+            let sceneWidth = this.game.canvas.width;
+            let sceneHeight = this.game.canvas.height;
+            this.showCardShapes.cards = this.drawCardsOnScreen(cards);
 
-        this.showCardShapes.fade = this.add.rectangle(0, 0, sceneWidth, sceneHeight, 0x000000, 0.75)
-            .setOrigin(0, 0)
-            .setDepth(19);
+            this.showCardShapes.fade = this.add.rectangle(0, 0, sceneWidth, sceneHeight, 0x000000, 0.75)
+                .setOrigin(0, 0)
+                .setDepth(19);
 
-        if (title) {
-            this.showCardShapes.title = this.add.text(
-                sceneWidth, this.showCardShapes.cards.getBounds().top - 15,
-                title
-            )
-                .setOrigin(0.5, 1)
-                .setStyle({
-                    fontFamily: 'Exo2Bold',
-                    fontSize: '20px'
-                })
-                .setDepth(20);
-        }
+            if (title) {
+                this.showCardShapes.title = this.add.text(
+                    sceneWidth / 2, this.showCardShapes.cards.getBounds().top - 15,
+                    title
+                )
+                    .setOrigin(0.5, 1)
+                    .setStyle({
+                        fontFamily: 'Exo2Bold',
+                        fontSize: '20px'
+                    })
+                    .setDepth(20);
+            }
 
-        this.input.once('pointerdown', destroyShowCards);
+            this.input.once('pointerdown', () => {
+                destroyShowCards();
+
+                resolve();
+            });
+        });
     }
 
     chooseFromList(title: string, values: string[]): Promise<number> {

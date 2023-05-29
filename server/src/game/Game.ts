@@ -13,6 +13,8 @@ import Vector2 from "../../../common/Vector2";
 import {HAS_PLAYERS_DATA} from "../../../common/Sockets";
 import GameToGameForPlayerMapper from "./GameToGameForPlayerMapper";
 import {TimeManager, TimeRecordType} from "./TimeManager";
+import MessageManager from "./MessageManager";
+import {GameSettings} from "../../../common/GameForPlayerDTO";
 
 enum GameState {
     WAIT_FOR_PLAYERS,
@@ -23,7 +25,7 @@ enum GameState {
 export default class Game {
     gameData: GameData;
 
-    size: number;
+    settings: GameSettings;
 
     players: Player[] = [];
 
@@ -44,7 +46,8 @@ export default class Game {
     currentFight?: FightManager;
 
     timeManager: TimeManager;
-    withTimeControl: boolean = true;
+
+    messageManager: MessageManager;
 
     // logger: Logger;
 
@@ -52,7 +55,11 @@ export default class Game {
         // this.logger = new Logger(this);
         // this.logger.log("game created!");
 
-        this.size = size;
+        this.settings = {
+            size: size,
+            withTimeControl: true
+        };
+
         this.gameData = new GameData();
 
         this.io = io;
@@ -67,6 +74,14 @@ export default class Game {
             DEFAULT_TIME_INCREASE: 45 * 1000,
             FIGHT_TIME_INCREASE: 10 * 1000,
         }, this.players);
+
+        this.messageManager = new MessageManager();
+
+        this.messageManager.addMessage("Hello world1");
+        this.messageManager.addMessage("Hello world2");
+        this.messageManager.addMessage("Hello world3");
+        this.messageManager.addMessage("Hello world4");
+        this.messageManager.addMessage("Hello world5");
     }
 
     addUseEventCardEvent(player: Player) {
@@ -597,12 +612,18 @@ export default class Game {
         });
     }
 
-    showCardsToPlayer(cards: (Module | Event)[], player: Player, showToOther: boolean) {
+    async showCardsToPlayer(cards: (Module | Event)[], player: Player, showToOther: boolean) {
         if (!showToOther) {
-            this.getSocket(player)?.emit('showCards', player.link, cards);
+            await this.emitToPlayerAndWait(player, 'showCardsAndWait', player.link, cards, () => {
+            });
         } else {
             for (let playerToEmit of this.players) {
-                this.getSocket(playerToEmit)?.emit('showCards', player.link, cards);
+                if (playerToEmit.link === player.link) {
+                    await this.emitToPlayerAndWait(player, 'showCardsAndWait', player.link, cards, () => {
+                    });
+                } else {
+                    this.getSocket(playerToEmit)?.emit('showCards', player.link, cards);
+                }
             }
         }
     }

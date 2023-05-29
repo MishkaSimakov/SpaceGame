@@ -7,6 +7,7 @@ import SocketManager from "./sockets/SocketManager";
 import config from "./config";
 import {Event, EventTypes} from "../../common/events/Event";
 import {GameForPlayerDTO, GameSettings, OtherPlayer} from "../../common/GameForPlayerDTO";
+import {Message} from "../../common/Types";
 
 export default class Game {
     currentPlayer: Player;
@@ -18,12 +19,12 @@ export default class Game {
     controlsScene: Controls;
     rebuildSpaceshipManager: RebuildSpaceshipManager;
 
-    settings: GameSettings = {
-        withTimeControl: false
-    };
+    settings: GameSettings;
 
     playerTime: Record<number, number> = {};
     timeDecreasingPlayerLink: number;
+
+    messages: Message[];
 
     constructor() {
         this.spaceshipsScene = new Spaceships(this);
@@ -84,6 +85,8 @@ export default class Game {
                 this.playerTime[player.link] = gameDTO.timeControl.playersTime[player.link];
             }
         }
+
+        this.messages = gameDTO.messages;
 
         this.redraw();
     }

@@ -203,6 +203,9 @@ let eventsPerformFunctions: Record<EventTypes, (game: Game, event: Event) => Pro
         game.currentPlayer.hand.push(chosenCard);
     },
     [EventTypes.DiscardCardAndRepairSpaceship]: async (game: Game) => {
+        if (game.currentPlayer.hand.length === 0)
+            return;
+
         let discardedCardsIndexes: number[] = await game.emitToCurrentPlayerAndWait('chooseCardsForRepairSpaceshipEvent', game.currentPlayer.hand, (discardedCards: number[]) => {
             if (discardedCards.length > 2)
                 throw new Error('Too many discarded cards in DiscardCardAndRepairSpaceship event');
