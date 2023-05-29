@@ -9,6 +9,8 @@ import Modal from "../../Modal";
 import {COLORS} from "../../constants";
 import {AttackReason, MoveDamageReason} from "../../../../../common/Types";
 import {OtherPlayer} from "../../../../../common/GameForPlayerDTO";
+import TopBarSmallDrawer from "../../topbar/TopBarSmallDrawer";
+import TopBarDefaultDrawer from "../../topbar/TopBarDefaultDrawer";
 
 
 export default class Controls extends Phaser.Scene {
@@ -33,7 +35,12 @@ export default class Controls extends Phaser.Scene {
 
     create() {
         this.handDrawer = new HandDrawer(this.gameManager, this);
-        this.topBarDrawer = new TopBarDrawer(this);
+
+        if (this.game.canvas.width < (400 + 2 * 15)) {
+            this.topBarDrawer = new TopBarSmallDrawer(this);
+        } else {
+            this.topBarDrawer = new TopBarDefaultDrawer(this);
+        }
 
         this.input.dragDistanceThreshold = 10;
     }
