@@ -76,12 +76,6 @@ export default class Game {
         }, this.players);
 
         this.messageManager = new MessageManager();
-
-        this.messageManager.addMessage("Hello world1");
-        this.messageManager.addMessage("Hello world2");
-        this.messageManager.addMessage("Hello world3");
-        this.messageManager.addMessage("Hello world4");
-        this.messageManager.addMessage("Hello world5");
     }
 
     addUseEventCardEvent(player: Player) {
@@ -102,6 +96,8 @@ export default class Game {
                 callback(true);
 
                 this.getSocket(player).emit('chooseModuleToDealDamage', target.link, (position: Vector2) => {
+                    this.messageManager.addMessage(`нанёс 1 урон ${target.link} картой действия`, player);
+
                     player = this.getPlayerByLink(player.link);
 
                     let discardedCardIndex = player.hand.findIndex((c) => {
@@ -410,8 +406,9 @@ export default class Game {
             if (!modulePosition)
                 return false;
 
+            this.messageManager.addMessage(`починился ремонтным модулем`, this.currentPlayer);
+
             let module = this.currentPlayer.spaceship.getModuleByPosition(modulePosition);
-            let repairModule = this.currentPlayer.spaceship.getModulesByType(ModuleTypes.RepairModule)[0];
 
             this.currentPlayer.energy -= energyCost;
             module.health = Math.min(module.health + 2, module.totalHealth);
@@ -437,6 +434,7 @@ export default class Game {
             if (!useSecondTime)
                 return;
 
+            this.messageManager.addMessage(`починился ремонтным модулем x2`, this.currentPlayer);
             console.log("   Player use repair module for second time");
 
             this.currentPlayer.usedRepairOrAttackModuleSecondTimeOnThisTurn = true;

@@ -4,7 +4,7 @@ import Button from "../Button";
 
 export default class TopBarSmallDrawer extends TopBarDrawer {
     drawStatus(): void {
-        if (this.status.text === "")
+        if (!this.status.text)
             return;
 
         this.status.textShape = this.scene.add.text(
@@ -40,6 +40,8 @@ export default class TopBarSmallDrawer extends TopBarDrawer {
             -this.sizes.strokeWidth / 2, -this.sizes.strokeWidth / 2,
             this.sizes.sceneWidth + this.sizes.strokeWidth, this.statusStartY + statusHeight + this.sizes.strokeWidth
         );
+
+        this.messagesStartY = this.statusStartY + statusHeight;
     }
 
     drawCurrentPlayerData() {
@@ -72,6 +74,7 @@ export default class TopBarSmallDrawer extends TopBarDrawer {
         }
 
         this.statusStartY = height;
+        this.messagesStartY = height;
     }
 
     drawPlayersData() {
@@ -121,6 +124,7 @@ export default class TopBarSmallDrawer extends TopBarDrawer {
         }
 
         this.statusStartY = backgroundHeight;
+        this.messagesStartY = backgroundHeight;
     }
 
     drawButtons() {
@@ -156,4 +160,19 @@ export default class TopBarSmallDrawer extends TopBarDrawer {
             this.buttonsShapes.push(buttonShape);
         }
     };
+
+    drawMessages() {
+        if (this.messages.length === 0)
+            return;
+
+        let message = this.messages[this.messages.length - 1];
+
+        if (message.id === this.hiddenMessageId)
+            return;
+
+        this.messagesShape.push(
+            this.getMessageShape(message)
+                .setPosition(this.sizes.padding * 2, this.messagesStartY + this.sizes.padding * 2)
+        );
+    }
 }

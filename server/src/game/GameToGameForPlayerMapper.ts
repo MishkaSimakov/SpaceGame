@@ -20,6 +20,8 @@ export default class GameToGameForPlayerMapper {
             };
         }
 
+        dto.messages = game.messageManager.messages;
+
         return dto;
     }
 }

@@ -12,6 +12,7 @@ enum MoveDamageReason {
 }
 
 type Message = {
+    id: number;
     playerLink?: number;
     text: string;
     time: number;

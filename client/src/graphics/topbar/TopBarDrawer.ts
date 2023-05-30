@@ -3,6 +3,7 @@ import Button from "../Button";
 import Controls from "../scenes/game/controls";
 import {ButtonColors, SIZES} from "../constants";
 import {OtherPlayer} from "../../../../common/GameForPlayerDTO";
+import {Message} from "../../../../common/Types";
 
 type ButtonData = {
     text: string, onClick: () => void, color: ButtonColors
@@ -18,6 +19,10 @@ export default abstract class TopBarDrawer {
     currentPlayerData: Phaser.GameObjects.Container;
 
     status: {
+        context?: string,
+        contextColor?: string,
+        contextShape?: Phaser.GameObjects.Text,
+
         text?: string,
         backgroundShape?: Phaser.GameObjects.Graphics,
         textShape?: Phaser.GameObjects.Text
@@ -48,10 +53,13 @@ export default abstract class TopBarDrawer {
     };
 
     statusStartY: number = this.sizes.margin;
+    messagesStartY: number = this.sizes.margin;
+
+    messages: Message[] = [];
+    messagesShape: Phaser.GameObjects.Container[] = [];
+    hiddenMessageId: number;
 
     constructor(scene: Controls) {
-        this.clearStatus();
-
         this.scene = scene;
 
         this.sizes.sceneWidth = scene.game.canvas.width;
@@ -67,6 +75,7 @@ export default abstract class TopBarDrawer {
 
     abstract drawButtons(): void;
 
+    abstract drawMessages(): void;
 
     clearStatus() {
         this.status.text = "";
@@ -74,8 +83,16 @@ export default abstract class TopBarDrawer {
         this.redraw();
     }
 
-    setStatus(status: string) {
+    setMessages(messages: Message[]) {
+        this.messages = messages;
+
+        this.redraw();
+    }
+
+    setStatus(status: string, context?: string, contextColor?: string) {
         this.status.text = status;
+        this.status.context = context;
+        this.status.contextColor = contextColor;
 
         this.redraw();
     }
@@ -89,6 +106,7 @@ export default abstract class TopBarDrawer {
     }
 
     private redraw() {
+        this.messagesShape.forEach(s => s.destroy());
         this.status.backgroundShape?.destroy();
         this.status.textShape?.destroy();
         this.currentPlayerData?.destroy();
@@ -113,6 +131,8 @@ export default abstract class TopBarDrawer {
         }
 
         this.drawStatus();
+
+        this.drawMessages();
     }
 
     togglePlayerCharacteristics() {
@@ -185,6 +205,27 @@ export default abstract class TopBarDrawer {
                 container.getBounds().width + offset * 2, container.getBounds().height + offset * 2
             ),
             Phaser.Geom.Rectangle.Contains
+        );
+
+        return container;
+    }
+
+    getMessageShape(message: Message): Phaser.GameObjects.Container {
+        let container = this.scene.add.container();
+        let textStyle = {
+            fontFamily: 'Exo2Regular',
+            fontSize: '12px',
+            color: '#ffffff'
+        };
+
+        container.add(
+            this.scene.add.text(0, 0, (message.playerLink ?? 'ИИ') + ":")
+                .setStyle(textStyle)
+        );
+
+        container.add(
+            this.scene.add.text(50, 0, message.text)
+                .setStyle(textStyle)
         );
 
         return container;

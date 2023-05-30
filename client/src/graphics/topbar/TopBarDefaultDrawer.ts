@@ -5,12 +5,28 @@ import Button from "../Button";
 
 export default class TopBarDefaultDrawer extends TopBarDrawer {
     drawStatus(): void {
-        if (this.status.text === "")
+        if (!this.status.text)
             return;
+
+        let textShapeStartY: number = this.sizes.padding + this.statusStartY;
+
+        if (this.status.context) {
+            this.status.contextShape = this.scene.add.text(
+                this.sizes.sceneWidth - this.sizes.margin - this.sizes.statusWidth / 2,
+                textShapeStartY,
+                this.status.context + ":"
+            )
+                .setStyle(this.textStyle)
+                .setColor(this.status.contextColor)
+                .setOrigin(0.5, 0)
+                .setDepth(5)
+
+            textShapeStartY = this.status.contextShape.getBounds().bottom + this.sizes.padding
+        }
 
         this.status.textShape = this.scene.add.text(
             this.sizes.sceneWidth - this.sizes.margin - this.sizes.statusWidth / 2,
-            this.sizes.padding + this.statusStartY,
+            textShapeStartY,
             this.status.text
         )
             .setStyle(this.textStyle)
@@ -166,4 +182,7 @@ export default class TopBarDefaultDrawer extends TopBarDrawer {
             this.buttonsShapes.push(buttonShape);
         }
     };
+
+    drawMessages() {
+    }
 }
