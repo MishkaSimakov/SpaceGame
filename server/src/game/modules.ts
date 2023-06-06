@@ -1,4 +1,4 @@
-{
+export default {
     "dark_matter_generator": {
         "configurations": [
             [0, 2, 1, 2],

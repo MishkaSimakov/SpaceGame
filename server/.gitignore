@@ -11,3 +11,5 @@ package-lock.json
 
 # Build
 /npm-debug.log
+
+.env

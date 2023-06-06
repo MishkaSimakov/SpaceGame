@@ -7,7 +7,7 @@ import {MainModule, MainModuleType} from "../../../common/modules/MainModule";
 import SmallQuantumProtector from "../../../common/modules/SmallQuantumProtector";
 
 import RepairModule from "../../../common/modules/RepairModule";
-import * as modules from "./modules.json";
+import modules from "./modules";
 import DarkMatterGenerator from "../../../common/modules/DarkMatterGenerator";
 import QuantumProtector from "../../../common/modules/QuantumProtector";
 import NuclearReactor from "../../../common/modules/NuclearReactor";
@@ -117,10 +117,8 @@ export default class GameData {
     }
 
     constructor() {
-        let modulesObject = Object(modules);
-
-        for (let module in modulesObject) {
-            for (let configuration of modulesObject[module]["configurations"]) {
+        for (let module in modules) {
+            for (let configuration of modules[module]["configurations"]) {
                 this.modulesStack.push(
                     new this.moduleName[module](configuration[3], configuration[0], configuration[1], configuration[2])
                 );

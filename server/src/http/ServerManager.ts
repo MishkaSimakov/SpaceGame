@@ -1,0 +1,52 @@
+import initRoutes from "./routes";
+
+const express = require('express');
+const http = require('http');
+
+import {Server, Socket} from "socket.io";
+
+import cors from "cors";
+import path from "path";
+import serveStatic from "serve-static";
+import {Express} from "express";
+
+export default class ServerManager {
+    server: Express;
+    httpServer;
+    io: Server;
+
+    staticBasePath: string;
+
+    constructor() {}
+
+    initServer() {
+        this.staticBasePath = path.join(__dirname, '../../../client/dist');
+
+        this.server = express();
+
+        this.server.use(cors());
+        this.server.use(serveStatic(this.staticBasePath));
+        this.server.use(express.urlencoded({extended: false}));
+
+        initRoutes(this.server);
+    }
+
+    initSockets(): Server {
+        this.httpServer = http.createServer(this.server);
+
+        this.io = new Server(http, {
+            cors: {
+                origin: "http://localhost:3000",
+                methods: ["GET", "POST"]
+            }
+        });
+
+        return this.io;
+    }
+
+    runServer() {
+        this.httpServer.listen(3000, () => {
+            console.log('Server started!');
+        });
+    }
+}
