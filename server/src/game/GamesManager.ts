@@ -1,6 +1,8 @@
 import {Server, Socket} from "socket.io";
 import Game from "./Game";
 import Player from "../../../common/Player";
+import {GameSettings} from "../../../common/GameForPlayerDTO";
+import {User} from "../entity/user";
 
 export default class GamesManager {
     io: Server;
@@ -44,8 +46,8 @@ export default class GamesManager {
         });
     }
 
-    createGame(playersCount: number): Game {
-        let game = new Game(playersCount, this.io);
+    createGame(name: string, users: User[], settings: GameSettings): Game {
+        let game = new Game(name, users, settings, this.io);
 
         game.start().then(() => {
             for (let player of game.players)

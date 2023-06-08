@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Космические баталии</title>
+
+    <link href="/css/bootstrap.css" rel="stylesheet">
+</head>
+<body>
+@include('partials/header')
+
+<div class="row">
+    <div class="col-md-6 mx-auto">
+        <div class="card mt-3">
+            <div class="card-header">Новая игра</div>
+
+            <div class="card-body">
+                <form action="/game/create" method="POST">
+
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Название</label>
+
+                        <div class="input-group mb-3">
+                            <input id="name" name="name" type="text" class="form-control">
+                            <button class="btn btn-outline-secondary" type="button" id="generate-game-name-btn">
+                                придумать
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Участники</label>
+                    </div>
+
+                    <div class="mb-0">
+                        <button class="btn btn-primary" type="submit">Создать</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        let generateName = () => {
+            let randomElement = (array) => {
+                let random = Math.random();
+
+                return array[Math.floor(random * array.length)];
+            }
+
+            let getDate = () => {
+                return new Date().toLocaleDateString('ru-ru', { year:"numeric", month:"numeric", day:"numeric"});
+            }
+
+            // 0 - при ..., 1 - у ...
+            let locations = [
+                ['Марсе', 'Марса'],
+                ['Венере', 'Венеры'],
+                ['Малой Медведице', 'Малой Медведицы'],
+                ['Вердене', 'Вердена'],
+                ['Асгарде', 'Асгарда'],
+            ]
+
+            let nameGenerators = [
+                () => {
+                    return 'Битва от ' + getDate();
+                },
+                () => {
+                    return 'Резня от ' + getDate();
+                },
+                () => {
+                    return 'Потасовка ' + getDate();
+                },
+                () => {
+                    return 'Битва при ' + randomElement(locations)[0];
+                },
+                () => {
+                    return 'Последствия пьянства у ' + randomElement(locations)[1];
+                },
+                () => {
+                    return 'Дед с батей подрались у ' + randomElement(locations)[1];
+                },
+            ];
+
+            return randomElement(nameGenerators)();
+        }
+
+        let generateNameBtn = document.getElementById('generate-game-name-btn');
+        let nameInput = document.getElementById('name');
+
+        generateNameBtn.addEventListener('click', () => {
+            nameInput.value = generateName();
+        });
+    });
+</script>
+</body>
+</html>

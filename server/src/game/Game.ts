@@ -15,6 +15,7 @@ import GameToGameForPlayerMapper from "./GameToGameForPlayerMapper";
 import {TimeManager, TimeRecordType} from "./TimeManager";
 import MessageManager from "./MessageManager";
 import {GameSettings} from "../../../common/GameForPlayerDTO";
+import {User} from "../entity/user";
 
 enum GameState {
     WAIT_FOR_PLAYERS,
@@ -51,21 +52,18 @@ export default class Game {
 
     // logger: Logger;
 
-    constructor(size: number, io: Server) {
+    constructor(name: string, users: User[], settings: GameSettings, io: Server) {
         // this.logger = new Logger(this);
         // this.logger.log("game created!");
 
-        this.settings = {
-            size: size,
-            withTimeControl: true
-        };
+        this.settings = settings;
 
         this.gameData = new GameData();
 
         this.io = io;
 
-        for (let i = 0; i < size; ++i)
-            this.players.push(this.createPlayer());
+        for (let user of users)
+            this.players.push(this.createPlayer(user));
 
         this.currentPlayer = this.players[0];
 
@@ -253,8 +251,10 @@ export default class Game {
         return this.players.filter(p => p.link === link)[0];
     }
 
-    createPlayer(): Player {
+    createPlayer(user: User): Player {
         let player = new Player();
+        player.id = user.id;
+        player.name = user.login;
         player.spaceship = new Spaceship(this.gameData.popMainModule());
         player.hand = this.gameData.popModuleCards(this.gameData.startCardsCount);
 

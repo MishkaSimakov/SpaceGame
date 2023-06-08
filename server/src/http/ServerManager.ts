@@ -8,6 +8,8 @@ import {Server, Socket} from "socket.io";
 import cors from "cors";
 import path from "path";
 import serveStatic from "serve-static";
+import edge from "express-edge";
+import cookieParser from 'cookie-parser';
 import {Express} from "express";
 
 export default class ServerManager {
@@ -24,11 +26,20 @@ export default class ServerManager {
 
         this.server = express();
 
+        this.server.use(cookieParser());
+        this.server.use(edge);
+        this.server.set('views', `${__dirname}/../views`);
         this.server.use(cors());
         this.server.use(serveStatic(this.staticBasePath));
         this.server.use(express.urlencoded({extended: false}));
 
         initRoutes(this.server);
+
+        this.server.get('*', (req, res) => {
+            res.status(404).render('error', {
+                code: 404
+            });
+        })
     }
 
     initSockets(): Server {

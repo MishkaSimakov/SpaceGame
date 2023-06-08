@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Космические баталии</title>
+
+    <link href="/css/bootstrap.css" rel="stylesheet">
+</head>
+<body>
+
+@include('partials/header')
+
+<div class="row">
+    <div class="col-md-6 mx-auto">
+        <div class="alert alert-primary mt-3" role="alert">
+            Я использую cookie, и вы мне ничего не сделаете!
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">Ваши игры</div>
+            <div class="list-group list-group-flush">
+                <a class="list-group-item list-group-item-action" href="game/create">Создать новую</a>
+
+                @each(game in games)
+                <div class="list-group-item">{{ game.name }} (members)</div>
+                @end
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function getGameURL(code) {
+        return '/game/' + code.toString();
+    }
+
+    function getCheckGameURL(code) {
+        return '/check/' + code.toString();
+    }
+
+    function getCreateGameURL(playersCount) {
+        return '/create?count=' + playersCount;
+    }
+
+    let joinGameButton = document.getElementById('game-join');
+    let gameCodeInput = document.getElementById('game-code');
+
+    joinGameButton.addEventListener('click', event => {
+        event.preventDefault();
+
+        let code = gameCodeInput.value;
+
+        if (!code.match(/[0-9]{6}/)) {
+            gameCodeInput.classList.add('is-invalid');
+
+            return;
+        }
+
+        gameCodeInput.classList.remove('is-invalid');
+
+        fetch(getCheckGameURL(code))
+            .then(response => {
+                return response.text();
+            })
+            .then(text => {
+                if (text === 'true') {
+                    location.href = getGameURL(code);
+                } else {
+                    gameCodeInput.classList.add('is-invalid');
+                }
+            });
+    });
+
+    let createGameButton = document.getElementById('game-create');
+
+    createGameButton.addEventListener('click', event => {
+        event.preventDefault();
+
+        let radios = document.getElementsByName('players-count');
+
+        for (let radio of radios) {
+            if (radio.checked) {
+                let playersCount = parseInt(radio.value);
+
+                fetch(getCreateGameURL(playersCount))
+                    .then(response => {
+                        return response.text();
+                    })
+                    .then(text => {
+                        let links = JSON.parse(text);
+                        let linksContainer = document.getElementById('game-created-links-container');
+
+                        for (let link of links) {
+                            let linkElement = document.createElement("span");
+                            linkElement.textContent = link;
+                            linkElement.classList.add('list-group-item');
+
+                            linksContainer.appendChild(linkElement);
+                        }
+
+                        document.getElementById('game-create-card').classList.add('d-none');
+                        document.getElementById('game-created-card').classList.remove('d-none');
+                    });
+
+                break;
+            }
+        }
+    });
+</script>
+</body>
+</html>

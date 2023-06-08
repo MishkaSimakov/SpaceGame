@@ -48,6 +48,9 @@ function arrayCompare<T>(arr1: Array<T>, arr2: Array<T>) {
 
 
 export default class Player {
+    id: number;
+    name: string;
+
     link: number;
     socketId: string;
 
