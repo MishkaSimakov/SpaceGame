@@ -9,7 +9,7 @@ enum TimeRecordType {
 
 type TimeRecord = {
     type: TimeRecordType,
-    playerLink: number,
+    playerId: number,
     time: number
 };
 
@@ -29,7 +29,7 @@ class TimeManager {
         this.timeControlSettings = timeControlSettings;
 
         for (let player of players) {
-            this.playersTime[player.link] = this.timeControlSettings.START_TIME;
+            this.playersTime[player.id] = this.timeControlSettings.START_TIME;
         }
     }
 
@@ -37,21 +37,21 @@ class TimeManager {
         let currentTime = (new Date()).getTime();
 
         if (type === TimeRecordType.FIGHT_TURN_ENDED) {
-            let prevRecord = this.getLastRecordByLinkAndType(player.link, TimeRecordType.FIGHT_TURN_STARTED);
+            let prevRecord = this.getLastRecordByPlayerIdAndType(player.id, TimeRecordType.FIGHT_TURN_STARTED);
 
-            this.playersTime[player.link] += this.timeControlSettings.FIGHT_TIME_INCREASE;
-            this.playersTime[player.link] -= currentTime - prevRecord.time;
+            this.playersTime[player.id] += this.timeControlSettings.FIGHT_TIME_INCREASE;
+            this.playersTime[player.id] -= currentTime - prevRecord.time;
         }
         if (type === TimeRecordType.DEFAULT_TURN_ENDED) {
-            let prevRecord = this.getLastRecordByLinkAndType(player.link, TimeRecordType.DEFAULT_TURN_STARTED);
+            let prevRecord = this.getLastRecordByPlayerIdAndType(player.id, TimeRecordType.DEFAULT_TURN_STARTED);
 
-            this.playersTime[player.link] += this.timeControlSettings.DEFAULT_TIME_INCREASE;
-            this.playersTime[player.link] -= currentTime - prevRecord.time;
+            this.playersTime[player.id] += this.timeControlSettings.DEFAULT_TIME_INCREASE;
+            this.playersTime[player.id] -= currentTime - prevRecord.time;
         }
 
         this.timeRecords.push({
             type: type,
-            playerLink: player.link,
+            playerId: player.id,
             time: currentTime
         });
     }
@@ -63,16 +63,16 @@ class TimeManager {
         return this.timeRecords[this.timeRecords.length - 1];
     }
 
-    getLastRecordByLinkAndType(link: number, type: TimeRecordType): TimeRecord {
+    getLastRecordByPlayerIdAndType(playerId: number, type: TimeRecordType): TimeRecord {
         for (let i = this.timeRecords.length - 1; i >= 0; i--) {
-            if (this.timeRecords[i].playerLink === link && this.timeRecords[i].type === type) {
+            if (this.timeRecords[i].playerId === playerId && this.timeRecords[i].type === type) {
                 return this.timeRecords[i];
             }
         }
     }
 
-    getTimeDecreasingPlayerLink(): number {
-        return this.getLastRecord().playerLink;
+    getTimeDecreasingPlayerId(): number {
+        return this.getLastRecord().playerId;
     }
 
     getPlayersTime(): Record<number, number> {
@@ -82,23 +82,23 @@ class TimeManager {
         let currentTime = (new Date()).getTime();
 
         if (lastRecord.type === TimeRecordType.DEFAULT_TURN_STARTED) {
-            playersTime[lastRecord.playerLink] -= (currentTime - lastRecord.time);
+            playersTime[lastRecord.playerId] -= (currentTime - lastRecord.time);
         }
         if (lastRecord.type === TimeRecordType.FIGHT_TURN_STARTED) {
-            playersTime[lastRecord.playerLink] -= (currentTime - lastRecord.time);
+            playersTime[lastRecord.playerId] -= (currentTime - lastRecord.time);
 
             let lastDefaultTurnStart : TimeRecord;
             let fightStart: TimeRecord;
 
             for (let i = this.timeRecords.length - 1; i >= 0; i--) {
-                if (this.timeRecords[i].playerLink === lastRecord.playerLink && this.timeRecords[i].type === TimeRecordType.DEFAULT_TURN_STARTED) {
+                if (this.timeRecords[i].playerId === lastRecord.playerId && this.timeRecords[i].type === TimeRecordType.DEFAULT_TURN_STARTED) {
                     lastDefaultTurnStart = this.timeRecords[i];
                     fightStart = this.timeRecords[i + 1];
                     break;
                 }
             }
 
-            playersTime[lastRecord.playerLink] -= (fightStart.time - lastDefaultTurnStart.time);
+            playersTime[lastRecord.playerId] -= (fightStart.time - lastDefaultTurnStart.time);
         }
 
         return playersTime;

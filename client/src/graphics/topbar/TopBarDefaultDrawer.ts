@@ -113,7 +113,7 @@ export default class TopBarDefaultDrawer extends TopBarDrawer {
                     .setPosition(textStart.x, textStart.y + lineOffset * index)
                     .setDepth(5)
                     .on('pointerdown', () => {
-                        this.scene.gameManager.spaceshipsScene.panToPlayerWithLink(player.link);
+                        this.scene.gameManager.spaceshipsScene.panToPlayerWithId(player.id);
                     })
             );
         }

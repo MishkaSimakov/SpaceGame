@@ -44,18 +44,16 @@ export default class SocketManager {
 
         this.on('connect', () => {
             console.log('connected!');
+
+            this.socket.emit('gameId', window.location.href.split('/').pop());
         });
 
         this.on('disconnect', () => {
             // window.location.href = '/spaceships/lobby';
-        })
-
-        this.on('getLink', (callback: (link: number) => void) => {
-            callback(this.game.getLink());
         });
 
-        this.on('setGameData', (game: GameForPlayerDTO) => {
-            this.game.setGameData(game);
+        this.on('setGameData', (gameDTO: GameForPlayerDTO) => {
+            this.game.setGameData(gameDTO);
         });
     }
 

@@ -39,13 +39,13 @@ export default class ServerManager {
             res.status(404).render('error', {
                 code: 404
             });
-        })
+        });
     }
 
     initSockets(): Server {
         this.httpServer = http.createServer(this.server);
 
-        this.io = new Server(http, {
+        this.io = new Server(this.httpServer, {
             cors: {
                 origin: "http://localhost:3000",
                 methods: ["GET", "POST"]

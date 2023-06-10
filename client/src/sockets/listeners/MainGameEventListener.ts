@@ -43,8 +43,8 @@ export default class MainGameEventListener extends BaseEventListener {
 
             this.game.spaceshipsScene.chooseModule((module) => {
                 chosenModule = module;
-            }, (module, playerLink) => {
-                if (playerLink !== this.game.getCurrentPlayer().link)
+            }, (module, playerId) => {
+                if (playerId !== this.game.getCurrentPlayer().id)
                     return false;
 
                 if (module.health === module.totalHealth)
@@ -68,7 +68,7 @@ export default class MainGameEventListener extends BaseEventListener {
             }]);
         });
 
-        this.socket.on('choosePlayerForAttack', (attackReason: AttackReason, callback: (link: number) => {}) => {
+        this.socket.on('choosePlayerForAttack', (attackReason: AttackReason, callback: (playerId: number) => {}) => {
             this.controls().choosePlayerForAttack(this.game.otherPlayers, attackReason).then(callback);
         });
 

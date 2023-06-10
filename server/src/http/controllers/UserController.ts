@@ -38,6 +38,14 @@ export const login = async (req: Request, res: Response) => {
 
 export const register = async (req: Request, res: Response) => {
     try {
+        let existUserWithSameName = await User.createQueryBuilder().where({
+            login: req.body.login
+        }).getExists();
+
+        if (existUserWithSameName) {
+            return res.redirect('/register')
+        }
+
         let user = new User();
 
         user.login = req.body.login;
@@ -59,11 +67,17 @@ let getStaticPath = (staticPath: string): string => {
 }
 
 export const home = async (req: AuthenticatedRequest, res: Response) => {
+    let games = App.getInstance().gamesManager.getGamesOfUser(req.user);
+
     res.render('home', {
         user: req.user,
-        games: [
-
-        ]
+        games: games.map(game => {
+            return {
+                id: game.id,
+                name: game.name,
+                players: game.players.map(p => p.name)
+            };
+        })
     });
 };
 

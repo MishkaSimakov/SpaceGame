@@ -33,8 +33,8 @@ export default class FightEventListener extends BaseEventListener {
 
             this.game.spaceshipsScene.chooseModule((module?: Module) => {
                 selectedProtector = module;
-            }, (module?: Module, playerLink?: number) => {
-                if (playerLink !== this.game.getLink())
+            }, (module?: Module, playerId?: number) => {
+                if (playerId !== this.game.currentPlayer.id)
                     return false;
 
                 if (module.type !== ModuleTypes.SmallQuantumProtector && module.type !== ModuleTypes.QuantumProtector)
@@ -99,8 +99,8 @@ export default class FightEventListener extends BaseEventListener {
                 this.controls().topBarDrawer.setButtonsDisabled(
                     (selectedWeapon === undefined) || (selectedTarget === undefined)
                 );
-            }, (module?: Module, playerLink?: number) => {
-                if (playerLink !== this.game.getLink())
+            }, (module?: Module, playerId?: number) => {
+                if (playerId !== this.game.currentPlayer.id)
                     return false;
 
                 if (module.energyCost > this.game.getCurrentPlayer().energy)

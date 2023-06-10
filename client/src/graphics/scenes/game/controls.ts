@@ -78,7 +78,7 @@ export default class Controls extends Phaser.Scene {
             [AttackReason.UsingAttackModuleSecondTime]: "Выберите игрока для нападения"
         }
 
-        return new Promise((resolve: (link?: number) => void) => {
+        return new Promise((resolve: (playerId?: number) => void) => {
             this.topBarDrawer.setStatus(reasonStatus[attackReason]);
 
             let showNoButton = attackReason != AttackReason.AttackAnyEventCard && attackReason != AttackReason.UsingAttackModuleSecondTime;
@@ -89,12 +89,12 @@ export default class Controls extends Phaser.Scene {
                 onClick: () => {
                     this.topBarDrawer.setButtonsDisabled(true);
 
-                    this.showChoosePlayerForAttackModal(players).then((result?: number) => {
-                        if (result !== undefined) {
+                    this.showChoosePlayerForAttackModal(players).then((playerId?: number) => {
+                        if (playerId !== undefined) {
                             this.topBarDrawer.removeButtons();
                             this.topBarDrawer.clearStatus();
 
-                            resolve(result);
+                            resolve(playerId);
                         }
 
                         this.topBarDrawer.setButtonsDisabled(false);
@@ -126,10 +126,10 @@ export default class Controls extends Phaser.Scene {
             modal.setTitle("Выберите игрока для атаки");
 
             for (let player of players) {
-                modal.addLine(player.link.toString())
+                modal.addLine(player.name)
                     .setInteractive()
                     .on('pointerdown', () => {
-                        resolve(player.link);
+                        resolve(player.id);
 
                         modal.destroy();
                     });
@@ -492,8 +492,8 @@ export default class Controls extends Phaser.Scene {
 
             this.gameManager.spaceshipsScene.chooseModule((module?: Module) => {
                 moveDamageFrom = module;
-            }, (module?: Module, playerLink?: number) => {
-                if (playerLink !== this.gameManager.getLink())
+            }, (module?: Module, playerId?: number) => {
+                if (playerId !== this.gameManager.currentPlayer.id)
                     return false;
 
                 if (!module.isDamaged())
@@ -516,8 +516,8 @@ export default class Controls extends Phaser.Scene {
 
                     this.gameManager.spaceshipsScene.chooseModule((module?: Module) => {
                         moveDamageTo = module;
-                    }, (module?: Module, playerLink?: number) => {
-                        return playerLink === this.gameManager.getLink();
+                    }, (module?: Module, playerId?: number) => {
+                        return playerId === this.gameManager.currentPlayer.id;
                     }, true, 0xa3b18a);
 
                     this.topBarDrawer.addButtons([{

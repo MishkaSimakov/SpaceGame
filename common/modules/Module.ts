@@ -68,6 +68,10 @@ class Module {
     getPosition(): Vector2 {
         return new Vector2(this.x, this.y);
     }
+
+    toString(): string {
+        return this.name;
+    }
 }
 
 function isModule(card: Module | Event) {

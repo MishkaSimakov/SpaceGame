@@ -10,39 +10,15 @@ function loadFont(name, url) {
     });
 }
 
-function redirectToLobby() {
-    location.href = '/';
-}
-
 loadFont("Exo2Bold", "/fonts/Exo2-Bold.ttf");
 loadFont("Exo2Regular", "/fonts/Exo2-Regular.ttf");
 
-let regex = /game\/[0-9]{6}$/
+// document.addEventListener('DOMContentLoaded', () => {
+//     let ratio = 1 / window.devicePixelRatio;
+//     let appElement = document.getElementById('app');
+//     appElement.setAttribute('style',
+//         `transform: scale(${ratio}); translate: -${50 * ratio}% -${50 * ratio}%;`
+//     );
+// });
 
-if (regex.test(window.location.href)) {
-    // document.addEventListener('DOMContentLoaded', () => {
-    //     let ratio = 1 / window.devicePixelRatio;
-    //     let appElement = document.getElementById('app');
-    //     appElement.setAttribute('style',
-    //         `transform: scale(${ratio}); translate: -${50 * ratio}% -${50 * ratio}%;`
-    //     );
-    // });
-
-    let link = parseInt(window.location.href.split('/').pop());
-
-    fetch('/check/' + link)
-        .then(response => {
-            return response.text();
-        })
-        .then(text => {
-            if (text === 'true') {
-                let game = new Game();
-            } else {
-                redirectToLobby();
-            }
-        });
-
-
-} else {
-    redirectToLobby();
-}
+let game = new Game();

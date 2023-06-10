@@ -174,11 +174,11 @@ export default abstract class TopBarDrawer {
 
         if (withName) {
             container.add(
-                this.scene.add.text(0, 0, (player.online ? "🔴 " : "✖️ ") + player.link + ":")
+                this.scene.add.text(0, 0, (player.online ? "🔴 " : "✖️ ") + player.name + ":")
                     .setStyle(textStyle)
             );
 
-            startX += 100;
+            startX += 150;
         }
 
         container.add(
@@ -193,7 +193,7 @@ export default abstract class TopBarDrawer {
 
         if (this.scene.gameManager.settings.withTimeControl) {
             container.add(
-                this.scene.add.text(startX + 150, 0, `${this.timeToString(this.playerTime[player.link])} ⏰`)
+                this.scene.add.text(startX + 150, 0, `${this.timeToString(this.playerTime[player.id])} ⏰`)
                     .setStyle(textStyle)
             );
         }
@@ -219,7 +219,7 @@ export default abstract class TopBarDrawer {
         };
 
         container.add(
-            this.scene.add.text(0, 0, (message.playerLink ?? 'ИИ') + ":")
+            this.scene.add.text(0, 0, (message.playerId ?? 'ИИ') + ":")
                 .setStyle(textStyle)
         );
 

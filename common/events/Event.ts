@@ -38,6 +38,10 @@ class Event {
         this.description = description;
         this.sprite = sprite;
     }
+
+    toString(): string {
+        return this.description;
+    }
 }
 
 function addEvents(type: EventTypes, description: string, count: number, sprite: string = ""): Event[] {

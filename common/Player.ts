@@ -51,7 +51,6 @@ export default class Player {
     id: number;
     name: string;
 
-    link: number;
     socketId: string;
 
     spaceship: Spaceship;
@@ -66,9 +65,7 @@ export default class Player {
 
     protected lose: boolean = false;
 
-    constructor() {
-        this.link = this.generateLink();
-    }
+    constructor() {}
 
     protected generateLink(): number {
         const linkSize = 6;
@@ -140,7 +137,8 @@ export default class Player {
     getOtherPlayer(): OtherPlayer {
         let otherPlayer = new OtherPlayer();
 
-        otherPlayer.link = this.link;
+        otherPlayer.id = this.id;
+        otherPlayer.name = this.name;
         otherPlayer.energy = this.energy;
         otherPlayer.online = this.online;
         otherPlayer.spaceship = this.spaceship;

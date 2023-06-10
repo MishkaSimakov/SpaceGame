@@ -7,14 +7,10 @@
     <link href="/css/bootstrap.css" rel="stylesheet">
 </head>
 <body>
-<nav class="navbar navbar-expand-lg bg-body-tertiary">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="#">🚀 Космические баталии</a>
-    </div>
-</nav>
+@include('partials/header')
 
-<div class="container">
-    <div class="col-md-5 mx-auto">
+<div class="container mt-3">
+    <div class="col-lg-5 mx-auto">
         <div class="card mb-3">
             <div class="card-header">Зарегистрироваться</div>
 
@@ -22,7 +18,7 @@
                 <form action="/register" method="POST">
                     <div class="mb-3">
                         <label for="login" class="form-label">Логин</label>
-                        <input id="login" type="text" class="form-control" name="login"
+                        <input id="login" type="text" class="form-control" maxlength="15" minlength="4" name="login"
                                placeholder="Например, Poreshatyel" required autofocus>
                     </div>
 

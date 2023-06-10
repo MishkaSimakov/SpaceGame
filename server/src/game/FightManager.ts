@@ -24,9 +24,9 @@ export default class FightManager {
     }
 
     getEnemyOf(player: Player): Player {
-        if (player.link === this.first.link)
+        if (player.id === this.first.id)
             return this.second;
-        if (player.link === this.second.link)
+        if (player.id === this.second.id)
             return this.first
 
         return undefined;
@@ -51,7 +51,7 @@ export default class FightManager {
             this.gameManager.timeManager.addRecord(TimeRecordType.FIGHT_TURN_ENDED, attacker);
 
             if (destroyed !== undefined) {
-                console.log(`Fight has ended. Player ${destroyed.link} was destroyed`);
+                console.log(`Fight has ended. ${destroyed.name} was destroyed`);
                 return destroyed;
             }
 
@@ -70,7 +70,7 @@ export default class FightManager {
     }
 
     protected async makeFightIteration(attacker: Player, target: Player): Promise<Player | undefined> {
-        console.log(`Fight iteration. Player ${attacker.link} attack player ${target.link}`);
+        console.log(`Fight iteration. ${attacker.name} attack ${target.name}`);
 
         if (target.canProtect())
             await this.chooseProtectors(attacker, target);
@@ -154,7 +154,7 @@ export default class FightManager {
     }
 
     protected async chooseWeaponAndTarget(attacker: Player, target: Player): Promise<Module> {
-        return await this.gameManager.emitToPlayerAndWait(attacker, 'chooseWeaponAndTarget', target.link, (weaponPosition: Vector2, targetPosition: Vector2) => {
+        return await this.gameManager.emitToPlayerAndWait(attacker, 'chooseWeaponAndTarget', target.id, (weaponPosition: Vector2, targetPosition: Vector2) => {
             let weapon: Module = attacker.spaceship.getModuleByPosition(weaponPosition);
             let targetModule: Module = target.spaceship.getModuleByPosition(targetPosition);
 
@@ -167,7 +167,7 @@ export default class FightManager {
     }
 
     protected async chooseTarget(attacker: Player, target: Player, weapon: Module): Promise<Module> {
-        return await this.gameManager.emitToPlayerAndWait(attacker, 'chooseTarget', target.link, weapon, (targetPosition: Vector2) => {
+        return await this.gameManager.emitToPlayerAndWait(attacker, 'chooseTarget', target.id, weapon, (targetPosition: Vector2) => {
             let targetModule: Module = target.spaceship.getModuleByPosition(targetPosition);
 
             console.log(`   Player has chosen attack module at x: ${targetModule.x}, y: ${targetModule.y}`);

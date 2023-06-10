@@ -22,7 +22,7 @@ export default class Game {
     settings: GameSettings;
 
     playerTime: Record<number, number> = {};
-    timeDecreasingPlayerLink: number;
+    timeDecreasingPlayerId: number;
 
     messages: Message[];
 
@@ -41,22 +41,18 @@ export default class Game {
 
         let prevTime = (new Date()).getTime();
         setInterval(() => {
-            if (!this.settings.withTimeControl)
+            if (!this.settings || !this.settings.withTimeControl)
                 return;
 
-            if (!this.timeDecreasingPlayerLink)
+            if (!this.timeDecreasingPlayerId)
                 return;
 
             let currTime = (new Date()).getTime();
-            this.playerTime[this.timeDecreasingPlayerLink] -= (currTime - prevTime);
+            this.playerTime[this.timeDecreasingPlayerId] -= (currTime - prevTime);
             prevTime = currTime;
 
             this.controlsScene.topBarDrawer.updateTime(this.playerTime);
         }, 1000);
-    }
-
-    getLink(): number {
-        return parseInt(window.location.href.split('/').pop());
     }
 
     onReady() {
@@ -75,14 +71,14 @@ export default class Game {
         this.settings = gameDTO.settings;
 
         // time control
-        if (this.settings.withTimeControl) {
-            this.timeDecreasingPlayerLink = gameDTO.timeControl.timeDecreasingPlayerLink;
+        if (this.settings?.withTimeControl) {
+            this.timeDecreasingPlayerId = gameDTO.timeControl.timeDecreasingPlayerId;
 
             for (let player of this.getAllPlayers()) {
-                if (this.timeDecreasingPlayerLink === player.link && this.playerTime[this.timeDecreasingPlayerLink])
+                if (this.timeDecreasingPlayerId === player.id && this.playerTime[this.timeDecreasingPlayerId])
                     continue;
 
-                this.playerTime[player.link] = gameDTO.timeControl.playersTime[player.link];
+                this.playerTime[player.id] = gameDTO.timeControl.playersTime[player.id];
             }
         }
 

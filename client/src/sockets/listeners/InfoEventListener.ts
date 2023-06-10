@@ -13,17 +13,17 @@ export default class InfoEventListener extends BaseEventListener {
     }
 
     addListeners(): void {
-        this.socket.on('showCards', (link: number, cards: (Module | Event)[]) => {
+        this.socket.on('showCards', (playerId: number, cards: (Module | Event)[]) => {
             this.controls().showCards(
                 cards,
-                link === this.game.getLink() ? "вы вытянули" : (link + " вытянул")
+                playerId === this.game.currentPlayer.id ? "вы вытянули" : (playerId + " вытянул")
             );
         });
 
-        this.socket.on('showCardsAndWait', (link: number, cards: (Module | Event)[], callback: () => void) => {
+        this.socket.on('showCardsAndWait', (playerId: number, cards: (Module | Event)[], callback: () => void) => {
             this.controls().showCards(
                 cards,
-                link === this.game.getLink() ? "вы вытянули" : (link + " вытянул")
+                playerId === this.game.currentPlayer.id ? "вы вытянули" : (playerId + " вытянул")
             ).then(callback);
         });
     }

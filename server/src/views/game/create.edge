@@ -10,7 +10,7 @@
 <body>
 @include('partials/header')
 
-<div class="row">
+<div class="row mx-3">
     <div class="col-md-6 mx-auto">
         <div class="card mt-3">
             <div class="card-header">Новая игра</div>
@@ -30,7 +30,23 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Участники</label>
+                        <label class="form-label" for="player">Участники</label>
+
+                        <div class="input-group mb-3">
+                            <select id="player" name="player" class="form-select">
+                                @each(user in users)
+                                <option value="{{ user.id }}">{{ user.login }}</option>
+                                @end
+                            </select>
+
+                            <select name="players" id="players" multiple class="d-none"></select>
+
+                            <button class="btn btn-outline-secondary" type="button" id="add-player-btn">
+                                добавить
+                            </button>
+                        </div>
+
+                        <div id="players-list" class="d-flex flex-row gap-3 flex-wrap card card-body"></div>
                     </div>
 
                     <div class="mb-0">
@@ -44,6 +60,20 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
+        let players = [];
+
+        let playersInput = document.getElementById('player');
+        let playersList = document.getElementById('players-list');
+        let playersInputForm = document.getElementById('players');
+
+        for (let child of playersInput.children) {
+            players.push({
+                id: child.getAttribute('value'),
+                login: child.innerHTML,
+                selected: false
+            });
+        }
+
         let generateName = () => {
             let randomElement = (array) => {
                 let random = Math.random();
@@ -52,7 +82,7 @@
             }
 
             let getDate = () => {
-                return new Date().toLocaleDateString('ru-ru', { year:"numeric", month:"numeric", day:"numeric"});
+                return new Date().toLocaleDateString('ru-ru', {year: "numeric", month: "numeric", day: "numeric"});
             }
 
             // 0 - при ..., 1 - у ...
@@ -94,6 +124,52 @@
         generateNameBtn.addEventListener('click', () => {
             nameInput.value = generateName();
         });
+
+        let updateSelectedPlayers = () => {
+            playersList.textContent = '';
+            playersInput.textContent = '';
+            playersInputForm.textContent = '';
+
+            for (let player of players) {
+                if (player.selected) {
+                    let playerDiv = document.createElement('div');
+                    playerDiv.innerHTML = player.login;
+
+                    playersList.appendChild(playerDiv);
+
+                    //
+                    let playerOption = document.createElement('option');
+                    playerOption.innerHTML = player.login;
+                    playerOption.setAttribute('value', player.id);
+                    playerOption.setAttribute('selected', '1');
+
+                    playersInputForm.appendChild(playerOption);
+                } else {
+                    let playerOption = document.createElement('option');
+                    playerOption.innerHTML = player.login;
+                    playerOption.setAttribute('value', player.id);
+
+                    playersInput.appendChild(playerOption);
+                }
+            }
+        };
+
+        let addPlayerButton = document.getElementById('add-player-btn');
+        addPlayerButton.onclick = () => {
+            let playerInput = document.getElementById('player');
+
+            if (!playerInput.value)
+                return;
+
+            let player = players.find(p => p.id === playerInput.value);
+
+            if (!player)
+                return;
+
+            player.selected = true;
+
+            updateSelectedPlayers();
+        };
     });
 </script>
 </body>

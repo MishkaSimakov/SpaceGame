@@ -35,7 +35,7 @@ export default class RebuildSpaceshipManager {
     }
 
     disallowRebuildSpaceship() {
-        this.spaceshipsScene.spaceshipDrawers[this.player.link].disallowDrag();
+        this.spaceshipsScene.spaceshipDrawers[this.player.id].disallowDrag();
         this.controlsScene.handDrawer.disallowDrag();
 
         this.removeEvents();
@@ -199,7 +199,7 @@ export default class RebuildSpaceshipManager {
     }
 
     private get spaceshipDrawer(): SpaceshipDrawer {
-        return this.gameManager.spaceshipsScene.spaceshipDrawers[this.player.link];
+        return this.gameManager.spaceshipsScene.spaceshipDrawers[this.player.id];
     }
 
     private get hand(): (Event|Module)[] {

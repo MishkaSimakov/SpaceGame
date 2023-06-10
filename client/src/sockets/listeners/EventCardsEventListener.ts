@@ -1,5 +1,5 @@
 import BaseEventListener from "./BaseEventListener";
-import Module, {isModule, ModuleTypes} from "../../../../common/modules/Module";
+import {Module, ModuleTypes} from "../../../../common/modules/Module";
 import {Event} from "../../../../common/events/Event";
 import Game from "../../Game";
 import Vector2 from "../../../../common/Vector2";
@@ -15,34 +15,20 @@ export default class EventCardsEventListener extends BaseEventListener {
         super(...args);
     }
 
-    //  permuteThreeCards
-    //  permuteThreeCardsAndChooseOne
-    //  destroyAnyModuleOnYourSpaceshipEvent
-    //  destroyTwoSolarPanelsOnYourSpaceshipEvent
-    //  choosePlayerForAttack
-    //  chooseModuleToDamageEvent
-    //  chooseModuleToRepairEvent
-    //  --choosePlayerToStealCardEvent
-    //  --chooseCardOfPlayer
-    //  chooseCardsForRepairSpaceshipEvent
-    //  chooseModulesToRepairByDiscardedCards
-    //  chooseModulesToMoveDamage
-    //  --chooseCardsToDiscardAndTakeAnother
     addListeners(): void {
-        this.socket.on('choosePlayerToStealCardEvent', (playersWithCards: number[], callback: (link: number) => void) => {
+        this.socket.on('choosePlayerToStealCardEvent', (playersWithCards: number[], callback: (id: number) => void) => {
+            // TODO: do this!!!
+            // let players = playersWithCards.map(id => this.game.getAllPlayers().find(p => p.id === id));
+
             this.game.controlsScene.chooseFromList("Выберите игрока", playersWithCards.map(v => v.toString())).then((index: number) => {
                 callback(playersWithCards[index]);
             });
         });
 
         this.socket.on('chooseCardOfPlayer', (cards: (Module | Event)[], callback: (cardIndex: number) => void) => {
-            this.game.controlsScene.chooseFromList("Выберите карту", cards.map((card: Module | Event): string => {
-                if (isModule(card)) {
-                    return (card as Module).name;
-                } else {
-                    return (card as Event).description;
-                }
-            })).then(callback);
+            this.game.controlsScene
+                .chooseFromList("Выберите карту", cards.map(c => c.toString()))
+                .then(callback);
         });
 
         this.socket.on('chooseCardsToDiscardAndTakeAnother', (cards: (Module | Event)[], callback: (indexes: number[]) => void) => {
@@ -67,8 +53,8 @@ export default class EventCardsEventListener extends BaseEventListener {
 
                 this.game.spaceshipsScene.chooseModules((chosen: Module[]) => {
                     modules = chosen;
-                }, (module?: Module, playerLink?: number) => {
-                    if (playerLink !== this.game.getLink())
+                }, (module?: Module, playerId?: number) => {
+                    if (playerId !== this.game.currentPlayer.id)
                         return false;
 
                     if (!module.isDamaged())
@@ -98,8 +84,8 @@ export default class EventCardsEventListener extends BaseEventListener {
 
             this.game.spaceshipsScene.chooseModule((chosen: Module) => {
                 module = chosen;
-            }, (module?: Module, playerLink?: number) => {
-                if (playerLink !== this.game.getLink())
+            }, (module?: Module, playerId?: number) => {
+                if (playerId !== this.game.currentPlayer.id)
                     return false;
 
                 if (!module.isDamaged())
@@ -131,19 +117,19 @@ export default class EventCardsEventListener extends BaseEventListener {
             }]);
         });
 
-        this.socket.on('chooseModuleToDamageEvent', (damageToDeal: number, callback: (playerLink?: number, module?: Vector2) => void) => {
+        this.socket.on('chooseModuleToDamageEvent', (damageToDeal: number, callback: (playerId?: number, module?: Vector2) => void) => {
             this.controls().topBarDrawer.setStatus(`выберите модуль, чтобы нанести урон (${damageToDeal})`);
 
             let module: Module;
-            let link: number;
+            let id: number;
 
-            this.game.spaceshipsScene.chooseModule((chosen: Module, playerLink: number) => {
+            this.game.spaceshipsScene.chooseModule((chosen: Module, playerId: number) => {
                 module = chosen;
-                link = playerLink;
+                id = playerId;
 
                 this.controls().topBarDrawer.buttonsShapes[0].setDisabled(module === undefined);
-            }, (module?: Module, playerLink?: number) => {
-                if (playerLink === this.game.getLink())
+            }, (module?: Module, playerId?: number) => {
+                if (playerId === this.game.currentPlayer.id)
                     return false;
 
                 if (module.isMain)
@@ -157,7 +143,7 @@ export default class EventCardsEventListener extends BaseEventListener {
                 color: COLORS.BUTTON.DANGER,
                 onClick: () => {
                     if (module) {
-                        callback(link, module.getPosition());
+                        callback(id, module.getPosition());
                     } else {
                         callback();
                     }
@@ -193,8 +179,8 @@ export default class EventCardsEventListener extends BaseEventListener {
                 selectedSolarPanels = chosen;
 
                 this.controls().topBarDrawer.setButtonsDisabled(selectedSolarPanels.length < count);
-            }, (module?: Module, playerLink?: number) => {
-                if (playerLink !== this.game.getLink())
+            }, (module?: Module, playerId?: number) => {
+                if (playerId !== this.game.currentPlayer.id)
                     return false;
 
                 if (module.type !== ModuleTypes.SolarPanel)
@@ -232,8 +218,8 @@ export default class EventCardsEventListener extends BaseEventListener {
                 selectedModule = chosen;
 
                 this.controls().topBarDrawer.setButtonsDisabled(selectedModule === undefined);
-            }, (module?: Module, playerLink?: number) => {
-                if (playerLink !== this.game.getLink())
+            }, (module?: Module, playerId?: number) => {
+                if (playerId !== this.game.currentPlayer.id)
                     return false;
 
                 if (module.isMain)
@@ -279,7 +265,7 @@ export default class EventCardsEventListener extends BaseEventListener {
             });
         });
 
-        this.socket.on('chooseModuleToDealDamage', (enemyLink: number, callback: (position: Vector2) => void) => {
+        this.socket.on('chooseModuleToDealDamage', (enemyId: number, callback: (position: Vector2) => void) => {
             this.controls().topBarDrawer.removeButtons();
             this.game.spaceshipsScene.endChoosingModule();
 
@@ -291,8 +277,8 @@ export default class EventCardsEventListener extends BaseEventListener {
                 selectedModule = chosen;
 
                 this.controls().topBarDrawer.setButtonsDisabled(selectedModule === undefined);
-            }, (module?: Module, playerLink?: number) => {
-                if (playerLink !== enemyLink)
+            }, (module?: Module, playerId?: number) => {
+                if (playerId !== enemyId)
                     return false;
 
                 if (module.isMain)

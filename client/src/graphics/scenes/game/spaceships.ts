@@ -73,34 +73,17 @@ export default class Spaceships extends Phaser.Scene {
         });
     }
 
-    drawSpaceship(spaceship: Spaceship, link: number, index: number, count: number): void {
-        if (this.spaceshipDrawers[link] === undefined) {
-            const spaceshipPosition = spaceshipConfigurations[count - 1][index];
-
-            this.spaceshipDrawers[link] = new SpaceshipDrawer(
-                spaceship, spaceshipPosition, this.spaceshipsCardSize, this
-            );
-
-            let currentPlayer = this.gameManager.getCurrentPlayer();
-            if (currentPlayer && link === currentPlayer.link) {
-                this.panToPlayerWithLink(currentPlayer.link, 0);
-            }
-        } else {
-            this.spaceshipDrawers[link].spaceship = spaceship;
-        }
-
-        this.spaceshipDrawers[link].draw();
-    }
-
-    chooseModule(onSelected: (module?: Module, playerLink?: number) => void, check: (module: Module, playerLink: number) => boolean, required: boolean, outlineColor: number): void {
+    chooseModule(onSelected: (module?: Module, playerId?: number) => void, check: (module: Module, playerId: number) => boolean, required: boolean, outlineColor: number): void {
         let selected: Phaser.GameObjects.Container;
 
-        for (let link of Object.keys(this.spaceshipDrawers)) {
-            for (let shape of this.spaceshipDrawers[link].moduleShapes) {
+        for (let key in this.spaceshipDrawers) {
+            let playerId = parseInt(key);
+
+            for (let shape of this.spaceshipDrawers[playerId].moduleShapes) {
                 shape.on('pointerdown', () => {
                     let module = shape.getData('module') as Module;
 
-                    if (!check(module, parseInt(link)))
+                    if (!check(module, playerId))
                         return;
 
                     if (selected !== undefined)
@@ -116,21 +99,22 @@ export default class Spaceships extends Phaser.Scene {
                     selected = shape;
                     (selected.getAll()[0] as Phaser.GameObjects.Rectangle).setStrokeStyle(5, outlineColor);
 
-                    onSelected(module, parseInt(link));
+                    onSelected(module, playerId);
                 });
             }
         }
     }
 
-    chooseModules(onSelected: (modules: Module[]) => void, check: (module: Module, playerLink: number) => boolean, count: number, outlineColor: number): void {
+    chooseModules(onSelected: (modules: Module[]) => void, check: (module: Module, playerId: number) => boolean, count: number, outlineColor: number): void {
         let selected: Phaser.GameObjects.Container[] = [];
 
-        for (let link of Object.keys(this.spaceshipDrawers)) {
-            for (let shape of this.spaceshipDrawers[link].moduleShapes) {
+        for (let key in this.spaceshipDrawers) {
+            let playerId = parseInt(key);
+            for (let shape of this.spaceshipDrawers[playerId].moduleShapes) {
                 shape.on('pointerdown', () => {
                     let module = shape.getData('module') as Module;
 
-                    if (!check(module, parseInt(link)))
+                    if (!check(module, playerId))
                         return;
 
                     if (selected.includes(shape))
@@ -152,8 +136,19 @@ export default class Spaceships extends Phaser.Scene {
 
     redraw() {
         let players = this.gameManager.getAllPlayers();
+
         for (let [index, player] of players.entries()) {
-            this.drawSpaceship(player.spaceship, player.link, index, players.length);
+            if (this.spaceshipDrawers[player.id] === undefined) {
+                const spaceshipPosition = spaceshipConfigurations[players.length - 1][index];
+
+                this.spaceshipDrawers[player.id] = new SpaceshipDrawer(
+                    player.spaceship, spaceshipPosition, this.spaceshipsCardSize, this
+                );
+            } else {
+                this.spaceshipDrawers[player.id].spaceship = player.spaceship;
+            }
+
+            this.spaceshipDrawers[player.id].draw();
         }
     }
 
@@ -167,8 +162,8 @@ export default class Spaceships extends Phaser.Scene {
         }
     }
 
-    panToPlayerWithLink(link: number, duration: number = 500) {
-        let position = this.spaceshipDrawers[link].center;
+    panToPlayerWithId(playerId: number, duration: number = 500) {
+        let position = this.spaceshipDrawers[playerId].center;
 
         this.cameras.main.pan(position.x, position.y, duration, 'Sine.easeInOut');
     }

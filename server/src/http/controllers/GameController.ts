@@ -1,25 +1,35 @@
 import {Request, Response} from "express";
 import App from "../../App";
-import path from "path";
 import {User} from "../../entity/user";
+import {AuthenticatedRequest} from "../middleware/auth";
+import {arrayShuffle} from "../../game/GameData";
 
 export const create = async (req: Request, res: Response) => {
-    let createdGame = App.getInstance().gamesManager.createGame(req.body.name, {
-        withTimeControl: true,
-        size: 3
+    let users = await User.find();
+
+    let selectedUsers = req.body.players.map(id => {
+        return users.find(u => u.id === parseInt(id));
     });
 
-    res.send(JSON.stringify(createdGame.getLinks()));
+    selectedUsers = arrayShuffle(selectedUsers);
+
+    let createdGame = App.getInstance().gamesManager.createGame(req.body.name,  selectedUsers,{
+        withTimeControl: true,
+        size: selectedUsers.length
+    });
+
+    return res.redirect('/');
 };
 
-export const joinGame = async (req: Request, res: Response) => {
-    if (!App.getInstance().gamesManager.checkPlayerLinkExist(parseInt(req.params.link))) {
-        res.redirect("/");
+export const joinGame = async (req: AuthenticatedRequest, res: Response) => {
+    let gameId = req.url.split('/').pop();
+    let game = App.getInstance().gamesManager.getGameById(gameId);
 
-        return;
+    if (!game || !game.players.find(p => p.id === req.user.id)) {
+        return res.redirect('/');
     }
 
-    res.sendFile(path.join(__dirname, '../../client/dist/html/game.edge'));
+    res.render('game/game');
 };
 
 export const showCreatePage = async (req: Request, res: Response) => {
@@ -31,7 +41,3 @@ export const showCreatePage = async (req: Request, res: Response) => {
         users: users
     });
 }
-
-export const check = async (req: Request, res: Response) => {
-    res.send(App.getInstance().gamesManager.checkPlayerLinkExist(parseInt(req.params.link)));
-};

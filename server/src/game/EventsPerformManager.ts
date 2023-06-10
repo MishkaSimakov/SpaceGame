@@ -139,17 +139,17 @@ let eventsPerformFunctions: Record<EventTypes, (game: Game, event: Event) => Pro
         let damageToDeal = tossDice() <= 4 ? 1 : 2;
 
         let damageData: {
-            playerLink: number,
+            playerId: number,
             modulePosition: Vector2
-        } = await game.emitToCurrentPlayerAndWait('chooseModuleToDamageEvent', damageToDeal, (playerLink?: number, module?: Vector2) => {
+        } = await game.emitToCurrentPlayerAndWait('chooseModuleToDamageEvent', damageToDeal, (playerId?: number, module?: Vector2) => {
             return {
-                playerLink: playerLink, modulePosition: module
+                playerId: playerId, modulePosition: module
             };
         });
 
-        if (damageData.playerLink === undefined) return;
+        if (damageData.playerId === undefined) return;
 
-        let playerToDamage: Player = game.getPlayerByLink(damageData.playerLink);
+        let playerToDamage: Player = game.getPlayerById(damageData.playerId);
         let moduleToDamage: Module = playerToDamage.spaceship.getModuleByPosition(damageData.modulePosition);
 
         let destroyed = playerToDamage.spaceship.damage(moduleToDamage, damageToDeal, false);
@@ -184,15 +184,15 @@ let eventsPerformFunctions: Record<EventTypes, (game: Game, event: Event) => Pro
         game.currentPlayer.hand.push(event);
     },
     [EventTypes.ChoosePlayerAndStealHisCard]: async (game: Game) => {
-        let playersWithCards = game.getLinks().filter((link) => (game.getPlayerByLink(link).hand.length !== 0) && (link !== game.currentPlayer.link));
+        let playersWithCards = game.players.filter(p => (p.hand.length !== 0) && (p.id !== game.currentPlayer.id));
 
         if (playersWithCards.length === 0)
             return;
 
-        let chosenPlayerLink: number = await game.emitToCurrentPlayerAndWait('choosePlayerToStealCardEvent', playersWithCards, (playerLink: number) => {
-            return playerLink;
+        let chosenPlayerId: number = await game.emitToCurrentPlayerAndWait('choosePlayerToStealCardEvent', playersWithCards.map(p => p.id), (playerId: number) => {
+            return playerId;
         });
-        let chosenPlayer = game.getPlayerByLink(chosenPlayerLink);
+        let chosenPlayer = game.getPlayerById(chosenPlayerId);
 
         let chosenCardIndex: number = await game.emitToCurrentPlayerAndWait('chooseCardOfPlayer', chosenPlayer.hand, (chosenCardIndex: number) => {
             return chosenCardIndex;

@@ -24,6 +24,9 @@ enum GameState {
 }
 
 export default class Game {
+    id: string;
+    name: string;
+
     gameData: GameData;
 
     settings: GameSettings;
@@ -36,7 +39,7 @@ export default class Game {
 
     state: GameState = GameState.WAIT_FOR_PLAYERS;
 
-    currentEmitPlayerLink: number;
+    currentEmitPlayerId: number;
     currentEmitFunction: () => void;
 
     ENERGY_TO_ATTACK_BY_COMMAND_MODULE: number = 7;
@@ -52,9 +55,11 @@ export default class Game {
 
     // logger: Logger;
 
-    constructor(name: string, users: User[], settings: GameSettings, io: Server) {
+    constructor(id: string, name: string, users: User[], settings: GameSettings, io: Server) {
         // this.logger = new Logger(this);
         // this.logger.log("game created!");
+        this.id = id;
+        this.name = name;
 
         this.settings = settings;
 
@@ -93,10 +98,10 @@ export default class Game {
 
                 callback(true);
 
-                this.getSocket(player).emit('chooseModuleToDealDamage', target.link, (position: Vector2) => {
-                    this.messageManager.addMessage(`нанёс 1 урон ${target.link} картой действия`, player);
+                this.getSocket(player).emit('chooseModuleToDealDamage', target.id, (position: Vector2) => {
+                    this.messageManager.addMessage(`нанёс 1 урон ${target.id} картой действия`, player);
 
-                    player = this.getPlayerByLink(player.link);
+                    player = this.getPlayerById(player.id);
 
                     let discardedCardIndex = player.hand.findIndex((c) => {
                         if (isModule(c))
@@ -117,7 +122,7 @@ export default class Game {
 
                     this.handleDestroyedModules(target, player, destroyed, true);
 
-                    if (player.link === this.currentEmitPlayerLink) {
+                    if (player.id === this.currentEmitPlayerId) {
                         this.currentEmitFunction();
                     }
                 });
@@ -176,7 +181,7 @@ export default class Game {
     isPlayerInFight(player: Player): boolean {
         if (!this.currentFight) return false;
 
-        return player.link === this.currentFight.first.link || player.link === this.currentFight.second.link;
+        return player.id === this.currentFight.first.id || player.id === this.currentFight.second.id;
     }
 
     addPlayersData(message: any[], player: Player) {
@@ -184,7 +189,7 @@ export default class Game {
             message.splice(0, 2);
         }
 
-        message.unshift(HAS_PLAYERS_DATA, GameToGameForPlayerMapper.getDTO(this, player.link));
+        message.unshift(HAS_PLAYERS_DATA, GameToGameForPlayerMapper.getDTO(this, player));
 
         return message;
     }
@@ -203,28 +208,28 @@ export default class Game {
 
                     let newAcknowledgement = async (...ackArgs) => {
                         this.currentEmitFunction = undefined;
-                        this.currentEmitPlayerLink = undefined;
+                        this.currentEmitPlayerId = undefined;
 
                         let result = await acknowledgement(...ackArgs);
 
                         resolve(result);
                     };
 
-                    this.getSocketByLink(player.link).emit(event, ...args.slice(0, args.length - 1), newAcknowledgement);
+                    this.getSocket(player).emit(event, ...args.slice(0, args.length - 1), newAcknowledgement);
                 } else {
                     this.currentEmitFunction = undefined;
-                    this.currentEmitPlayerLink = undefined;
+                    this.currentEmitPlayerId = undefined;
 
-                    this.getSocketByLink(player.link).emit(event, ...args);
+                    this.getSocket(player).emit(event, ...args);
 
                     resolve(undefined);
                 }
             };
 
             this.currentEmitFunction = emitFunction;
-            this.currentEmitPlayerLink = player.link;
+            this.currentEmitPlayerId = player.id;
 
-            if (this.getSocketByLink(player.link) !== undefined && !this.getSocketByLink(player.link).disconnected)
+            if (this.getSocket(player) !== undefined && !this.getSocket(player).disconnected)
                 emitFunction();
         });
     }
@@ -233,26 +238,23 @@ export default class Game {
         return this.emitToPlayerAndWait(this.currentPlayer, event, ...args);
     }
 
-    tryToEmitEvent(link: number) {
-        if (this.currentEmitPlayerLink !== link)
+    tryToEmitEvent(player: Player) {
+        if (this.currentEmitPlayerId !== player.id)
             return;
 
-        if (this.getSocketByLink(this.currentEmitPlayerLink) === undefined || this.getSocketByLink(this.currentEmitPlayerLink).disconnected)
+        if (this.getSocketById(this.currentEmitPlayerId) === undefined || this.getSocketById(this.currentEmitPlayerId).disconnected)
             return;
 
         this.currentEmitFunction();
     }
 
-    getLinks(): number[] {
-        return this.players.map(p => p.link);
-    }
-
-    getPlayerByLink(link: number): Player {
-        return this.players.filter(p => p.link === link)[0];
+    getPlayerById(id: number): Player {
+        return this.players.filter(p => p.id === id)[0];
     }
 
     createPlayer(user: User): Player {
         let player = new Player();
+
         player.id = user.id;
         player.name = user.login;
         player.spaceship = new Spaceship(this.gameData.popMainModule());
@@ -261,23 +263,19 @@ export default class Game {
         return player;
     }
 
-    playerConnected(link: number, socketId: string): Player {
-        console.log(`User with link ${link} connected`);
+    playerConnected(player: Player, socketId: string) {
+        console.log(`Player ${player.name} connected`);
 
-        let connectedPlayer = this.getPlayerByLink(link);
+        player.socketId = socketId;
+        player.online = true;
 
-        connectedPlayer.socketId = socketId;
-        connectedPlayer.online = true;
+        this.changePlayerData(player);
 
-        this.changePlayerData(connectedPlayer);
-
-        this.addUseEventCardEvent(connectedPlayer);
+        this.addUseEventCardEvent(player);
 
         this.syncPlayersData();
 
-        this.tryToEmitEvent(link);
-
-        return connectedPlayer;
+        this.tryToEmitEvent(player);
     }
 
     async start() {
@@ -296,28 +294,28 @@ export default class Game {
 
     changePlayerData(player: Player) {
         for (let i = 0; i < this.players.length; ++i) {
-            if (this.players[i].link === player.link) {
+            if (this.players[i].id === player.id) {
                 this.players[i] = player;
                 break;
             }
         }
 
-        if (this.currentPlayer.link === player.link)
-            this.currentPlayer = this.getPlayerByLink(player.link);
+        if (this.currentPlayer.id === player.id)
+            this.currentPlayer = player;
     }
 
     syncPlayersData() {
         for (let player of this.players) {
-            this.getSocket(player)?.emit('setGameData', GameToGameForPlayerMapper.getDTO(this, player.link));
+            this.getSocket(player)?.emit('setGameData', GameToGameForPlayerMapper.getDTO(this, player));
         }
     }
 
-    getSocketByLink(link: number): Socket {
-        return this.getSocket(this.getPlayerByLink(link));
+    getSocketById(id: number): Socket {
+        return this.getSocket(this.getPlayerById(id));
     }
 
-    getSocket(value: Player): Socket {
-        return this.io.sockets.sockets.get(value.socketId);
+    getSocket(player: Player): Socket {
+        return this.io.sockets.sockets.get(player.socketId);
     }
 
     getNextTurnPlayer() {
@@ -348,19 +346,24 @@ export default class Game {
     }
 
     setDestroyed(player: Player) {
-        let destroyedPlayerData = this.getPlayerByLink(player.link);
+        player.setLose();
 
-        destroyedPlayerData.setLose();
+        this.gameData.discardCards(player.hand);
+        player.hand = [];
 
-        this.changePlayerData(destroyedPlayerData);
+        player.spaceship.modules = player.spaceship.modules.filter(m => !m.isMain);
+        this.gameData.discardCards(player.spaceship.modules);
+        player.spaceship.modules = [];
 
-        console.log(`Player ${destroyedPlayerData.link} lose`);
+        this.changePlayerData(player);
+
+        console.log(`${player.name} lost`);
     }
 
     end() {
         let winner = Object.entries(this.players).filter(([_, player]) => !player.isLose())[0][1];
 
-        console.log(`Game end. Player ${winner.link} has won`);
+        console.log(`Game end. Player ${winner.name} has won`);
 
         this.state = GameState.ENDED;
     }
@@ -449,7 +452,7 @@ export default class Game {
         let attackedPlayer = await this.choosePlayerForAttack(AttackReason.AttackModule);
 
         if (!attackedPlayer) {
-            console.log(`   Player ${this.currentPlayer.link} is peaceful`);
+            console.log(`   Player ${this.currentPlayer.name} is peaceful`);
 
             return;
         }
@@ -483,17 +486,17 @@ export default class Game {
     }
 
     async choosePlayerForAttack(attackReason: AttackReason): Promise<Player | void> {
-        return await this.emitToCurrentPlayerAndWait('choosePlayerForAttack', attackReason, async (attackedPlayerLink?: number) => {
-            if (attackedPlayerLink === undefined) {
+        return await this.emitToCurrentPlayerAndWait('choosePlayerForAttack', attackReason, async (attackedPlayerId?: number) => {
+            if (attackedPlayerId === undefined) {
                 return;
             }
 
-            return this.getPlayerByLink(attackedPlayerLink);
+            return this.getPlayerById(attackedPlayerId);
         });
     }
 
     async attackPlayer(attackedPlayer: Player) {
-        console.log(`   Player ${this.currentPlayer.link} has attacked player ${attackedPlayer.link}`);
+        console.log(`   Player ${this.currentPlayer.name} has attacked player ${attackedPlayer.name}`);
 
         this.currentFight = new FightManager(this.currentPlayer, attackedPlayer, this);
         let destroyedPlayer = await this.currentFight.fight();
@@ -501,7 +504,7 @@ export default class Game {
         this.currentFight = undefined;
 
         if (destroyedPlayer !== undefined) {
-            console.log(`   Player ${destroyedPlayer.link} was destroyed`);
+            console.log(`   Player ${destroyedPlayer.name} was destroyed`);
             this.setDestroyed(destroyedPlayer);
         }
 
@@ -612,31 +615,31 @@ export default class Game {
 
     async showCardsToPlayer(cards: (Module | Event)[], player: Player, showToOther: boolean) {
         if (!showToOther) {
-            await this.emitToPlayerAndWait(player, 'showCardsAndWait', player.link, cards, () => {
+            await this.emitToPlayerAndWait(player, 'showCardsAndWait', player.id, cards, () => {
             });
         } else {
             for (let playerToEmit of this.players) {
-                if (playerToEmit.link === player.link) {
-                    await this.emitToPlayerAndWait(player, 'showCardsAndWait', player.link, cards, () => {
+                if (playerToEmit.id === player.id) {
+                    await this.emitToPlayerAndWait(player, 'showCardsAndWait', player.id, cards, () => {
                     });
                 } else {
-                    this.getSocket(playerToEmit)?.emit('showCards', player.link, cards);
+                    this.getSocket(playerToEmit)?.emit('showCards', player.id, cards);
                 }
             }
         }
     }
 
     getPlayerByOffsetFromCurrent(offset: number): Player {
-        let currentPlayerId = this.players.findIndex(p => p.link === this.currentPlayer.link);
+        let currentPlayerIndex = this.players.findIndex(p => p.id === this.currentPlayer.id);
 
         do {
-            currentPlayerId = (currentPlayerId + Math.sign(offset) + this.players.length) % this.players.length;
+            currentPlayerIndex = (currentPlayerIndex + Math.sign(offset) + this.players.length) % this.players.length;
 
-            if (!this.getPlayerByIndex(currentPlayerId).isLose())
+            if (!this.getPlayerByIndex(currentPlayerIndex).isLose())
                 offset += -Math.sign(offset);
         } while (offset !== 0);
 
-        return this.getPlayerByIndex(currentPlayerId);
+        return this.getPlayerByIndex(currentPlayerIndex);
     }
 
     async beforeTurn() {
@@ -720,7 +723,7 @@ export default class Game {
     }
 
     async makeGameIteration() {
-        console.log(`Turn of player ${this.currentPlayer.link}`);
+        console.log(`Turn of player ${this.currentPlayer.name}`);
 
         this.timeManager.addRecord(TimeRecordType.DEFAULT_TURN_STARTED, this.currentPlayer);
 

@@ -10,7 +10,8 @@ type GameSettings = {
 };
 
 class OtherPlayer {
-    link: number;
+    id: number;
+    name: string;
     energy: number;
     online: boolean;
     spaceship: Spaceship;
@@ -35,7 +36,7 @@ class GameForPlayerDTO {
     otherPlayers: OtherPlayer[];
 
     timeControl: {
-        timeDecreasingPlayerLink: number;
+        timeDecreasingPlayerId: number;
         playersTime: Record<number, number>
     };
 

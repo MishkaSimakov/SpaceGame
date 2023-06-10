@@ -90,7 +90,7 @@ export default class TopBarSmallDrawer extends TopBarDrawer {
                     .setPosition(this.sizes.padding, this.sizes.padding + lineOffset * index)
                     .setDepth(5)
                     .on('pointerdown', () => {
-                        this.scene.gameManager.spaceshipsScene.panToPlayerWithLink(player.link);
+                        this.scene.gameManager.spaceshipsScene.panToPlayerWithId(player.id);
                     })
             );
         }

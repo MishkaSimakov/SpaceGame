@@ -1,21 +1,22 @@
 import Game from "./Game";
 import {GameForPlayerDTO} from "../../../common/GameForPlayerDTO";
+import Player from "../../../common/Player";
 
 export default class GameToGameForPlayerMapper {
-    static getDTO(game: Game, forPlayer: number): GameForPlayerDTO {
+    static getDTO(game: Game, forPlayer: Player): GameForPlayerDTO {
         let dto = new GameForPlayerDTO();
 
-        dto.player = game.getPlayerByLink(forPlayer);
+        dto.player = game.getPlayerById(forPlayer.id);
 
         dto.otherPlayers = game.players
-            .filter(p => p.link !== forPlayer)
+            .filter(p => p.id !== forPlayer.id)
             .map(p => p.getOtherPlayer());
 
         dto.settings = game.settings;
 
         if (game.settings.withTimeControl) {
             dto.timeControl = {
-                timeDecreasingPlayerLink: game.timeManager.getTimeDecreasingPlayerLink(),
+                timeDecreasingPlayerId: game.timeManager.getTimeDecreasingPlayerId(),
                 playersTime: game.timeManager.getPlayersTime()
             };
         }

@@ -14,6 +14,5 @@ export default function initRoutes(server: Express) {
 
     server.get('/game/create', auth, GameController.showCreatePage);
     server.post('/game/create', auth, GameController.create);
-    server.get('/game/check/:link', auth, GameController.check);
-    server.get('/game/:link', auth, GameController.joinGame);
+    server.get('/game/:id', auth, GameController.joinGame);
 }

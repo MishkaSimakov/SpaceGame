@@ -23,90 +23,11 @@
                 <a class="list-group-item list-group-item-action" href="game/create">Создать новую</a>
 
                 @each(game in games)
-                <div class="list-group-item">{{ game.name }} (members)</div>
+                <a class="list-group-item list-group-item-action" href="/game/{{ game.id }}">{{ game.name }} <span class="text-muted">({{ game.players.join(", ") }})</span></a>
                 @end
             </div>
         </div>
     </div>
 </div>
-
-<script>
-    function getGameURL(code) {
-        return '/game/' + code.toString();
-    }
-
-    function getCheckGameURL(code) {
-        return '/check/' + code.toString();
-    }
-
-    function getCreateGameURL(playersCount) {
-        return '/create?count=' + playersCount;
-    }
-
-    let joinGameButton = document.getElementById('game-join');
-    let gameCodeInput = document.getElementById('game-code');
-
-    joinGameButton.addEventListener('click', event => {
-        event.preventDefault();
-
-        let code = gameCodeInput.value;
-
-        if (!code.match(/[0-9]{6}/)) {
-            gameCodeInput.classList.add('is-invalid');
-
-            return;
-        }
-
-        gameCodeInput.classList.remove('is-invalid');
-
-        fetch(getCheckGameURL(code))
-            .then(response => {
-                return response.text();
-            })
-            .then(text => {
-                if (text === 'true') {
-                    location.href = getGameURL(code);
-                } else {
-                    gameCodeInput.classList.add('is-invalid');
-                }
-            });
-    });
-
-    let createGameButton = document.getElementById('game-create');
-
-    createGameButton.addEventListener('click', event => {
-        event.preventDefault();
-
-        let radios = document.getElementsByName('players-count');
-
-        for (let radio of radios) {
-            if (radio.checked) {
-                let playersCount = parseInt(radio.value);
-
-                fetch(getCreateGameURL(playersCount))
-                    .then(response => {
-                        return response.text();
-                    })
-                    .then(text => {
-                        let links = JSON.parse(text);
-                        let linksContainer = document.getElementById('game-created-links-container');
-
-                        for (let link of links) {
-                            let linkElement = document.createElement("span");
-                            linkElement.textContent = link;
-                            linkElement.classList.add('list-group-item');
-
-                            linksContainer.appendChild(linkElement);
-                        }
-
-                        document.getElementById('game-create-card').classList.add('d-none');
-                        document.getElementById('game-created-card').classList.remove('d-none');
-                    });
-
-                break;
-            }
-        }
-    });
-</script>
 </body>
 </html>
