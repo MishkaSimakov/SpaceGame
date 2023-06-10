@@ -28,8 +28,7 @@ export function arrayShuffle<T>(array: T[]): T[] {
         currentIndex--;
 
         // And swap it with the current element.
-        [array[currentIndex], array[randomIndex]] = [
-            array[randomIndex], array[currentIndex]];
+        [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
     }
 
     return array;
@@ -128,13 +127,6 @@ export default class GameData {
         this.modulesStack = arrayShuffle(this.modulesStack);
         this.eventsStack = arrayShuffle(this.eventsStack);
         this.mainModules = arrayShuffle(this.mainModules);
-
-        this.eventsStack.push(
-            ...addEvents(EventTypes.DiscardCardAndRepairSpaceship, "Вы можете, скинув до 2\n" +
-                "карт с руки,\n" +
-                "восстановить по 1 урона\n" +
-                "с модулей вашего корабля за каждую\nскинутую карту", 2)
-        );
     }
 
 

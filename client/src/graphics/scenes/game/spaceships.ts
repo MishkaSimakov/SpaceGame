@@ -144,6 +144,10 @@ export default class Spaceships extends Phaser.Scene {
                 this.spaceshipDrawers[player.id] = new SpaceshipDrawer(
                     player.spaceship, spaceshipPosition, this.spaceshipsCardSize, this
                 );
+
+                if (player.id === this.gameManager.currentPlayer.id) {
+                    this.panToPlayerWithId(player.id);
+                }
             } else {
                 this.spaceshipDrawers[player.id].spaceship = player.spaceship;
             }
