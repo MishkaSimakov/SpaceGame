@@ -401,6 +401,8 @@ export default class Game {
             throw new Error("Changed player has wrong spaceship configuration");
         }
 
+        player.energy = Math.min(player.energy, player.spaceship.getTotalCapacity());
+
         this.changePlayerData(player);
     }
 
@@ -414,7 +416,7 @@ export default class Game {
             let module = this.currentPlayer.spaceship.getModuleByPosition(modulePosition);
 
             this.currentPlayer.energy -= energyCost;
-            module.health = Math.min(module.health + 2, module.totalHealth);
+            module.health = Math.min(module.health + 1, module.totalHealth);
 
             return true;
         });
@@ -555,6 +557,7 @@ export default class Game {
 
                 console.log(`   Event performed`);
             } else if (cardType === 'module') {
+                // TODO: do later
                 let drawAdditional: boolean;
 
                 do {
@@ -564,8 +567,6 @@ export default class Game {
                     console.log(`   Player get module: ${module.name}`);
 
                     await this.showCardsToPlayer([module], this.currentPlayer, true);
-
-                    console.log("here");
 
                     this.currentPlayer.hand.push(module);
 

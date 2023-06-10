@@ -66,9 +66,9 @@ export default class Button {
 
         if (this.background.getBounds().contains(scene.input.x, scene.input.y)) {
             this.state = ButtonState.HOVER;
-
-            this.stateUpdated();
         }
+
+        this.stateUpdated();
     }
 w
     setDisabled(isDisabled: boolean) {

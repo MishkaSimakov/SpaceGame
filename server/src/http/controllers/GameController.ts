@@ -41,3 +41,7 @@ export const showCreatePage = async (req: Request, res: Response) => {
         users: users
     });
 }
+
+export const showRules = async (req: Request, res: Response) => {
+    return res.render('game/rules');
+}

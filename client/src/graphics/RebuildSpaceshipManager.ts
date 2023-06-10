@@ -49,6 +49,7 @@ export default class RebuildSpaceshipManager {
                 continue;
 
             shape.on('dragstart', () => {
+                this.spaceshipsScene.children.bringToTop(shape);
                 this.spaceshipsScene.isDragging = true;
             });
 
@@ -127,6 +128,7 @@ export default class RebuildSpaceshipManager {
 
             shape.on('dragstart', () => {
                 this.spaceshipsScene.isDragging = true;
+                this.spaceshipsScene.children.bringToTop(shape);
             })
 
             shape.on('drag', (pointer: Phaser.Input.Pointer, x: number, y: number) => {
