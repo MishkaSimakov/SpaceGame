@@ -29,7 +29,9 @@ export const login = async (req: Request, res: Response) => {
 
         let token = generateToken(user);
 
-        return res.cookie('authentication_token', token).redirect(HOME);
+        return res.cookie('authentication_token', token, {
+            expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365)
+        }).redirect(HOME);
     } catch (error) {
         console.log(error);
         return res.status(500).send('Something went wrong.');

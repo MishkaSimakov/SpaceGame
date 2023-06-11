@@ -17,7 +17,7 @@ export default class SocketManager {
     constructor(game: Game) {
         this.game = game;
 
-        this.initSocket('http://localhost:3000');
+        this.initSocket(window.location.origin);
 
         // register socket listeners
         for (let listener of this.listeners) {
