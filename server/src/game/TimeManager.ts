@@ -1,3 +1,4 @@
+import { TimeControlSettings } from "../../../common/GameForPlayerDTO";
 import Player from "../../../common/Player";
 
 enum TimeRecordType {
@@ -11,12 +12,6 @@ type TimeRecord = {
     type: TimeRecordType,
     playerId: number,
     time: number
-};
-
-type TimeControlSettings = {
-    START_TIME: number;
-    DEFAULT_TIME_INCREASE: number;
-    FIGHT_TIME_INCREASE: number;
 };
 
 class TimeManager {

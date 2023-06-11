@@ -72,11 +72,14 @@ export default class Game {
 
         this.currentPlayer = this.players[0];
 
-        this.timeManager = new TimeManager({
-            START_TIME: 5 * 60 * 1000,
-            DEFAULT_TIME_INCREASE: 45 * 1000,
-            FIGHT_TIME_INCREASE: 10 * 1000,
-        }, this.players);
+        if (!this.settings.timeControlSettings) {
+            this.settings.timeControlSettings = {
+                START_TIME: 5 * 60 * 1000,
+                DEFAULT_TIME_INCREASE: 45 * 1000,
+                FIGHT_TIME_INCREASE: 10 * 1000,
+            };
+        }
+        this.timeManager = new TimeManager(this.settings.timeControlSettings, this.players);
 
         this.messageManager = new MessageManager();
     }
