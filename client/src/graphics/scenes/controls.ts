@@ -1,51 +1,53 @@
-import Module, {isModule} from "../../../../../common/modules/Module";
-import HandDrawer from "../../HandDrawer";
-import Vector2 from "../../../../../common/Vector2";
-import {Event} from "../../../../../common/events/Event";
-import {drawCard} from "../../CardsDrawer";
-import TopBarDrawer from "../../topbar/TopBarDrawer";
-import Game from "../../../Game";
-import Modal from "../../Modal";
-import {COLORS} from "../../constants";
-import {AttackReason, MoveDamageReason} from "../../../../../common/Types";
-import {OtherPlayer} from "../../../../../common/GameForPlayerDTO";
-import TopBarSmallDrawer from "../../topbar/TopBarSmallDrawer";
-import TopBarDefaultDrawer from "../../topbar/TopBarDefaultDrawer";
+import Module, {isModule} from "../../../../common/modules/Module";
+import HandDrawer from "../HandDrawer";
+import Vector2 from "../../../../common/Vector2";
+import {Event} from "../../../../common/events/Event";
+import TopBarDrawer from "../topbar/TopBarDrawer";
+import Game from "../../Game";
+import Modal from "../Modal";
+import {COLORS} from "../constants";
+import {AttackReason, MoveDamageReason} from "../../../../common/Types";
+import {OtherPlayer} from "../../../../common/GameForPlayerDTO";
+import TopBarSmallDrawer from "../topbar/TopBarSmallDrawer";
+import TopBarDefaultDrawer from "../topbar/TopBarDefaultDrawer";
+import Scene from "../engine/Scene";
+import {GraphicsManager} from "../engine/GraphicsManager";
+import Rectangle from "../engine/shapes/Rectangle";
+import Text from "../engine/shapes/Text";
+import Pointer from "../engine/Pointer";
+import Color from "../engine/types/Color";
+import Container from "../engine/shapes/Container";
 
 
-export default class Controls extends Phaser.Scene {
+export default class Controls extends Scene {
     handDrawer: HandDrawer;
     topBarDrawer: TopBarDrawer;
     gameManager: Game;
 
     showCardShapes: {
-        cards?: Phaser.GameObjects.Container,
-        title?: Phaser.GameObjects.Text,
-        fade?: Phaser.GameObjects.Rectangle
+        cards?: Container,
+        title?: Text,
+        fade?: Rectangle
     } = {};
 
-    constructor(game: Game) {
-        super({
-            key: 'Controls',
-            active: true
-        });
+    constructor(graphicsManager: GraphicsManager, game: Game) {
+        super(graphicsManager);
 
         this.gameManager = game;
-    }
 
-    create() {
         this.handDrawer = new HandDrawer(this.gameManager, this);
 
-        if (this.game.canvas.width < (400 + 2 * 15)) {
+        if (this.graphicsManager.width < (400 + 2 * 15)) {
             this.topBarDrawer = new TopBarSmallDrawer(this);
         } else {
             this.topBarDrawer = new TopBarDefaultDrawer(this);
         }
 
-        this.input.dragDistanceThreshold = 10;
+        // TODO: fix
+        // this.input.dragDistanceThreshold = 10;
     }
 
-    redraw() {
+    updateData() {
         this.handDrawer.redraw();
 
         this.topBarDrawer.setPlayersData(this.gameManager.currentPlayer, this.gameManager.otherPlayers, this.gameManager.playerTime);
@@ -126,19 +128,19 @@ export default class Controls extends Phaser.Scene {
             modal.setTitle("Выберите игрока для атаки");
 
             for (let player of players) {
-                modal.addLine(player.name)
-                    .setInteractive()
-                    .on('pointerdown', () => {
-                        resolve(player.id);
+                modal.addLine(player.name).events.on('pointerdown', () => {
+                    resolve(player.id);
 
-                        modal.destroy();
-                    });
+                    modal.destroy();
+                });
             }
 
-            this.input.once('pointerup', () => {
-                this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-                    if (!modal.backgroundShape.getBounds().contains(pointer.x, pointer.y)) {
-                        this.input.removeListener("pointerdown");
+            this.graphicsManager.events.once('pointerup', () => {
+                this.graphicsManager.events.on('pointerdown', (pointer: Pointer) => {
+                    if (!modal.backgroundShape.contains(pointer.x, pointer.y)) {
+                        // TODO: fix listeners remove
+
+                        // this.input.removeListener("pointerdown");
 
                         resolve(undefined);
 
@@ -159,28 +161,28 @@ export default class Controls extends Phaser.Scene {
 
             destroyShowCards();
 
-            let sceneWidth = this.game.canvas.width;
-            let sceneHeight = this.game.canvas.height;
+            let sceneWidth = this.width;
+            let sceneHeight = this.height;
             this.showCardShapes.cards = this.drawCardsOnScreen(cards);
 
-            this.showCardShapes.fade = this.add.rectangle(0, 0, sceneWidth, sceneHeight, 0x000000, 0.75)
+            this.showCardShapes.fade = this.rect(0, 0, sceneWidth, sceneHeight)
+                .setFillStyle(Color.fromHex('#000000', 0.75))
                 .setOrigin(0, 0)
                 .setDepth(19);
 
             if (title) {
-                this.showCardShapes.title = this.add.text(
-                    sceneWidth / 2, this.showCardShapes.cards.getBounds().top - 15,
+                this.showCardShapes.title = this.text(
+                    sceneWidth / 2,
+                    this.showCardShapes.cards.getBounds().top - 15,
                     title
                 )
                     .setOrigin(0.5, 1)
-                    .setStyle({
-                        fontFamily: 'Exo2Bold',
-                        fontSize: '20px'
-                    })
+                    .setFontFamily('Exo2Bold')
+                    .setFontSize(20)
                     .setDepth(20);
             }
 
-            this.input.once('pointerdown', () => {
+            this.graphicsManager.events.once('pointerdown', () => {
                 destroyShowCards();
 
                 resolve();
@@ -195,13 +197,11 @@ export default class Controls extends Phaser.Scene {
             modal.setTitle(title);
 
             for (let index = 0; index < values.length; ++index) {
-                modal.addLine(values[index])
-                    .setInteractive()
-                    .on('pointerdown', () => {
-                        resolve(index);
+                modal.addLine(values[index]).events.on('pointerdown', () => {
+                    resolve(index);
 
-                        modal.destroy();
-                    });
+                    modal.destroy();
+                });
             }
         });
     }
@@ -215,10 +215,9 @@ export default class Controls extends Phaser.Scene {
             modal.setTitle("Выберите, какие карты скинуть");
 
             for (let [index, card] of Object.entries(this.gameManager.getCurrentPlayer().hand)) {
-                let line = modal.addLine(isModule(card) ? (card as Module).name : 'event')
-                    .setInteractive();
+                let line = modal.addLine(isModule(card) ? (card as Module).name : 'event');
 
-                line.on('pointerdown', () => {
+                line.events.on('pointerdown', () => {
                     if (selected.indexOf(parseInt(index)) !== -1) {
                         selected = selected.filter((s) => s !== parseInt(index));
 
@@ -231,64 +230,61 @@ export default class Controls extends Phaser.Scene {
                 });
             }
 
-            modal.setBottomText("Скинуть")
-                .setInteractive()
-                .on('pointerdown', () => {
-                    if (selected.length < requiredDiscardCount)
-                        return;
+            modal.setBottomText("Скинуть").events.on('pointerdown', () => {
+                if (selected.length < requiredDiscardCount)
+                    return;
 
-                    resolve(selected);
+                resolve(selected);
 
-                    modal.destroy();
-                });
+                modal.destroy();
+            });
         });
     }
 
     chooseCards(cards: (Module | Event)[], count: number, title: string): Promise<number[]> {
         return new Promise<number[]>((resolve, reject) => {
-            let cardShapes: Phaser.GameObjects.Container;
-            let backgroundShape: Phaser.GameObjects.Rectangle;
-            let fadeShape: Phaser.GameObjects.Rectangle;
-            let titleShape: Phaser.GameObjects.Text;
-            let buttonShape: Phaser.GameObjects.Text;
+            let cardShapes: Container;
+            let backgroundShape: Rectangle;
+            let fadeShape: Rectangle;
+            let titleShape: Text;
+            let buttonShape: Text;
 
             let selected: number[] = [];
 
             let offset = 20;
             let outlineColor = 0xa3b18a;
 
-            let sceneWidth = this.game.canvas.width;
-            let sceneHeight = this.game.canvas.height;
+            let sceneWidth = this.width;
+            let sceneHeight = this.height;
             cardShapes = this.drawCardsOnScreen(cards)
                 .setDepth(21);
 
-            fadeShape = this.add.rectangle(0, 0, sceneWidth, sceneHeight, 0x000000, 0.75)
+            fadeShape = this.rect(0, 0, sceneWidth, sceneHeight)
+                .setFillStyle(Color.fromHex('#000000', 0.75))
                 .setOrigin(0, 0)
                 .setDepth(19);
 
             if (title) {
-                titleShape = this.add.text(sceneWidth / 2, cardShapes.getBounds().top - 15, title)
+                titleShape = this.text(sceneWidth / 2, cardShapes.getBounds().top - 15, title)
                     .setOrigin(0.5, 1)
-                    .setStyle({
-                        fontFamily: 'Exo2Bold',
-                        fontSize: '20px'
-                    })
+                    .setFontFamily('Exo2Bold')
+                    .setFontSize(20)
                     .setDepth(21);
             }
 
-            buttonShape = this.add.text(sceneWidth / 2, cardShapes.getBounds().bottom + 15, "Далее")
+            buttonShape = this.text(sceneWidth / 2, cardShapes.getBounds().bottom + 15, "Далее")
                 .setOrigin(0.5, 0)
-                .setInteractive()
-                .setDepth(21)
-                .on('pointerdown', () => {
-                    cardShapes.destroy();
-                    backgroundShape.destroy();
-                    fadeShape.destroy();
-                    titleShape.destroy();
-                    buttonShape.destroy();
+                .setDepth(21);
 
-                    resolve(selected);
-                });
+            buttonShape.events.on('pointerdown', () => {
+                cardShapes.destroy();
+                backgroundShape.destroy();
+                fadeShape.destroy();
+                titleShape.destroy();
+                buttonShape.destroy();
+
+                resolve(selected);
+            });
 
             let backgroundPosition1 = new Vector2(
                 Math.min(cardShapes.getBounds().left, titleShape.getBounds().left) - offset,
@@ -298,47 +294,49 @@ export default class Controls extends Phaser.Scene {
                 Math.max(cardShapes.getBounds().right, titleShape.getBounds().right) + offset,
                 buttonShape.getBounds().bottom + offset
             );
-            backgroundShape = this.add.rectangle(
+            backgroundShape = this.rect(
                 backgroundPosition1.x, backgroundPosition1.y,
                 backgroundPosition2.x - backgroundPosition1.x,
-                backgroundPosition2.y - backgroundPosition1.y,
-                0x0B2545, 0.75
+                backgroundPosition2.y - backgroundPosition1.y
             )
+                .setFillStyle(Color.fromHex('#0B2545', 0.75))
+                .setStrokeStyle(Color.fromHex('#3D76BE'), 2)
                 .setOrigin(0, 0)
-                .setStrokeStyle(2, 0x3D76BE)
                 .setDepth(20);
 
-            cardShapes.getAll().forEach((shape: Phaser.GameObjects.Container, index: number) => {
-                (shape.getAll()[0] as Phaser.GameObjects.Rectangle)
-                    .setInteractive()
-                    .on('pointerdown', () => {
-                        if (selected.includes(index)) {
-                            (shape.getAll()[0] as Phaser.GameObjects.Rectangle).setStrokeStyle(0);
 
-                            selected = selected.filter((s) => s != index);
-                            return;
-                        }
-
-                        if (selected.length == count) {
-                            (
-                                (cardShapes.getAt(selected[count - 1]) as Phaser.GameObjects.Container)
-                                    .getAll()[0] as Phaser.GameObjects.Rectangle
-                            )
-                                .setStrokeStyle(0);
-                            selected[count - 1] = index;
-                        } else {
-                            selected.push(index);
-                        }
-
-                        (shape.getAll()[0] as Phaser.GameObjects.Rectangle).setStrokeStyle(5, outlineColor);
-                    });
-            });
+            // TODO: add container and uncomment
+            // cardShapes.getAll().forEach((shape: Phaser.GameObjects.Container, index: number) => {
+            //     (shape.getAll()[0] as Phaser.GameObjects.Rectangle)
+            //         .setInteractive()
+            //         .on('pointerdown', () => {
+            //             if (selected.includes(index)) {
+            //                 (shape.getAll()[0] as Phaser.GameObjects.Rectangle).setStrokeStyle(0);
+            //
+            //                 selected = selected.filter((s) => s != index);
+            //                 return;
+            //             }
+            //
+            //             if (selected.length == count) {
+            //                 (
+            //                     (cardShapes.getAt(selected[count - 1]) as Phaser.GameObjects.Container)
+            //                         .getAll()[0] as Phaser.GameObjects.Rectangle
+            //                 )
+            //                     .setStrokeStyle(0);
+            //                 selected[count - 1] = index;
+            //             } else {
+            //                 selected.push(index);
+            //             }
+            //
+            //             (shape.getAll()[0] as Phaser.GameObjects.Rectangle).setStrokeStyle(5, outlineColor);
+            //         });
+            // });
         });
     }
 
-    drawCardsOnScreen(cards: (Module | Event)[]): Phaser.GameObjects.Container {
-        let sceneWidth = this.game.canvas.width;
-        let sceneHeight = this.game.canvas.height;
+    drawCardsOnScreen(cards: (Module | Event)[]): Container {
+        let sceneWidth = this.width;
+        let sceneHeight = this.height;
 
         let offset = new Vector2(0, 0);
 
@@ -354,12 +352,12 @@ export default class Controls extends Phaser.Scene {
             offset.y = cardSize + padding;
         }
 
-        let cardShapes = this.add.container();
+        let cardShapes = this.container();
 
         let position = new Vector2(0, 0)
 
         for (let card of cards) {
-            cardShapes.add(drawCard(this, card, position, cardSize));
+            cardShapes.add(this.card(position.x, position.y, cardSize, card));
 
             position.add(offset);
         }
@@ -377,7 +375,7 @@ export default class Controls extends Phaser.Scene {
     permuteCards(cards: (Event | Module)[]): Promise<number[]> {
         return new Promise((resolve) => {
                 let outlineColor = 0xa3b18a;
-                let cardShapes: Phaser.GameObjects.Container[] = [];
+                let cardShapes: Container[] = [];
                 let cardWidth = 256;
 
                 let order: number[] = [];
@@ -385,30 +383,33 @@ export default class Controls extends Phaser.Scene {
                     order.push(i);
                 }
 
-                let backgroundShape = this.add.rectangle(
-                    this.game.canvas.width / 2,
-                    this.game.canvas.height / 2,
-                    (cardWidth + 50) * cards.length, cardWidth + 100, 0x000000
+                let backgroundShape = this.rect(
+                    this.width / 2,
+                    this.height / 2,
+                    (cardWidth + 50) * cards.length, cardWidth + 100
                 )
-                    .setOrigin(0.5)
-                    .setStrokeStyle(2, 0x555555)
+                    .setFillStyle(Color.BLACK)
+                    .setOrigin(0.5, 0)
+                    .setStrokeStyle(Color.fromHex('#555555'), 2)
                     .setDepth(2);
 
-                let buttonShape = this.add.text(this.game.canvas.width / 2, this.game.canvas.height / 2 + cardWidth / 2 + 20, "Next")
-                    .setInteractive()
+                let buttonShape = this.text(
+                    this.width / 2, this.height / 2 + cardWidth / 2 + 20, "Next"
+                )
                     .setDepth(3)
-                    .on('pointerdown', () => {
-                        backgroundShape.destroy();
-                        for (let cardShape of cardShapes) {
-                            cardShape.destroy();
-                        }
-                        buttonShape.destroy();
 
-                        resolve(order);
-                    });
+                buttonShape.events.on('pointerdown', () => {
+                    backgroundShape.destroy();
+                    for (let cardShape of cardShapes) {
+                        cardShape.destroy();
+                    }
+                    buttonShape.destroy();
+
+                    resolve(order);
+                });
 
                 let indexByPosition = (x: number): number => {
-                    let index = (x - (this.game.canvas.width / 2 - ((cardWidth + 50) * cards.length - 50) / 2 + cardWidth / 2)) / (cardWidth + 50);
+                    let index = (x - (this.width / 2 - ((cardWidth + 50) * cards.length - 50) / 2 + cardWidth / 2)) / (cardWidth + 50);
                     index = Math.round(index);
 
                     index = Math.min(
@@ -419,61 +420,62 @@ export default class Controls extends Phaser.Scene {
                     return index;
                 }
 
-                for (let [indexInOrder, index] of order.entries()) {
-                    let card = cards[index];
+                // TODO: add drag and uncomment
+                // for (let [indexInOrder, index] of order.entries()) {
+                //     let card = cards[index];
+                //
+                //     let position = new Vector2(
+                //         this.width / 2 - ((cardWidth + 50) * cards.length - 50) / 2 + (cardWidth + 50) * indexInOrder + cardWidth / 2,
+                //         this.height / 2
+                //     );
+                //
+                //     let cardShape = drawCard(this, card, position, cardWidth)
+                //         .setDepth(3)
+                //         .setInteractive();
+                //
+                //     this.input.setDraggable(cardShape, true);
+                //
+                //     cardShape.on('dragstart', () => {
+                //         this.children.bringToTop(cardShape);
+                //     })
+                //
+                //     cardShape.on('drag', (pointer: Phaser.Input.Pointer, x: number, y: number) => {
+                //         cardShape.setPosition(x, y);
+                //
+                //         let newIndexInOrder = indexByPosition(cardShape.x);
+                //
+                //         // because order could be updated
+                //         let oldIndexInOrder = order.indexOf(index);
+                //
+                //         if (newIndexInOrder !== oldIndexInOrder) {
+                //             order.splice(oldIndexInOrder, 1);
+                //             order.splice(newIndexInOrder, 0, index);
+                //
+                //             moveCards(index);
+                //         }
+                //     });
+                //
+                //     cardShape.on('dragend', (pointer: Phaser.Input.Pointer) => {
+                //         moveCards();
+                //     });
+                //
+                //     cardShapes[index] = cardShape;
+                // }
 
-                    let position = new Vector2(
-                        this.game.canvas.width / 2 - ((cardWidth + 50) * cards.length - 50) / 2 + (cardWidth + 50) * indexInOrder + cardWidth / 2,
-                        this.game.canvas.height / 2
-                    );
-
-                    let cardShape = drawCard(this, card, position, cardWidth)
-                        .setDepth(3)
-                        .setInteractive();
-
-                    this.input.setDraggable(cardShape, true);
-
-                    cardShape.on('dragstart', () => {
-                        this.children.bringToTop(cardShape);
-                    })
-
-                    cardShape.on('drag', (pointer: Phaser.Input.Pointer, x: number, y: number) => {
-                        cardShape.setPosition(x, y);
-
-                        let newIndexInOrder = indexByPosition(cardShape.x);
-
-                        // because order could be updated
-                        let oldIndexInOrder = order.indexOf(index);
-
-                        if (newIndexInOrder !== oldIndexInOrder) {
-                            order.splice(oldIndexInOrder, 1);
-                            order.splice(newIndexInOrder, 0, index);
-
-                            moveCards(index);
-                        }
-                    });
-
-                    cardShape.on('dragend', (pointer: Phaser.Input.Pointer) => {
-                        moveCards();
-                    });
-
-                    cardShapes[index] = cardShape;
-                }
-
-                let moveCards = (except?: number) => {
-                    for (let [indexInOrder, index] of order.entries()) {
-                        if (index === except)
-                            continue;
-
-                        let cardShape = cardShapes[index];
-                        let position = new Vector2(
-                            this.game.canvas.width / 2 - ((cardWidth + 50) * cards.length - 50) / 2 + (cardWidth + 50) * indexInOrder + cardWidth / 2,
-                            this.game.canvas.height / 2
-                        );
-
-                        cardShape.setPosition(position.x, position.y);
-                    }
-                }
+                // let moveCards = (except?: number) => {
+                //     for (let [indexInOrder, index] of order.entries()) {
+                //         if (index === except)
+                //             continue;
+                //
+                //         let cardShape = cardShapes[index];
+                //         let position = new Vector2(
+                //             this.game.canvas.width / 2 - ((cardWidth + 50) * cards.length - 50) / 2 + (cardWidth + 50) * indexInOrder + cardWidth / 2,
+                //             this.game.canvas.height / 2
+                //         );
+                //
+                //         cardShape.setPosition(position.x, position.y);
+                //     }
+                // }
             }
         );
     }
@@ -500,7 +502,7 @@ export default class Controls extends Phaser.Scene {
                     return false;
 
                 return true;
-            }, true, 0xa3b18a);
+            }, true, Color.fromHex('#a3b18a'));
 
             this.topBarDrawer.addButtons([{
                 text: "Далее",
@@ -518,7 +520,7 @@ export default class Controls extends Phaser.Scene {
                         moveDamageTo = module;
                     }, (module?: Module, playerId?: number) => {
                         return playerId === this.gameManager.currentPlayer.id;
-                    }, true, 0xa3b18a);
+                    }, true, Color.fromHex('a3b18a'));
 
                     this.topBarDrawer.addButtons([{
                         text: "Далее",

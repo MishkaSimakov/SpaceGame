@@ -6,6 +6,7 @@ import Vector2 from "../../../../common/Vector2";
 import {COLORS} from "../../graphics/constants";
 import {MoveDamageReason} from "../../../../common/Types";
 import SocketManager from "../SocketManager";
+import Color from "../../graphics/engine/types/Color";
 
 export default class EventCardsEventListener extends BaseEventListener {
     socket: SocketManager;
@@ -61,7 +62,7 @@ export default class EventCardsEventListener extends BaseEventListener {
                         return false;
 
                     return true;
-                }, count, 0xa3b18a);
+                }, count, Color.fromHex('#a3b18a'));
 
                 this.controls().topBarDrawer.addButtons([{
                     text: "Починить",
@@ -92,7 +93,7 @@ export default class EventCardsEventListener extends BaseEventListener {
                     return false;
 
                 return true;
-            }, false, 0xa3b18a);
+            }, false, Color.fromHex('#a3b18a'));
 
             this.controls().topBarDrawer.addButtons([{
                 text: "Починить",
@@ -136,7 +137,7 @@ export default class EventCardsEventListener extends BaseEventListener {
                     return false;
 
                 return true;
-            }, false, 0xa3b18a);
+            }, false, Color.fromHex('#a3b18a'));
 
             this.controls().topBarDrawer.addButtons([{
                 text: "Атаковать",
@@ -187,7 +188,7 @@ export default class EventCardsEventListener extends BaseEventListener {
                     return false;
 
                 return true;
-            }, count, 0xa3b18a);
+            }, count, Color.fromHex('#a3b18a'));
 
             this.controls().topBarDrawer.setButtonsDisabled(true);
 
@@ -226,7 +227,7 @@ export default class EventCardsEventListener extends BaseEventListener {
                     return false;
 
                 return true;
-            }, true, 0xa3b18a);
+            }, true, Color.fromHex('#a3b18a'));
 
             this.controls().topBarDrawer.setButtonsDisabled(true);
 
@@ -285,7 +286,7 @@ export default class EventCardsEventListener extends BaseEventListener {
                     return false;
 
                 return true;
-            }, true, 0xa3b18a);
+            }, true, Color.fromHex('#a3b18a'));
 
             this.controls().topBarDrawer.setButtonsDisabled(true);
 

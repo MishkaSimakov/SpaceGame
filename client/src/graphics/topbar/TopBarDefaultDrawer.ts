@@ -1,7 +1,7 @@
 import TopBarDrawer from "./TopBarDrawer";
 import Vector2 from "../../../../common/Vector2";
 import {OtherPlayer} from "../../../../common/GameForPlayerDTO";
-import Button from "../Button";
+import Color from "../engine/types/Color";
 
 export default class TopBarDefaultDrawer extends TopBarDrawer {
     drawStatus(): void {
@@ -11,25 +11,29 @@ export default class TopBarDefaultDrawer extends TopBarDrawer {
         let textShapeStartY: number = this.sizes.padding + this.statusStartY;
 
         if (this.status.context) {
-            this.status.contextShape = this.scene.add.text(
+            this.status.contextShape = this.scene.text(
                 this.sizes.sceneWidth - this.sizes.margin - this.sizes.statusWidth / 2,
                 textShapeStartY,
                 this.status.context + ":"
             )
-                .setStyle(this.textStyle)
-                .setColor(this.status.contextColor)
+                .setFillStyle(Color.fromHex(this.status.contextColor))
+                .setFontFamily('Exo2Bold')
+                .setFontSize(15)
+                .setFillStyle(Color.WHITE)
                 .setOrigin(0.5, 0)
-                .setDepth(5)
+                .setDepth(5);
 
             textShapeStartY = this.status.contextShape.getBounds().bottom + this.sizes.padding
         }
 
-        this.status.textShape = this.scene.add.text(
+        this.status.textShape = this.scene.text(
             this.sizes.sceneWidth - this.sizes.margin - this.sizes.statusWidth / 2,
             textShapeStartY,
             this.status.text
         )
-            .setStyle(this.textStyle)
+            .setFontFamily('Exo2Bold')
+            .setFontSize(15)
+            .setFillStyle(Color.WHITE)
             .setOrigin(0.5, 0)
             .setDepth(5);
 
@@ -38,27 +42,21 @@ export default class TopBarDefaultDrawer extends TopBarDrawer {
         let bottomY: number;
 
         if (this.buttonsShapes.length) {
-            bottomY = this.buttonsShapes[this.buttonsShapes.length - 1].background.getBounds().bottom;
+            bottomY = this.buttonsShapes[this.buttonsShapes.length - 1].backgroundShape.getBounds().bottom;
         } else {
             bottomY = this.status.textShape.getBounds().bottom;
         }
 
         let statusHeight = bottomY - this.status.textShape.getBounds().top + 2 * this.sizes.padding;
 
-        this.status.backgroundShape = this.scene.add.graphics();
 
-        this.status.backgroundShape.fillStyle(0x0B2545, 0.75);
-        this.status.backgroundShape.lineStyle(this.sizes.strokeWidth, 0x3D76BE);
-
-        this.status.backgroundShape.fillRoundedRect(
+        this.status.backgroundShape = this.scene.rect(
             this.sizes.sceneWidth - this.sizes.margin - this.sizes.statusWidth, this.statusStartY,
-            this.sizes.statusWidth, statusHeight, this.sizes.cornerRadius
-        );
-        this.status.backgroundShape.strokeRoundedRect(
-            this.sizes.sceneWidth - this.sizes.margin - this.sizes.statusWidth - this.sizes.strokeWidth / 2, this.statusStartY - this.sizes.strokeWidth / 2,
-            this.sizes.statusWidth + this.sizes.strokeWidth, statusHeight + this.sizes.strokeWidth,
-            this.sizes.cornerRadius
-        );
+            this.sizes.statusWidth, statusHeight
+        )
+            .setFillStyle(Color.fromHex('#0B2545', 0.75))
+            .setStrokeStyle(Color.fromHex('#3D76BE'), this.sizes.strokeWidth)
+            .setCornerRadius(this.sizes.cornerRadius);
     }
 
     drawCurrentPlayerData() {
@@ -70,27 +68,22 @@ export default class TopBarDefaultDrawer extends TopBarDrawer {
                 this.sizes.sceneWidth - this.sizes.margin - this.sizes.statusWidth + this.sizes.padding,
                 this.sizes.margin + this.sizes.padding
             )
-            .on('pointerdown', () => {
-                this.togglePlayerCharacteristics();
-            })
             .setDepth(5);
 
-        this.playersDataBackground = this.scene.add.graphics();
-
-        this.playersDataBackground.fillStyle(0x0B2545, 0.75);
-        this.playersDataBackground.lineStyle(this.sizes.strokeWidth, 0x3D76BE);
+        this.currentPlayerData.events.on('pointerdown', () => {
+            this.togglePlayerCharacteristics();
+        });
 
         let height = 2 * this.sizes.padding + this.currentPlayerData.getBounds().height;
 
-        this.playersDataBackground.fillRoundedRect(
+        this.playersDataBackground = this.scene.rect(
             this.sizes.sceneWidth - this.sizes.margin - this.sizes.statusWidth, this.sizes.margin,
-            this.sizes.statusWidth, height, this.sizes.cornerRadius
-        );
-        this.playersDataBackground.strokeRoundedRect(
-            this.sizes.sceneWidth - this.sizes.margin - this.sizes.statusWidth - this.sizes.strokeWidth / 2, this.sizes.margin - this.sizes.strokeWidth / 2,
-            this.sizes.statusWidth + this.sizes.strokeWidth, height + this.sizes.strokeWidth,
-            this.sizes.cornerRadius
-        );
+            this.sizes.statusWidth, height
+        )
+
+            .setFillStyle(Color.fromHex('#0B2545', 0.75))
+            .setStrokeStyle(Color.fromHex('#3D76BE'), this.sizes.strokeWidth)
+            .setCornerRadius(this.sizes.cornerRadius);
 
         this.statusStartY = 2 * this.sizes.margin + height;
     }
@@ -108,42 +101,46 @@ export default class TopBarDefaultDrawer extends TopBarDrawer {
         players.push(this.currentPlayer.getOtherPlayer());
 
         for (let [index, player] of players.entries()) {
-            this.playersDataText.push(
-                this.getPlayerStatusStringShape(player, true)
-                    .setPosition(textStart.x, textStart.y + lineOffset * index)
-                    .setDepth(5)
-                    .on('pointerdown', () => {
-                        this.scene.gameManager.spaceshipsScene.panToPlayerWithId(player.id);
-                    })
-            );
+            let playersDataLine = this.getPlayerStatusStringShape(player, true)
+                .setPosition(textStart.x, textStart.y + lineOffset * index)
+                .setDepth(5);
+
+            playersDataLine.events.on('pointerdown', () => {
+                this.scene.gameManager.spaceshipsScene.panToPlayerWithId(player.id);
+            });
+
+            this.playersDataText.push(playersDataLine);
         }
 
-        this.playersDataCloseText = this.scene.add.text(textStart.x, this.playersDataText[this.playersDataText.length - 1].getBounds().bottom + lineOffset, "Закрыть")
-            .setStyle(this.textStyle)
+        this.playersDataCloseText = this.scene.text(
+            textStart.x, this.playersDataText[this.playersDataText.length - 1].getBounds().bottom + lineOffset,
+            "Закрыть"
+        )
+            .setFontFamily('Exo2Bold')
+            .setFontSize(15)
+            .setFillStyle(Color.WHITE)
             .setOrigin(0, 1)
-            .setDepth(5)
-            .setInteractive()
-            .on('pointerdown', () => {
-                this.togglePlayerCharacteristics();
-            });
+            .setDepth(5);
+        this.playersDataCloseText.events.on('pointerdown', () => {
+            this.togglePlayerCharacteristics();
+        });
+
+        let bb = this.playersDataCloseText.getBounds();
+        this.scene.rect(bb.left, bb.top, bb.width, bb.height).setFillStyle(Color.YELLOW).setDepth(1000);
+
 
         let totalTextHeight = this.playersDataCloseText.getBounds().bottom - this.playersDataText[0].getBounds().top;
 
-        this.playersDataBackground = this.scene.add.graphics();
         let backgroundHeight = this.sizes.padding * 2 + totalTextHeight;
         let borderRadius = 10;
 
-        this.playersDataBackground.fillStyle(0x0B2545, 0.75);
-        this.playersDataBackground.lineStyle(this.sizes.strokeWidth, 0x3D76BE);
-
-        this.playersDataBackground.fillRoundedRect(
-            textStart.x - this.sizes.padding, this.sizes.margin, this.sizes.statusWidth, backgroundHeight, borderRadius
-        );
-        this.playersDataBackground.strokeRoundedRect(
-            textStart.x - this.sizes.padding - this.sizes.strokeWidth / 2, this.sizes.margin - this.sizes.strokeWidth / 2,
-            this.sizes.statusWidth + this.sizes.strokeWidth, backgroundHeight + this.sizes.strokeWidth,
-            borderRadius
-        );
+        this.playersDataBackground = this.scene.rect(
+            textStart.x - this.sizes.padding, this.sizes.margin,
+            this.sizes.statusWidth, backgroundHeight
+        )
+            .setFillStyle(Color.fromHex('#0B2545', 0.75))
+            .setStrokeStyle(Color.fromHex('#3D76BE'), this.sizes.strokeWidth)
+            .setCornerRadius(borderRadius);
 
         this.statusStartY = backgroundHeight + 2 * this.sizes.margin;
     }
@@ -166,21 +163,22 @@ export default class TopBarDefaultDrawer extends TopBarDrawer {
 
         let startX = this.sizes.sceneWidth - this.sizes.margin - this.sizes.statusWidth + this.sizes.padding;
 
-        for (let [index, button] of this.buttons.entries()) {
-            let buttonShape = new Button(
-                this.scene, button.onClick,
-                startX + index * (buttonWidth + this.sizes.padding) + buttonWidth / 2,
-                startY + buttonHeight / 2,
-                buttonWidth, buttonHeight,
-                button.text, this.sizes.cornerRadius, button.color,
-                this.textStyle
-            );
-
-            buttonShape.background.setDepth(5);
-            buttonShape.text.setDepth(5);
-
-            this.buttonsShapes.push(buttonShape);
-        }
+        // TODO: finish button and uncomment
+        // for (let [index, button] of this.buttons.entries()) {
+        //     let buttonShape = new Button(
+        //         this.scene, button.onClick,
+        //         startX + index * (buttonWidth + this.sizes.padding) + buttonWidth / 2,
+        //         startY + buttonHeight / 2,
+        //         buttonWidth, buttonHeight,
+        //         button.text, this.sizes.cornerRadius, button.color,
+        //         this.textStyle
+        //     );
+        //
+        //     buttonShape.background.setDepth(5);
+        //     buttonShape.text.setDepth(5);
+        //
+        //     this.buttonsShapes.push(buttonShape);
+        // }
     };
 
     drawMessages() {

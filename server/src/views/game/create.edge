@@ -11,18 +11,18 @@
 @include('partials/header')
 
 <div class="row mx-3">
-    <div class="col-md-6 mx-auto">
+    <div class="col-lg-5 mx-auto">
         <div class="card mt-3">
             <div class="card-header">Новая игра</div>
 
             <div class="card-body">
-                <form action="/game/create" method="POST">
+                <form action="/game/create" method="POST" id="game-create-form">
 
                     <div class="mb-3">
                         <label for="name" class="form-label">Название</label>
 
                         <div class="input-group mb-3">
-                            <input id="name" name="name" type="text" class="form-control">
+                            <input id="name" name="name" type="text" class="form-control" required>
                             <button class="btn btn-outline-secondary" type="button" id="generate-game-name-btn">
                                 придумать
                             </button>
@@ -46,11 +46,33 @@
                             </button>
                         </div>
 
-                        <div id="players-list" class="d-flex flex-row gap-3 flex-wrap card card-body"></div>
+                        <div id="players-list" class="d-none d-flex flex-row gap-3 flex-wrap card card-body"></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="" id="time-control" name="time-control" checked>
+                            <label class="form-check-label" for="time-control">
+                                контроль времени
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3" id="time-control-settings">
+                        <div class="col">
+                            <label class="form-label" for="default-time-increase">Прибавка времени за ход</label>
+
+                            <input type="number" min="0" id="default-time-increase" name="default-time-increase" class="form-control" value="45">
+                        </div>
+                        <div class="col">
+                            <label class="form-label" for="fight-time-increase">Прибавка времени в бою</label>
+
+                            <input type="number" min="0" id="fight-time-increase" name="fight-time-increase" class="form-control" value="10">
+                        </div>
                     </div>
 
                     <div class="mb-0">
-                        <button class="btn btn-primary" type="submit">Создать</button>
+                        <button class="btn btn-primary" type="submit" id="submit-btn">Создать</button>
                     </div>
                 </form>
             </div>
@@ -130,10 +152,18 @@
             playersInput.textContent = '';
             playersInputForm.textContent = '';
 
+            let hasSelected = false;
+
             for (let player of players) {
                 if (player.selected) {
                     let playerDiv = document.createElement('div');
                     playerDiv.innerHTML = player.login;
+                    playerDiv.addEventListener('click', () => {
+                        player.selected = false;
+
+                        updateSelectedPlayers();
+                    });
+                    playerDiv.setAttribute('style', 'cursor: pointer;');
 
                     playersList.appendChild(playerDiv);
 
@@ -144,6 +174,8 @@
                     playerOption.setAttribute('selected', '1');
 
                     playersInputForm.appendChild(playerOption);
+
+                    hasSelected = true;
                 } else {
                     let playerOption = document.createElement('option');
                     playerOption.innerHTML = player.login;
@@ -151,6 +183,12 @@
 
                     playersInput.appendChild(playerOption);
                 }
+            }
+
+            if (hasSelected) {
+                playersList.classList.remove('d-none');
+            } else {
+                playersList.classList.add('d-none')
             }
         };
 
@@ -168,8 +206,36 @@
 
             player.selected = true;
 
+            let selected = players.filter(p => p.selected);
+            if (selected.length < 2 || selected.length > 5) {
+                playersInput.setCustomValidity('Должно быть от 2 до 5 игроков');
+            } else {
+                playersInput.setCustomValidity("");
+            }
+
             updateSelectedPlayers();
         };
+
+        let checkbox = document.getElementById('time-control');
+        let timeControlSettings = document.getElementById('time-control-settings');
+        checkbox.addEventListener('click', () => {
+            if (checkbox.checked) {
+                timeControlSettings.classList.remove('d-none')
+            } else {
+                timeControlSettings.classList.add('d-none');
+            }
+        });
+
+        document.getElementById('game-create-form').addEventListener('submit', (evt) => {
+            let selected = players.filter(p => p.selected);
+            console.log(selected);
+            if (selected.length < 2 || selected.length > 5) {
+                evt.preventDefault();
+
+                playersInput.setCustomValidity('Должно быть от 2 до 5 игроков');
+                playersInput.reportValidity();
+            }
+        });
     });
 </script>
 </body>

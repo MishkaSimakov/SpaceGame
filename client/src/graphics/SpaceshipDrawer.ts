@@ -1,15 +1,14 @@
 import Spaceship from "../../../common/Spaceship";
 import Vector2 from "../../../common/Vector2";
-import * as Phaser from "phaser";
-import Module from "../../../common/modules/Module";
-import {drawModuleCard} from "./CardsDrawer";
-import Spaceships from "./scenes/game/spaceships";
+import Spaceships from "./scenes/spaceships";
+import Container from "./engine/shapes/Container";
+import Card from "./engine/shapes/Card";
 
 export default class SpaceshipDrawer {
     spaceship: Spaceship;
     center: Vector2;
     cardSize: number;
-    moduleShapes: Phaser.GameObjects.Container[] = [];
+    moduleShapes: Card[] = [];
 
     spaceshipsScene: Spaceships;
 
@@ -52,53 +51,54 @@ export default class SpaceshipDrawer {
     }
 
     draw() {
-        for (let shape of this.moduleShapes) {
-            shape.destroy();
-        }
-        this.moduleShapes = [];
-
-        for (let module of this.spaceship.modules) {
-            let shape = drawModuleCard(this.spaceshipsScene, module, this.getGlobalPosition(new Vector2(module.x, module.y)), this.cardSize, module.isActivated);
-
-            this.moduleShapes.push(shape);
-
-            if (module.isMain) {
-                this.spaceshipsScene.input.setDraggable(shape, true);
-
-                shape.on('dragstart', () => {
-                    this.spaceshipsScene.isDragging = true;
-
-                    for (let shape of this.moduleShapes) {
-                        this.spaceshipsScene.children.bringToTop(shape);
-                    }
-                });
-
-                shape.on('drag', (pointer: Phaser.Input.Pointer, x: number, y: number) => {
-                    this.moveCenterTo(new Vector2(x, y));
-                });
-
-                shape.on('dragend', () => {
-                    this.spaceshipsScene.isDragging = false;
-                });
-            }
-        }
+        // TODO: add drag and uncomment
+        // for (let shape of this.moduleShapes) {
+        //     shape.destroy();
+        // }
+        // this.moduleShapes = [];
+        //
+        // for (let module of this.spaceship.modules) {
+        //     let shape = drawModuleCard(this.spaceshipsScene, module, this.getGlobalPosition(new Vector2(module.x, module.y)), this.cardSize, module.isActivated);
+        //
+        //     this.moduleShapes.push(shape);
+        //
+        //     if (module.isMain) {
+        //         this.spaceshipsScene.input.setDraggable(shape, true);
+        //
+        //         shape.on('dragstart', () => {
+        //             this.spaceshipsScene.isDragging = true;
+        //
+        //             for (let shape of this.moduleShapes) {
+        //                 this.spaceshipsScene.children.bringToTop(shape);
+        //             }
+        //         });
+        //
+        //         shape.on('drag', (pointer: Phaser.Input.Pointer, x: number, y: number) => {
+        //             this.moveCenterTo(new Vector2(x, y));
+        //         });
+        //
+        //         shape.on('dragend', () => {
+        //             this.spaceshipsScene.isDragging = false;
+        //         });
+        //     }
+        // }
     }
 
     allowDrag() {
-        for (let shape of this.moduleShapes) {
-            if ((shape.getData('module') as Module).isMain)
-                continue;
-
-            this.spaceshipsScene.input.setDraggable(shape, true);
-        }
+        // for (let shape of this.moduleShapes) {
+        //     if ((shape.getData('module') as Module).isMain)
+        //         continue;
+        //
+        //     this.spaceshipsScene.input.setDraggable(shape, true);
+        // }
     }
 
     disallowDrag() {
-        for (let shape of this.moduleShapes) {
-            if ((shape.getData('module') as Module).isMain)
-                continue;
-
-            this.spaceshipsScene.input.setDraggable(shape, false);
-        }
+        // for (let shape of this.moduleShapes) {
+        //     if ((shape.getData('module') as Module).isMain)
+        //         continue;
+        //
+        //     this.spaceshipsScene.input.setDraggable(shape, false);
+        // }
     }
 }

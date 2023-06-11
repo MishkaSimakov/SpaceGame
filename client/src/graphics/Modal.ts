@@ -1,12 +1,17 @@
+import Scene from "./engine/Scene";
+import Rectangle from "./engine/shapes/Rectangle";
+import Text from "./engine/shapes/Text";
+import Color from "./engine/types/Color";
+
 export default class Modal {
-    scene: Phaser.Scene;
+    scene: Scene;
 
-    backgroundShape: Phaser.GameObjects.Rectangle;
-    titleShape: Phaser.GameObjects.Text;
-    fadeShape: Phaser.GameObjects.Rectangle;
+    backgroundShape: Rectangle;
+    titleShape: Text;
+    fadeShape: Rectangle;
 
-    lines: Phaser.GameObjects.Text[] = [];
-    bottomTextShape: Phaser.GameObjects.Text;
+    lines: Text[] = [];
+    bottomTextShape: Text;
 
     textStartX: number;
     textStartY: number;
@@ -16,11 +21,11 @@ export default class Modal {
 
     offset: number;
 
-    constructor(scene: Phaser.Scene) {
+    constructor(scene: Scene) {
         this.scene = scene;
 
-        this.sceneWidth = this.scene.game.canvas.width;
-        this.sceneHeight = this.scene.game.canvas.height;
+        this.sceneWidth = this.scene.width;
+        this.sceneHeight = this.scene.height;
 
         this.offset = 10;
 
@@ -29,25 +34,27 @@ export default class Modal {
 
         this.textStartX = (this.sceneWidth - width) / 2 + this.offset;
 
-        this.backgroundShape = this.scene.add.rectangle(
+        this.backgroundShape = this.scene.rect(
             this.sceneWidth / 2,
             this.sceneHeight / 2,
             width, height,
-            0x0B2545, 0.75
         )
-            .setOrigin(0.5)
-            .setStrokeStyle(2, 0x3D76BE)
-            .setDepth(10);
+            .setFillStyle(Color.fromHex('#0B2545', 0.75))
+            .setOrigin(0.5, 0.5)
+            .setStrokeStyle(Color.fromHex('#3D76BE'), 2)
 
-        this.fadeShape = this.scene.add.rectangle(
-            0, 0, this.sceneWidth, this.sceneHeight, 0x000000, 0.75
-        )
+        // TODO: add depth and uncomment
+            // .setDepth(10);
+
+        this.fadeShape = this.scene.rect(0, 0, this.sceneWidth, this.sceneHeight)
+            .setFillStyle(Color.fromHex('#000000', 0.75))
             .setOrigin(0, 0)
-            .setDepth(9);
+
+        // .setDepth(9);
     }
 
-    setTitle(title: string): Phaser.GameObjects.Text {
-        this.titleShape = this.scene.add.text(
+    setTitle(title: string): Text {
+        this.titleShape = this.scene.text(
             this.sceneWidth / 2,
             this.sceneHeight / 2 - 250 + this.offset,
             title
@@ -62,9 +69,9 @@ export default class Modal {
         return this.titleShape;
     }
 
-    addLine(text: string): Phaser.GameObjects.Text {
+    addLine(text: string): Text {
         this.lines.push(
-            this.scene.add.text(
+            this.scene.text(
                 this.textStartX,
                 this.textStartY + this.lines.length * 20,
                 text
@@ -77,8 +84,8 @@ export default class Modal {
         return this.lines[this.lines.length - 1];
     }
 
-    setBottomText(text: string): Phaser.GameObjects.Text {
-        this.bottomTextShape = this.scene.add.text(
+    setBottomText(text: string): Text {
+        this.bottomTextShape = this.scene.text(
             this.textStartX,
             this.sceneHeight / 2 + 250 - this.offset,
             text

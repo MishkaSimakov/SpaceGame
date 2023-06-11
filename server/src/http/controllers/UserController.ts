@@ -21,6 +21,10 @@ export const login = async (req: Request, res: Response) => {
             login: req.body.login
         });
 
+        if (!user) {
+            throw new Error('user dont exist');
+        }
+
         const isMatch = await bcrypt.compare(req.body.password, user.password);
 
         if (!isMatch) {
@@ -33,8 +37,9 @@ export const login = async (req: Request, res: Response) => {
             expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365)
         }).redirect(HOME);
     } catch (error) {
-        console.log(error);
-        return res.status(500).send('Something went wrong.');
+        console.error(error);
+
+        return res.redirect('/login');
     }
 };
 

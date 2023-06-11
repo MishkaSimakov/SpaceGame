@@ -1,6 +1,6 @@
 import Game from "../../Game";
 import RebuildSpaceshipManager from "../../graphics/RebuildSpaceshipManager";
-import Controls from "../../graphics/scenes/game/controls";
+import Controls from "../../graphics/scenes/controls";
 import SocketManager from "../SocketManager";
 
 export default class BaseEventListener {

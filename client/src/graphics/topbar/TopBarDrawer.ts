@@ -1,9 +1,13 @@
 import Player from "../../../../common/Player";
-import Button from "../Button";
-import Controls from "../scenes/game/controls";
+import Controls from "../scenes/controls";
 import {ButtonColors, SIZES} from "../constants";
 import {OtherPlayer} from "../../../../common/GameForPlayerDTO";
 import {Message} from "../../../../common/Types";
+import Rectangle from "../engine/shapes/Rectangle";
+import Container from "../engine/shapes/Container";
+import Text from "../engine/shapes/Text";
+import Button from "../engine/shapes/Button";
+import Color from "../engine/types/Color";
 
 type ButtonData = {
     text: string, onClick: () => void, color: ButtonColors
@@ -13,19 +17,19 @@ export default abstract class TopBarDrawer {
     scene: Controls;
 
     showPlayersData: boolean = false;
-    playersDataBackground: Phaser.GameObjects.Graphics;
-    playersDataText: Phaser.GameObjects.Container[] = [];
-    playersDataCloseText: Phaser.GameObjects.Text;
-    currentPlayerData: Phaser.GameObjects.Container;
+    playersDataBackground: Rectangle;
+    playersDataText: Container[] = [];
+    playersDataCloseText: Text;
+    currentPlayerData: Container;
 
     status: {
         context?: string,
         contextColor?: string,
-        contextShape?: Phaser.GameObjects.Text,
+        contextShape?: Text,
 
         text?: string,
-        backgroundShape?: Phaser.GameObjects.Graphics,
-        textShape?: Phaser.GameObjects.Text
+        backgroundShape?: Rectangle,
+        textShape?: Text
     } = {};
 
     buttons: ButtonData[];
@@ -56,15 +60,15 @@ export default abstract class TopBarDrawer {
     messagesStartY: number = this.sizes.margin;
 
     messages: Message[] = [];
-    messagesShape: Phaser.GameObjects.Container[] = [];
+    messagesShape: Container[] = [];
     hiddenMessageId: number;
 
     constructor(scene: Controls) {
         this.scene = scene;
 
-        this.sizes.sceneWidth = scene.game.canvas.width;
+        this.sizes.sceneWidth = scene.width;
 
-        this.scale = scene.game.canvas.width / 1440;
+        this.scale = scene.width / 1440;
     }
 
     abstract drawStatus(): void;
@@ -163,69 +167,63 @@ export default abstract class TopBarDrawer {
         this.buttonsShapes.forEach(b => b.setDisabled(isDisabled));
     }
 
-    getPlayerStatusStringShape(player: OtherPlayer, withName: boolean): Phaser.GameObjects.Container {
-        let container = this.scene.add.container();
-        let textStyle = {
-            fontFamily: 'Exo2Bold',
-            fontSize: '15px',
-        };
+    getPlayerStatusStringShape(player: OtherPlayer, withName: boolean): Container {
+        let container = this.scene.container();
 
         let startX = 0;
 
         if (withName) {
             container.add(
-                this.scene.add.text(0, 0, (player.online ? "🔴 " : "✖️ ") + player.name + ":")
-                    .setStyle(textStyle)
+                this.scene.text(0, 0, (player.online ? "🔴 " : "✖️ ") + player.name + ":")
+                    .setFontFamily('Exo2Bold')
+                    .setFontSize(15)
+                    .setFillStyle(Color.WHITE)
             );
 
             startX += 150;
         }
 
         container.add(
-            this.scene.add.text(startX, 0, `${player.energy}/${player.spaceship.getTotalCapacity()} ⚡️`)
-                .setStyle(textStyle)
+            this.scene.text(startX, 0, `${player.energy}/${player.spaceship.getTotalCapacity()} ⚡️`)
+                .setFontFamily('Exo2Bold')
+                .setFontSize(15)
+                .setFillStyle(Color.WHITE)
         );
 
         container.add(
-            this.scene.add.text(startX + 75, 0, `${player.handSize} 🤚`)
-                .setStyle(textStyle)
+            this.scene.text(startX + 75, 0, `${player.handSize} 🤚`)
+                .setFontFamily('Exo2Bold')
+                .setFontSize(15)
+                .setFillStyle(Color.WHITE)
         );
 
         if (this.scene.gameManager.settings.withTimeControl) {
             container.add(
-                this.scene.add.text(startX + 150, 0, `${this.timeToString(this.playerTime[player.id])} ⏰`)
-                    .setStyle(textStyle)
+                this.scene.text(startX + 150, 0, `${this.timeToString(this.playerTime[player.id])} ⏰`)
+                    .setFontFamily('Exo2Bold')
+                    .setFontSize(15)
+                    .setFillStyle(Color.WHITE)
             );
         }
-
-        let offset = 10;
-        container.setInteractive(
-            new Phaser.Geom.Rectangle(
-                -offset, -offset,
-                container.getBounds().width + offset * 2, container.getBounds().height + offset * 2
-            ),
-            Phaser.Geom.Rectangle.Contains
-        );
 
         return container;
     }
 
-    getMessageShape(message: Message): Phaser.GameObjects.Container {
-        let container = this.scene.add.container();
-        let textStyle = {
-            fontFamily: 'Exo2Regular',
-            fontSize: '12px',
-            color: '#ffffff'
-        };
+    getMessageShape(message: Message): Container {
+        let container = this.scene.container();
 
         container.add(
-            this.scene.add.text(0, 0, (message.playerId ?? 'ИИ') + ":")
-                .setStyle(textStyle)
+            this.scene.text(0, 0, (message.playerId ?? 'ИИ') + ":")
+                .setFontFamily('Exo2Regular')
+                .setFontSize(12)
+                .setFillStyle(Color.WHITE)
         );
 
         container.add(
-            this.scene.add.text(50, 0, message.text)
-                .setStyle(textStyle)
+            this.scene.text(50, 0, message.text)
+                .setFontFamily('Exo2Regular')
+                .setFontSize(12)
+                .setFillStyle(Color.WHITE)
         );
 
         return container;

@@ -6,6 +6,7 @@ import {COLORS} from "../../graphics/constants";
 import {AttackReason} from "../../../../common/Types";
 import Vector2 from "../../../../common/Vector2";
 import SocketManager from "../SocketManager";
+import Color from "../../graphics/engine/types/Color";
 
 export default class MainGameEventListener extends BaseEventListener {
     socket: SocketManager;
@@ -51,7 +52,7 @@ export default class MainGameEventListener extends BaseEventListener {
                     return false;
 
                 return true;
-            }, false, 0xe76f51);
+            }, false, Color.fromHex('#e76f51'));
 
             this.controls().topBarDrawer.setStatus("починка модуля");
 
