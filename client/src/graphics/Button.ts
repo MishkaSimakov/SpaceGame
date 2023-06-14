@@ -1,7 +1,7 @@
 // import {ButtonColors} from "./constants";
-// import Scene from "./engine/Scene";
-// import Rectangle from "./engine/shapes/Rectangle";
-// import Text from "./engine/shapes/Text";
+// import Scene from "./konva/Scene";
+// import Rectangle from "./konva/shapes/Rectangle";
+// import Text from "./konva/shapes/Text";
 //
 // enum ButtonState {
 //     DISABLED,

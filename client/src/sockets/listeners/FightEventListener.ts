@@ -4,7 +4,7 @@ import Game from "../../Game";
 import {COLORS} from "../../graphics/constants";
 import Vector2 from "../../../../common/Vector2";
 import SocketManager from "../SocketManager";
-import Color from "../../graphics/engine/types/Color";
+import Color from "../../graphics/Color";
 
 export default class FightEventListener extends BaseEventListener {
     socket: SocketManager;

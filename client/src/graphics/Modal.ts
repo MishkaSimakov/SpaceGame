@@ -1,7 +1,7 @@
 import Scene from "./engine/Scene";
-import Rectangle from "./engine/shapes/Rectangle";
-import Text from "./engine/shapes/Text";
-import Color from "./engine/types/Color";
+import {Rectangle} from "./engine/shapes/Rectangle";
+import {Text} from "./engine/shapes/Text";
+import Color from "./Color";
 
 export default class Modal {
     scene: Scene;
@@ -24,8 +24,8 @@ export default class Modal {
     constructor(scene: Scene) {
         this.scene = scene;
 
-        this.sceneWidth = this.scene.width;
-        this.sceneHeight = this.scene.height;
+        this.sceneWidth = this.scene.width();
+        this.sceneHeight = this.scene.height();
 
         this.offset = 10;
 
@@ -34,64 +34,61 @@ export default class Modal {
 
         this.textStartX = (this.sceneWidth - width) / 2 + this.offset;
 
-        this.backgroundShape = this.scene.rect(
-            this.sceneWidth / 2,
-            this.sceneHeight / 2,
+        this.backgroundShape = this.scene.createAndAdd.rectangle({
+            x: this.sceneWidth / 2,
+            y: this.sceneHeight / 2,
             width, height,
-        )
-            .setFillStyle(Color.fromHex('#0B2545', 0.75))
-            .setOrigin(0.5, 0.5)
-            .setStrokeStyle(Color.fromHex('#3D76BE'), 2)
+            originX: 0.5,
+            originY: 0.5,
+            fill: Color.fromHex('#0B2545', 0.75).toString(),
+            stroke: Color.fromHex('#3D76BE').toString(),
+            strokeWidth: 2
+        })
 
-        // TODO: add depth and uncomment
-            // .setDepth(10);
-
-        this.fadeShape = this.scene.rect(0, 0, this.sceneWidth, this.sceneHeight)
-            .setFillStyle(Color.fromHex('#000000', 0.75))
-            .setOrigin(0, 0)
-
-        // .setDepth(9);
+        this.fadeShape = this.scene.createAndAdd.rectangle({
+            x: 0,
+            y: 0,
+            width: this.sceneWidth,
+            height: this.sceneHeight,
+            fill: Color.fromHex('#000000', 0.75).toString(),
+        });
     }
 
     setTitle(title: string): Text {
-        this.titleShape = this.scene.text(
-            this.sceneWidth / 2,
-            this.sceneHeight / 2 - 250 + this.offset,
-            title
-        )
-            .setFontFamily('Exo2Regular')
-            .setFontSize(20)
-            .setOrigin(0.5, 0)
-            .setDepth(11);
+        this.titleShape = this.scene.createAndAdd.text({
+            x: this.sceneWidth / 2,
+            y: this.sceneHeight / 2 - 250 + this.offset,
+            text: title,
+            fontFamily: "Exo2Regular",
+            fontSize: 20,
+            originX: 0.5
+        });
 
-        this.textStartY = this.titleShape.getBounds().bottom + this.offset;
+        this.textStartY = this.titleShape.getClientRect().bottom + this.offset;
 
         return this.titleShape;
     }
 
     addLine(text: string): Text {
         this.lines.push(
-            this.scene.text(
-                this.textStartX,
-                this.textStartY + this.lines.length * 20,
-                text
-            )
-                .setFontFamily('Exo2Regular')
-                .setOrigin(0, 0)
-                .setDepth(11)
+            this.scene.createAndAdd.text({
+                x: this.textStartX,
+                y: this.textStartY + this.lines.length * 20,
+                text,
+                fontFamily: "Exo2Regular"
+            })
         );
 
         return this.lines[this.lines.length - 1];
     }
 
     setBottomText(text: string): Text {
-        this.bottomTextShape = this.scene.text(
-            this.textStartX,
-            this.sceneHeight / 2 + 250 - this.offset,
-            text
-        )
-            .setOrigin(0, 1)
-            .setDepth(11);
+        this.bottomTextShape = this.scene.createAndAdd.text({
+            x: this.textStartX,
+            y: this.sceneHeight / 2 + 250 - this.offset,
+            text,
+            originY: 1
+        });
 
         this.updateBackground();
 

@@ -72,6 +72,26 @@ class Module {
     toString(): string {
         return this.name;
     }
+
+    getCharacteristicsString(): string {
+        let values = '';
+
+        values += this.health + '/' + this.totalHealth + '❤️';
+
+        if (this.strength)
+            values += ' ' + this.strength + '🎯';
+
+        if (this.capacity)
+            values += ' ' + this.capacity + '🔋';
+
+        if (this.energyIncrease)
+            values += ' +' + this.energyIncrease + '⚡️';
+
+        if (this.energyCost)
+            values += ' -' + this.energyCost + '⚡️'
+
+        return values;
+    }
 }
 
 function isModule(card: Module | Event) {

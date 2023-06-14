@@ -6,7 +6,7 @@ import Vector2 from "../../../../common/Vector2";
 import {COLORS} from "../../graphics/constants";
 import {MoveDamageReason} from "../../../../common/Types";
 import SocketManager from "../SocketManager";
-import Color from "../../graphics/engine/types/Color";
+import Color from "../../graphics/Color";
 
 export default class EventCardsEventListener extends BaseEventListener {
     socket: SocketManager;
@@ -128,7 +128,7 @@ export default class EventCardsEventListener extends BaseEventListener {
                 module = chosen;
                 id = playerId;
 
-                this.controls().topBarDrawer.buttonsShapes[0].setDisabled(module === undefined);
+                this.controls().topBarDrawer.buttonsShapes[0].disabled(module === undefined);
             }, (module?: Module, playerId?: number) => {
                 if (playerId === this.game.currentPlayer.id)
                     return false;
@@ -165,7 +165,7 @@ export default class EventCardsEventListener extends BaseEventListener {
                 }
             }]);
 
-            this.controls().topBarDrawer.buttonsShapes[0].setDisabled(true);
+            this.controls().topBarDrawer.buttonsShapes[0].disabled(true);
         });
 
         this.socket.on('destroyTwoSolarPanelsOnYourSpaceshipEvent', (callback: (firstPosition: Vector2, secondPosition?: Vector2) => void) => {

@@ -1,114 +1,94 @@
-import {GraphicsManager, GraphicsManagerEvents} from "./GraphicsManager";
-import {Shape, ShapeEvents} from "./shapes/Shape";
-import Vector2 from "../../../../common/Vector2";
-import Pointer from "./Pointer";
-import Rectangle from "./shapes/Rectangle";
-import Text from "./shapes/Text";
-import Container from "./shapes/Container";
-import Module from "../../../../common/modules/Module";
-import Card from "./shapes/Card";
-import Button from "./shapes/Button";
-import {Event} from "../../../../common/events/Event";
+import {Container} from "./Container";
+import {Shape, shapes} from "./Shape";
+import {Group} from "./Group";
+import {HitCanvas, SceneCanvas} from "./Canvas";
+import {GetSet, Vector2} from "./types";
+import {Utils} from "./Utils";
+import {_registerNode} from "./Global";
+import {SceneShapeFactory} from "./SceneShapeFactory";
+import {NodeConfig} from "./Node";
+import {Factory} from "./Factory";
 
-export default class Scene {
-    graphicsManager: GraphicsManager;
-
-    zoom: number = 1;
-    scrollX: number = 0;
-    scrollY: number = 0;
-
-    shapes: Shape[] = [];
-
-    constructor(graphicsManager: GraphicsManager) {
-        this.graphicsManager = graphicsManager;
-
-        this.graphicsManager.events.on('pointerdown', (pointer: Pointer) => {
-            this.passEventToShapes('pointerdown', pointer);
-        });
-
-        this.graphicsManager.events.on('pointerup', (pointer: Pointer) => {
-            this.passEventToShapes('pointerup', pointer);
-        });
-    }
-
-    requestRedraw() {
-        this.graphicsManager?.requestRedraw();
-    }
-
-    redraw() {
-        this.graphicsManager.context.scale(this.zoom, this.zoom);
-
-        for (let shape of this.shapes.sort(Scene.compareByDepth)) {
-            shape.redraw(this.graphicsManager.context);
-        }
-
-        this.graphicsManager.context.scale(1, 1);
-    }
-
-    static compareByDepth(a: Shape, b: Shape): number {
-        return a.depth - b.depth;
-    }
-
-    toScreenPosition(x: number, y: number): Vector2 {
-        return new Vector2(
-            x + this.scrollX,
-            y + this.scrollY
-        );
-    }
-
-    passEventToShapes(event: GraphicsManagerEvents, pointer: Pointer) {
-        for (let shape of this.shapes) {
-            if (shape.contains(pointer.x, pointer.y)) {
-                shape.events.emit(event as ShapeEvents, pointer);
-            }
-        }
-    }
-
-    rect(x: number, y: number, width: number, height: number): Rectangle {
-        let shape = new Rectangle(this, x, y, width, height);
-
-        this.shapes.push(shape);
-
-        return shape;
-    }
-
-    text(x: number, y: number, text: string): Text {
-        let shape = new Text(this, x, y, text);
-
-        this.shapes.push(shape);
-
-        return shape;
-    }
-
-    card(x: number, y: number, size: number, card: (Module | Event)): Card {
-        let shape = new Card(this, x, y, size, card);
-
-        this.shapes.push(shape);
-
-        return shape;
-    }
-
-    button(x: number, y: number, width: number, height: number, text: string): Button {
-        let shape = new Button(this, x, y, width, height, text);
-
-        this.shapes.push(shape);
-
-        return shape;
-    }
-
-    container(): Container {
-        let shape = new Container(this);
-
-        this.shapes.push(shape);
-
-        return shape;
-    }
-
-    get width(): number {
-        return this.graphicsManager.width;
-    }
-
-    get height(): number {
-        return this.graphicsManager.height;
-    }
+export interface SceneConfig extends NodeConfig {
+    clearColor?: string,
 }
+
+export default class Scene extends Container<Group | Shape> {
+    canvas = new SceneCanvas({
+        width: 0,
+        height: 0
+    });
+    hitCanvas = new HitCanvas({
+        width: 0,
+        height: 0
+    });
+
+    waitingForDraw: boolean = false;
+    createAndAdd: SceneShapeFactory;
+
+    constructor(config?: SceneConfig) {
+        super(config);
+
+        this.createAndAdd = new SceneShapeFactory(this);
+    }
+
+    setSize({width, height}) {
+        this.canvas.setSize(width, height);
+        this.hitCanvas.setSize(width, height);
+
+        return this;
+    }
+
+    getScene(): Scene {
+        return this;
+    }
+
+    batchDraw() {
+        if (!this.waitingForDraw) {
+            this.waitingForDraw = true;
+
+            requestAnimationFrame(() => {
+                this.draw();
+                this.waitingForDraw = false;
+            });
+        }
+    }
+
+    drawHit() {
+        this.hitCanvas.getContext().clear();
+
+        Container.prototype.drawHit.call(this);
+    }
+
+    drawScene() {
+        this.canvas.getContext().clear(this.clearColor());
+
+        Container.prototype.drawScene.call(this);
+    }
+
+    getIntersection(pos: Vector2): Shape {
+        if (!pos)
+            return;
+
+        const ratio = this.hitCanvas.pixelRatio;
+        const p = this.hitCanvas.context.getImageData(
+            Math.round(pos.x * ratio),
+            Math.round(pos.y * ratio),
+            1,
+            1
+        ).data;
+
+        if (p[3] > 0) {
+            const colorKey = '#' + Utils.rgbToHex(p[0], p[1], p[2]);
+
+            return shapes[colorKey];
+        }
+    }
+
+    clearColor: GetSet<string, this>
+}
+
+Scene.prototype.nodeType = 'Scene';
+_registerNode(Scene);
+
+Factory.addGetterSetter(Scene, 'clearColor')

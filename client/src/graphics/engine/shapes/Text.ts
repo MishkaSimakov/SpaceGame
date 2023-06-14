@@ -1,176 +1,188 @@
-import Scene from "../Scene";
-import Color from "../types/Color";
-import {Shape} from "./Shape";
-import Vector2 from "../../../../../common/Vector2";
-import BoundingBox from "../types/BoundingBox";
+import {Shape, ShapeConfig} from "../Shape";
+import {GetSet} from "../types";
+import {Factory} from "../Factory";
+import {Utils} from "../Utils";
+import {Context} from "../Context";
+import {_registerNode} from "../Global";
 
-export default class Text extends Shape {
-    x: number;
-    y: number;
-    text: string;
-
-    originX: number = 0;
-    originY: number = 0;
-
-    fillColor: Color = Color.BLACK;
-
-    fontSize: string = '48px';
-    fontFamily: string = 'Exo2Regular';
-
-    constructor(scene: Scene, x: number, y: number, text: string) {
-        super(scene);
-
-        this.x = x;
-        this.y = y;
-        this.text = text;
-
-        this.scene.requestRedraw();
-    }
-
-    setText(text: string): Text {
-        this.text = text;
-
-        this.scene.requestRedraw();
-
-        return this;
-    }
-
-    setFontFamily(fontFamily: string): Text {
-        this.fontFamily = fontFamily;
-
-        this.scene.requestRedraw();
-
-        return this;
-    }
-
-    setFontSize(fontSize: string);
-    setFontSize(fontSize: number);
-    setFontSize(fontSize: string | number): Text {
-        if (typeof fontSize === 'number') {
-            this.fontSize = fontSize + 'px';
-        } else {
-            this.fontSize = fontSize;
-        }
-
-        this.scene.requestRedraw();
-
-        return this;
-    }
-
-    setFillStyle(color: Color): Text {
-        this.fillColor = color;
-
-        this.scene.requestRedraw();
-
-        return this;
-    }
-
-    contains(x: number, y: number): boolean {
-        return this.getBounds().contains(x, y);
-    }
-
-    redraw(context: CanvasRenderingContext2D) {
-        context.fillStyle = this.fillColor.toSting();
-        context.font = this.getFontString();
-
-        let position = this.getScenePosition();
-
-        position.y += this.getBounds().height;
-
-        position = this.scene.toScreenPosition(position.x, position.y);
-
-        context.fillText(this.text, position.x, position.y);
-    }
-
-    getBounds(): BoundingBox {
-        let position = this.applyContainerOffset(new Vector2(this.x, this.y));
-        let size = this.measureSize();
-
-        return new BoundingBox(position.x, position.y, size.x, size.y);
-    }
-
-    private getFontString(): string {
-        return this.fontSize + "  " + this.fontFamily;
-    }
-
-    private measureSize(): Vector2 {
-        let canvas = document.createElement('canvas');
-        canvas.setAttribute('visible', 'none');
-
-        canvas = document.body.appendChild(canvas);
-        let ctx = canvas.getContext('2d', {willReadFrequently: true});
-
-        ctx.font = this.getFontString();
-        let metrics = ctx.measureText(this.text);
-
-        let width = Math.ceil(metrics.width);
-        let baseline = width;
-        let height = width * 2;
-
-        canvas.width = width;
-        canvas.height = height;
-
-        ctx.fillStyle = '#f00';
-        ctx.fillRect(0, 0, width, height);
-
-        ctx.font = this.getFontString();
-        ctx.textBaseline = 'alphabetic';
-        ctx.fillStyle = '#000';
-
-        ctx.fillText(this.text, 0, baseline);
-
-        let imageData = ctx.getImageData(0, 0, width, height);
-
-        let pixels = imageData.data;
-        let numPixels = pixels.length;
-        let line = width * 4;
-        let i;
-        let j;
-        let idx = 0;
-        let stop = false;
-
-        for (i = 0; i < baseline; i++) {
-            for (j = 0; j < line; j += 4) {
-                if (pixels[idx + j] !== 255) {
-                    stop = true;
-                    break;
-                }
-            }
-
-            if (!stop) {
-                idx += line;
-            } else {
-                break;
-            }
-        }
-
-        let top = i;
-
-        idx = numPixels - line;
-        stop = false;
-
-        for (i = height; i > baseline; i--) {
-            for (j = 0; j < line; j += 4) {
-                if (pixels[idx + j] !== 255) {
-                    stop = true;
-                    break;
-                }
-            }
-
-            if (!stop) {
-                idx -= line;
-            } else {
-                break;
-            }
-        }
-
-        let bottom = i;
-
-        document.body.removeChild(canvas);
-
-        return new Vector2(
-            width,
-            bottom - top
-        );
-    }
+export interface TextConfig extends ShapeConfig {
+    text?: string;
+    fontFamily?: string;
+    fontSize?: number;
+    lineHeight?: number;
+    align?: string;
 }
+
+function _fillFunc(context: Context) {
+    context.fillText(this._partialText, this._partialTextX, this._partialTextY);
+}
+
+function _strokeFunc(context: Context) {
+    context.miterLimit = 2;
+    context.strokeText(this._partialText, this._partialTextX, this._partialTextY);
+}
+
+let dummyContext: CanvasRenderingContext2D;
+
+function getDummyContext() {
+    if (dummyContext)
+        return dummyContext;
+
+    dummyContext = Utils.createCanvasElement().getContext('2d') as CanvasRenderingContext2D;
+
+    return dummyContext;
+}
+
+export class Text extends Shape {
+    textArr: Array<{ text: string, width: number }> = [];
+    textHeight: number;
+    textWidth: number;
+
+    _partialText: string;
+    _partialTextX: number = 0;
+    _partialTextY: number = 0;
+
+
+    constructor(config?: TextConfig) {
+        super(config);
+
+        let recalculateWhenChange = [
+            'text',
+            'fontFamily',
+            'fontSize',
+            'lineHeight',
+            'align'
+        ];
+
+        for (let attribute of recalculateWhenChange) {
+            this.on(attribute + 'Change', this.setTextData);
+        }
+
+        this.setTextData();
+    }
+
+    _sceneFunc(context: Context) {
+        let align = this.align();
+        let totalWidth = this.width();
+        let fontSize = this.fontSize();
+        let lineHeightPx = this.lineHeight() * fontSize;
+
+        let translateY = lineHeightPx / 2;
+
+        context.font = this.getContextFont();
+        context.textBaseline = 'middle';
+        context.textAlign = 'left';
+
+        for (let line of this.textArr) {
+            if (align === 'center') {
+                this._partialTextX = (totalWidth - line.width) / 2;
+            } else if (align === 'right') {
+                this._partialTextX = totalWidth - line.width;
+            }
+
+            this._partialTextY = translateY;
+            this._partialText = line.text;
+
+            context.fillStrokeShape(this);
+
+            translateY += lineHeightPx;
+        }
+    }
+
+    _hitFunc(context: Context) {
+        context.beginPath();
+        context.rect(0, 0, this.width(), this.height());
+        context.closePath();
+        context.fillStrokeShape(this);
+    }
+
+    getContextFont(): string {
+        return this.fontSize() + 'px ' + "\"" + this.fontFamily() + "\"";
+    }
+
+    measureSize(text: string) {
+        let context = getDummyContext();
+        context.save();
+
+        context.font = this.getContextFont();
+
+        let measure = context.measureText(text);
+
+        context.restore();
+
+        return {
+            width: measure.width,
+            height: this.fontSize()
+        };
+    }
+
+    getTextWidth(text: string): number {
+        return getDummyContext().measureText(text).width;
+    }
+
+    addTextLine(line: string, width?: number) {
+        width = width || this.getTextWidth(line);
+
+        this.textArr.push({
+            text: line,
+            width: width
+        });
+    }
+
+    setTextData() {
+        let lines = this.text().split('\n');
+        let fontSize = this.fontSize();
+        let lineHeightPx = this.lineHeight() * fontSize;
+        let textWidth = 0;
+        let context = getDummyContext();
+
+        this.textArr = [];
+
+        context.save();
+        context.font = this.getContextFont();
+
+        for (let line of lines) {
+            let lineWidth = this.getTextWidth(line);
+            textWidth = Math.max(textWidth, lineWidth);
+
+            this.addTextLine(line, lineWidth);
+        }
+
+        this.textHeight = lineHeightPx * lines.length;
+        this.textWidth = textWidth;
+    }
+
+    setWidth() {
+        console.warn('Only auto width supported');
+    }
+
+    setHeight() {
+        console.warn('Only auto height supported');
+    }
+
+    getWidth(): number {
+        return this.textWidth;
+    }
+
+    getHeight(): number {
+        return this.textHeight;
+    }
+
+    text: GetSet<string, this>;
+    fontFamily: GetSet<string, this>;
+    fontSize: GetSet<number, this>;
+    lineHeight: GetSet<number, this>;
+    align: GetSet<string, this>;
+}
+
+Text.prototype.className = 'Text';
+_registerNode(Text);
+
+Text.prototype._fillFunc = _fillFunc;
+Text.prototype._strokeFunc = _strokeFunc;
+
+Factory.addGetterSetter(Text, 'text', '');
+Factory.addGetterSetter(Text, 'fontFamily', 'Arial');
+Factory.addGetterSetter(Text, 'fontSize', 12);
+Factory.addGetterSetter(Text, 'lineHeight', 1);
+Factory.addGetterSetter(Text, 'align', 'left');

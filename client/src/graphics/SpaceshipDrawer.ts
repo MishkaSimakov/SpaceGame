@@ -1,8 +1,7 @@
 import Spaceship from "../../../common/Spaceship";
 import Vector2 from "../../../common/Vector2";
 import Spaceships from "./scenes/spaceships";
-import Container from "./engine/shapes/Container";
-import Card from "./engine/shapes/Card";
+import {Card} from "./shapes/Card";
 
 export default class SpaceshipDrawer {
     spaceship: Spaceship;
@@ -21,10 +20,10 @@ export default class SpaceshipDrawer {
 
     moveCenterTo(position: Vector2) {
         for (let moduleShape of this.moduleShapes) {
-            moduleShape.setPosition(
-                moduleShape.x - this.center.x + position.x,
-                moduleShape.y - this.center.y + position.y
-            );
+            moduleShape.setPosition({
+                x: moduleShape.x() - this.center.x + position.x,
+                y: moduleShape.y() - this.center.y + position.y
+            });
         }
 
         this.center = position;

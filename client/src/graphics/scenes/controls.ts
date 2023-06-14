@@ -11,13 +11,11 @@ import {OtherPlayer} from "../../../../common/GameForPlayerDTO";
 import TopBarSmallDrawer from "../topbar/TopBarSmallDrawer";
 import TopBarDefaultDrawer from "../topbar/TopBarDefaultDrawer";
 import Scene from "../engine/Scene";
-import {GraphicsManager} from "../engine/GraphicsManager";
-import Rectangle from "../engine/shapes/Rectangle";
-import Text from "../engine/shapes/Text";
-import Pointer from "../engine/Pointer";
-import Color from "../engine/types/Color";
-import Container from "../engine/shapes/Container";
-
+import {Text} from "../engine/shapes/Text";
+import {Rectangle} from "../engine/shapes/Rectangle";
+import {Group} from "../engine/Group";
+import Color from "../Color";
+import {Card} from "../shapes/Card";
 
 export default class Controls extends Scene {
     handDrawer: HandDrawer;
@@ -25,26 +23,26 @@ export default class Controls extends Scene {
     gameManager: Game;
 
     showCardShapes: {
-        cards?: Container,
+        cards?: Group,
         title?: Text,
         fade?: Rectangle
     } = {};
 
-    constructor(graphicsManager: GraphicsManager, game: Game) {
-        super(graphicsManager);
+    constructor(game: Game) {
+        super({
+            width: window.innerWidth,
+            height: window.innerHeight
+        });
 
         this.gameManager = game;
 
         this.handDrawer = new HandDrawer(this.gameManager, this);
 
-        if (this.graphicsManager.width < (400 + 2 * 15)) {
+        if (this.width() < (400 + 2 * 15)) {
             this.topBarDrawer = new TopBarSmallDrawer(this);
         } else {
             this.topBarDrawer = new TopBarDefaultDrawer(this);
         }
-
-        // TODO: fix
-        // this.input.dragDistanceThreshold = 10;
     }
 
     updateData() {
@@ -128,24 +126,24 @@ export default class Controls extends Scene {
             modal.setTitle("Выберите игрока для атаки");
 
             for (let player of players) {
-                modal.addLine(player.name).events.on('pointerdown', () => {
+                modal.addLine(player.name).on('pointerdown', () => {
                     resolve(player.id);
 
                     modal.destroy();
                 });
             }
 
-            this.graphicsManager.events.once('pointerup', () => {
-                this.graphicsManager.events.on('pointerdown', (pointer: Pointer) => {
-                    if (!modal.backgroundShape.contains(pointer.x, pointer.y)) {
-                        // TODO: fix listeners remove
+            const graphics = this.getGraphics();
 
-                        // this.input.removeListener("pointerdown");
-
-                        resolve(undefined);
-
-                        modal.destroy();
-                    }
+            graphics.once('pointerup', () => {
+                graphics.on('pointerdown.modal', (evt) => {
+                    // if (!modal.backgroundShape.(pointer.x, pointer.y)) {
+                    //     graphics.off("pointerdown.modal");
+                    //
+                    //     resolve(undefined);
+                    //
+                    //     modal.destroy();
+                    // }
                 });
             });
         });
@@ -161,28 +159,31 @@ export default class Controls extends Scene {
 
             destroyShowCards();
 
-            let sceneWidth = this.width;
-            let sceneHeight = this.height;
+            let sceneWidth = this.width();
+            let sceneHeight = this.height();
             this.showCardShapes.cards = this.drawCardsOnScreen(cards);
 
-            this.showCardShapes.fade = this.rect(0, 0, sceneWidth, sceneHeight)
-                .setFillStyle(Color.fromHex('#000000', 0.75))
-                .setOrigin(0, 0)
-                .setDepth(19);
+            this.showCardShapes.fade = this.createAndAdd.rectangle({
+                x: 0,
+                y: 0,
+                width: sceneWidth,
+                height: sceneHeight,
+                fill: Color.fromHex('#000000', 0.75).toString()
+            });
 
             if (title) {
-                this.showCardShapes.title = this.text(
-                    sceneWidth / 2,
-                    this.showCardShapes.cards.getBounds().top - 15,
-                    title
-                )
-                    .setOrigin(0.5, 1)
-                    .setFontFamily('Exo2Bold')
-                    .setFontSize(20)
-                    .setDepth(20);
+                this.showCardShapes.title = this.createAndAdd.text({
+                    x: sceneWidth / 2,
+                    y: this.showCardShapes.cards.getClientRect().top - 15,
+                    text: title,
+                    originX: 0.5,
+                    originY: 1,
+                    fontFamily: "Exo2Bold",
+                    fontSize: 20,
+                });
             }
 
-            this.graphicsManager.events.once('pointerdown', () => {
+            this.getGraphics().once('pointerdown', () => {
                 destroyShowCards();
 
                 resolve();
@@ -197,7 +198,7 @@ export default class Controls extends Scene {
             modal.setTitle(title);
 
             for (let index = 0; index < values.length; ++index) {
-                modal.addLine(values[index]).events.on('pointerdown', () => {
+                modal.addLine(values[index]).once('pointerdown', () => {
                     resolve(index);
 
                     modal.destroy();
@@ -217,20 +218,20 @@ export default class Controls extends Scene {
             for (let [index, card] of Object.entries(this.gameManager.getCurrentPlayer().hand)) {
                 let line = modal.addLine(isModule(card) ? (card as Module).name : 'event');
 
-                line.events.on('pointerdown', () => {
+                line.on('pointerdown', () => {
                     if (selected.indexOf(parseInt(index)) !== -1) {
                         selected = selected.filter((s) => s !== parseInt(index));
 
-                        line.setText(line.text.slice(2, -2));
+                        line.text(line.text().slice(2, -2));
                     } else {
                         selected.push(parseInt(index));
 
-                        line.setText("- " + line.text + " -");
+                        line.text("- " + line.text() + " -");
                     }
                 });
             }
 
-            modal.setBottomText("Скинуть").events.on('pointerdown', () => {
+            modal.setBottomText("Скинуть").on('pointerdown', () => {
                 if (selected.length < requiredDiscardCount)
                     return;
 
@@ -243,7 +244,7 @@ export default class Controls extends Scene {
 
     chooseCards(cards: (Module | Event)[], count: number, title: string): Promise<number[]> {
         return new Promise<number[]>((resolve, reject) => {
-            let cardShapes: Container;
+            let cardShapes: Group;
             let backgroundShape: Rectangle;
             let fadeShape: Rectangle;
             let titleShape: Text;
@@ -254,29 +255,38 @@ export default class Controls extends Scene {
             let offset = 20;
             let outlineColor = 0xa3b18a;
 
-            let sceneWidth = this.width;
-            let sceneHeight = this.height;
-            cardShapes = this.drawCardsOnScreen(cards)
-                .setDepth(21);
+            let sceneWidth = this.width();
+            let sceneHeight = this.height();
+            cardShapes = this.drawCardsOnScreen(cards);
 
-            fadeShape = this.rect(0, 0, sceneWidth, sceneHeight)
-                .setFillStyle(Color.fromHex('#000000', 0.75))
-                .setOrigin(0, 0)
-                .setDepth(19);
+            fadeShape = this.createAndAdd.rectangle({
+                x: 0,
+                y: 0,
+                width: sceneWidth,
+                height: sceneHeight,
+                fill: Color.fromHex('#000000', 0.75).toString()
+            });
 
             if (title) {
-                titleShape = this.text(sceneWidth / 2, cardShapes.getBounds().top - 15, title)
-                    .setOrigin(0.5, 1)
-                    .setFontFamily('Exo2Bold')
-                    .setFontSize(20)
-                    .setDepth(21);
+                titleShape = this.createAndAdd.text({
+                    x: sceneWidth / 2,
+                    y: cardShapes.getClientRect().top - 15,
+                    text: title,
+                    originX: 0.5,
+                    originY: 1,
+                    fontFamily: "Exo2Bold",
+                    fontSize: 20
+                });
             }
 
-            buttonShape = this.text(sceneWidth / 2, cardShapes.getBounds().bottom + 15, "Далее")
-                .setOrigin(0.5, 0)
-                .setDepth(21);
+            buttonShape = this.createAndAdd.text({
+                x: sceneWidth / 2,
+                y: cardShapes.getClientRect().bottom + 15,
+                text: "Далее",
+                originX: 0.5
+            });
 
-            buttonShape.events.on('pointerdown', () => {
+            buttonShape.on('pointerdown', () => {
                 cardShapes.destroy();
                 backgroundShape.destroy();
                 fadeShape.destroy();
@@ -287,23 +297,22 @@ export default class Controls extends Scene {
             });
 
             let backgroundPosition1 = new Vector2(
-                Math.min(cardShapes.getBounds().left, titleShape.getBounds().left) - offset,
-                titleShape.getBounds().top - offset
+                Math.min(cardShapes.getClientRect().left, titleShape.getClientRect().left) - offset,
+                titleShape.getClientRect().top - offset
             );
             let backgroundPosition2 = new Vector2(
-                Math.max(cardShapes.getBounds().right, titleShape.getBounds().right) + offset,
-                buttonShape.getBounds().bottom + offset
+                Math.max(cardShapes.getClientRect().right, titleShape.getClientRect().right) + offset,
+                buttonShape.getClientRect().bottom + offset
             );
-            backgroundShape = this.rect(
-                backgroundPosition1.x, backgroundPosition1.y,
-                backgroundPosition2.x - backgroundPosition1.x,
-                backgroundPosition2.y - backgroundPosition1.y
-            )
-                .setFillStyle(Color.fromHex('#0B2545', 0.75))
-                .setStrokeStyle(Color.fromHex('#3D76BE'), 2)
-                .setOrigin(0, 0)
-                .setDepth(20);
-
+            backgroundShape = this.createAndAdd.rectangle({
+                x: backgroundPosition1.x,
+                y: backgroundPosition1.y,
+                width: backgroundPosition2.x - backgroundPosition1.x,
+                height: backgroundPosition2.y - backgroundPosition1.y,
+                fill: Color.fromHex('#0B2545', 0.75).toString(),
+                stroke: Color.fromHex('#3D76BE').toString(),
+                strokeWidth: 2
+            });
 
             // TODO: add container and uncomment
             // cardShapes.getAll().forEach((shape: Phaser.GameObjects.Container, index: number) => {
@@ -334,9 +343,9 @@ export default class Controls extends Scene {
         });
     }
 
-    drawCardsOnScreen(cards: (Module | Event)[]): Container {
-        let sceneWidth = this.width;
-        let sceneHeight = this.height;
+    drawCardsOnScreen(cards: (Module | Event)[]): Group {
+        let sceneWidth = this.width();
+        let sceneHeight = this.height();
 
         let offset = new Vector2(0, 0);
 
@@ -352,73 +361,78 @@ export default class Controls extends Scene {
             offset.y = cardSize + padding;
         }
 
-        let cardShapes = this.container();
+        let cardShapes = this.createAndAdd.group();
 
         let position = new Vector2(0, 0)
 
         for (let card of cards) {
-            cardShapes.add(this.card(position.x, position.y, cardSize, card));
+            let cardShape = new Card({
+                x: position.x,
+                y: position.y,
+                size: cardSize,
+                card: card
+            });
+            cardShapes.add(cardShape);
 
             position.add(offset);
         }
 
         cardShapes
-            .setDepth(20)
-            .setPosition(
-                (sceneWidth - cardShapes.getBounds().width + cardSize) / 2,
-                (sceneHeight - cardShapes.getBounds().height + cardSize) / 2
-            );
+            .setPosition({
+                x: (sceneWidth - cardShapes.getClientRect().width + cardSize) / 2,
+                y: (sceneHeight - cardShapes.getClientRect().height + cardSize) / 2
+            });
 
         return cardShapes;
     }
 
     permuteCards(cards: (Event | Module)[]): Promise<number[]> {
         return new Promise((resolve) => {
-                let outlineColor = 0xa3b18a;
-                let cardShapes: Container[] = [];
-                let cardWidth = 256;
-
-                let order: number[] = [];
-                for (let i = 0; i < cards.length; ++i) {
-                    order.push(i);
-                }
-
-                let backgroundShape = this.rect(
-                    this.width / 2,
-                    this.height / 2,
-                    (cardWidth + 50) * cards.length, cardWidth + 100
-                )
-                    .setFillStyle(Color.BLACK)
-                    .setOrigin(0.5, 0)
-                    .setStrokeStyle(Color.fromHex('#555555'), 2)
-                    .setDepth(2);
-
-                let buttonShape = this.text(
-                    this.width / 2, this.height / 2 + cardWidth / 2 + 20, "Next"
-                )
-                    .setDepth(3)
-
-                buttonShape.events.on('pointerdown', () => {
-                    backgroundShape.destroy();
-                    for (let cardShape of cardShapes) {
-                        cardShape.destroy();
-                    }
-                    buttonShape.destroy();
-
-                    resolve(order);
-                });
-
-                let indexByPosition = (x: number): number => {
-                    let index = (x - (this.width / 2 - ((cardWidth + 50) * cards.length - 50) / 2 + cardWidth / 2)) / (cardWidth + 50);
-                    index = Math.round(index);
-
-                    index = Math.min(
-                        order.length - 1,
-                        Math.max(0, index)
-                    );
-
-                    return index;
-                }
+                // let outlineColor = 0xa3b18a;
+                // let cardShapes: Container[] = [];
+                // let cardWidth = 256;
+                //
+                // let order: number[] = [];
+                // for (let i = 0; i < cards.length; ++i) {
+                //     order.push(i);
+                // }
+                //
+                // let backgroundShape = this.rect(
+                //     this.width / 2,
+                //     this.height / 2,
+                //     (cardWidth + 50) * cards.length, cardWidth + 100
+                // )
+                //     .setFillStyle(Color.BLACK)
+                //     .setOrigin(0.5, 0)
+                //     .setStrokeStyle(Color.fromHex('#555555'), 2)
+                //     .setDepth(2);
+                //
+                // let buttonShape = this.text(
+                //     this.width / 2, this.height / 2 + cardWidth / 2 + 20, "Next"
+                // )
+                //     .setDepth(3)
+                //
+                // buttonShape.events.on('pointerdown', () => {
+                //     backgroundShape.destroy();
+                //     for (let cardShape of cardShapes) {
+                //         cardShape.destroy();
+                //     }
+                //     buttonShape.destroy();
+                //
+                //     resolve(order);
+                // });
+                //
+                // let indexByPosition = (x: number): number => {
+                //     let index = (x - (this.width / 2 - ((cardWidth + 50) * cards.length - 50) / 2 + cardWidth / 2)) / (cardWidth + 50);
+                //     index = Math.round(index);
+                //
+                //     index = Math.min(
+                //         order.length - 1,
+                //         Math.max(0, index)
+                //     );
+                //
+                //     return index;
+                // }
 
                 // TODO: add drag and uncomment
                 // for (let [indexInOrder, index] of order.entries()) {

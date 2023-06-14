@@ -1,7 +1,7 @@
 import TopBarDrawer from "./TopBarDrawer";
 import Vector2 from "../../../../common/Vector2";
 import {OtherPlayer} from "../../../../common/GameForPlayerDTO";
-import Color from "../engine/types/Color";
+import Color from "../Color";
 
 export default class TopBarDefaultDrawer extends TopBarDrawer {
     drawStatus(): void {
@@ -11,52 +11,52 @@ export default class TopBarDefaultDrawer extends TopBarDrawer {
         let textShapeStartY: number = this.sizes.padding + this.statusStartY;
 
         if (this.status.context) {
-            this.status.contextShape = this.scene.text(
-                this.sizes.sceneWidth - this.sizes.margin - this.sizes.statusWidth / 2,
-                textShapeStartY,
-                this.status.context + ":"
-            )
-                .setFillStyle(Color.fromHex(this.status.contextColor))
-                .setFontFamily('Exo2Bold')
-                .setFontSize(15)
-                .setFillStyle(Color.WHITE)
-                .setOrigin(0.5, 0)
-                .setDepth(5);
+            this.status.contextShape = this.scene.createAndAdd.text({
+                x: this.sizes.sceneWidth - this.sizes.margin - this.sizes.statusWidth / 2,
+                y: textShapeStartY,
+                text: this.status.context + ":",
+                fill: Color.fromHex(this.status.contextColor).toString(),
+                fontFamily: "Exo2Bold",
+                fontSize: 15,
+                originX: 0.5
+            });
 
-            textShapeStartY = this.status.contextShape.getBounds().bottom + this.sizes.padding
+            textShapeStartY = this.status.contextShape.getClientRect().bottom + this.sizes.padding
         }
 
-        this.status.textShape = this.scene.text(
-            this.sizes.sceneWidth - this.sizes.margin - this.sizes.statusWidth / 2,
-            textShapeStartY,
-            this.status.text
-        )
-            .setFontFamily('Exo2Bold')
-            .setFontSize(15)
-            .setFillStyle(Color.WHITE)
-            .setOrigin(0.5, 0)
-            .setDepth(5);
+        this.status.textShape = this.scene.createAndAdd.text({
+            x: this.sizes.sceneWidth - this.sizes.margin - this.sizes.statusWidth / 2,
+            y: textShapeStartY,
+            text: this.status.text,
+            fontFamily: "Exo2Bold",
+            fontSize: 15,
+            fill: "white",
+            originX: 0.5
+        });
 
         this.drawButtons();
 
         let bottomY: number;
 
         if (this.buttonsShapes.length) {
-            bottomY = this.buttonsShapes[this.buttonsShapes.length - 1].backgroundShape.getBounds().bottom;
+            bottomY = this.buttonsShapes[this.buttonsShapes.length - 1].getClientRect().bottom;
         } else {
-            bottomY = this.status.textShape.getBounds().bottom;
+            bottomY = this.status.textShape.getClientRect().bottom;
         }
 
-        let statusHeight = bottomY - this.status.textShape.getBounds().top + 2 * this.sizes.padding;
+        let statusHeight = bottomY - this.status.textShape.getClientRect().top + 2 * this.sizes.padding;
 
 
-        this.status.backgroundShape = this.scene.rect(
-            this.sizes.sceneWidth - this.sizes.margin - this.sizes.statusWidth, this.statusStartY,
-            this.sizes.statusWidth, statusHeight
-        )
-            .setFillStyle(Color.fromHex('#0B2545', 0.75))
-            .setStrokeStyle(Color.fromHex('#3D76BE'), this.sizes.strokeWidth)
-            .setCornerRadius(this.sizes.cornerRadius);
+        this.status.backgroundShape = this.scene.createAndAdd.rectangle({
+            x: this.sizes.sceneWidth - this.sizes.margin - this.sizes.statusWidth,
+            y: this.statusStartY,
+            width: this.sizes.statusWidth,
+            height: statusHeight,
+            fill: Color.fromHex('#0B2545', 0.75).toString(),
+            stroke: Color.fromHex('#3D76BE').toString(),
+            strokeWidth: this.sizes.strokeWidth,
+            cornerRadius: this.sizes.cornerRadius
+        });
     }
 
     drawCurrentPlayerData() {
@@ -64,26 +64,27 @@ export default class TopBarDefaultDrawer extends TopBarDrawer {
             return;
 
         this.currentPlayerData = this.getPlayerStatusStringShape(this.currentPlayer.getOtherPlayer(), false)
-            .setPosition(
-                this.sizes.sceneWidth - this.sizes.margin - this.sizes.statusWidth + this.sizes.padding,
-                this.sizes.margin + this.sizes.padding
-            )
-            .setDepth(5);
+            .setPosition({
+                x: this.sizes.sceneWidth - this.sizes.margin - this.sizes.statusWidth + this.sizes.padding,
+                y: this.sizes.margin + this.sizes.padding
+            });
 
-        this.currentPlayerData.events.on('pointerdown', () => {
+        this.currentPlayerData.on('pointerdown', () => {
             this.togglePlayerCharacteristics();
         });
 
-        let height = 2 * this.sizes.padding + this.currentPlayerData.getBounds().height;
+        let height = 2 * this.sizes.padding + this.currentPlayerData.getClientRect().height;
 
-        this.playersDataBackground = this.scene.rect(
-            this.sizes.sceneWidth - this.sizes.margin - this.sizes.statusWidth, this.sizes.margin,
-            this.sizes.statusWidth, height
-        )
-
-            .setFillStyle(Color.fromHex('#0B2545', 0.75))
-            .setStrokeStyle(Color.fromHex('#3D76BE'), this.sizes.strokeWidth)
-            .setCornerRadius(this.sizes.cornerRadius);
+        this.playersDataBackground = this.scene.createAndAdd.rectangle({
+            x: this.sizes.sceneWidth - this.sizes.margin - this.sizes.statusWidth,
+            y: this.sizes.margin,
+            width: this.sizes.statusWidth,
+            height: height,
+            fill: Color.fromHex('#0B2545', 0.75).toString(),
+            stroke: Color.fromHex('#3D76BE').toString(),
+            strokeWidth: this.sizes.strokeWidth,
+            cornerRadius: this.sizes.cornerRadius
+        })
 
         this.statusStartY = 2 * this.sizes.margin + height;
     }
@@ -102,45 +103,56 @@ export default class TopBarDefaultDrawer extends TopBarDrawer {
 
         for (let [index, player] of players.entries()) {
             let playersDataLine = this.getPlayerStatusStringShape(player, true)
-                .setPosition(textStart.x, textStart.y + lineOffset * index)
-                .setDepth(5);
+                .setPosition({
+                    x: textStart.x,
+                    y: textStart.y + lineOffset * index
+                });
 
-            playersDataLine.events.on('pointerdown', () => {
+            playersDataLine.on('pointerdown', () => {
                 this.scene.gameManager.spaceshipsScene.panToPlayerWithId(player.id);
             });
 
             this.playersDataText.push(playersDataLine);
         }
 
-        this.playersDataCloseText = this.scene.text(
-            textStart.x, this.playersDataText[this.playersDataText.length - 1].getBounds().bottom + lineOffset,
-            "Закрыть"
-        )
-            .setFontFamily('Exo2Bold')
-            .setFontSize(15)
-            .setFillStyle(Color.WHITE)
-            .setOrigin(0, 1)
-            .setDepth(5);
-        this.playersDataCloseText.events.on('pointerdown', () => {
+        this.playersDataCloseText = this.scene.createAndAdd.text({
+            x: textStart.x,
+            y: this.playersDataText[this.playersDataText.length - 1].getClientRect().bottom + lineOffset,
+            text: "Закрыть",
+            fontFamily: "Exo2Bold",
+            fontSize: 15,
+            fill: "white",
+            originY: 1
+        });
+
+        this.playersDataCloseText.on('pointerdown', () => {
             this.togglePlayerCharacteristics();
         });
 
-        let bb = this.playersDataCloseText.getBounds();
-        this.scene.rect(bb.left, bb.top, bb.width, bb.height).setFillStyle(Color.YELLOW).setDepth(1000);
+        let bb = this.playersDataCloseText.getClientRect();
+        this.scene.createAndAdd.rectangle({
+            x: bb.left,
+            y: bb.top,
+            width: bb.width,
+            height: bb.height,
+            fill: "yellow",
+        });
 
-
-        let totalTextHeight = this.playersDataCloseText.getBounds().bottom - this.playersDataText[0].getBounds().top;
+        let totalTextHeight = this.playersDataCloseText.getClientRect().bottom - this.playersDataText[0].getClientRect().top;
 
         let backgroundHeight = this.sizes.padding * 2 + totalTextHeight;
         let borderRadius = 10;
 
-        this.playersDataBackground = this.scene.rect(
-            textStart.x - this.sizes.padding, this.sizes.margin,
-            this.sizes.statusWidth, backgroundHeight
-        )
-            .setFillStyle(Color.fromHex('#0B2545', 0.75))
-            .setStrokeStyle(Color.fromHex('#3D76BE'), this.sizes.strokeWidth)
-            .setCornerRadius(borderRadius);
+        this.playersDataBackground = this.scene.createAndAdd.rectangle({
+            x: textStart.x - this.sizes.padding,
+            y: this.sizes.margin,
+            width: this.sizes.statusWidth,
+            height: backgroundHeight,
+            fill: Color.fromHex('#0B2545', 0.75).toString(),
+            stroke: Color.fromHex('#3D76BE').toString(),
+            strokeWidth: this.sizes.strokeWidth,
+            cornerRadius: borderRadius
+        });
 
         this.statusStartY = backgroundHeight + 2 * this.sizes.margin;
     }
@@ -156,7 +168,7 @@ export default class TopBarDefaultDrawer extends TopBarDrawer {
         let startY: number;
 
         if (this.status.textShape) {
-            startY = this.status.textShape.getBounds().bottom + this.sizes.padding;
+            startY = this.status.textShape.getClientRect().bottom + this.sizes.padding;
         } else {
             startY = this.sizes.margin + this.sizes.margin;
         }

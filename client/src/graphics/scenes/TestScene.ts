@@ -1,6 +1,6 @@
-import Scene from "../engine/Scene";
-import {GraphicsManager} from "../engine/GraphicsManager";
-import Color from "../engine/types/Color";
+import Scene from "../../../../../../../../WebstormProjects/canvasGraphicsEngine/src/engine/Scene";
+import {GraphicsManager} from "../../../../../../../../WebstormProjects/canvasGraphicsEngine/src/engine/GraphicsManager";
+import Color from "../../../../../../../../WebstormProjects/canvasGraphicsEngine/src/engine/types/Color";
 
 export default class TestScene extends Scene {
     constructor(graphics: GraphicsManager) {

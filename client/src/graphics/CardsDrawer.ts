@@ -1,7 +1,7 @@
 // import Module, {isModule} from "../../../common/modules/Module";
 // import Vector2 from "../../../common/Vector2";
 // import {Event} from "../../../common/events/Event";
-// import Scene from "./engine/Scene";
+// import Scene from "./konva/Scene";
 //
 // function drawModuleCard(scene: Scene, module: Module, position: Vector2, cardSize: number, isActivated: boolean = false): Phaser.GameObjects.Container {
 //     let scale = cardSize / 256;

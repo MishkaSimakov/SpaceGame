@@ -1,14 +1,15 @@
 import Game from "../Game";
 import {SIZES} from "./constants";
+import {Card} from "./shapes/Card";
 import Scene from "./engine/Scene";
-import Rectangle from "./engine/shapes/Rectangle";
-import Color from "./engine/types/Color";
-import Container from "./engine/shapes/Container";
-
+import {Rectangle} from "./engine/shapes/Rectangle";
+import Color from "./Color";
+import Vector2 from "../../../common/Vector2";
+import {isEvent, Event, EventTypes} from "../../../common/events/Event";
 
 export default class HandDrawer {
     cardSize: number;
-    cardShapes: Container[] = [];
+    cardShapes: Card[] = [];
 
     scene: Scene;
 
@@ -17,7 +18,7 @@ export default class HandDrawer {
 
     constructor(game: Game, scene: Scene) {
         this.gameManager = game;
-        this.cardSize = Math.max(128 * scene.width / 1440, 75);
+        this.cardSize = Math.max(128 * scene.width() / 1440, 75);
         this.scene = scene;
     }
 
@@ -29,8 +30,8 @@ export default class HandDrawer {
         if (hand.length === 0)
             return;
 
-        let sceneWidth = this.scene.width;
-        let sceneHeight = this.scene.height;
+        let sceneWidth = this.scene.width();
+        let sceneHeight = this.scene.height();
         let spaceBetween = this.cardSize * 0.1;
         let handWidth = hand.length * (this.cardSize + spaceBetween) - spaceBetween;
 
@@ -39,65 +40,72 @@ export default class HandDrawer {
 
         // draw background
         if (startPosition < spaceBetween * 2) {
-            this.background = this.scene.rect(0, sceneHeight - handHeight, sceneWidth, handHeight);
+            this.background = this.scene.createAndAdd.rectangle({
+                x: 0,
+                y: sceneHeight - handHeight,
+                width: sceneWidth,
+                height: handHeight
+            });
         } else {
-            this.background = this.scene.rect(
-                startPosition - spaceBetween, sceneHeight - handHeight,
-                handWidth + 2 * spaceBetween, handHeight
-            );
+            this.background = this.scene.createAndAdd.rectangle({
+                x: startPosition - spaceBetween,
+                y: sceneHeight - handHeight,
+                width: handWidth + 2 * spaceBetween,
+                height: handHeight
+            });
         }
 
         let strokeWidth = SIZES.STROKE_WIDTH;
         let borderRadius = 10;
-        this.background.setCornerRadius({tl: borderRadius, tr: borderRadius, bl: 0, br: 0});
-        this.background.setFillStyle(Color.fromHex('#0B2545', 0.75));
-        this.background.setStrokeStyle(Color.fromHex('#3D76BE'), strokeWidth);
+        this.background
+            .cornerRadius([borderRadius, borderRadius, 0, 0])
+            .fill(Color.fromHex('#0B2545', 0.75).toString())
+            .stroke(Color.fromHex('#3D76BE').toString())
+            .strokeWidth(strokeWidth)
 
         startPosition = Math.max(startPosition, spaceBetween);
 
         // draw cards
 
         // TODO: uncomment
-        // for (let [index, card] of hand.entries()) {
-        //     let position = new Vector2(
-        //         startPosition + index * (this.cardSize + spaceBetween),
-        //         sceneHeight - spaceBetween
-        //     );
-        //
-        //     position.add(new Vector2(this.cardSize / 2, -this.cardSize / 2));
-        //
-        //     let cardShape = drawCard(this.scene, card, position, this.cardSize);
-        //
-        //     if (isEvent(card) && (card as Event).type === EventTypes.SaveCardAndThenDealDamage) {
-        //         this.scene.input.setDraggable(cardShape, true);
-        //
-        //         cardShape.on('drag', (pointer: Phaser.Input.Pointer) => {
-        //             cardShape.setPosition(pointer.x, pointer.y);
-        //         });
-        //
-        //         cardShape.on('dragend', async (pointer: Phaser.Input.Pointer) => {
-        //             let distance_y = Math.abs(pointer.y - cardShape.input.dragStartY);
-        //
-        //             if (distance_y > 50) {
-        //                 let isAccepted = await this.gameManager.useEventCard(card as Event);
-        //
-        //                 if (isAccepted) {
-        //                     cardShape.destroy();
-        //
-        //                     let hand = this.gameManager.getCurrentPlayer().hand;
-        //                     hand.splice(hand.indexOf(card), 1);
-        //                     this.redraw();
-        //
-        //                     return;
-        //                 }
-        //             }
-        //
-        //             cardShape.setPosition(cardShape.input.dragStartX, cardShape.input.dragStartY);
-        //         });
-        //     }
-        //
-        //     this.cardShapes.push(cardShape);
-        // }
+        for (let [index, card] of hand.entries()) {
+            let cardShape = new Card({
+                size: this.cardSize,
+                card: card,
+                x: startPosition + index * (this.cardSize + spaceBetween),
+                y: sceneHeight - spaceBetween,
+                originY: 1
+            });
+            this.scene.add(cardShape);
+
+            if (isEvent(card) && (card as Event).type === EventTypes.SaveCardAndThenDealDamage) {
+                cardShape.draggable(true);
+
+                cardShape.on('dragend', async (evt) => {
+                    console.log("uncomment");
+
+                    // let distance_y = Math.abs(pointer.y - cardShape.input.dragStartY);
+                    //
+                    // if (distance_y > 50) {
+                    //     let isAccepted = await this.gameManager.useEventCard(card as Event);
+                    //
+                    //     if (isAccepted) {
+                    //         cardShape.destroy();
+                    //
+                    //         let hand = this.gameManager.getCurrentPlayer().hand;
+                    //         hand.splice(hand.indexOf(card), 1);
+                    //         this.redraw();
+                    //
+                    //         return;
+                    //     }
+                    // }
+                    //
+                    // cardShape.setPosition(cardShape.input.dragStartX, cardShape.input.dragStartY);
+                });
+            }
+
+            this.cardShapes.push(cardShape);
+        }
     }
 
     allowDrag() {

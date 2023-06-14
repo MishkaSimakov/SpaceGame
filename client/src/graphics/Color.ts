@@ -30,7 +30,7 @@ export default class Color {
         return new Color(r, g, b, alpha);
     }
 
-    toSting(): string {
+    toString(): string {
         return `rgba(${this.r}, ${this.g}, ${this.b}, ${this.a})`;
     }
 }

@@ -7,9 +7,7 @@ import SocketManager from "./sockets/SocketManager";
 import {Event, EventTypes} from "../../common/events/Event";
 import {GameForPlayerDTO, GameSettings, OtherPlayer} from "../../common/GameForPlayerDTO";
 import {Message} from "../../common/Types";
-import {GraphicsManager} from "./graphics/engine/GraphicsManager";
-import TestScene from "./graphics/scenes/TestScene";
-import Color from "./graphics/engine/types/Color";
+import {Graphics} from "./graphics/engine/Graphics";
 
 export default class Game {
     currentPlayer: Player;
@@ -29,31 +27,36 @@ export default class Game {
     messages: Message[];
 
     constructor() {
-        const graphics = new GraphicsManager('app');
-
-        graphics.events.once('ready', () => {
-            this.spaceshipsScene = graphics.addScene(Spaceships, this);
-            this.controlsScene = graphics.addScene(Controls, this);
-
-            this.rebuildSpaceshipManager = new RebuildSpaceshipManager(this);
-
-            this.socketManager = new SocketManager(this);
+        const graphics = new Graphics({
+            container: 'app',
+            width: window.innerWidth,
+            height: window.innerHeight
         });
 
-        let prevTime = (new Date()).getTime();
-        setInterval(() => {
-            if (!this.settings || !this.settings.withTimeControl)
-                return;
+        this.spaceshipsScene = new Spaceships(this);
+        this.controlsScene = new Controls(this);
 
-            if (!this.timeDecreasingPlayerId)
-                return;
+        graphics.add(this.spaceshipsScene);
+        graphics.add(this.controlsScene);
 
-            let currTime = (new Date()).getTime();
-            this.playerTime[this.timeDecreasingPlayerId] -= (currTime - prevTime);
-            prevTime = currTime;
+        this.rebuildSpaceshipManager = new RebuildSpaceshipManager(this);
 
-            this.controlsScene.topBarDrawer.updateTime(this.playerTime);
-        }, 1000);
+        this.socketManager = new SocketManager(this);
+
+        // let prevTime = (new Date()).getTime();
+        // setInterval(() => {
+        //     if (!this.settings || !this.settings.withTimeControl)
+        //         return;
+        //
+        //     if (!this.timeDecreasingPlayerId)
+        //         return;
+        //
+        //     let currTime = (new Date()).getTime();
+        //     this.playerTime[this.timeDecreasingPlayerId] -= (currTime - prevTime);
+        //     prevTime = currTime;
+        //
+        //     this.controlsScene.topBarDrawer.updateTime(this.playerTime);
+        // }, 1000);
     }
 
     setGameData(gameDTO: GameForPlayerDTO) {

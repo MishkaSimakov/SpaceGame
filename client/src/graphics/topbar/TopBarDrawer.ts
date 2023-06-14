@@ -3,11 +3,10 @@ import Controls from "../scenes/controls";
 import {ButtonColors, SIZES} from "../constants";
 import {OtherPlayer} from "../../../../common/GameForPlayerDTO";
 import {Message} from "../../../../common/Types";
-import Rectangle from "../engine/shapes/Rectangle";
-import Container from "../engine/shapes/Container";
-import Text from "../engine/shapes/Text";
-import Button from "../engine/shapes/Button";
-import Color from "../engine/types/Color";
+import {Rectangle} from "../engine/shapes/Rectangle";
+import {Text} from "../engine/shapes/Text";
+import {Group} from "../engine/Group";
+import {Button} from "../shapes/Button";
 
 type ButtonData = {
     text: string, onClick: () => void, color: ButtonColors
@@ -18,9 +17,9 @@ export default abstract class TopBarDrawer {
 
     showPlayersData: boolean = false;
     playersDataBackground: Rectangle;
-    playersDataText: Container[] = [];
+    playersDataText: Group[] = [];
     playersDataCloseText: Text;
-    currentPlayerData: Container;
+    currentPlayerData: Group;
 
     status: {
         context?: string,
@@ -60,15 +59,17 @@ export default abstract class TopBarDrawer {
     messagesStartY: number = this.sizes.margin;
 
     messages: Message[] = [];
-    messagesShape: Container[] = [];
+    messagesShape: Group[] = [];
     hiddenMessageId: number;
 
     constructor(scene: Controls) {
         this.scene = scene;
 
-        this.sizes.sceneWidth = scene.width;
+        this.sizes.sceneWidth = scene.width();
 
-        this.scale = scene.width / 1440;
+        console.log(scene.width());
+
+        this.scale = scene.width() / 1440;
     }
 
     abstract drawStatus(): void;
@@ -164,69 +165,69 @@ export default abstract class TopBarDrawer {
     }
 
     setButtonsDisabled(isDisabled: boolean) {
-        this.buttonsShapes.forEach(b => b.setDisabled(isDisabled));
+        this.buttonsShapes.forEach(b => b.disabled(isDisabled));
     }
 
-    getPlayerStatusStringShape(player: OtherPlayer, withName: boolean): Container {
-        let container = this.scene.container();
+    getPlayerStatusStringShape(player: OtherPlayer, withName: boolean): Group {
+        let container = this.scene.createAndAdd.group();
 
         let startX = 0;
 
         if (withName) {
             container.add(
-                this.scene.text(0, 0, (player.online ? "🔴 " : "✖️ ") + player.name + ":")
-                    .setFontFamily('Exo2Bold')
-                    .setFontSize(15)
-                    .setFillStyle(Color.WHITE)
+                new Text({
+                    x: 0,
+                    y: 0,
+                    text: (player.online ? "🔴 " : "✖️ ") + player.name + ":",
+                    fontFamily: "Exo2Bold",
+                    fontSize: 15,
+                    fill: "white"
+                })
             );
 
             startX += 150;
         }
 
         container.add(
-            this.scene.text(startX, 0, `${player.energy}/${player.spaceship.getTotalCapacity()} ⚡️`)
-                .setFontFamily('Exo2Bold')
-                .setFontSize(15)
-                .setFillStyle(Color.WHITE)
+            new Text({
+                x: startX,
+                y: 0,
+                text: `${player.energy}/${player.spaceship.getTotalCapacity()} ⚡️`,
+                fontFamily: "Exo2Bold",
+                fontSize: 15,
+                fill: "white"
+            })
         );
 
         container.add(
-            this.scene.text(startX + 75, 0, `${player.handSize} 🤚`)
-                .setFontFamily('Exo2Bold')
-                .setFontSize(15)
-                .setFillStyle(Color.WHITE)
+            new Text({
+                x: startX + 75,
+                y: 0,
+                text: `${player.handSize} 🤚`,
+                fontFamily: "Exo2Bold",
+                fontSize: 15,
+                fill: "white"
+            })
         );
 
         if (this.scene.gameManager.settings.withTimeControl) {
             container.add(
-                this.scene.text(startX + 150, 0, `${this.timeToString(this.playerTime[player.id])} ⏰`)
-                    .setFontFamily('Exo2Bold')
-                    .setFontSize(15)
-                    .setFillStyle(Color.WHITE)
+                new Text({
+                    x: startX + 150,
+                    y: 0,
+                    text: `${this.timeToString(this.playerTime[player.id])} ⏰`,
+                    fontFamily: "Exo2Bold",
+                    fontSize: 15,
+                    fill: "white"
+                })
             );
         }
 
         return container;
     }
 
-    getMessageShape(message: Message): Container {
-        let container = this.scene.container();
-
-        container.add(
-            this.scene.text(0, 0, (message.playerId ?? 'ИИ') + ":")
-                .setFontFamily('Exo2Regular')
-                .setFontSize(12)
-                .setFillStyle(Color.WHITE)
-        );
-
-        container.add(
-            this.scene.text(50, 0, message.text)
-                .setFontFamily('Exo2Regular')
-                .setFontSize(12)
-                .setFillStyle(Color.WHITE)
-        );
-
-        return container;
+    getMessageShape(message: Message): Group {
+       return this.scene.createAndAdd.group();
     }
 
     timeToString(time: number): string {
