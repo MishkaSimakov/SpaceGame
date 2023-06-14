@@ -2,6 +2,7 @@ import Spaceship from "../../../common/Spaceship";
 import Vector2 from "../../../common/Vector2";
 import Spaceships from "./scenes/spaceships";
 import {Card} from "./shapes/Card";
+import Module from "../../../common/modules/Module";
 
 export default class SpaceshipDrawer {
     spaceship: Spaceship;
@@ -51,53 +52,55 @@ export default class SpaceshipDrawer {
 
     draw() {
         // TODO: add drag and uncomment
-        // for (let shape of this.moduleShapes) {
-        //     shape.destroy();
-        // }
-        // this.moduleShapes = [];
-        //
-        // for (let module of this.spaceship.modules) {
-        //     let shape = drawModuleCard(this.spaceshipsScene, module, this.getGlobalPosition(new Vector2(module.x, module.y)), this.cardSize, module.isActivated);
-        //
-        //     this.moduleShapes.push(shape);
-        //
-        //     if (module.isMain) {
-        //         this.spaceshipsScene.input.setDraggable(shape, true);
-        //
-        //         shape.on('dragstart', () => {
-        //             this.spaceshipsScene.isDragging = true;
-        //
-        //             for (let shape of this.moduleShapes) {
-        //                 this.spaceshipsScene.children.bringToTop(shape);
-        //             }
-        //         });
-        //
-        //         shape.on('drag', (pointer: Phaser.Input.Pointer, x: number, y: number) => {
-        //             this.moveCenterTo(new Vector2(x, y));
-        //         });
-        //
-        //         shape.on('dragend', () => {
-        //             this.spaceshipsScene.isDragging = false;
-        //         });
-        //     }
-        // }
+        for (let shape of this.moduleShapes) {
+            shape.destroy();
+        }
+        this.moduleShapes = [];
+
+        for (let module of this.spaceship.modules) {
+            let position = this.getGlobalPosition(new Vector2(module.x, module.y));
+
+            let shape = new Card({
+                card: module,
+                size: this.cardSize,
+                x: position.x,
+                y: position.y,
+                originY: 0.5,
+                originX: 0.5
+            });
+
+            this.spaceshipsScene.add(shape);
+
+            this.moduleShapes.push(shape);
+
+            if (module.isMain) {
+                shape.draggable(true);
+
+                // shape.on('dragstart', () => {
+                //     this.spaceshipsScene.isDragging = true;
+                //
+                //     for (let shape of this.moduleShapes) {
+                //         this.spaceshipsScene.children.bringToTop(shape);
+                //     }
+                // });
+                //
+                // shape.on('drag', (pointer: Phaser.Input.Pointer, x: number, y: number) => {
+                //     this.moveCenterTo(new Vector2(x, y));
+                // });
+                //
+                // shape.on('dragend', () => {
+                //     this.spaceshipsScene.isDragging = false;
+                // });
+            }
+        }
     }
 
-    allowDrag() {
-        // for (let shape of this.moduleShapes) {
-        //     if ((shape.getData('module') as Module).isMain)
-        //         continue;
-        //
-        //     this.spaceshipsScene.input.setDraggable(shape, true);
-        // }
-    }
+    setDragEnabled(isEnabled: boolean) {
+        for (let shape of this.moduleShapes) {
+            if ((shape.card() as Module).isMain)
+                continue;
 
-    disallowDrag() {
-        // for (let shape of this.moduleShapes) {
-        //     if ((shape.getData('module') as Module).isMain)
-        //         continue;
-        //
-        //     this.spaceshipsScene.input.setDraggable(shape, false);
-        // }
+            shape.draggable(isEnabled);
+        }
     }
 }

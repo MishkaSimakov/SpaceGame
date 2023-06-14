@@ -36,6 +36,8 @@ export default class Scene extends Container<Group | Shape> {
         this.canvas.setSize(width, height);
         this.hitCanvas.setSize(width, height);
 
+        this.width(width).height(height)
+
         return this;
     }
 
@@ -83,6 +85,43 @@ export default class Scene extends Container<Group | Shape> {
 
             return shapes[colorKey];
         }
+    }
+
+    panTo(x: number, y: number, duration: number) {
+        const animationStart = new Date().getTime();
+        const startPosition = this.getPosition();
+
+        const panFunction = function easeInOutSine(x: number): number {
+            return -(Math.cos(Math.PI * x) - 1) / 2;
+        }
+
+        const makeAnimationStep = () => {
+            requestAnimationFrame(() => {
+                let currentTime = new Date().getTime();
+                let shouldStop = (currentTime - animationStart) >= duration
+
+                let percent = panFunction((currentTime - animationStart) / duration);
+
+                // TODO: make this better
+                // TODO: dont work with zooooom
+                if (shouldStop) {
+                    this.attrs.x = -x;
+                    this.attrs.y = -y;
+                } else {
+                    this.attrs.x = -x * percent + startPosition.x * (1 - percent);
+                    this.attrs.y = -y * percent + startPosition.y * (1 - percent);
+                }
+
+                this.waitingForDraw = false;
+                this.draw();
+
+                if (!shouldStop) {
+                    makeAnimationStep();
+                }
+            });
+        }
+
+        makeAnimationStep();
     }
 
     clearColor: GetSet<string, this>

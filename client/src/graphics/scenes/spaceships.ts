@@ -4,6 +4,7 @@ import Module from "../../../../common/modules/Module";
 import Game from "../../Game";
 import Scene from "../engine/Scene";
 import Color from "../Color";
+import {DD} from "../engine/Drag";
 
 
 let spaceshipConfigurations: Vector2[][] = [
@@ -23,46 +24,58 @@ export default class Spaceships extends Scene {
 
     constructor(game: Game) {
         super({
-            width: window.innerWidth,
-            height: window.innerHeight,
-            clearColor: "black"
+            clearColor: "black",
+            originX: -0.5,
+            originY: -0.5
         });
 
         this.gameManager = game;
+    }
 
+    adopted() {
         // let pinch = new Pinch(this);
 
         this.spaceshipsCardSize = 256 * this.width() / 1440;
+        let prevPointerPosition = this.getGraphics().getPointerPosition();
 
-        // this.getGraphics().on("pointermove", ({evt}) => {
-        //     if (evt.button !== -1) return;
-        //
-        //     if (this.isDragging) return;
-        //
-        //     let zoom = this.scaleX(),
-        //         x = this.x(),
-        //         y = this.y();
-        //
-        //     this.x(x - (evt.clientX - pointer.prevX) / zoom);
-        //     this.scrollY -= (pointer.y - pointer.prevY) / this.zoom;
-        // });
+        this.getGraphics().on("pointermove", ({evt}) => {
+            let pointerPosition = this.getGraphics().getPointerPosition();
 
-        // TODO: uncomment when finish zoom
-        // this.input.on("wheel", (pointer, gameObjects, deltaX, deltaY) => {
-        //     if (deltaY > 0) {
-        //         let newZoom = this.cameras.main.zoom - .1;
-        //         if (newZoom > 0.2) {
-        //             this.cameras.main.zoom = newZoom;
-        //         }
-        //     }
-        //
-        //     if (deltaY < 0) {
-        //         let newZoom = this.cameras.main.zoom + .1;
-        //         if (newZoom < 1.3) {
-        //             this.cameras.main.zoom = newZoom;
-        //         }
-        //     }
-        // });
+            if (DD.isDragging()) return;
+
+            if (evt.buttons !== 0) {
+                let zoom = this.scaleX(),
+                    x = this.x(),
+                    y = this.y();
+
+                this.x(x + (pointerPosition.x - prevPointerPosition.x));
+                this.y(y + (pointerPosition.y - prevPointerPosition.y));
+            }
+
+            prevPointerPosition = pointerPosition;
+        });
+
+        this.getGraphics().on("wheel", ({evt}) => {
+            let deltaY = evt.deltaY,
+                zoom = this.scaleX(),
+                newZoom = zoom,
+                pos = this.getGraphics().getPointerPosition();
+
+            if (deltaY > 0) {
+                newZoom = Math.max(0.2, zoom - 0.1);
+            }
+
+            if (deltaY < 0) {
+                newZoom = Math.min(1.3, zoom + .1);
+            }
+
+            // TODO: zoom into cursor
+            // let offsetX = pos.x * (zoom - newZoom),
+            //     offsetY = pos.y * (zoom - newZoom);
+            // this.move(offsetX, offsetY);
+
+            this.scaleX(newZoom).scaleY(newZoom);
+        });
 
         // pinch.on('pinch', (pinch) => {
         //     this.cameras.main.zoom *= pinch.scaleFactor;
@@ -166,7 +179,6 @@ export default class Spaceships extends Scene {
     panToPlayerWithId(playerId: number, duration: number = 500) {
         let position = this.spaceshipDrawers[playerId].center;
 
-        // TODO: make pan and uncomment
-        // this.cameras.main.pan(position.x, position.y, duration, 'Sine.easeInOut');
+        this.panTo(position.x, position.y, duration);
     }
 }

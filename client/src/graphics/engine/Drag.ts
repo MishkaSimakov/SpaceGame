@@ -8,19 +8,21 @@ export const DD = {
         {
             node: Node,
             startPointerPos: Vector2,
+            startPos: Vector2,
             offset: Vector2,
             pointerId: number,
 
             dragStatus: 'ready' | 'dragging' | 'stopped'
         }
     >(),
-    get isDragging(): boolean {
-          DD._dragElements.forEach(element => {
-                if (element.dragStatus === 'dragging')
-                    return true;
-          });
+    isDragging(): boolean {
+        let isDragging = false;
+        DD._dragElements.forEach(element => {
+            if (element.dragStatus === 'dragging')
+                isDragging = true;
+        });
 
-          return false;
+        return isDragging;
     },
 
     _drag(evt) {
@@ -49,7 +51,7 @@ export const DD = {
                 if (distance < dragDistance)
                     return;
 
-                node.startDrag({ evt });
+                node.startDrag({evt});
             }
 
             node.setDragPosition(evt, element);

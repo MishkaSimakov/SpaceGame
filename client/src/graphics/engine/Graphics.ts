@@ -291,7 +291,7 @@ class Graphics extends Container<Scene> {
 
         this.updatePointerPosition(evt);
 
-        if (DD.isDragging)
+        if (DD.isDragging())
             return;
 
         let triggeredOnShape = false;
@@ -398,7 +398,7 @@ class Graphics extends Container<Scene> {
         let shape = this.getIntersection(this.getPointerPosition());
 
         if (shape) {
-            shape.fire('wheel', {evt: evt});
+            shape.fire('wheel', {evt: evt}, true);
         } else {
             this.fire('wheel', {
                 evt: evt,
@@ -424,6 +424,13 @@ class Graphics extends Container<Scene> {
 
     getPointerPosition(): Vector2 {
         const pos = this._pointerPositions[0] || this._changedPointerPositions[0];
+
+        if (!pos) {
+            return {
+                x: 0,
+                y: 0
+            };
+        }
 
         return {
             x: pos.x,

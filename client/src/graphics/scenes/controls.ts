@@ -29,13 +29,12 @@ export default class Controls extends Scene {
     } = {};
 
     constructor(game: Game) {
-        super({
-            width: window.innerWidth,
-            height: window.innerHeight
-        });
+        super();
 
         this.gameManager = game;
+    }
 
+    adopted() {
         this.handDrawer = new HandDrawer(this.gameManager, this);
 
         if (this.width() < (400 + 2 * 15)) {

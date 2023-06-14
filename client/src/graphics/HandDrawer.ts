@@ -68,6 +68,7 @@ export default class HandDrawer {
         // draw cards
 
         // TODO: uncomment
+        console.log(this.cardSize)
         for (let [index, card] of hand.entries()) {
             let cardShape = new Card({
                 size: this.cardSize,
@@ -108,24 +109,11 @@ export default class HandDrawer {
         }
     }
 
-    allowDrag() {
-        // TODO: uncomment
-
-        // for (let shape of this.cardShapes) {
-        //     if (shape.getData('type') === 'event')
-        //         continue;
-        //
-        //     this.scene.input.setDraggable(shape, true);
-        // }
-    }
-
-    disallowDrag() {
-        // for (let shape of this.cardShapes) {
-        //     if (shape.getData('type') === 'event')
-        //         continue;
-        //
-        //     this.scene.input.setDraggable(shape, false);
-        // }
+    setDragEnabled(isEnabled: boolean) {
+        for (let shape of this.cardShapes) {
+            if (shape.isModule)
+                shape.draggable(isEnabled);
+        }
     }
 
     destroy() {

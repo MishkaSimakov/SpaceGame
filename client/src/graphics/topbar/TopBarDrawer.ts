@@ -43,7 +43,7 @@ export default abstract class TopBarDrawer {
     sizes = {
         margin: 15,
         fontSize: 15,
-        padding: 7.5,
+        padding: 10,
         strokeWidth: SIZES.STROKE_WIDTH,
         cornerRadius: SIZES.CORNER_RADIUS,
         sceneWidth: undefined,
@@ -169,7 +169,7 @@ export default abstract class TopBarDrawer {
     }
 
     getPlayerStatusStringShape(player: OtherPlayer, withName: boolean): Group {
-        let container = this.scene.createAndAdd.group();
+        let container = new Group();
 
         let startX = 0;
 

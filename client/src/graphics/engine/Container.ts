@@ -1,8 +1,12 @@
-import {Node} from './Node';
+import {Node, NodeConfig} from './Node';
 import {BoundingRect} from "./types";
 
-export abstract class Container<ChildType extends Node = Node> extends Node {
+export abstract class Container<ChildType extends Node = Node, Config extends NodeConfig = NodeConfig> extends Node {
     children?: Array<ChildType> = [];
+
+    constructor(config?: Config) {
+        super(config);
+    }
 
     getChildren(): Array<ChildType> {
         return this.children;
@@ -21,6 +25,9 @@ export abstract class Container<ChildType extends Node = Node> extends Node {
         }
 
         const child = children[0];
+
+        if (!child)
+            return this;
 
         child.index = this.children.length;
         child.parent = this;

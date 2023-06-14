@@ -318,6 +318,11 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         }
     }
 
+    move(x: number, y: number) {
+        this.x(this.x() + x)
+            .y(this.y() + y);
+    }
+
     isDragging(): boolean {
         const element = DD._dragElements.get(this._id);
         return element && element.dragStatus === 'dragging';
@@ -409,6 +414,25 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         return false;
     }
 
+    moveToTop() {
+        if (!this.parent)
+            return false;
+
+        let index = this.index,
+            length = this.parent.getChildren().length;
+
+        if (index !== length - 1) {
+            this.parent.children.splice(index, 1);
+            this.parent.children.push(this);
+
+            this.parent.setChildrenIndices();
+
+            return true;
+        }
+
+        return false;
+    }
+
     setPosition(pos: Vector2) {
         this.x(pos.x).y(pos.y);
 
@@ -430,8 +454,8 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         let translation = this.getAbsoluteTransform().getTranslation();
 
         this.setPosition({
-            x: pos.x,
-            y: pos.y
+            x: this.attrs.x + pos.x - translation.x,
+            y: this.attrs.y + pos.y - translation.y
         });
     }
 
@@ -461,6 +485,7 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         DD._dragElements.set(this._id, {
             node: this,
             startPointerPos: pos,
+            startPos: this.getPosition(),
             offset: {
                 x: pos.x - ap.x,
                 y: pos.y - ap.y

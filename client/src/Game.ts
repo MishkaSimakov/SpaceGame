@@ -39,24 +39,27 @@ export default class Game {
         graphics.add(this.spaceshipsScene);
         graphics.add(this.controlsScene);
 
+        this.spaceshipsScene.adopted();
+        this.controlsScene.adopted();
+
         this.rebuildSpaceshipManager = new RebuildSpaceshipManager(this);
 
         this.socketManager = new SocketManager(this);
 
-        // let prevTime = (new Date()).getTime();
-        // setInterval(() => {
-        //     if (!this.settings || !this.settings.withTimeControl)
-        //         return;
-        //
-        //     if (!this.timeDecreasingPlayerId)
-        //         return;
-        //
-        //     let currTime = (new Date()).getTime();
-        //     this.playerTime[this.timeDecreasingPlayerId] -= (currTime - prevTime);
-        //     prevTime = currTime;
-        //
-        //     this.controlsScene.topBarDrawer.updateTime(this.playerTime);
-        // }, 1000);
+        let prevTime = (new Date()).getTime();
+        setInterval(() => {
+            if (!this.settings || !this.settings.withTimeControl)
+                return;
+
+            if (!this.timeDecreasingPlayerId)
+                return;
+
+            let currTime = (new Date()).getTime();
+            this.playerTime[this.timeDecreasingPlayerId] -= (currTime - prevTime);
+            prevTime = currTime;
+
+            this.controlsScene.topBarDrawer.updateTime(this.playerTime);
+        }, 1000);
     }
 
     setGameData(gameDTO: GameForPlayerDTO) {
@@ -90,7 +93,7 @@ export default class Game {
         this.spaceshipsScene.updateData();
 
         if (this.rebuildSpaceshipManager.isRebuildingSpaceship) {
-            this.rebuildSpaceshipManager.allowRebuildSpaceship();
+            this.rebuildSpaceshipManager.setIsRebuildSpaceshipAllowed(true);
         }
     }
 
