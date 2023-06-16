@@ -94,8 +94,10 @@ export const DD = {
                 element.dragStatus = 'stopped';
             }
 
-            if (node.getScene() && drawNodes.indexOf(node) === -1) {
-                drawNodes.push(node);
+            const drawNode = node.getScene();
+
+            if (node.getScene() && drawNodes.indexOf(drawNode) === -1) {
+                drawNodes.push(drawNode);
             }
         });
 

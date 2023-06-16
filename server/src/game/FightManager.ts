@@ -129,6 +129,8 @@ export default class FightManager {
                 protector.isActivated = true;
 
                 target.energy -= protector.energyCost;
+
+                this.gameManager.syncPlayersData();
             }
         });
     }

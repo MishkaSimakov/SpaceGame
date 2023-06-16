@@ -134,20 +134,16 @@ export default class Controls extends Scene {
 
             const graphics = this.getGraphics();
 
-            graphics.once('pointerup', () => {
-                graphics.on('pointerdown.modal', (evt) => {
-                    const pos = this.getRelativePointerPosition();
-                    const bb = modal.backgroundShape.getClientRect();
-                    const contains = bb.left <= pos.x && pos.x <= bb.right && bb.top <= pos.y && pos.y <= bb.bottom;
+            graphics.on('pointerdown.modal', (evt) => {
+                const pos = this.getRelativePointerPosition();
 
-                    if (!contains) {
-                        graphics.off("pointerdown.modal");
+                if (!modal.backgroundShape.getClientRect().contains(pos)) {
+                    graphics.off("pointerdown.modal");
 
-                        resolve(undefined);
+                    resolve(undefined);
 
-                        modal.destroy();
-                    }
-                });
+                    modal.destroy();
+                }
             });
         });
     }
@@ -425,7 +421,7 @@ export default class Controls extends Scene {
                 let buttonShape = new Text({
                     x: this.width() / 2,
                     y: this.height() / 2 + cardWidth / 2 + 25,
-                    text: "Next",
+                    text: "Далее",
                     fontFamily: "Exo2Bold",
                     fontSize: 20,
                     fill: "white",

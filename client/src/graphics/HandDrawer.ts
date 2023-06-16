@@ -108,8 +108,6 @@ export default class HandDrawer {
             this.group.add(cardShape);
 
             cardShape.on('click', () => {
-                console.log("click!");
-
                 const module = card as Module;
 
                 module.rotation = (module.rotation + 1) % 4;
@@ -120,8 +118,6 @@ export default class HandDrawer {
                 cardShape.draggable(true);
 
                 cardShape.on('dragend', async (evt) => {
-                    console.log("uncomment");
-
                     // TODO: uncomment
                     // let distance_y = Math.abs(pointer.y - cardShape.input.dragStartY);
                     //

@@ -28,4 +28,11 @@ export class BoundingRect {
     get height() {
         return this.bottom - this.top;
     }
+
+    contains(pos: Vector2): boolean {
+        if (!pos)
+            return false;
+
+        return this.left <= pos.x && pos.x <= this.right && this.top <= pos.y && pos.y <= this.bottom
+    }
 }

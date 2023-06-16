@@ -12,7 +12,7 @@ export const auth = async (req: Request, res: Response, next: NextFunction) => {
         const token = req.cookies.authentication_token;
 
         if (!token) {
-            throw new Error();
+            throw new Error("token not found");
         }
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY) as UserJWTPayload;
@@ -22,13 +22,14 @@ export const auth = async (req: Request, res: Response, next: NextFunction) => {
         });
 
         if (!user || user.rememberToken !== token) {
-            throw new Error();
+            throw new Error("remember token != token");
         }
 
         (req as AuthenticatedRequest).user = user;
 
         next();
     } catch (err) {
+        console.error(err);
         res.redirect('/login');
     }
 };

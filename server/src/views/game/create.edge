@@ -228,7 +228,7 @@
 
         document.getElementById('game-create-form').addEventListener('submit', (evt) => {
             let selected = players.filter(p => p.selected);
-            console.log(selected);
+
             if (selected.length < 2 || selected.length > 5) {
                 evt.preventDefault();
 

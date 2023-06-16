@@ -45,6 +45,12 @@ export class Button extends Group<ButtonConfig> {
 
         this.add(this._background, this._text);
 
+        if (this.isPointerInside()) {
+            this._state = 'HOVER';
+
+            this._updateFill();
+        }
+
         this.on('pointerenter', () => {
             if (this._state !== 'ACTIVE') {
                 this._state = 'HOVER';
@@ -54,12 +60,28 @@ export class Button extends Group<ButtonConfig> {
         });
 
         this.on('pointerout', () => {
-            if (this._state !== 'ACTIVE') {
-                this._state = 'DEFAULT';
+            this._state = 'DEFAULT';
 
-                this._updateFill();
-            }
+            this._updateFill();
         });
+
+        this.on('pointerdown', () => {
+            this._state = 'ACTIVE';
+
+            this._updateFill();
+        });
+
+        this.on('pointerup', () => {
+            this._state = 'HOVER';
+
+            this._updateFill();
+        })
+    }
+
+    isPointerInside(): boolean {
+        const pos = this.getRelativePointerPosition();
+
+        return !!this.getClientRect()?.contains(pos);
     }
 
     _updateFill() {

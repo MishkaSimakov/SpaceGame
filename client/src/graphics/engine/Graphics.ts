@@ -380,7 +380,6 @@ class Graphics extends Container<Scene> {
             }
 
             if (shape === this['_' + eventType + 'ClickStart']) {
-                console.log()
                 shape.fire(events.pointerclick, {
                     evt: evt,
                     pointerId: pointer.id

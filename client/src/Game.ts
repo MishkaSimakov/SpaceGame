@@ -8,6 +8,7 @@ import {Event, EventTypes} from "../../common/events/Event";
 import {GameForPlayerDTO, GameSettings, OtherPlayer} from "../../common/GameForPlayerDTO";
 import {Message} from "../../common/Types";
 import {Graphics} from "./graphics/engine/Graphics";
+import {DD} from "./graphics/engine/Drag";
 
 export default class Game {
     currentPlayer: Player;
@@ -34,6 +35,7 @@ export default class Game {
         });
 
         window["graphics"] = graphics;
+        window["drag"] = DD;
 
         this.spaceshipsScene = new Spaceships(this);
         this.controlsScene = new Controls(this);

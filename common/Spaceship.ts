@@ -119,7 +119,7 @@ export default class Spaceship {
     getModuleByPosition(x: (number | Vector2), y?: number): Module {
         if (typeof x == "number") {
             return this.modules.filter(card => card.x === x && card.y === y)[0];
-        } else if (x && x.x && x.y) {
+        } else if (x && x.x !== undefined && x.y !== undefined) {
             return this.modules.filter(card => card.x === x.x && card.y === x.y)[0];
         }
     }
