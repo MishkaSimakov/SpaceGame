@@ -70,6 +70,8 @@ export const DD = {
         })
     },
     _endDragBefore(evt) {
+        const drawNodes = [];
+
         DD._dragElements.forEach((element, key) => {
             const {node} = element;
             const graphics = node.getGraphics();
@@ -91,6 +93,14 @@ export const DD = {
 
                 element.dragStatus = 'stopped';
             }
+
+            if (node.getScene() && drawNodes.indexOf(node) === -1) {
+                drawNodes.push(node);
+            }
+        });
+
+        drawNodes.forEach(node => {
+            node.draw();
         });
     },
     _endDragAfter(evt) {

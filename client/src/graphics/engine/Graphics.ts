@@ -393,7 +393,7 @@ class Graphics extends Container<Scene> {
                 evt: evt,
                 target: this,
                 currentTarget: this,
-                pointerId: this._pointerPositions[0].id
+                pointerId: this._changedPointerPositions[0].id
             });
         }
     }

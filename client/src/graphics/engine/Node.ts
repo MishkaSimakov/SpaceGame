@@ -248,11 +248,17 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         }
     }
 
-    getRelativePointerPosition() {
+    getRelativePointerPosition(pointerId?: number) {
         if (!this.getGraphics())
             return;
 
-        let pos = this.getGraphics().getPointerPosition();
+        let pos : Vector2;
+
+        if (pointerId) {
+            pos = this.getGraphics().getPointerById(pointerId);
+        } else {
+           pos = this.getGraphics().getPointerPosition()
+        }
 
         if (!pos)
             return;
@@ -516,10 +522,10 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         this.setAttr('draggable', draggable);
 
         this.off('mousedown.core');
-        this.off('touchdown.core');
+        this.off('touchstart.core');
 
         if (draggable) {
-            this.on('mousedown.core touchdown.core', (evt) => {
+            this.on('mousedown.core touchstart.core', (evt) => {
                 // TODO: should check button
                 if (this.isDragging())
                     return;

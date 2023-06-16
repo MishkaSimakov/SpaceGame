@@ -32,12 +32,12 @@ export default class Spaceships extends Scene {
     }
 
     adopted() {
-        // let pinch = new Pinch(this);
-
         this.spaceshipsCardSize = 256 * this.width() / 1440;
 
         let prevPointerPosition = undefined;
-        this.getGraphics().on("pointermove", ({evt}) => {
+        this.getGraphics().on("mousemove", ({evt}) => {
+
+            console.log("mousemove")
             let pointerPosition = this.getGraphics().getRelativePointerPosition();
 
             if (!DD.isDragging() && prevPointerPosition && evt.buttons !== 0) {
@@ -50,11 +50,22 @@ export default class Spaceships extends Scene {
             prevPointerPosition = pointerPosition;
         });
 
-        this.getGraphics().on("pointerup", () => {
+        this.getGraphics().on("touchend", () => {
             prevPointerPosition = undefined;
-        })
+
+            lastDist = 0;
+            lastCenter = null;
+        });
+
+        this.getGraphics().on("touchstart", () => {
+            prevPointerPosition = undefined;
+
+            lastDist = 0;
+            lastCenter = null;
+        });
 
         this.getGraphics().on("wheel", ({evt}) => {
+            console.log("wheel");
             let deltaY = evt.deltaY,
                 zoom = this.scaleX(),
                 newZoom = zoom,
@@ -73,9 +84,102 @@ export default class Spaceships extends Scene {
             this.scaleX(newZoom).scaleY(newZoom);
         });
 
-        // pinch.on('pinch', (pinch) => {
-        //     this.cameras.main.zoom *= pinch.scaleFactor;
-        // });
+
+        function getDistance(p1, p2) {
+            return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+        }
+
+        function getCenter(p1, p2) {
+            return {
+                x: (p1.x + p2.x) / 2,
+                y: (p1.y + p2.y) / 2,
+            };
+        }
+
+        let lastCenter = undefined;
+        let lastDist = 0;
+
+        let pointerShape1 = this.createAndAdd.rectangle({
+            width: 10,
+            height: 10,
+            fill: 'cyan'
+        });
+        let pointerShape2 = this.createAndAdd.rectangle({
+            width: 10,
+            height: 10,
+            fill: 'cyan'
+        });
+        let centerShape = this.createAndAdd.rectangle({
+            width: 10,
+            height: 10,
+            fill: 'red'
+        });
+
+        this.getGraphics().on('touchmove', ({evt}) => {
+            evt.preventDefault();
+
+            let touch1 = evt.touches[0];
+            let touch2 = evt.touches[1];
+
+            if (touch1 && !touch2) {
+                let pointerPosition = this.getGraphics().getRelativePointerPosition();
+
+                if (!DD.isDragging() && prevPointerPosition) {
+                    this.move({
+                        x: pointerPosition.x - prevPointerPosition.x,
+                        y: pointerPosition.y - prevPointerPosition.y
+                    });
+                }
+
+                prevPointerPosition = pointerPosition;
+            }
+
+            if (!touch1 || !touch2) {
+                return;
+            }
+
+            let p1= {
+                x: touch1.clientX,
+                y: touch1.clientY,
+            };
+            let p2 = {
+                x: touch2.clientX,
+                y: touch2.clientY
+            };
+
+            if (!lastCenter) {
+                lastCenter = getCenter(p1, p2);
+                return;
+            }
+            let newCenter = getCenter(p1, p2);
+
+            let dist = getDistance(p1, p2);
+
+            if (!lastDist) {
+                lastDist = dist;
+            }
+
+            const tr = this.getAbsoluteTransform().copy();
+            tr.invert();
+
+            let localPoint = tr.point(newCenter);
+
+            var scale = this.scaleX() * (dist / lastDist);
+
+            let dx = lastCenter.x - newCenter.x;
+            let dy = lastCenter.y - newCenter.y;
+
+            this.move({
+                x: localPoint.x * (this.scaleX() - scale) - dx,
+                y: localPoint.y * (this.scaleY() - scale) - dy
+            });
+
+            this.scaleX(scale);
+            this.scaleY(scale);
+
+            lastDist = dist;
+            lastCenter = newCenter;
+        });
     }
 
     chooseModule(onSelected: (module?: Module, playerId?: number) => void, check: (module: Module, playerId: number) => boolean, required: boolean, outlineColor: Color): void {
