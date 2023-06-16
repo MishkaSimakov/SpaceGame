@@ -18,13 +18,12 @@ export const DD = {
     isDragging(): boolean {
         let isDragging = false;
         DD._dragElements.forEach(element => {
-            if (element.dragStatus === 'dragging')
+            if (element.dragStatus === 'dragging' || element.dragStatus === 'ready')
                 isDragging = true;
         });
 
         return isDragging;
     },
-
     _drag(evt) {
         const nodesToFireEvents: Array<Node> = [];
 
@@ -55,6 +54,7 @@ export const DD = {
             }
 
             node.setDragPosition(evt, element);
+
             nodesToFireEvents.push(node);
         });
 
@@ -69,7 +69,7 @@ export const DD = {
             );
         })
     },
-    _endDrag(evt) {
+    _endDragBefore(evt) {
         DD._dragElements.forEach((element, key) => {
             const {node} = element;
             const graphics = node.getGraphics();
@@ -89,20 +89,31 @@ export const DD = {
                 Draw._pointerListenClick = false;
                 Draw._touchListenClick = false;
 
-                node.fire('dragend', {
+                element.dragStatus = 'stopped';
+            }
+        });
+    },
+    _endDragAfter(evt) {
+        DD._dragElements.forEach((element, key) => {
+            if (element.dragStatus === 'stopped') {
+                element.node.fire('dragend', {
+                    evt: evt,
                     type: 'dragend',
-                    target: node,
-                    evt
-                }, true);
-
+                    target: element.node
+                });
+            }
+            if (element.dragStatus !== 'dragging') {
                 DD._dragElements.delete(key);
             }
         });
     }
 }
 
+window.addEventListener('mouseup', DD._endDragBefore, true);
+window.addEventListener('touchend', DD._endDragBefore, true);
+
 window.addEventListener('mousemove', DD._drag);
 window.addEventListener('touchmove', DD._drag);
 
-window.addEventListener('mouseup', DD._endDrag, false);
-window.addEventListener('touchend', DD._endDrag, false);
+window.addEventListener('mouseup', DD._endDragAfter, false);
+window.addEventListener('touchend', DD._endDragAfter, false);

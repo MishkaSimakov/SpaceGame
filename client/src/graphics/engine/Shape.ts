@@ -63,6 +63,9 @@ export class Shape<Config extends ShapeConfig = ShapeConfig> extends Node<Config
     }
 
     drawScene() {
+        if (!this.isVisible())
+            return;
+
         let context = this.getScene().canvas.getContext();
 
         let drawFunc = this.sceneFunc();
@@ -82,6 +85,9 @@ export class Shape<Config extends ShapeConfig = ShapeConfig> extends Node<Config
     }
 
     drawHit() {
+        if (!this.shouldDrawHit())
+            return;
+
         let context = this.getScene().hitCanvas.getContext();
         let drawFunc = this.hitFunc() || this.sceneFunc();
 
@@ -103,10 +109,14 @@ export class Shape<Config extends ShapeConfig = ShapeConfig> extends Node<Config
         return !!(this.strokeWidth() && this.stroke());
     }
 
-    getClientRect(relativeTo?: Container<Node>): BoundingRect {
+    getClientRect(relativeTo?: Container<Node>, ignoreStroke?: boolean): BoundingRect {
+        if (!this.isVisible())
+            return;
+
         relativeTo = relativeTo ?? this.getScene();
 
-        let strokeWidth = this.hasStroke() && this.strokeWidth();
+        let strokeWidth = (this.hasStroke() && !ignoreStroke) && this.strokeWidth();
+
         let rect = new BoundingRect(
             0, 0,
             this.height() + strokeWidth, this.width() + strokeWidth

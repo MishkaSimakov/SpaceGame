@@ -34,6 +34,14 @@ export default class Modal {
 
         this.textStartX = (this.sceneWidth - width) / 2 + this.offset;
 
+        this.fadeShape = this.scene.createAndAdd.rectangle({
+            x: 0,
+            y: 0,
+            width: this.sceneWidth,
+            height: this.sceneHeight,
+            fill: Color.fromHex('#000000', 0.75).toString(),
+        });
+
         this.backgroundShape = this.scene.createAndAdd.rectangle({
             x: this.sceneWidth / 2,
             y: this.sceneHeight / 2,
@@ -44,14 +52,6 @@ export default class Modal {
             stroke: Color.fromHex('#3D76BE').toString(),
             strokeWidth: 2
         })
-
-        this.fadeShape = this.scene.createAndAdd.rectangle({
-            x: 0,
-            y: 0,
-            width: this.sceneWidth,
-            height: this.sceneHeight,
-            fill: Color.fromHex('#000000', 0.75).toString(),
-        });
     }
 
     setTitle(title: string): Text {
@@ -59,6 +59,7 @@ export default class Modal {
             x: this.sceneWidth / 2,
             y: this.sceneHeight / 2 - 250 + this.offset,
             text: title,
+            fill: "white",
             fontFamily: "Exo2Regular",
             fontSize: 20,
             originX: 0.5
@@ -74,7 +75,9 @@ export default class Modal {
             this.scene.createAndAdd.text({
                 x: this.textStartX,
                 y: this.textStartY + this.lines.length * 20,
-                text,
+                text: text,
+                fontSize: 15,
+                fill: "white",
                 fontFamily: "Exo2Regular"
             })
         );
@@ -86,7 +89,10 @@ export default class Modal {
         this.bottomTextShape = this.scene.createAndAdd.text({
             x: this.textStartX,
             y: this.sceneHeight / 2 + 250 - this.offset,
-            text,
+            text: text,
+            fill: "white",
+            fontFamily: "Exo2Bold",
+            fontSize: 15,
             originY: 1
         });
 

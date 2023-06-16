@@ -1,11 +1,11 @@
-import SpaceshipDrawer from "../SpaceshipDrawer";
 import Vector2 from "../../../../common/Vector2";
 import Module from "../../../../common/modules/Module";
 import Game from "../../Game";
 import Scene from "../engine/Scene";
 import Color from "../Color";
 import {DD} from "../engine/Drag";
-
+import {Spaceship as SpaceshipShape} from "../shapes/Spaceship";
+import {Card} from "../shapes/Card";
 
 let spaceshipConfigurations: Vector2[][] = [
     [new Vector2(0, 0)],
@@ -16,7 +16,7 @@ let spaceshipConfigurations: Vector2[][] = [
 ];
 
 export default class Spaceships extends Scene {
-    spaceshipDrawers: Record<number, SpaceshipDrawer> = {};
+    spaceshipShapes: Record<number, SpaceshipShape> = {};
 
     gameManager: Game;
 
@@ -24,7 +24,6 @@ export default class Spaceships extends Scene {
 
     constructor(game: Game) {
         super({
-            clearColor: "black",
             originX: -0.5,
             originY: -0.5
         });
@@ -36,20 +35,18 @@ export default class Spaceships extends Scene {
         // let pinch = new Pinch(this);
 
         this.spaceshipsCardSize = 256 * this.width() / 1440;
-        let prevPointerPosition = this.getGraphics().getPointerPosition();
 
+        let prevPointerPosition = this.getGraphics().getRelativePointerPosition();
         this.getGraphics().on("pointermove", ({evt}) => {
-            let pointerPosition = this.getGraphics().getPointerPosition();
+            let pointerPosition = this.getGraphics().getRelativePointerPosition();
 
             if (DD.isDragging()) return;
 
             if (evt.buttons !== 0) {
-                let zoom = this.scaleX(),
-                    x = this.x(),
-                    y = this.y();
-
-                this.x(x + (pointerPosition.x - prevPointerPosition.x));
-                this.y(y + (pointerPosition.y - prevPointerPosition.y));
+                this.move({
+                    x: pointerPosition.x - prevPointerPosition.x,
+                    y: pointerPosition.y - prevPointerPosition.y
+                });
             }
 
             prevPointerPosition = pointerPosition;
@@ -59,20 +56,17 @@ export default class Spaceships extends Scene {
             let deltaY = evt.deltaY,
                 zoom = this.scaleX(),
                 newZoom = zoom,
-                pos = this.getGraphics().getPointerPosition();
+                pos = this.getRelativePointerPosition();
 
-            if (deltaY > 0) {
-                newZoom = Math.max(0.2, zoom - 0.1);
-            }
+            newZoom = Math.min(
+                2,
+                Math.max(0.1, zoom - deltaY * 0.01)
+            );
 
-            if (deltaY < 0) {
-                newZoom = Math.min(1.3, zoom + .1);
-            }
-
-            // TODO: zoom into cursor
-            // let offsetX = pos.x * (zoom - newZoom),
-            //     offsetY = pos.y * (zoom - newZoom);
-            // this.move(offsetX, offsetY);
+            this.move({
+                x: pos.x * (zoom - newZoom),
+                y: pos.y * (zoom - newZoom)
+            });
 
             this.scaleX(newZoom).scaleY(newZoom);
         });
@@ -83,85 +77,97 @@ export default class Spaceships extends Scene {
     }
 
     chooseModule(onSelected: (module?: Module, playerId?: number) => void, check: (module: Module, playerId: number) => boolean, required: boolean, outlineColor: Color): void {
-        // let selected: Card;
-        //
-        // for (let key in this.spaceshipDrawers) {
-        //     let playerId = parseInt(key);
-        //
-        //     for (let shape of this.spaceshipDrawers[playerId].moduleShapes) {
-        //         shape.events.on('pointerdown', () => {
-        //             let module = shape.card as Module;
-        //
-        //             if (!check(module, playerId))
-        //                 return;
-        //
-        //             if (selected !== undefined)
-        //                 selected.setStrokeStyle(Color.BLACK, 0);
-        //
-        //             if (!required && shape === selected) {
-        //                 selected = undefined;
-        //                 onSelected();
-        //
-        //                 return;
-        //             }
-        //
-        //             selected = shape;
-        //             selected.setStrokeStyle(outlineColor, 5);
-        //
-        //             onSelected(module, playerId);
-        //         });
-        //     }
-        // }
+        let selected: Card;
+
+        for (let key in this.spaceshipShapes) {
+            let playerId = parseInt(key);
+
+            for (let shape of this.spaceshipShapes[playerId].children) {
+                const card = shape as Card;
+
+                shape.on('click', () => {
+                    console.log("click!2");
+                    let module = card.card() as Module;
+
+                    if (!check(module, playerId))
+                        return;
+
+                    if (selected !== undefined)
+                        selected._background.strokeWidth(0);
+
+                    if (!required && shape === selected) {
+                        selected = undefined;
+                        onSelected();
+
+                        return;
+                    }
+
+                    selected = card;
+                    selected._background.strokeWidth(5)
+                        .stroke(outlineColor.toString());
+
+                    onSelected(module, playerId);
+                });
+            }
+        }
     }
 
     chooseModules(onSelected: (modules: Module[]) => void, check: (module: Module, playerId: number) => boolean, count: number, outlineColor: Color): void {
-        // let selected: Card[] = [];
-        //
-        // for (let key in this.spaceshipDrawers) {
-        //     let playerId = parseInt(key);
-        //     for (let shape of this.spaceshipDrawers[playerId].moduleShapes) {
-        //         shape.events.on('pointerdown', () => {
-        //             let module = shape.card as Module;
-        //
-        //             if (!check(module, playerId))
-        //                 return;
-        //
-        //             if (selected.includes(shape))
-        //                 return;
-        //
-        //             if (selected.length === count) {
-        //                 selected[selected.length - 1].setStrokeStyle(Color.BLACK, 0);
-        //                 selected.splice(selected.length - 1, 1);
-        //             }
-        //
-        //             selected.push(shape);
-        //             shape.setStrokeStyle(outlineColor, 5);
-        //
-        //             onSelected(selected.map(s => s.card as Module));
-        //         });
-        //     }
-        // }
+        let selected: Card[] = [];
+
+        for (let key in this.spaceshipShapes) {
+            let playerId = parseInt(key);
+            for (let shape of this.spaceshipShapes[playerId].children) {
+                const card = shape as Card;
+
+                shape.on('click', () => {
+                    console.log("click!")
+                    let module = card.card() as Module;
+
+                    if (!check(module, playerId))
+                        return;
+
+                    if (selected.includes(card))
+                        return;
+
+                    if (selected.length === count) {
+                        selected[selected.length - 1]._background.strokeWidth(0);
+                        selected.splice(selected.length - 1, 1);
+                    }
+
+                    selected.push(card);
+                    card._background.strokeWidth(5)
+                        .stroke(outlineColor.toString());
+
+                    onSelected(selected.map(s => s.card() as Module));
+                });
+            }
+        }
     }
 
     updateData() {
         let players = this.gameManager.getAllPlayers();
 
         for (let [index, player] of players.entries()) {
-            if (this.spaceshipDrawers[player.id] === undefined) {
+            if (this.spaceshipShapes[player.id] === undefined) {
                 const spaceshipPosition = spaceshipConfigurations[players.length - 1][index];
 
-                this.spaceshipDrawers[player.id] = new SpaceshipDrawer(
-                    player.spaceship, spaceshipPosition, this.spaceshipsCardSize, this
-                );
+                this.spaceshipShapes[player.id] = new SpaceshipShape({
+                    cardSize: this.spaceshipsCardSize,
+                    x: spaceshipPosition.x,
+                    y: spaceshipPosition.y,
+                });
+
+                this.spaceshipShapes[player.id].spaceship(player.spaceship);
+
+                this.add(this.spaceshipShapes[player.id]);
 
                 if (player.id === this.gameManager.currentPlayer.id) {
                     this.panToPlayerWithId(player.id, 0);
                 }
             } else {
-                this.spaceshipDrawers[player.id].spaceship = player.spaceship;
+                this.spaceshipShapes[player.id].setSpaceship(player.spaceship);
             }
-
-            this.spaceshipDrawers[player.id].draw();
         }
     }
 
@@ -177,7 +183,7 @@ export default class Spaceships extends Scene {
     }
 
     panToPlayerWithId(playerId: number, duration: number = 500) {
-        let position = this.spaceshipDrawers[playerId].center;
+        let position = this.spaceshipShapes[playerId].getPosition();
 
         this.panTo(position.x, position.y, duration);
     }

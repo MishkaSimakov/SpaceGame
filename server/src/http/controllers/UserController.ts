@@ -1,12 +1,17 @@
 import {Request, Response} from "express";
 import {User} from "../../entity/user";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
+import jwt, {JwtPayload} from "jsonwebtoken";
 import path from "path";
 import App from "../../App";
 import {AuthenticatedRequest} from "../middleware/auth";
 
 const HOME = '/';
+
+export interface UserJWTPayload extends JwtPayload {
+    _id: string,
+    login: string
+}
 
 let generateToken = (user: User): string => {
     const SECRET_KEY = process.env.JWT_SECRET_KEY;

@@ -15,9 +15,11 @@ type ButtonData = {
 export default abstract class TopBarDrawer {
     scene: Controls;
 
+    group: Group;
+
     showPlayersData: boolean = false;
     playersDataBackground: Rectangle;
-    playersDataText: Group[] = [];
+    playersDataText: Map<number, Group> = new Map<number, Group>();
     playersDataCloseText: Text;
     currentPlayerData: Group;
 
@@ -65,9 +67,11 @@ export default abstract class TopBarDrawer {
     constructor(scene: Controls) {
         this.scene = scene;
 
-        this.sizes.sceneWidth = scene.width();
+        this.group = new Group();
 
-        console.log(scene.width());
+        this.scene.add(this.group);
+
+        this.sizes.sceneWidth = scene.width();
 
         this.scale = scene.width() / 1440;
     }
@@ -120,7 +124,7 @@ export default abstract class TopBarDrawer {
         this.playersDataBackground?.destroy();
         this.playersDataText.forEach(t => t.destroy());
         this.playersDataCloseText?.destroy();
-        this.playersDataText = [];
+        this.playersDataText.clear();
 
         // clear buttons
         for (let button of this.buttonsShapes) {
@@ -149,7 +153,23 @@ export default abstract class TopBarDrawer {
     updateTime(playerTime: Record<number, number>) {
         this.playerTime = playerTime;
 
-        this.redraw();
+        for (let key in playerTime) {
+            const id = parseInt(key);
+
+            if (this.playersDataText.has(id)) {
+                let line = this.playersDataText.get(id);
+
+                (line.findOne('.time') as Text)
+                    .text(`${this.timeToString(this.playerTime[id])} ⏰`);
+            }
+
+            if (id === this.currentPlayer.id) {
+                let line = this.currentPlayerData;
+
+                (line.findOne('.time') as Text)
+                    .text(`${this.timeToString(this.playerTime[id])} ⏰`);
+            }
+        }
     }
 
     addButtons(buttons: ButtonData[]) {
@@ -218,7 +238,8 @@ export default abstract class TopBarDrawer {
                     text: `${this.timeToString(this.playerTime[player.id])} ⏰`,
                     fontFamily: "Exo2Bold",
                     fontSize: 15,
-                    fill: "white"
+                    fill: "white",
+                    name: "time"
                 })
             );
         }
@@ -227,7 +248,7 @@ export default abstract class TopBarDrawer {
     }
 
     getMessageShape(message: Message): Group {
-       return this.scene.createAndAdd.group();
+        return this.scene.createAndAdd.group();
     }
 
     timeToString(time: number): string {

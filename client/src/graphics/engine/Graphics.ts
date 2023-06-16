@@ -204,6 +204,8 @@ class Graphics extends Container<Scene> {
 
         this.content.appendChild(scene.canvas.canvas);
 
+        scene.adopted();
+
         return this;
     }
 
@@ -242,6 +244,10 @@ class Graphics extends Container<Scene> {
             this._pointerPositions = [{x, y, id: Utils.getFirstPointerId(evt)}];
             this._changedPointerPositions = [{x, y, id: Utils.getFirstPointerId(evt)}];
         }
+    }
+
+    shouldDrawHit(): boolean {
+        return true;
     }
 
     _pointerdown(evt: TouchEvent | MouseEvent | PointerEvent) {

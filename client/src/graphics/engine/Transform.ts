@@ -2,9 +2,19 @@ import {Vector2} from "./types";
 
 export class Transform {
     m: Array<number>;
+    dirty: boolean = false;
 
     constructor(m = [1, 0, 0, 1, 0, 0]) {
         this.m = (m && m.slice()) || [1, 0, 0, 1, 0, 0];
+    }
+
+    reset() {
+        this.m[0] = 1;
+        this.m[1] = 0;
+        this.m[2] = 0;
+        this.m[3] = 1;
+        this.m[4] = 0;
+        this.m[5] = 0;
     }
 
     getMatrix(): Array<number> {
@@ -18,6 +28,45 @@ export class Transform {
         tr.m[3] = this.m[3];
         tr.m[4] = this.m[4];
         tr.m[5] = this.m[5];
+    }
+
+    rotate(rad: number) {
+        let c = Math.cos(rad);
+        let s = Math.sin(rad);
+        let m11 = this.m[0] * c + this.m[2] * s;
+        let m12 = this.m[1] * c + this.m[3] * s;
+        let m21 = this.m[0] * -s + this.m[2] * c;
+        let m22 = this.m[1] * -s + this.m[3] * c;
+        this.m[0] = m11;
+        this.m[1] = m12;
+        this.m[2] = m21;
+        this.m[3] = m22;
+        return this;
+    }
+
+    copy(): Transform {
+        let tr = new Transform();
+
+        this.copyInto(tr);
+
+        return tr;
+    }
+
+    invert() {
+        var d = 1 / (this.m[0] * this.m[3] - this.m[1] * this.m[2]);
+        var m0 = this.m[3] * d;
+        var m1 = -this.m[1] * d;
+        var m2 = -this.m[2] * d;
+        var m3 = this.m[0] * d;
+        var m4 = d * (this.m[2] * this.m[5] - this.m[3] * this.m[4]);
+        var m5 = d * (this.m[1] * this.m[4] - this.m[0] * this.m[5]);
+        this.m[0] = m0;
+        this.m[1] = m1;
+        this.m[2] = m2;
+        this.m[3] = m3;
+        this.m[4] = m4;
+        this.m[5] = m5;
+        return this;
     }
 
     point(point: Vector2) {

@@ -9,10 +9,6 @@ import {SceneShapeFactory} from "./SceneShapeFactory";
 import {NodeConfig} from "./Node";
 import {Factory} from "./Factory";
 
-export interface SceneConfig extends NodeConfig {
-    clearColor?: string,
-}
-
 export default class Scene extends Container<Group | Shape> {
     canvas = new SceneCanvas({
         width: 0,
@@ -26,7 +22,9 @@ export default class Scene extends Container<Group | Shape> {
     waitingForDraw: boolean = false;
     createAndAdd: SceneShapeFactory;
 
-    constructor(config?: SceneConfig) {
+    panning = false;
+
+    constructor(config?: NodeConfig) {
         super(config);
 
         this.createAndAdd = new SceneShapeFactory(this);
@@ -63,7 +61,7 @@ export default class Scene extends Container<Group | Shape> {
     }
 
     drawScene() {
-        this.canvas.getContext().clear(this.clearColor());
+        this.canvas.getContext().clear();
 
         Container.prototype.drawScene.call(this);
     }
@@ -88,8 +86,16 @@ export default class Scene extends Container<Group | Shape> {
     }
 
     panTo(x: number, y: number, duration: number) {
+        if (this.panning)
+            return;
+
+        this.panning = true;
+
         const animationStart = new Date().getTime();
         const startPosition = this.getPosition();
+
+        x = -x * this.scaleX();
+        y = -y * this.scaleY();
 
         const panFunction = function easeInOutSine(x: number): number {
             return -(Math.cos(Math.PI * x) - 1) / 2;
@@ -105,11 +111,12 @@ export default class Scene extends Container<Group | Shape> {
                 // TODO: make this better
                 // TODO: dont work with zooooom
                 if (shouldStop) {
-                    this.attrs.x = -x;
-                    this.attrs.y = -y;
+                    this.setPosition({ x: x, y: y });
                 } else {
-                    this.attrs.x = -x * percent + startPosition.x * (1 - percent);
-                    this.attrs.y = -y * percent + startPosition.y * (1 - percent);
+                    this.setPosition({
+                        x: x * percent + startPosition.x * (1 - percent),
+                        y: y * percent + startPosition.y * (1 - percent)
+                    });
                 }
 
                 this.waitingForDraw = false;
@@ -117,6 +124,8 @@ export default class Scene extends Container<Group | Shape> {
 
                 if (!shouldStop) {
                     makeAnimationStep();
+                } else {
+                    this.panning = false;
                 }
             });
         }
@@ -124,10 +133,8 @@ export default class Scene extends Container<Group | Shape> {
         makeAnimationStep();
     }
 
-    clearColor: GetSet<string, this>
+    adopted() {};
 }
 
 Scene.prototype.nodeType = 'Scene';
 _registerNode(Scene);
-
-Factory.addGetterSetter(Scene, 'clearColor')

@@ -4,6 +4,7 @@ import {OtherPlayer} from "../../../../common/GameForPlayerDTO";
 import Color from "../Color";
 import {Button} from "../shapes/Button";
 import {Text} from "../engine/shapes/Text";
+import {Rectangle} from "../engine/shapes/Rectangle";
 
 export default class TopBarDefaultDrawer extends TopBarDrawer {
     drawStatus(): void {
@@ -48,7 +49,7 @@ export default class TopBarDefaultDrawer extends TopBarDrawer {
 
         let statusHeight = bottomY - this.status.textShape.getClientRect().top + 2 * this.sizes.padding;
 
-        this.status.backgroundShape = this.scene.createAndAdd.rectangle({
+        this.status.backgroundShape = new Rectangle({
             x: this.sizes.sceneWidth - this.sizes.margin - this.sizes.statusWidth,
             y: this.statusStartY,
             width: this.sizes.statusWidth,
@@ -59,7 +60,7 @@ export default class TopBarDefaultDrawer extends TopBarDrawer {
             cornerRadius: this.sizes.cornerRadius
         });
 
-        this.scene.add(this.status.contextShape, this.status.textShape, ...this.buttonsShapes);
+        this.group.add(this.status.backgroundShape, this.status.contextShape, this.status.textShape, ...this.buttonsShapes);
     }
 
     drawCurrentPlayerData() {
@@ -78,7 +79,7 @@ export default class TopBarDefaultDrawer extends TopBarDrawer {
 
         let height = 2 * this.sizes.padding + this.currentPlayerData.getClientRect().height;
 
-        this.playersDataBackground = this.scene.createAndAdd.rectangle({
+        this.playersDataBackground = new Rectangle({
             x: this.sizes.sceneWidth - this.sizes.margin - this.sizes.statusWidth,
             y: this.sizes.margin,
             width: this.sizes.statusWidth,
@@ -91,7 +92,7 @@ export default class TopBarDefaultDrawer extends TopBarDrawer {
 
         this.statusStartY = 2 * this.sizes.margin + height;
 
-        this.scene.add(this.currentPlayerData);
+        this.group.add(this.playersDataBackground, this.currentPlayerData);
     }
 
     drawPlayersData() {
@@ -106,6 +107,8 @@ export default class TopBarDefaultDrawer extends TopBarDrawer {
         players.push(...this.otherPlayers);
         players.push(this.currentPlayer.getOtherPlayer());
 
+        let topY = Infinity, bottomY = 0;
+
         for (let [index, player] of players.entries()) {
             let playersDataLine = this.getPlayerStatusStringShape(player, true)
                 .setPosition({
@@ -117,12 +120,17 @@ export default class TopBarDefaultDrawer extends TopBarDrawer {
                 this.scene.gameManager.spaceshipsScene.panToPlayerWithId(player.id);
             });
 
-            this.playersDataText.push(playersDataLine);
+            this.playersDataText.set(player.id, playersDataLine);
+
+            let lineBB = playersDataLine.getClientRect();
+
+            topY = Math.min(topY, lineBB.top);
+            bottomY = Math.max(bottomY, lineBB.bottom);
         }
 
         this.playersDataCloseText = new Text({
             x: textStart.x,
-            y: this.playersDataText[this.playersDataText.length - 1].getClientRect().bottom + lineOffset,
+            y: bottomY + lineOffset,
             text: "Закрыть",
             fontFamily: "Exo2Bold",
             fontSize: 15,
@@ -134,12 +142,12 @@ export default class TopBarDefaultDrawer extends TopBarDrawer {
             this.togglePlayerCharacteristics();
         });
 
-        let totalTextHeight = this.playersDataCloseText.getClientRect().bottom - this.playersDataText[0].getClientRect().top;
+        let totalTextHeight = this.playersDataCloseText.getClientRect().bottom - topY;
 
         let backgroundHeight = this.sizes.padding * 2 + totalTextHeight;
         let borderRadius = 10;
 
-        this.playersDataBackground = this.scene.createAndAdd.rectangle({
+        this.playersDataBackground = new Rectangle({
             x: textStart.x - this.sizes.padding,
             y: this.sizes.margin,
             width: this.sizes.statusWidth,
@@ -152,7 +160,7 @@ export default class TopBarDefaultDrawer extends TopBarDrawer {
 
         this.statusStartY = backgroundHeight + 2 * this.sizes.margin;
 
-        this.scene.add(...this.playersDataText, this.playersDataCloseText);
+        this.group.add(this.playersDataBackground, ...this.playersDataText.values(), this.playersDataCloseText);
     }
 
     drawButtons() {
@@ -181,9 +189,10 @@ export default class TopBarDefaultDrawer extends TopBarDrawer {
                 height: buttonHeight,
                 text: button.text,
                 fill: button.color.DEFAULT.toString(),
-                hoverFill:  button.color.HOVER.toString(),
-                activeFill:  button.color.ACTIVE.toString()
-            });
+                hoverFill: button.color.HOVER.toString(),
+                activeFill: button.color.ACTIVE.toString()
+            })
+                .on('click', button.onClick);
 
             this.buttonsShapes.push(buttonShape);
         }

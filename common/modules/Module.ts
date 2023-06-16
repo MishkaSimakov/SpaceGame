@@ -1,5 +1,7 @@
 import {Event} from "../events/Event";
 import Vector2 from "../Vector2";
+import {Options} from "../PlainToClass";
+import Spaceship from "../Spaceship";
 
 enum ModuleTypes {
     MainModule,
@@ -71,26 +73,6 @@ class Module {
 
     toString(): string {
         return this.name;
-    }
-
-    getCharacteristicsString(): string {
-        let values = '';
-
-        values += this.health + '/' + this.totalHealth + '❤️';
-
-        if (this.strength)
-            values += ' ' + this.strength + '🎯';
-
-        if (this.capacity)
-            values += ' ' + this.capacity + '🔋';
-
-        if (this.energyIncrease)
-            values += ' +' + this.energyIncrease + '⚡️';
-
-        if (this.energyCost)
-            values += ' -' + this.energyCost + '⚡️'
-
-        return values;
     }
 }
 

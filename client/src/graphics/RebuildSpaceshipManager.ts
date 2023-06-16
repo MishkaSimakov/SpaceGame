@@ -2,12 +2,11 @@ import Spaceships from "./scenes/spaceships";
 import Controls from "./scenes/controls";
 import Module from "../../../common/modules/Module";
 import Spaceship from "../../../common/Spaceship";
-import Vector2 from "../../../common/Vector2";
 import {Event} from "../../../common/events/Event";
-import SpaceshipDrawer from "./SpaceshipDrawer";
 import Game from "../Game";
 import Player from "../../../common/Player";
 import {DD} from "./engine/Drag";
+import {Spaceship as SpaceshipShape} from "./shapes/Spaceship";
 
 export default class RebuildSpaceshipManager {
     gameManager: Game;
@@ -20,7 +19,7 @@ export default class RebuildSpaceshipManager {
     setIsRebuildSpaceshipAllowed(allowed: boolean): void {
         this.isRebuildingSpaceship = allowed;
 
-        this.spaceshipDrawer.setDragEnabled(allowed);
+        this.spaceshipShape.setModulesDraggable(allowed);
         this.controlsScene.handDrawer.setDragEnabled(allowed);
 
         this.removeEvents();
@@ -30,7 +29,9 @@ export default class RebuildSpaceshipManager {
     }
 
     protected addEvents() {
-        for (let shape of this.spaceshipDrawer.moduleShapes) {
+        let spaceshipCardSize = this.spaceshipShape.cardSize();
+
+        for (let shape of this.spaceshipShape.getModules()) {
             let module = shape.card() as Module;
 
             if (module.isMain)
@@ -41,30 +42,28 @@ export default class RebuildSpaceshipManager {
             });
 
             shape.on('dragend.rebuild', () => {
-                let pointerPos = this.spaceshipsScene.getGraphics().getPointerPosition();
-                let localPosition = this.spaceshipDrawer.getLocalPosition(
-                    new Vector2(pointerPos.x, pointerPos.y)
+                let localPosition = this.spaceshipShape.transformToCardPosition(
+                    this.spaceshipShape.getRelativePointerPosition()
                 );
 
                 this.spaceship.removeModule(module.x, module.y);
 
                 if (this.spaceship.addModule(module, localPosition.x, localPosition.y)) {
-                    let newPosition = this.spaceshipDrawer.getGlobalPosition(localPosition);
-                    shape.setPosition({x: newPosition.x, y: newPosition.y});
+                    shape.setPosition({
+                        x: localPosition.x * spaceshipCardSize,
+                        y: localPosition.y * spaceshipCardSize
+                    });
 
                     let unconnected = this.spaceship.getUnconnectedModules();
                     this.spaceship.removeModule(unconnected);
 
-                    this.spaceshipDrawer.draw();
-                    this.spaceshipDrawer.setDragEnabled(true);
+                    this.spaceshipShape.setSpaceship(this.spaceship);
 
                     this.hand.push(...unconnected);
 
                     this.controlsScene.handDrawer.redraw();
-                    this.controlsScene.handDrawer.setDragEnabled(true);
 
-                    this.removeEvents();
-                    this.addEvents();
+                    this.setIsRebuildSpaceshipAllowed(true);
 
                     return;
                 }
@@ -76,18 +75,15 @@ export default class RebuildSpaceshipManager {
                 let unconnected = this.spaceship.getUnconnectedModules();
                 this.spaceship.removeModule(unconnected);
 
-                this.spaceshipDrawer.draw();
-                this.spaceshipDrawer.setDragEnabled(true);
+                this.spaceshipShape.setSpaceship(this.spaceship);
 
                 // add to hand cards
                 this.hand.push(module, ...unconnected);
 
                 // add to hand shapes
                 this.controlsScene.handDrawer.redraw();
-                this.controlsScene.handDrawer.setDragEnabled(true);
 
-                this.removeEvents();
-                this.addEvents();
+                this.setIsRebuildSpaceshipAllowed(true);
             });
         }
 
@@ -102,26 +98,22 @@ export default class RebuildSpaceshipManager {
             })
 
             shape.on('dragend.rebuild', () => {
-                let pointerPosition = this.spaceshipsScene.getGraphics().getPointerPosition();
-                let localPosition = this.spaceshipDrawer.getLocalPosition(new Vector2(pointerPosition.x, pointerPosition.y));
+                let localPosition = this.spaceshipShape.transformToCardPosition(
+                    this.spaceshipShape.getRelativePointerPosition()
+                );
 
-
-                console.log(localPosition);
                 if (this.spaceship.addModule(module, localPosition.x, localPosition.y)) {
                     // remove from hand cards
                     this.hand.splice(this.hand.indexOf(module), 1);
 
                     // add to spaceship modules
                     // add to spaceship shapes
-                    this.spaceshipDrawer.draw();
-                    this.spaceshipDrawer.setDragEnabled(true);
+                    this.spaceshipShape.setSpaceship(this.spaceship);
 
                     // redraw hand
                     this.controlsScene.handDrawer.redraw();
-                    this.controlsScene.handDrawer.setDragEnabled(true);
 
-                    this.removeEvents();
-                    this.addEvents();
+                    this.setIsRebuildSpaceshipAllowed(true);
 
                     return;
                 }
@@ -137,7 +129,7 @@ export default class RebuildSpaceshipManager {
     }
 
     protected removeEvents() {
-        for (let shape of this.spaceshipDrawer.moduleShapes) {
+        for (let shape of this.spaceshipShape.getModules()) {
             shape.off('drag.rebuild');
             shape.off('dragend.rebuild');
             shape.off('dragstart.rebuild');
@@ -162,8 +154,8 @@ export default class RebuildSpaceshipManager {
         return this.gameManager.controlsScene;
     }
 
-    private get spaceshipDrawer(): SpaceshipDrawer {
-        return this.gameManager.spaceshipsScene.spaceshipDrawers[this.player.id];
+    private get spaceshipShape(): SpaceshipShape {
+        return this.gameManager.spaceshipsScene.spaceshipShapes[this.player.id];
     }
 
     private get hand(): (Event | Module)[] {

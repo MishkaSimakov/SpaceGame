@@ -66,6 +66,9 @@ let eventsPerformFunctions: Record<EventTypes, (game: Game, event: Event) => Pro
         game.currentPlayer.hand = [];
     },
     [EventTypes.DestroyAnyModuleOnYourSpaceship]: async (game: Game) => {
+        if (game.currentPlayer.spaceship.modules.length === 1)
+            return;
+
         await game.emitToCurrentPlayerAndWait('destroyAnyModuleOnYourSpaceshipEvent', async (position: Vector2) => {
             let module = game.currentPlayer.spaceship.getModuleByPosition(position);
 

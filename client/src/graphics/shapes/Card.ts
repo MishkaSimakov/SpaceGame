@@ -14,6 +14,7 @@ export interface CardConfig extends ShapeConfig {
 }
 
 export class Card extends Group<CardConfig> {
+    _rotationGroup: Group;
     _background: Rectangle;
     _title: Text;
     _values: Text;
@@ -26,8 +27,8 @@ export class Card extends Group<CardConfig> {
             card = this.card(),
             scale = this.size() / 256,
             title = isModule(card)
-                ? card.toString().replace(' ', '\n')
-                : card.toString(),
+                ? (card as Module).name.replaceAll(' ', '\n')
+                : (card as Event).description,
             baseConnectorWidth = 150,
             baseConnectorHeight = 18;
 
@@ -48,17 +49,22 @@ export class Card extends Group<CardConfig> {
             color = Color.fromHex('#f8b195');
         }
 
+        this._rotationGroup = new Group();
+
         this._background = new Rectangle({
             width: size,
             height: size,
-            fill: color.toString()
+            fill: color.toString(),
+            x: 0,
+            y: 0
         });
 
+        const titleFontSize = 25 * scale;
         this._title = new Text({
             x: size / 2,
             y: size / 2,
             fontFamily: "Exo2Bold",
-            fontSize: 25 * scale,
+            fontSize: titleFontSize,
             fill: "white",
             originX: 0.5,
             originY: 0.5,
@@ -66,7 +72,14 @@ export class Card extends Group<CardConfig> {
             text: title
         });
 
+        const titleWidth = this._title.getWidth();
+        if (titleWidth > size - 20 * scale) {
+            this._title.fontSize(titleFontSize * (size - 20 * scale) / titleWidth);
+        }
+
         this.add(this._background, this._title);
+
+        this.add(this._rotationGroup);
 
         if (isModule(card)) {
             let module = card as Module;
@@ -79,7 +92,7 @@ export class Card extends Group<CardConfig> {
                 fill: "white",
                 originX: 0.5,
                 originY: 0.5,
-                text: module.getCharacteristicsString()
+                text: this.getCharacteristicsString()
             });
 
             if (module.connectors.top) {
@@ -132,8 +145,13 @@ export class Card extends Group<CardConfig> {
                 }));
             }
 
-            this.add(this._values, ...this._connectors);
+            this._rotationGroup.add(...this._connectors);
+            this.add(this._values);
         }
+    }
+
+    rotateCard(rotation) {
+        this._rotationGroup.rotation(rotation);
     }
 
     setWidth() {
@@ -150,6 +168,33 @@ export class Card extends Group<CardConfig> {
 
     get isEvent(): boolean {
         return isEvent(this.card());
+    }
+
+    private getCharacteristicsString(): string {
+        const card = this.card();
+
+        if (!card || !isModule(card))
+            return "";
+
+        const module = card as Module;
+
+        let values = '';
+
+        values += module.health + '/' + module.totalHealth + '❤️';
+
+        if (module.strength)
+            values += ' ' + module.strength + '🎯';
+
+        if (module.capacity)
+            values += ' ' + module.capacity + '🔋';
+
+        if (module.energyIncrease)
+            values += ' +' + module.energyIncrease + '⚡️';
+
+        if (module.energyCost)
+            values += ' -' + module.energyCost + '⚡️'
+
+        return values;
     }
 
     size: GetSet<number, this>;

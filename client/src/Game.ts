@@ -33,14 +33,13 @@ export default class Game {
             height: window.innerHeight
         });
 
+        window["graphics"] = graphics;
+
         this.spaceshipsScene = new Spaceships(this);
         this.controlsScene = new Controls(this);
 
         graphics.add(this.spaceshipsScene);
         graphics.add(this.controlsScene);
-
-        this.spaceshipsScene.adopted();
-        this.controlsScene.adopted();
 
         this.rebuildSpaceshipManager = new RebuildSpaceshipManager(this);
 
@@ -108,6 +107,16 @@ export default class Game {
         allPlayers.push(this.currentPlayer.getOtherPlayer());
 
         return allPlayers;
+    }
+
+    getPlayerById(id: number): OtherPlayer {
+        if (id === this.currentPlayer.id)
+            return this.currentPlayer.getOtherPlayer();
+
+        for (let player of this.otherPlayers) {
+            if (player.id === id)
+                return player;
+        }
     }
 
     async useEventCard(event: Event): Promise<boolean> {

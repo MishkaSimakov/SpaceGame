@@ -2,14 +2,79 @@ import {Node, NodeConfig} from './Node';
 import {BoundingRect} from "./types";
 
 export abstract class Container<ChildType extends Node = Node, Config extends NodeConfig = NodeConfig> extends Node {
-    children?: Array<ChildType> = [];
+    children?: Array<ChildType>;
 
     constructor(config?: Config) {
         super(config);
+
+        this.children = this.children ?? [];
+    }
+
+    destroyChildren() {
+        this.getChildren().forEach(child => {
+            child.parent = undefined;
+            child.index = 0;
+
+            child.destroy();
+        });
+
+        this.children = [];
+
+        this.requestRedraw();
+    }
+
+    hasChildren() {
+        return this.getChildren().length > 0;
+    }
+
+    find(selector): Array<ChildType> {
+        return this._find(selector, false);
+    }
+
+    findOne(selector): ChildType {
+        let result = this._find(selector, true);
+        return result.length > 0 ? result[0] : undefined;
+    }
+
+    private _find(selector, findOne: boolean): ChildType[] {
+        let result = [];
+
+        this.descendants(desc => {
+            let isValid = desc.isMatch(selector);
+
+            if (isValid)
+                result.push(desc);
+
+            return !!(findOne && isValid);
+        });
+
+        return result;
+    }
+
+    private descendants(fn: (n: Node) => boolean) {
+        let shouldStop = false;
+        const children = this.getChildren();
+
+        for (const child of children) {
+            shouldStop = fn(child);
+
+            if (shouldStop)
+                return true;
+
+            if (!child.hasChildren())
+                continue;
+
+            shouldStop = (child as any).descendants(fn);
+
+            if (shouldStop)
+                return true;
+        }
+
+        return false;
     }
 
     getChildren(): Array<ChildType> {
-        return this.children;
+        return this.children || [];
     }
 
     add(...children: ChildType[]) {
@@ -29,10 +94,17 @@ export abstract class Container<ChildType extends Node = Node, Config extends No
         if (!child)
             return this;
 
+        if (!this.children)
+            this.children = [];
+
         child.index = this.children.length;
         child.parent = this;
 
         this.children.push(child);
+
+        this.fire('add', {
+            child: child,
+        });
 
         this.requestRedraw();
 
@@ -40,20 +112,32 @@ export abstract class Container<ChildType extends Node = Node, Config extends No
     }
 
     drawScene() {
+        if (!this.isVisible())
+            return;
+
         this.drawChildren('drawScene');
     }
 
     drawHit() {
+        if (!this.shouldDrawHit())
+            return;
+
         this.drawChildren('drawHit');
     }
 
-    getClientRect(relativeTo?: Container<Node>): BoundingRect {
+    getClientRect(relativeTo?: Container<Node>, ignoreStroke?: boolean): BoundingRect {
+        if (this.children.length === 0)
+            return;
+
         relativeTo = relativeTo ?? this.getScene();
 
         let br = new BoundingRect();
 
         this.children?.forEach(child => {
-            let cbr = child.getClientRect(this);
+            let cbr = child.getClientRect(this, ignoreStroke);
+
+            if (!cbr)
+                return;
 
             br.top = Math.min(br.top, cbr.top);
             br.bottom = Math.max(br.bottom, cbr.bottom);
@@ -99,14 +183,14 @@ export abstract class Container<ChildType extends Node = Node, Config extends No
         if (this.attrs.width !== undefined)
             return this.attrs.width;
 
-        return this.getClientRect(this).width;
+        return this.getClientRect(this, true).width;
     }
 
     getHeight(): number {
         if (this.attrs.height !== undefined)
             return this.attrs.height;
 
-        return this.getClientRect(this).height;
+        return this.getClientRect(this, true).height;
         // if (!this.children)
         //     return 0;
         //
@@ -120,5 +204,13 @@ export abstract class Container<ChildType extends Node = Node, Config extends No
         // });
         //
         // return maxY - minY;
+    }
+
+    clearSelfAndDescendantCache(attr?: string) {
+        super.clearSelfAndDescendantCache();
+
+        this.children?.forEach(node => {
+            node.clearSelfAndDescendantCache(attr)
+        });
     }
 }

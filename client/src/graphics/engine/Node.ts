@@ -9,6 +9,11 @@ import {Graphics} from "./Graphics";
 import {DD} from "./Drag";
 import {Draw} from "./Global";
 
+const TRANSFORM = 'TRANSFORM',
+    ABSOLUTE_TRANSFORM = 'ABSOLUTE_TRANSFORM',
+    ALL_LISTENERS = 'ALL_LISTENERS',
+    VISIBLE = 'VISIBLE';
+
 export interface NodeConfig {
     [index: string]: any;
 
@@ -21,9 +26,12 @@ export interface NodeConfig {
     height?: number;
     originX?: number;
     originY?: number;
+    rotation?: number;
 
     draggable?: boolean;
     dragDistance?: number;
+
+    visible?: boolean
 }
 
 type NodeEventMap = GlobalEventHandlersEventMap & {
@@ -58,8 +66,96 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
 
     eventListeners: Record<string, Array<{ name: string, handler: Function }>> = {};
 
+    _batchingTransformChange = false;
+    _needClearTransformCache = false;
+
+    _cache: Map<string, any> = new Map<string, any>();
+
     constructor(config?: Config) {
         this.setAttrs(config);
+    }
+
+    clearCache(attr?: string) {
+        if (
+            (attr === TRANSFORM || attr === ABSOLUTE_TRANSFORM)
+            && this._cache.get(attr)
+        ) {
+            (this._cache.get(attr) as Transform).dirty = true;
+        } else if (attr) {
+            this._cache.delete(attr);
+        } else {
+            this._cache.clear();
+        }
+    }
+
+    isVisible(): boolean {
+        return this.getCache(VISIBLE, this._isVisible);
+    }
+
+    _isVisible(): boolean {
+        const visible = this.visible();
+
+        if (!visible)
+            return false;
+
+        const parent = this.getParent();
+
+        if (parent) {
+            return parent.isVisible();
+        } else {
+            return true;
+        }
+    }
+
+    shouldDrawHit() {
+        if (!this.isVisible())
+            return false;
+
+        const scene = this.getScene();
+
+        for (let [_, dragElement] of DD._dragElements) {
+            if (dragElement.dragStatus === 'dragging' && dragElement.node.getScene() === scene) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    getProtoListeners(eventType) {
+        const allListeners = this._cache.get(ALL_LISTENERS) ?? {};
+        let events = allListeners?.[eventType];
+
+        if (events === undefined) {
+            events = [];
+            let obj = Object.getPrototypeOf(this);
+
+            while (obj) {
+                const listeners = obj.eventListeners?.[eventType] ?? [];
+                events.push(...listeners);
+
+                obj = Object.getPrototypeOf(obj);
+            }
+
+            allListeners[eventType] = events;
+            this._cache.set(ALL_LISTENERS, allListeners);
+        }
+
+        return events;
+    }
+
+    getCache(attr: string, privateGetter: Function) {
+        let cache = this._cache.get(attr);
+
+        let isTransform = attr === TRANSFORM || attr === ABSOLUTE_TRANSFORM;
+        let isInvalid = cache === undefined || (isTransform && (cache as Transform).dirty);
+
+        if (isInvalid) {
+            cache = privateGetter.call(this);
+            this._cache.set(attr, cache);
+        }
+
+        return cache;
     }
 
     requestRedraw() {
@@ -86,21 +182,50 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         return this.parent;
     }
 
+    hasChildren() {
+        return false;
+    }
+
+    isMatch(selector) {
+        // TODO: add all variants of selectors
+        if (Utils.isFunction(selector))
+            return selector(this);
+
+        if (selector[0] === '.')
+            return this.name() === selector.slice(1);
+
+        return false;
+    }
+
     setAttrs(config: any) {
         if (!config)
             return this;
 
-        for (let key in config) {
-            let setterName = 'set' + Utils.capitalize(key);
+        this.batchTransformChanges(() => {
+            for (let key in config) {
+                let setterName = 'set' + Utils.capitalize(key);
 
-            if (Utils.isFunction(this[setterName])) {
-                this[setterName](config[key]);
-            } else {
-                this.setAttr(key, config[key]);
+                if (Utils.isFunction(this[setterName])) {
+                    this[setterName](config[key]);
+                } else {
+                    this.setAttr(key, config[key]);
+                }
             }
-        }
+        });
 
         return this;
+    }
+
+    batchTransformChanges(func) {
+        this._batchingTransformChange = true;
+        func();
+        this._batchingTransformChange = false;
+
+        if (this._needClearTransformCache) {
+            this.clearCache(TRANSFORM);
+            this.clearSelfAndDescendantCache(ABSOLUTE_TRANSFORM);
+        }
+        this._needClearTransformCache = false;
     }
 
     eachAncestorsReverse(func: (node: Node) => void, top?: Node) {
@@ -123,21 +248,50 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         }
     }
 
-    abstract getClientRect(relativeTo?: Container<Node>): BoundingRect;
+    getRelativePointerPosition() {
+        if (!this.getGraphics())
+            return;
+
+        let pos = this.getGraphics().getPointerPosition();
+
+        if (!pos)
+            return;
+
+        let transform = this.getAbsoluteTransform().copy().invert();
+
+        return transform.point(pos);
+    }
+
+    abstract getClientRect(relativeTo?: Container<Node>, ignoreStroke?: boolean): BoundingRect;
 
     getAbsoluteTransform(top?: Node): Transform {
-        let tr = new Transform();
+        if (top) {
+            return this._getAbsoluteTransform(top);
+        } else {
+            return this.getCache(ABSOLUTE_TRANSFORM, this._getAbsoluteTransform) as Transform;
+        }
+    }
+
+    _getAbsoluteTransform(top?: Node): Transform {
+        let tr: Transform;
 
         if (top) {
+            tr = new Transform();
+
             this.eachAncestorsReverse(ancestor => {
                 tr.multiply(ancestor.getTransform())
             }, top);
         } else {
+            tr = this._cache.get(ABSOLUTE_TRANSFORM) || new Transform();
+
             if (this.parent) {
-                this.parent.getAbsoluteTransform().copyInto(tr);
+                this.parent._getAbsoluteTransform().copyInto(tr);
+            } else {
+                tr.reset();
             }
 
             tr.multiply(this.getTransform());
+            tr.dirty = false;
         }
 
         return tr;
@@ -175,7 +329,12 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
     }
 
     getTransform(): Transform {
-        let tr = new Transform();
+        return this.getCache(TRANSFORM, this._getTransform) as Transform;
+    }
+
+    _getTransform(): Transform {
+        let tr: Transform = this._cache.get(TRANSFORM) || new Transform();
+        tr.reset();
 
         let x = this.x();
         let y = this.y();
@@ -188,6 +347,8 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         let scaleX = this.attrs.scaleX ?? 1;
         let scaleY = this.attrs.scaleY ?? 1;
 
+        let rotation = this.rotation();
+
         if (x !== 0 || y !== 0)
             tr.translate(x, y);
 
@@ -197,8 +358,14 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         if (height !== 0 && originY)
             tr.translate(0, -1 * height * originY);
 
+
+        if (rotation !== 0)
+            tr.rotate(rotation);
+
         if (scaleX !== 1 || scaleY !== 1)
             tr.scale(scaleX, scaleY);
+
+        tr.dirty = false;
 
         return tr;
     }
@@ -231,6 +398,8 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
     }
 
     on<K extends keyof NodeEventMap>(evtStr: K, handler: EventListener<this, NodeEventMap[K]>) {
+        this._cache && this._cache.delete(ALL_LISTENERS);
+
         let events = (evtStr as string).split(' ');
 
         for (let event of events) {
@@ -275,6 +444,14 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
     }
 
     _fire(eventType: string, evt: any = {}) {
+        const protoListeners = this.getProtoListeners(eventType);
+
+        if (protoListeners) {
+            for (let listener of protoListeners) {
+                listener.handler.call(this, evt);
+            }
+        }
+
         let listeners = this.eventListeners[eventType];
         if (listeners) {
             for (let listener of listeners) {
@@ -297,6 +474,8 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         let events = (evtStr || '').split(' '),
             parts: string[], baseEvent: string, name: string, event: string;
 
+        this._cache && this._cache.delete(ALL_LISTENERS);
+
         if (!evtStr) {
             for (let t in this.eventListeners) {
                 this._off(t, callback);
@@ -318,9 +497,14 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         }
     }
 
-    move(x: number, y: number) {
-        this.x(this.x() + x)
-            .y(this.y() + y);
+    move(offset: Vector2) {
+        let x = this.x(),
+            y = this.y();
+
+        this.setPosition({
+            x: x + offset.x,
+            y: y + offset.y
+        });
     }
 
     isDragging(): boolean {
@@ -336,7 +520,7 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
 
         if (draggable) {
             this.on('mousedown.core touchdown.core', (evt) => {
-                // should check button
+                // TODO: should check button
                 if (this.isDragging())
                     return;
 
@@ -372,9 +556,11 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
     stopDrag(evt?) {
         const element = DD._dragElements.get(this._id);
 
-        element.dragStatus = 'stopped';
+        if (element)
+            element.dragStatus = 'stopped';
 
-        DD._endDrag(evt);
+        DD._endDragBefore(evt)
+        DD._endDragAfter(evt);
     }
 
     _off(type, name?, callback?) {
@@ -400,6 +586,9 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
     }
 
     destroy() {
+        if (this.isDragging())
+            this.stopDrag();
+
         let parent = this.getParent();
 
         if (parent && parent.children) {
@@ -434,7 +623,9 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
     }
 
     setPosition(pos: Vector2) {
-        this.x(pos.x).y(pos.y);
+        this.batchTransformChanges(() => {
+            this.x(pos.x).y(pos.y);
+        });
 
         return this;
     }
@@ -450,13 +641,52 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         return this.getAbsoluteTransform().getTranslation();
     }
 
-    setAbsolutePosition(pos: Vector2) {
-        let translation = this.getAbsoluteTransform().getTranslation();
+    clearTransform() {
+        let origTransform = {
+            x: this.attrs.x,
+            y: this.attrs.y,
+            scaleX: this.attrs.scaleX,
+            scaleY: this.attrs.scaleY,
+            rotation: this.attrs.rotation
+        }
 
-        this.setPosition({
-            x: this.attrs.x + pos.x - translation.x,
-            y: this.attrs.y + pos.y - translation.y
-        });
+        this.attrs.x = 0;
+        this.attrs.y = 0;
+        this.attrs.scaleX = 1;
+        this.attrs.scaleY = 1;
+        this.attrs.rotation = 0;
+
+        return origTransform;
+    }
+
+    setAbsolutePosition(pos: Vector2) {
+        let origTransform = this.clearTransform();
+
+        this.attrs.x = origTransform.x;
+        this.attrs.y = origTransform.y;
+
+        this.clearCache(TRANSFORM);
+        let tr = this._getAbsoluteTransform().copy();
+
+        tr.invert();
+        tr.translate(pos.x, pos.y);
+
+        let newPos = {
+            x: this.attrs.x + tr.getTranslation().x,
+            y: this.attrs.y + tr.getTranslation().y
+        };
+
+        this.attrs.scaleX = origTransform.scaleX;
+        this.attrs.scaleY = origTransform.scaleY;
+
+        this.attrs.rotation = origTransform.rotation;
+
+        this.setPosition(newPos);
+
+        this.clearCache(TRANSFORM);
+        this.clearCache(ABSOLUTE_TRANSFORM);
+
+        return this;
     }
 
     startDrag(evt?, bubbleEvent = true) {
@@ -508,6 +738,7 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
     setDragPosition(evt, element) {
         const pos = this.getGraphics().getPointerById(element.pointerId);
 
+
         if (!pos)
             return;
 
@@ -526,21 +757,55 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         this.lastPos = newNodePosition;
     }
 
+    clearSelfAndDescendantCache(attr?: string) {
+        this.clearCache(attr);
+    }
+
     name: GetSet<string, this>;
     x: GetSet<number, this>;
     y: GetSet<number, this>;
+
+    position: GetSet<Vector2, this>;
+    absolutePosition: GetSet<Vector2, this>;
+
     scaleX: GetSet<number, this>;
     scaleY: GetSet<number, this>;
     width: GetSet<number, this>;
     height: GetSet<number, this>;
     originX: GetSet<number, this>;
     originY: GetSet<number, this>;
+    rotation: GetSet<number, this>;
 
     draggable: GetSet<boolean, this>;
     dragDistance: GetSet<number, this>;
+
+    visible: GetSet<boolean, this>
 }
 
 Node.prototype.nodeType = 'Node';
+
+Node.prototype.eventListeners = {};
+
+const TRANSFORM_CHANGE_STR = [
+    'add.core',
+    'xChange.core',
+    'yChange.core',
+    'scaleXChange.core',
+    'scaleYChange.core',
+    'originXChange.core',
+    'originYChange.core',
+    'rotationChange.core'
+].join(' ');
+
+Node.prototype.on.call(Node.prototype, TRANSFORM_CHANGE_STR, function () {
+    if (this._batchingTransformChange) {
+        this._needClearTransformCache = true;
+        return;
+    }
+
+    this.clearCache(TRANSFORM);
+    this.clearSelfAndDescendantCache(ABSOLUTE_TRANSFORM);
+});
 
 Factory.addGetterSetter(Node, 'name', '');
 
@@ -557,5 +822,12 @@ Factory.addGetterSetter(Node, 'height', 0);
 Factory.addGetterSetter(Node, 'originX', 0);
 Factory.addGetterSetter(Node, 'originY', 0);
 
+Factory.addGetterSetter(Node, 'rotation', 0);
+
+Factory.addGetterSetter(Node, 'position');
+Factory.addGetterSetter(Node, 'absolutePosition');
+
 Factory.addGetterSetter(Node, 'draggable', false);
 Factory.addGetterSetter(Node, 'dragDistance', undefined);
+
+Factory.addGetterSetter(Node, 'visible', true);

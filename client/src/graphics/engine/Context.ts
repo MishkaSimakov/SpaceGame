@@ -14,19 +14,10 @@ export abstract class Context extends CanvasRenderingContext2D {
         return this.customCanvas;
     }
 
-    clear(color?: string) {
+    clear() {
         let canvas = this.getCanvas();
 
-        if (color) {
-            this.save();
-
-            this.fillStyle = color;
-            this.fillRect(0, 0, canvas.width / canvas.pixelRatio, canvas.height / canvas.pixelRatio);
-
-            this.restore();
-        } else {
-            this.clearRect(0, 0, canvas.width / canvas.pixelRatio, canvas.height / canvas.pixelRatio);
-        }
+        this.clearRect(0, 0, canvas.width / canvas.pixelRatio, canvas.height / canvas.pixelRatio);
     }
 
     fillStrokeShape(shape: Shape) {
@@ -35,6 +26,7 @@ export abstract class Context extends CanvasRenderingContext2D {
     }
 
     abstract _fill(shape: Shape);
+
     abstract _stroke(shape: Shape);
 
     strokeShape(shape: Shape) {

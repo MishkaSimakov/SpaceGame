@@ -2,20 +2,20 @@ import Module, {isModule} from "../../../../common/modules/Module";
 import HandDrawer from "../HandDrawer";
 import Vector2 from "../../../../common/Vector2";
 import {Event} from "../../../../common/events/Event";
-import TopBarDrawer from "../topbar/TopBarDrawer";
 import Game from "../../Game";
 import Modal from "../Modal";
 import {COLORS} from "../constants";
 import {AttackReason, MoveDamageReason} from "../../../../common/Types";
 import {OtherPlayer} from "../../../../common/GameForPlayerDTO";
-import TopBarSmallDrawer from "../topbar/TopBarSmallDrawer";
-import TopBarDefaultDrawer from "../topbar/TopBarDefaultDrawer";
+// import TopBarSmallDrawer from "../topbar/TopBarSmallDrawer";
+import TopBarDrawer from "../topbar/TopBarDrawer";
 import Scene from "../engine/Scene";
 import {Text} from "../engine/shapes/Text";
 import {Rectangle} from "../engine/shapes/Rectangle";
 import {Group} from "../engine/Group";
 import Color from "../Color";
 import {Card} from "../shapes/Card";
+import TopBarDefaultDrawer from "../topbar/TopBarDefaultDrawer";
 
 export default class Controls extends Scene {
     handDrawer: HandDrawer;
@@ -37,18 +37,20 @@ export default class Controls extends Scene {
     adopted() {
         this.handDrawer = new HandDrawer(this.gameManager, this);
 
-        if (this.width() < (400 + 2 * 15)) {
-            this.topBarDrawer = new TopBarSmallDrawer(this);
-        } else {
-            this.topBarDrawer = new TopBarDefaultDrawer(this);
-        }
+        // if (this.width() < (400 + 2 * 15)) {
+        //     // this.topBarDrawer = new TopBarSmallDrawer(this);
+        // } else {
+        //     this.topBarDrawer = new TopBarDefaultDrawer(this);
+        // }
     }
 
     updateData() {
         this.handDrawer.redraw();
 
+        if (!this.topBarDrawer) {
+            this.topBarDrawer = new TopBarDefaultDrawer(this);
+        }
         this.topBarDrawer.setPlayersData(this.gameManager.currentPlayer, this.gameManager.otherPlayers, this.gameManager.playerTime);
-        this.topBarDrawer.setMessages(this.gameManager.messages);
     }
 
     rebuildSpaceship(): Promise<void> {
@@ -125,7 +127,7 @@ export default class Controls extends Scene {
             modal.setTitle("Выберите игрока для атаки");
 
             for (let player of players) {
-                modal.addLine(player.name).on('pointerdown', () => {
+                modal.addLine(player.name).on('click', () => {
                     resolve(player.id);
 
                     modal.destroy();
@@ -160,7 +162,6 @@ export default class Controls extends Scene {
 
             let sceneWidth = this.width();
             let sceneHeight = this.height();
-            this.showCardShapes.cards = this.drawCardsOnScreen(cards);
 
             this.showCardShapes.fade = this.createAndAdd.rectangle({
                 x: 0,
@@ -170,6 +171,9 @@ export default class Controls extends Scene {
                 fill: Color.fromHex('#000000', 0.75).toString()
             });
 
+            this.showCardShapes.cards = this.drawCardsOnScreen(cards);
+            this.add(this.showCardShapes.cards);
+
             if (title) {
                 this.showCardShapes.title = this.createAndAdd.text({
                     x: sceneWidth / 2,
@@ -178,6 +182,7 @@ export default class Controls extends Scene {
                     originX: 0.5,
                     originY: 1,
                     fontFamily: "Exo2Bold",
+                    fill: "white",
                     fontSize: 20,
                 });
             }
@@ -252,10 +257,11 @@ export default class Controls extends Scene {
             let selected: number[] = [];
 
             let offset = 20;
-            let outlineColor = 0xa3b18a;
+            let outlineColor = '#a3b18a';
 
             let sceneWidth = this.width();
             let sceneHeight = this.height();
+
             cardShapes = this.drawCardsOnScreen(cards);
 
             fadeShape = this.createAndAdd.rectangle({
@@ -267,33 +273,35 @@ export default class Controls extends Scene {
             });
 
             if (title) {
-                titleShape = this.createAndAdd.text({
+                titleShape = new Text({
                     x: sceneWidth / 2,
                     y: cardShapes.getClientRect().top - 15,
                     text: title,
                     originX: 0.5,
                     originY: 1,
+                    fill: "white",
                     fontFamily: "Exo2Bold",
                     fontSize: 20
                 });
             }
 
-            buttonShape = this.createAndAdd.text({
+            buttonShape = new Text({
                 x: sceneWidth / 2,
                 y: cardShapes.getClientRect().bottom + 15,
                 text: "Далее",
+                fill: "white",
+                fontFamily: "Exo2Bold",
                 originX: 0.5
-            });
+            })
+                .on('pointerdown', () => {
+                    cardShapes.destroy();
+                    backgroundShape.destroy();
+                    fadeShape.destroy();
+                    titleShape.destroy();
+                    buttonShape.destroy();
 
-            buttonShape.on('pointerdown', () => {
-                cardShapes.destroy();
-                backgroundShape.destroy();
-                fadeShape.destroy();
-                titleShape.destroy();
-                buttonShape.destroy();
-
-                resolve(selected);
-            });
+                    resolve(selected);
+                });
 
             let backgroundPosition1 = new Vector2(
                 Math.min(cardShapes.getClientRect().left, titleShape.getClientRect().left) - offset,
@@ -313,32 +321,31 @@ export default class Controls extends Scene {
                 strokeWidth: 2
             });
 
-            // TODO: add container and uncomment
-            // cardShapes.getAll().forEach((shape: Phaser.GameObjects.Container, index: number) => {
-            //     (shape.getAll()[0] as Phaser.GameObjects.Rectangle)
-            //         .setInteractive()
-            //         .on('pointerdown', () => {
-            //             if (selected.includes(index)) {
-            //                 (shape.getAll()[0] as Phaser.GameObjects.Rectangle).setStrokeStyle(0);
-            //
-            //                 selected = selected.filter((s) => s != index);
-            //                 return;
-            //             }
-            //
-            //             if (selected.length == count) {
-            //                 (
-            //                     (cardShapes.getAt(selected[count - 1]) as Phaser.GameObjects.Container)
-            //                         .getAll()[0] as Phaser.GameObjects.Rectangle
-            //                 )
-            //                     .setStrokeStyle(0);
-            //                 selected[count - 1] = index;
-            //             } else {
-            //                 selected.push(index);
-            //             }
-            //
-            //             (shape.getAll()[0] as Phaser.GameObjects.Rectangle).setStrokeStyle(5, outlineColor);
-            //         });
-            // });
+            this.add(titleShape, buttonShape, cardShapes);
+
+            cardShapes.children.forEach((shape, index) => {
+                let card = shape as Card;
+
+                card.on('click', () => {
+                    if (selected.includes(index)) {
+                        card._background.strokeWidth(0);
+
+                        selected = selected.filter((s) => s != index);
+                        return;
+                    }
+
+                    if (selected.length == count) {
+                        (cardShapes.children[selected[count - 1]] as Card)._background.strokeWidth(0);
+
+                        selected[count - 1] = index;
+                    } else {
+                        selected.push(index);
+                    }
+
+                    card._background.strokeWidth(5)
+                        .stroke(outlineColor);
+                });
+            });
         });
     }
 
@@ -360,26 +367,27 @@ export default class Controls extends Scene {
             offset.y = cardSize + padding;
         }
 
-        let cardShapes = this.createAndAdd.group();
+        let cardShapes = new Group();
 
         let position = new Vector2(0, 0)
 
         for (let card of cards) {
-            let cardShape = new Card({
-                x: position.x,
-                y: position.y,
-                size: cardSize,
-                card: card
-            });
-            cardShapes.add(cardShape);
+            cardShapes.add(
+                new Card({
+                    x: position.x,
+                    y: position.y,
+                    size: cardSize,
+                    card: card
+                })
+            );
 
             position.add(offset);
         }
 
         cardShapes
             .setPosition({
-                x: (sceneWidth - cardShapes.getClientRect().width + cardSize) / 2,
-                y: (sceneHeight - cardShapes.getClientRect().height + cardSize) / 2
+                x: (sceneWidth - cardShapes.getWidth()) / 2,
+                y: (sceneHeight - cardShapes.getHeight()) / 2
             });
 
         return cardShapes;
@@ -387,108 +395,116 @@ export default class Controls extends Scene {
 
     permuteCards(cards: (Event | Module)[]): Promise<number[]> {
         return new Promise((resolve) => {
-                // let outlineColor = 0xa3b18a;
-                // let cardShapes: Container[] = [];
-                // let cardWidth = 256;
-                //
-                // let order: number[] = [];
-                // for (let i = 0; i < cards.length; ++i) {
-                //     order.push(i);
-                // }
-                //
-                // let backgroundShape = this.rect(
-                //     this.width / 2,
-                //     this.height / 2,
-                //     (cardWidth + 50) * cards.length, cardWidth + 100
-                // )
-                //     .setFillStyle(Color.BLACK)
-                //     .setOrigin(0.5, 0)
-                //     .setStrokeStyle(Color.fromHex('#555555'), 2)
-                //     .setDepth(2);
-                //
-                // let buttonShape = this.text(
-                //     this.width / 2, this.height / 2 + cardWidth / 2 + 20, "Next"
-                // )
-                //     .setDepth(3)
-                //
-                // buttonShape.events.on('pointerdown', () => {
-                //     backgroundShape.destroy();
-                //     for (let cardShape of cardShapes) {
-                //         cardShape.destroy();
-                //     }
-                //     buttonShape.destroy();
-                //
-                //     resolve(order);
-                // });
-                //
-                // let indexByPosition = (x: number): number => {
-                //     let index = (x - (this.width / 2 - ((cardWidth + 50) * cards.length - 50) / 2 + cardWidth / 2)) / (cardWidth + 50);
-                //     index = Math.round(index);
-                //
-                //     index = Math.min(
-                //         order.length - 1,
-                //         Math.max(0, index)
-                //     );
-                //
-                //     return index;
-                // }
+                let outlineColor = 0xa3b18a;
+                let cardShapes: Card[] = [];
+                let cardWidth = 256;
+                let sceneWidth = this.width(),
+                    sceneHeight = this.height();
 
-                // TODO: add drag and uncomment
-                // for (let [indexInOrder, index] of order.entries()) {
-                //     let card = cards[index];
-                //
-                //     let position = new Vector2(
-                //         this.width / 2 - ((cardWidth + 50) * cards.length - 50) / 2 + (cardWidth + 50) * indexInOrder + cardWidth / 2,
-                //         this.height / 2
-                //     );
-                //
-                //     let cardShape = drawCard(this, card, position, cardWidth)
-                //         .setDepth(3)
-                //         .setInteractive();
-                //
-                //     this.input.setDraggable(cardShape, true);
-                //
-                //     cardShape.on('dragstart', () => {
-                //         this.children.bringToTop(cardShape);
-                //     })
-                //
-                //     cardShape.on('drag', (pointer: Phaser.Input.Pointer, x: number, y: number) => {
-                //         cardShape.setPosition(x, y);
-                //
-                //         let newIndexInOrder = indexByPosition(cardShape.x);
-                //
-                //         // because order could be updated
-                //         let oldIndexInOrder = order.indexOf(index);
-                //
-                //         if (newIndexInOrder !== oldIndexInOrder) {
-                //             order.splice(oldIndexInOrder, 1);
-                //             order.splice(newIndexInOrder, 0, index);
-                //
-                //             moveCards(index);
-                //         }
-                //     });
-                //
-                //     cardShape.on('dragend', (pointer: Phaser.Input.Pointer) => {
-                //         moveCards();
-                //     });
-                //
-                //     cardShapes[index] = cardShape;
-                // }
+                let order: number[] = [];
+                for (let i = 0; i < cards.length; ++i) {
+                    order.push(i);
+                }
 
-                // let moveCards = (except?: number) => {
-                //     for (let [indexInOrder, index] of order.entries()) {
-                //         if (index === except)
-                //             continue;
-                //
-                //         let cardShape = cardShapes[index];
-                //         let position = new Vector2(
-                //             this.game.canvas.width / 2 - ((cardWidth + 50) * cards.length - 50) / 2 + (cardWidth + 50) * indexInOrder + cardWidth / 2,
-                //             this.game.canvas.height / 2
-                //         );
-                //
-                //         cardShape.setPosition(position.x, position.y);
-                //     }
-                // }
+                let backgroundShape = new Rectangle({
+                    x: sceneWidth / 2,
+                    y: sceneHeight / 2,
+                    width: (cardWidth + 50) * cards.length,
+                    height: cardWidth + 100,
+                    originX: 0.5,
+                    originY: 0.5,
+
+                    fill: Color.fromHex('#0B2545', 0.75).toString(),
+                    stroke: Color.fromHex('#3D76BE').toString(),
+                    strokeWidth: 5,
+                    cornerRadius: 10
+                });
+
+                let buttonShape = new Text({
+                    x: this.width() / 2,
+                    y: this.height() / 2 + cardWidth / 2 + 25,
+                    text: "Next",
+                    fontFamily: "Exo2Bold",
+                    fontSize: 20,
+                    fill: "white",
+                    originX: 0.5,
+                    originY: 0.5
+                })
+                    .on('click', () => {
+                        backgroundShape.destroy();
+                        for (let cardShape of cardShapes) {
+                            cardShape.destroy();
+                        }
+                        buttonShape.destroy();
+
+                        resolve(order);
+                    });
+
+                let indexByPosition = (x: number): number => {
+                    let index = (x - (sceneWidth / 2 - ((cardWidth + 50) * cards.length - 50) / 2)) / (cardWidth + 50);
+                    index = Math.round(index);
+
+                    index = Math.min(
+                        order.length - 1,
+                        Math.max(0, index)
+                    );
+
+                    return index;
+                }
+
+                for (let [indexInOrder, index] of order.entries()) {
+                    let card = cards[index];
+
+                    let cardShape = new Card({
+                        card: card,
+                        x: this.width() / 2 - ((cardWidth + 50) * cards.length - 50) / 2 + (cardWidth + 50) * indexInOrder,
+                        y: this.height() / 2,
+                        size: cardWidth,
+                        draggable: true,
+                        originY: 0.5
+                    });
+
+                    cardShape.on('dragstart', () => {
+                        cardShape.moveToTop();
+                    });
+
+                    cardShape.on('dragmove', ({evt}) => {
+                        let newIndexInOrder = indexByPosition(cardShape.x());
+
+                        // because order could be updated
+                        let oldIndexInOrder = order.indexOf(index);
+
+                        if (newIndexInOrder !== oldIndexInOrder) {
+                            order.splice(oldIndexInOrder, 1);
+                            order.splice(newIndexInOrder, 0, index);
+
+                            moveCards(index);
+                        }
+                    });
+
+                    cardShape.on('dragend', () => {
+                        moveCards();
+                    });
+
+                    cardShapes[index] = cardShape;
+                }
+
+                this.add(backgroundShape, ...cardShapes, buttonShape);
+
+                let moveCards = (except?: number) => {
+                    for (let [indexInOrder, index] of order.entries()) {
+                        if (index === except)
+                            continue;
+
+                        let cardShape = cardShapes[index];
+                        let position = new Vector2(
+                            sceneWidth / 2 - ((cardWidth + 50) * cards.length - 50) / 2 + (cardWidth + 50) * indexInOrder,
+                            sceneHeight / 2
+                        );
+
+                        cardShape.setPosition({x: position.x, y: position.y});
+                    }
+                }
             }
         );
     }

@@ -27,6 +27,19 @@ export class Rectangle extends Shape<RectangleConfig> {
         context.fillStrokeShape(this);
     }
 
+    _hitFunc(context: Context) {
+        let width = this.width(),
+            height = this.height();
+
+        context.beginPath();
+
+        context.rect(0, 0, width, height);
+
+        context.closePath();
+
+        context.fillStrokeShape(this);
+    }
+
     cornerRadius: GetSet<number | number[], this>;
 }
 
