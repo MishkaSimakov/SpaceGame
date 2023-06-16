@@ -24,7 +24,11 @@ export default class FightEventListener extends BaseEventListener {
                 text: "Далее",
                 color: COLORS.BUTTON.PRIMARY,
                 onClick: () => {
-                    callback(selectedProtector?.getPosition());
+                    const position = selectedProtector
+                        ? new Vector2(selectedProtector.x, selectedProtector.y)
+                        : undefined;
+
+                    callback(position);
 
                     this.controls().topBarDrawer.removeButtons();
                     this.controls().topBarDrawer.clearStatus();
@@ -84,7 +88,10 @@ export default class FightEventListener extends BaseEventListener {
                     if (selectedWeapon === undefined || selectedTarget === undefined)
                         return;
 
-                    callback(selectedWeapon.getPosition(), selectedTarget.getPosition());
+                    callback(
+                        new Vector2(selectedWeapon.x, selectedWeapon.y),
+                        new Vector2(selectedTarget.x, selectedTarget.y)
+                    );
 
                     this.controls().topBarDrawer.removeButtons();
                     this.controls().topBarDrawer.clearStatus();
@@ -133,7 +140,7 @@ export default class FightEventListener extends BaseEventListener {
                     if (selectedTarget === undefined)
                         return;
 
-                    callback(selectedTarget.getPosition());
+                    callback(new Vector2(selectedTarget.x, selectedTarget.y));
 
                     this.controls().topBarDrawer.removeButtons();
                     this.controls().topBarDrawer.clearStatus();

@@ -59,7 +59,7 @@ export default class EventCardsEventListener extends BaseEventListener {
                     if (playerId !== this.game.currentPlayer.id)
                         return false;
 
-                    if (!module.isDamaged())
+                    if (module.health !== module.totalHealth)
                         return false;
 
                     return true;
@@ -69,7 +69,7 @@ export default class EventCardsEventListener extends BaseEventListener {
                     text: "Починить",
                     color: COLORS.BUTTON.PRIMARY,
                     onClick: () => {
-                        callback(modules.map((m) => m.getPosition()));
+                        callback(modules.map((m) => new Vector2(m.x, m.y)));
 
                         this.controls().topBarDrawer.removeButtons();
                         this.controls().topBarDrawer.clearStatus();
@@ -90,7 +90,7 @@ export default class EventCardsEventListener extends BaseEventListener {
                 if (playerId !== this.game.currentPlayer.id)
                     return false;
 
-                if (!module.isDamaged())
+                if (module.health !== module.totalHealth)
                     return false;
 
                 return true;
@@ -100,7 +100,11 @@ export default class EventCardsEventListener extends BaseEventListener {
                 text: "Починить",
                 color: COLORS.BUTTON.PRIMARY,
                 onClick: () => {
-                    callback(module?.getPosition());
+                    const position = module
+                        ? new Vector2(module.x, module.y)
+                        : undefined;
+
+                    callback(position);
 
                     this.controls().topBarDrawer.removeButtons();
                     this.controls().topBarDrawer.clearStatus();
@@ -145,7 +149,7 @@ export default class EventCardsEventListener extends BaseEventListener {
                 color: COLORS.BUTTON.DANGER,
                 onClick: () => {
                     if (module) {
-                        callback(id, module.getPosition());
+                        callback(id, new Vector2(module.x, module.y));
                     } else {
                         callback();
                     }
@@ -200,9 +204,12 @@ export default class EventCardsEventListener extends BaseEventListener {
                     if (selectedSolarPanels.length < count) return;
 
                     if (count === 1)
-                        callback(selectedSolarPanels[0].getPosition());
+                        callback(new Vector2(selectedSolarPanels[0].x, selectedSolarPanels[0].y));
                     else
-                        callback(selectedSolarPanels[0].getPosition(), selectedSolarPanels[1].getPosition());
+                        callback(
+                            new Vector2(selectedSolarPanels[0].x, selectedSolarPanels[0].y),
+                            new Vector2(selectedSolarPanels[1].x, selectedSolarPanels[1].y)
+                        );
 
                     this.controls().topBarDrawer.removeButtons();
                     this.controls().topBarDrawer.clearStatus();
@@ -238,7 +245,7 @@ export default class EventCardsEventListener extends BaseEventListener {
                 onClick: () => {
                     if (!selectedModule) return;
 
-                    callback(selectedModule.getPosition());
+                    callback(new Vector2(selectedModule.x, selectedModule.y));
 
                     this.controls().topBarDrawer.removeButtons();
                     this.controls().topBarDrawer.clearStatus();
@@ -297,7 +304,7 @@ export default class EventCardsEventListener extends BaseEventListener {
                 onClick: () => {
                     if (!selectedModule) return;
 
-                    callback(selectedModule.getPosition());
+                    callback(new Vector2(selectedModule.x, selectedModule.y));
 
                     this.controls().topBarDrawer.removeButtons();
                     this.controls().topBarDrawer.clearStatus();

@@ -7,6 +7,7 @@ import {Rectangle} from "../engine/shapes/Rectangle";
 import {Text} from "../engine/shapes/Text";
 import {Group} from "../engine/Group";
 import {Button} from "../shapes/Button";
+import {PlayerDataLine} from "../shapes/PlayerDataLine";
 
 type ButtonData = {
     text: string, onClick: () => void, color: ButtonColors
@@ -19,9 +20,9 @@ export default abstract class TopBarDrawer {
 
     showPlayersData: boolean = false;
     playersDataBackground: Rectangle;
-    playersDataText: Map<number, Group> = new Map<number, Group>();
+    playersDataText: Map<number, PlayerDataLine> = new Map<number, PlayerDataLine>();
     playersDataCloseText: Text;
-    currentPlayerData: Group;
+    currentPlayerData: PlayerDataLine;
 
     status: {
         context?: string,
@@ -151,17 +152,11 @@ export default abstract class TopBarDrawer {
             const id = parseInt(key);
 
             if (this.playersDataText.has(id)) {
-                let line = this.playersDataText.get(id);
-
-                (line.findOne('.time') as Text)
-                    .text(`${this.timeToString(this.playerTime[id])} ⏰`);
+                this.playersDataText.get(id).time(this.playerTime[id]);
             }
 
             if (id === this.currentPlayer.id) {
-                let line = this.currentPlayerData;
-
-                (line.findOne('.time') as Text)
-                    .text(`${this.timeToString(this.playerTime[id])} ⏰`);
+                this.currentPlayerData.time(this.playerTime[id])
             }
         }
     }
@@ -184,84 +179,8 @@ export default abstract class TopBarDrawer {
         });
     }
 
-    getPlayerStatusStringShape(player: OtherPlayer, withName: boolean): Group {
-        let container = new Group();
-
-        let startX = 0;
-
-        if (withName) {
-            container.add(
-                new Text({
-                    x: 0,
-                    y: 0,
-                    text: (player.online ? "🔴 " : "✖️ ") + player.name + ":",
-                    fontFamily: "Exo2Bold",
-                    fontSize: 15,
-                    fill: "white"
-                })
-            );
-
-            startX += 150;
-        }
-
-        container.add(
-            new Text({
-                x: startX,
-                y: 0,
-                text: `${player.energy}/${player.spaceship.getTotalCapacity()} ⚡️`,
-                fontFamily: "Exo2Bold",
-                fontSize: 15,
-                fill: "white"
-            })
-        );
-
-        container.add(
-            new Text({
-                x: startX + 75,
-                y: 0,
-                text: `${player.handSize} 🤚`,
-                fontFamily: "Exo2Bold",
-                fontSize: 15,
-                fill: "white"
-            })
-        );
-
-        if (this.scene.gameManager.settings.withTimeControl) {
-            container.add(
-                new Text({
-                    x: startX + 150,
-                    y: 0,
-                    text: `${this.timeToString(this.playerTime[player.id])} ⏰`,
-                    fontFamily: "Exo2Bold",
-                    fontSize: 15,
-                    fill: "white",
-                    name: "time"
-                })
-            );
-        }
-
-        return container;
-    }
-
     getMessageShape(message: Message): Group {
         return this.scene.createAndAdd.group();
-    }
-
-    timeToString(time: number): string {
-        function padWithLeadingZeros(num, totalLength) {
-            return String(num).padStart(totalLength, '0');
-        }
-
-        time = Math.floor(time / 1000);
-
-        if (time >= 0) {
-            let minutes = Math.floor(time / 60);
-            return minutes + ":" + padWithLeadingZeros(time - minutes * 60, 2);
-        } else {
-            time = -time;
-            let minutes = Math.floor(time / 60);
-            return "-" + minutes + ":" + padWithLeadingZeros(time - minutes * 60, 2);
-        }
     }
 
     getButtonsGroup(width: number): Group {

@@ -64,7 +64,11 @@ export default class MainGameEventListener extends BaseEventListener {
                     this.controls().topBarDrawer.clearStatus();
                     this.game.spaceshipsScene.endChoosingModule();
 
-                    callback(chosenModule?.getPosition());
+                    const position = chosenModule
+                        ? new Vector2(chosenModule.x, chosenModule.y)
+                        : undefined;
+
+                    callback(position);
                 }
             }]);
         });

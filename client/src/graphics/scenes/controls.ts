@@ -7,7 +7,6 @@ import Modal from "../Modal";
 import {COLORS} from "../constants";
 import {AttackReason, MoveDamageReason} from "../../../../common/Types";
 import {OtherPlayer} from "../../../../common/GameForPlayerDTO";
-// import TopBarSmallDrawer from "../topbar/TopBarSmallDrawer";
 import TopBarDrawer from "../topbar/TopBarDrawer";
 import Scene from "../engine/Scene";
 import {Text} from "../engine/shapes/Text";
@@ -137,13 +136,17 @@ export default class Controls extends Scene {
 
             graphics.once('pointerup', () => {
                 graphics.on('pointerdown.modal', (evt) => {
-                    // if (!modal.backgroundShape.(pointer.x, pointer.y)) {
-                    //     graphics.off("pointerdown.modal");
-                    //
-                    //     resolve(undefined);
-                    //
-                    //     modal.destroy();
-                    // }
+                    const pos = this.getRelativePointerPosition();
+                    const bb = modal.backgroundShape.getClientRect();
+                    const contains = bb.left <= pos.x && pos.x <= bb.right && bb.top <= pos.y && pos.y <= bb.bottom;
+
+                    if (!contains) {
+                        graphics.off("pointerdown.modal");
+
+                        resolve(undefined);
+
+                        modal.destroy();
+                    }
                 });
             });
         });
@@ -526,7 +529,7 @@ export default class Controls extends Scene {
                 if (playerId !== this.gameManager.currentPlayer.id)
                     return false;
 
-                if (!module.isDamaged())
+                if (module.health !== module.totalHealth)
                     return false;
 
                 return true;
@@ -561,8 +564,8 @@ export default class Controls extends Scene {
                             this.topBarDrawer.removeButtons();
 
                             resolve({
-                                from: moveDamageFrom.getPosition(),
-                                to: moveDamageTo.getPosition()
+                                from: new Vector2(moveDamageFrom.x, moveDamageFrom.y),
+                                to: new Vector2(moveDamageTo.x, moveDamageTo.y)
                             });
                         }
                     }]);

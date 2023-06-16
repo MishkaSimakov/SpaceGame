@@ -108,9 +108,6 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
     }
 
     shouldDrawHit() {
-        if (!this.isVisible())
-            return false;
-
         const scene = this.getScene();
 
         for (let [_, dragElement] of DD._dragElements) {

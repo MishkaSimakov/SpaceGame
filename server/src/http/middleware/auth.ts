@@ -20,7 +20,11 @@ export const auth = async (req: Request, res: Response, next: NextFunction) => {
         let user = await User.findOneBy({
             id: parseInt(decoded._id)
         });
-        
+
+        if (!user || user.rememberToken !== token) {
+            throw new Error();
+        }
+
         (req as AuthenticatedRequest).user = user;
 
         next();

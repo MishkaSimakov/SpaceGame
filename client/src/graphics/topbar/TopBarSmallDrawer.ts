@@ -4,6 +4,7 @@ import {Text} from "../engine/shapes/Text";
 import {Rectangle} from "../engine/shapes/Rectangle";
 import Color from "../Color";
 import {Button} from "../shapes/Button";
+import {PlayerDataLine} from "../shapes/PlayerDataLine";
 
 export default class TopBarSmallDrawer extends TopBarDrawer {
     drawStatus(): void {
@@ -46,8 +47,6 @@ export default class TopBarSmallDrawer extends TopBarDrawer {
 
         this.messagesStartY = this.statusStartY + statusHeight;
 
-
-
         this.group.add(this.status.backgroundShape, this.status.textShape, buttons);
     }
 
@@ -55,12 +54,16 @@ export default class TopBarSmallDrawer extends TopBarDrawer {
         if (!this.currentPlayer)
             return;
 
-        this.currentPlayerData = this.getPlayerStatusStringShape(this.currentPlayer.getOtherPlayer(), false)
-            .setPosition({
-                x: this.sizes.padding,
-                y: this.sizes.padding,
-            })
-            .on('click', () => {
+        this.currentPlayerData = new PlayerDataLine({
+            x: this.sizes.padding,
+            y: this.sizes.padding,
+
+            player: this.currentPlayer.getOtherPlayer(),
+            withName: false,
+            withTimeControl: this.scene.gameManager.settings.withTimeControl,
+            time: this.playerTime[this.currentPlayer.id],
+        })
+            .onClick(() => {
                 this.togglePlayerCharacteristics();
             })
 
@@ -101,12 +104,16 @@ export default class TopBarSmallDrawer extends TopBarDrawer {
         let bottomY = 0;
 
         for (let [index, player] of players.entries()) {
-            let playersDataLine = this.getPlayerStatusStringShape(player, true)
-                .setPosition({
-                    x: this.sizes.padding,
-                    y: this.sizes.padding + lineOffset * index
-                })
-                .on('pointerdown', () => {
+            let playersDataLine = new PlayerDataLine({
+                x: this.sizes.padding,
+                y: this.sizes.padding + lineOffset * index,
+
+                player: player,
+                withName: true,
+                withTimeControl: this.scene.gameManager.settings.withTimeControl,
+                time: this.playerTime[player.id],
+            })
+                .onClick(() => {
                     this.scene.gameManager.spaceshipsScene.panToPlayerWithId(player.id);
                 });
 

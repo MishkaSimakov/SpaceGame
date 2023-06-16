@@ -43,4 +43,4 @@ class GameForPlayerDTO {
     messages: Message[];
 }
 
-export { GameSettings, GameForPlayerDTO, OtherPlayer };
+export {GameSettings, GameForPlayerDTO, OtherPlayer};

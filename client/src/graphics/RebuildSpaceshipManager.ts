@@ -32,10 +32,32 @@ export default class RebuildSpaceshipManager {
         let spaceshipCardSize = this.spaceshipShape.cardSize();
 
         for (let shape of this.spaceshipShape.getModules()) {
-            let module = shape.card() as Module;
+            const module = shape.card() as Module;
 
             if (module.isMain)
                 continue;
+
+            shape.on('click.rebuild', () => {
+                const initRotation = module.rotation;
+                this.spaceship.removeModule(module);
+
+                let possibleRotations = this.spaceship.getPossibleRotationsFor(module);
+
+                let index = possibleRotations.indexOf(initRotation);
+                index = (index + 1) % possibleRotations.length;
+
+                module.rotation = possibleRotations[index];
+
+                if (this.spaceship.addModule(module, module.x, module.y)) {
+                    shape.rotateCard(module.rotation * (Math.PI / 2));
+                } else {
+                    // something really went wrong
+                    module.rotation = initRotation;
+
+                    // last hope
+                    this.spaceship.addModule(module, module.x, module.y);
+                }
+            });
 
             shape.on('dragstart.rebuild', () => {
                 shape.moveToTop();
@@ -133,6 +155,7 @@ export default class RebuildSpaceshipManager {
 
     protected removeEvents() {
         for (let shape of this.spaceshipShape.getModules()) {
+            shape.off('click.rebuild');
             shape.off('drag.rebuild');
             shape.off('dragend.rebuild');
             shape.off('dragstart.rebuild');

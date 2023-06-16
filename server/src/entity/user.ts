@@ -12,6 +12,9 @@ export class User extends BaseEntity {
     @Column()
     password: string;
 
+    @Column()
+    rememberToken: string;
+
     @BeforeInsert()
     @BeforeUpdate()
     async updatePassword() {

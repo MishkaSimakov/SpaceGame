@@ -37,6 +37,8 @@ export const login = async (req: Request, res: Response) => {
         }
 
         let token = generateToken(user);
+        user.rememberToken = token;
+        await user.save();
 
         return res.cookie('authentication_token', token, {
             expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365)
@@ -63,9 +65,10 @@ export const register = async (req: Request, res: Response) => {
         user.login = req.body.login;
         user.password = req.body.password;
 
-        await user.save();
-
         let token = generateToken(user);
+        user.rememberToken = token;
+
+        await user.save();
 
         return res.cookie('authentication_token', token).redirect(HOME);
     } catch (error) {
