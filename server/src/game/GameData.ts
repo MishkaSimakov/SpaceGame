@@ -120,8 +120,6 @@ export default class GameData {
         this.modulesStack = arrayShuffle(this.modulesStack);
         this.eventsStack = arrayShuffle(this.eventsStack);
         this.mainModules = arrayShuffle(this.mainModules);
-
-        this.eventsStack.push(...addEvents(EventTypes.DestroyAnyModuleOnYourSpaceship, "Уничтожьте любой\nмодуль вашего корабля\nна ваш выбор", 2));
     }
 
 

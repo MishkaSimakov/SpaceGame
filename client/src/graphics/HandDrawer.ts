@@ -19,7 +19,7 @@ export default class HandDrawer {
     gameManager: Game;
     background: Rectangle;
 
-    hand: (Module|Event)[] = [];
+    hand: (Module | Event)[] = [];
 
     constructor(game: Game, scene: Scene) {
         this.gameManager = game;
@@ -29,7 +29,7 @@ export default class HandDrawer {
         this.group = this.scene.createAndAdd.group();
     }
 
-    setHandData(hand: (Module|Event)[]) {
+    setHandData(hand: (Module | Event)[]) {
         let newHandData = [];
 
         for (let card of hand) {
@@ -117,25 +117,35 @@ export default class HandDrawer {
             if (isEvent(card) && (card as Event).type === EventTypes.SaveCardAndThenDealDamage) {
                 cardShape.draggable(true);
 
-                cardShape.on('dragend', async (evt) => {
-                    // TODO: uncomment
-                    // let distance_y = Math.abs(pointer.y - cardShape.input.dragStartY);
-                    //
-                    // if (distance_y > 50) {
-                    //     let isAccepted = await this.gameManager.useEventCard(card as Event);
-                    //
-                    //     if (isAccepted) {
-                    //         cardShape.destroy();
-                    //
-                    //         let hand = this.gameManager.getCurrentPlayer().hand;
-                    //         hand.splice(hand.indexOf(card), 1);
-                    //         this.redraw();
-                    //
-                    //         return;
-                    //     }
-                    // }
-                    //
-                    // cardShape.setPosition(cardShape.input.dragStartX, cardShape.input.dragStartY);
+                let dragStartPosition;
+
+                cardShape.on('dragstart', () => {
+                    dragStartPosition = this.scene.getRelativePointerPosition();
+                })
+
+                cardShape.on('dragend', async ({evt}) => {
+                    const pos = this.scene.getRelativePointerPosition();
+
+                    let distance_y = Math.abs(pos.y - dragStartPosition.y);
+
+                    if (distance_y > 50) {
+                        let isAccepted = await this.gameManager.useEventCard(card as Event);
+
+                        if (isAccepted) {
+                            cardShape.destroy();
+
+                            let hand = this.gameManager.getCurrentPlayer().hand;
+                            hand.splice(hand.indexOf(card), 1);
+                            this.redraw();
+
+                            return;
+                        }
+                    }
+
+                    cardShape.setPosition({
+                        x: dragStartPosition.x,
+                        y: dragStartPosition.y
+                    });
                 });
             }
 

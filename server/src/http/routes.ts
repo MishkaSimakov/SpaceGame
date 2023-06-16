@@ -12,7 +12,7 @@ export default function initRoutes(server: Express) {
     server.post('/register', UserController.register);
     server.get('/', auth, UserController.home);
 
-    server.get('/game/rules', auth, GameController.showRules);
+    server.get('/game/rules', GameController.showRules);
     server.get('/game/create', auth, GameController.showCreatePage);
     server.post('/game/create', auth, GameController.create);
     server.get('/game/:id', auth, GameController.joinGame);
