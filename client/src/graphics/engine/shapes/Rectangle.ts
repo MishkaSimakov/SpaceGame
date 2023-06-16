@@ -3,6 +3,7 @@ import {Context} from "../Context";
 import {GetSet} from "../types";
 import {Factory} from "../Factory";
 import {_registerNode} from "../Global";
+import {Utils} from "../Utils";
 
 export interface RectangleConfig extends ShapeConfig {
     cornerRadius?: number | number[];
@@ -19,7 +20,7 @@ export class Rectangle extends Shape<RectangleConfig> {
         if (!cornerRadius) {
             context.rect(0, 0, width, height);
         } else {
-            context.roundRect(0, 0, width, height, cornerRadius);
+            Utils.drawRoundedRectPath(context, width, height, cornerRadius);
         }
 
         context.closePath();

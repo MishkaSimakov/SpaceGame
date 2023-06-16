@@ -37,8 +37,10 @@ export default class Controls extends Scene {
     adopted() {
         this.handDrawer = new HandDrawer(this.gameManager, this);
 
+        this.topBarDrawer = new TopBarDefaultDrawer(this);
+
         // if (this.width() < (400 + 2 * 15)) {
-        //     // this.topBarDrawer = new TopBarSmallDrawer(this);
+        //     this.topBarDrawer = new TopBarSmallDrawer(this);
         // } else {
         //     this.topBarDrawer = new TopBarDefaultDrawer(this);
         // }
@@ -47,9 +49,6 @@ export default class Controls extends Scene {
     updateData() {
         this.handDrawer.redraw();
 
-        if (!this.topBarDrawer) {
-            this.topBarDrawer = new TopBarDefaultDrawer(this);
-        }
         this.topBarDrawer.setPlayersData(this.gameManager.currentPlayer, this.gameManager.otherPlayers, this.gameManager.playerTime);
     }
 
