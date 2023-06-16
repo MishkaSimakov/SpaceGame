@@ -30,7 +30,11 @@ enum ModuleTypes {
     StructureModule
 }
 
+export let moduleIdCounter = 0;
+
 class Module {
+    id: number = moduleIdCounter++;
+
     name: string;
     description?: string;
 

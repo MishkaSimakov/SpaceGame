@@ -6,6 +6,7 @@ import {Rectangle} from "./engine/shapes/Rectangle";
 import Color from "./Color";
 import {isEvent, Event, EventTypes} from "../../../common/events/Event";
 import {Group} from "./engine/Group";
+import Module, {isModule} from "../../../common/modules/Module";
 
 export default class HandDrawer {
     group: Group;
@@ -18,6 +19,8 @@ export default class HandDrawer {
     gameManager: Game;
     background: Rectangle;
 
+    hand: (Module|Event)[] = [];
+
     constructor(game: Game, scene: Scene) {
         this.gameManager = game;
         this.cardSize = Math.max(128 * scene.width() / 1440, 75);
@@ -26,10 +29,31 @@ export default class HandDrawer {
         this.group = this.scene.createAndAdd.group();
     }
 
+    setHandData(hand: (Module|Event)[]) {
+        let newHandData = [];
+
+        for (let card of hand) {
+            if (isModule(card)) {
+                const module = card as Module;
+
+                const existingModule = this.hand.find(c => {
+                    return isModule(c) && (c as Module).id === module.id;
+                });
+
+                if (existingModule)
+                    module.rotation = (existingModule as Module).rotation;
+            }
+
+            newHandData.push(card);
+        }
+
+        this.hand = newHandData;
+    }
+
     redraw() {
         this.destroy();
 
-        let hand = this.gameManager.getCurrentPlayer().hand;
+        let hand = this.hand;
 
         if (hand.length === 0)
             return;
@@ -73,7 +97,6 @@ export default class HandDrawer {
 
         this.group.add(this.background);
 
-        // TODO: uncomment
         for (let [index, card] of hand.entries()) {
             let cardShape = new Card({
                 size: this.cardSize,
@@ -84,10 +107,13 @@ export default class HandDrawer {
             });
             this.group.add(cardShape);
 
-            let rotation = 0;
             cardShape.on('click', () => {
-                rotation++;
-                cardShape.rotateCard(rotation * Math.PI / 2);
+                console.log("click!");
+
+                const module = card as Module;
+
+                module.rotation = (module.rotation + 1) % 4;
+                cardShape.rotateCard(module.rotation * (Math.PI / 2));
             });
 
             if (isEvent(card) && (card as Event).type === EventTypes.SaveCardAndThenDealDamage) {
@@ -96,6 +122,7 @@ export default class HandDrawer {
                 cardShape.on('dragend', async (evt) => {
                     console.log("uncomment");
 
+                    // TODO: uncomment
                     // let distance_y = Math.abs(pointer.y - cardShape.input.dragStartY);
                     //
                     // if (distance_y > 50) {

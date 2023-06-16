@@ -61,6 +61,7 @@ export default class RebuildSpaceshipManager {
 
                     this.hand.push(...unconnected);
 
+                    this.controlsScene.handDrawer.setHandData(this.hand);
                     this.controlsScene.handDrawer.redraw();
 
                     this.setIsRebuildSpaceshipAllowed(true);
@@ -81,6 +82,7 @@ export default class RebuildSpaceshipManager {
                 this.hand.push(module, ...unconnected);
 
                 // add to hand shapes
+                this.controlsScene.handDrawer.setHandData(this.hand);
                 this.controlsScene.handDrawer.redraw();
 
                 this.setIsRebuildSpaceshipAllowed(true);
@@ -111,6 +113,7 @@ export default class RebuildSpaceshipManager {
                     this.spaceshipShape.setSpaceship(this.spaceship);
 
                     // redraw hand
+                    this.controlsScene.handDrawer.setHandData(this.hand);
                     this.controlsScene.handDrawer.redraw();
 
                     this.setIsRebuildSpaceshipAllowed(true);

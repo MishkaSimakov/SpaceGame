@@ -364,9 +364,18 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         if (height !== 0 && originY)
             tr.translate(0, -1 * height * originY);
 
+        // move rotation position
+        let s = Math.sin(rotation);
+        let c = Math.cos(rotation);
+
+        let dx = (width - width * c + height * s) / 2;
+        let dy = (height - width * s - height * c) / 2;
+
+        tr.translate(dx, dy);
 
         if (rotation !== 0)
             tr.rotate(rotation);
+
 
         if (scaleX !== 1 || scaleY !== 1)
             tr.scale(scaleX, scaleY);

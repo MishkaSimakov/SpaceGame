@@ -49,7 +49,10 @@ export class Card extends Group<CardConfig> {
             color = Color.fromHex('#f8b195');
         }
 
-        this._rotationGroup = new Group();
+        this._rotationGroup = new Group({
+            width: size,
+            height: size
+        });
 
         this._background = new Rectangle({
             width: size,
@@ -146,6 +149,9 @@ export class Card extends Group<CardConfig> {
             }
 
             this._rotationGroup.add(...this._connectors);
+
+            this._rotationGroup.rotation(module.rotation * (Math.PI / 2));
+
             this.add(this._values);
         }
     }

@@ -189,6 +189,7 @@ export default class Spaceships extends Scene {
                     }
 
                     selected = card;
+                    card.moveToTop();
                     selected._background.strokeWidth(5)
                         .stroke(outlineColor.toString());
 
@@ -221,6 +222,7 @@ export default class Spaceships extends Scene {
                     }
 
                     selected.push(card);
+                    card.moveToTop();
                     card._background.strokeWidth(5)
                         .stroke(outlineColor.toString());
 

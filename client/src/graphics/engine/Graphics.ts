@@ -6,7 +6,7 @@ import {Factory} from "./Factory";
 import {Utils} from "./Utils";
 import {Shape} from "./Shape";
 import {DD} from "./Drag";
-import {_registerNode} from "./Global";
+import {_registerNode, Draw} from "./Global";
 
 type GraphicsManagerEvents = 'pointerdown' | 'pointerup' | 'pointermove' | 'ready';
 
@@ -264,7 +264,7 @@ class Graphics extends Container<Scene> {
         this._changedPointerPositions.forEach((pointer) => {
             let shape = this.getIntersection(pointer);
 
-            Graphics['_' + eventType + 'ListenClick'] = true;
+            Draw['_' + eventType + 'ListenClick'] = true;
 
             if (!shape)
                 return;
@@ -375,10 +375,12 @@ class Graphics extends Container<Scene> {
             }, true);
             triggeredOnShape = true;
 
-            if (!Graphics['_' + eventType + 'ListenClick'])
+            if (!Draw['_' + eventType + 'ListenClick']) {
                 return;
+            }
 
             if (shape === this['_' + eventType + 'ClickStart']) {
+                console.log()
                 shape.fire(events.pointerclick, {
                     evt: evt,
                     pointerId: pointer.id
