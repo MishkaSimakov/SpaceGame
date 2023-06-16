@@ -36,8 +36,6 @@ export default class Spaceships extends Scene {
 
         let prevPointerPosition = undefined;
         this.getGraphics().on("mousemove", ({evt}) => {
-
-            console.log("mousemove")
             let pointerPosition = this.getGraphics().getRelativePointerPosition();
 
             if (!DD.isDragging() && prevPointerPosition && evt.buttons !== 0) {
@@ -65,7 +63,6 @@ export default class Spaceships extends Scene {
         });
 
         this.getGraphics().on("wheel", ({evt}) => {
-            console.log("wheel");
             let deltaY = evt.deltaY,
                 zoom = this.scaleX(),
                 newZoom = zoom,
@@ -98,22 +95,6 @@ export default class Spaceships extends Scene {
 
         let lastCenter = undefined;
         let lastDist = 0;
-
-        let pointerShape1 = this.createAndAdd.rectangle({
-            width: 10,
-            height: 10,
-            fill: 'cyan'
-        });
-        let pointerShape2 = this.createAndAdd.rectangle({
-            width: 10,
-            height: 10,
-            fill: 'cyan'
-        });
-        let centerShape = this.createAndAdd.rectangle({
-            width: 10,
-            height: 10,
-            fill: 'red'
-        });
 
         this.getGraphics().on('touchmove', ({evt}) => {
             evt.preventDefault();
@@ -192,7 +173,6 @@ export default class Spaceships extends Scene {
                 const card = shape as Card;
 
                 shape.on('click', () => {
-                    console.log("click!2");
                     let module = card.card() as Module;
 
                     if (!check(module, playerId))
@@ -227,7 +207,6 @@ export default class Spaceships extends Scene {
                 const card = shape as Card;
 
                 shape.on('click', () => {
-                    console.log("click!")
                     let module = card.card() as Module;
 
                     if (!check(module, playerId))

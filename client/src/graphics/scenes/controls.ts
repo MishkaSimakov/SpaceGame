@@ -16,6 +16,7 @@ import {Group} from "../engine/Group";
 import Color from "../Color";
 import {Card} from "../shapes/Card";
 import TopBarDefaultDrawer from "../topbar/TopBarDefaultDrawer";
+import TopBarSmallDrawer from "../topbar/TopBarSmallDrawer";
 
 export default class Controls extends Scene {
     handDrawer: HandDrawer;
@@ -37,13 +38,11 @@ export default class Controls extends Scene {
     adopted() {
         this.handDrawer = new HandDrawer(this.gameManager, this);
 
-        this.topBarDrawer = new TopBarDefaultDrawer(this);
-
-        // if (this.width() < (400 + 2 * 15)) {
-        //     this.topBarDrawer = new TopBarSmallDrawer(this);
-        // } else {
-        //     this.topBarDrawer = new TopBarDefaultDrawer(this);
-        // }
+        if (this.width() < (400 + 2 * 15)) {
+            this.topBarDrawer = new TopBarSmallDrawer(this);
+        } else {
+            this.topBarDrawer = new TopBarDefaultDrawer(this);
+        }
     }
 
     updateData() {

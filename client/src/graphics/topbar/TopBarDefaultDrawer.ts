@@ -37,12 +37,21 @@ export default class TopBarDefaultDrawer extends TopBarDrawer {
             originX: 0.5
         });
 
-        this.drawButtons();
+        let buttons = this.getButtonsGroup(this.sizes.statusWidth - 2 * this.sizes.padding);
+        this.buttonsGroup = buttons;
+
+        buttons.originX(1).x(this.sizes.sceneWidth - this.sizes.margin - this.sizes.padding);
+
+        if (this.status.textShape) {
+            buttons.y(this.status.textShape.getClientRect().bottom + this.sizes.padding);
+        } else {
+            buttons.y(this.sizes.margin + this.sizes.margin);
+        }
 
         let bottomY: number;
 
-        if (this.buttonsShapes.length) {
-            bottomY = this.buttonsShapes[this.buttonsShapes.length - 1].getClientRect().bottom;
+        if (this.buttons.length) {
+            bottomY = buttons.getClientRect().bottom;
         } else {
             bottomY = this.status.textShape.getClientRect().bottom;
         }
@@ -60,7 +69,7 @@ export default class TopBarDefaultDrawer extends TopBarDrawer {
             cornerRadius: this.sizes.cornerRadius
         });
 
-        this.group.add(this.status.backgroundShape, this.status.contextShape, this.status.textShape, ...this.buttonsShapes);
+        this.group.add(this.status.backgroundShape, this.status.contextShape, this.status.textShape, buttons);
     }
 
     drawCurrentPlayerData() {
@@ -162,41 +171,6 @@ export default class TopBarDefaultDrawer extends TopBarDrawer {
 
         this.group.add(this.playersDataBackground, ...this.playersDataText.values(), this.playersDataCloseText);
     }
-
-    drawButtons() {
-        if (!this.buttons)
-            return;
-
-        let totalWidth = this.sizes.statusWidth - 2 * this.sizes.padding;
-
-        let buttonWidth = (totalWidth + this.sizes.padding) / this.buttons.length - this.sizes.padding;
-        let buttonHeight = 40;
-        let startY: number;
-
-        if (this.status.textShape) {
-            startY = this.status.textShape.getClientRect().bottom + this.sizes.padding;
-        } else {
-            startY = this.sizes.margin + this.sizes.margin;
-        }
-
-        let startX = this.sizes.sceneWidth - this.sizes.margin - this.sizes.statusWidth + this.sizes.padding;
-
-        for (let [index, button] of this.buttons.entries()) {
-            let buttonShape = new Button({
-                x: startX + index * (buttonWidth + this.sizes.padding),
-                y: startY,
-                width: buttonWidth,
-                height: buttonHeight,
-                text: button.text,
-                fill: button.color.DEFAULT.toString(),
-                hoverFill: button.color.HOVER.toString(),
-                activeFill: button.color.ACTIVE.toString()
-            })
-                .on('click', button.onClick);
-
-            this.buttonsShapes.push(buttonShape);
-        }
-    };
 
     drawMessages() {
     }

@@ -33,8 +33,8 @@ export default abstract class TopBarDrawer {
         textShape?: Text
     } = {};
 
-    buttons: ButtonData[];
-    buttonsShapes: Button[] = [];
+    buttons: ButtonData[] = [];
+    buttonsGroup: Group;
 
     scale: number;
 
@@ -82,8 +82,6 @@ export default abstract class TopBarDrawer {
 
     abstract drawPlayersData(): void;
 
-    abstract drawButtons(): void;
-
     abstract drawMessages(): void;
 
     clearStatus() {
@@ -127,11 +125,7 @@ export default abstract class TopBarDrawer {
         this.playersDataText.clear();
 
         // clear buttons
-        for (let button of this.buttonsShapes) {
-            button.destroy();
-        }
-        this.buttonsShapes = [];
-
+        this.buttonsGroup?.destroy();
 
         if (this.showPlayersData) {
             this.drawPlayersData();
@@ -185,7 +179,9 @@ export default abstract class TopBarDrawer {
     }
 
     setButtonsDisabled(isDisabled: boolean) {
-        this.buttonsShapes.forEach(b => b.disabled(isDisabled));
+        this.buttonsGroup.children.forEach(b => {
+            (b as Button).disabled(isDisabled);
+        });
     }
 
     getPlayerStatusStringShape(player: OtherPlayer, withName: boolean): Group {
@@ -266,5 +262,35 @@ export default abstract class TopBarDrawer {
             let minutes = Math.floor(time / 60);
             return "-" + minutes + ":" + padWithLeadingZeros(time - minutes * 60, 2);
         }
+    }
+
+    getButtonsGroup(width: number): Group {
+        let group = new Group({
+            width: width
+        });
+
+        if (!this.buttons)
+            return group;
+
+        let buttonWidth = (width + this.sizes.padding) / this.buttons.length - this.sizes.padding;
+        let buttonHeight = 40;
+
+        for (let [index, button] of this.buttons.entries()) {
+            let buttonShape = new Button({
+                x: index * (buttonWidth + this.sizes.padding),
+                y: 0,
+                width: buttonWidth,
+                height: buttonHeight,
+                text: button.text,
+                fill: button.color.DEFAULT.toString(),
+                hoverFill: button.color.HOVER.toString(),
+                activeFill: button.color.ACTIVE.toString()
+            })
+                .on('click', button.onClick);
+
+            group.add(buttonShape);
+        }
+
+        return group;
     }
 }
