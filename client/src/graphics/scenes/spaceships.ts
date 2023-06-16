@@ -36,13 +36,11 @@ export default class Spaceships extends Scene {
 
         this.spaceshipsCardSize = 256 * this.width() / 1440;
 
-        let prevPointerPosition = this.getGraphics().getRelativePointerPosition();
+        let prevPointerPosition = undefined;
         this.getGraphics().on("pointermove", ({evt}) => {
             let pointerPosition = this.getGraphics().getRelativePointerPosition();
 
-            if (DD.isDragging()) return;
-
-            if (evt.buttons !== 0) {
+            if (!DD.isDragging() && prevPointerPosition && evt.buttons !== 0) {
                 this.move({
                     x: pointerPosition.x - prevPointerPosition.x,
                     y: pointerPosition.y - prevPointerPosition.y
@@ -51,6 +49,10 @@ export default class Spaceships extends Scene {
 
             prevPointerPosition = pointerPosition;
         });
+
+        this.getGraphics().on("pointerup", () => {
+            prevPointerPosition = undefined;
+        })
 
         this.getGraphics().on("wheel", ({evt}) => {
             let deltaY = evt.deltaY,
