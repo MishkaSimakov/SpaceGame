@@ -65,7 +65,6 @@ export default abstract class TopBarDrawer {
 
     messages: Message[] = [];
     messagesShape: Group[] = [];
-    hiddenMessageId: number;
 
     constructor(scene: Controls) {
         this.scene = scene;
@@ -107,10 +106,11 @@ export default abstract class TopBarDrawer {
         this.redraw();
     }
 
-    setPlayersData(currentPlayer: Player, otherPlayers: OtherPlayer[], playerTime: Record<number, number>) {
+    setPlayersData(currentPlayer: Player, otherPlayers: OtherPlayer[], playerTime: Record<number, number>, messages: Message[]) {
         this.currentPlayer = currentPlayer;
         this.otherPlayers = otherPlayers;
         this.playerTime = playerTime;
+        this.messages = messages;
 
         this.redraw();
     }

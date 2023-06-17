@@ -71,6 +71,8 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
 
     _cache: Map<string, any> = new Map<string, any>();
 
+    inAnimation: boolean = false;
+
     constructor(config?: Config) {
         this.setAttrs(config);
     }
@@ -249,12 +251,12 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         if (!this.getGraphics())
             return;
 
-        let pos : Vector2;
+        let pos: Vector2;
 
         if (pointerId) {
             pos = this.getGraphics().getPointerById(pointerId);
         } else {
-           pos = this.getGraphics().getPointerPosition()
+            pos = this.getGraphics().getPointerPosition()
         }
 
         if (!pos)
@@ -773,6 +775,57 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         this.clearCache(attr);
     }
 
+    animate(newAttrs, duration: number, animationFunc?: (x: number) => number) {
+        if (this.inAnimation)
+            return;
+
+        this.inAnimation = true;
+
+        const animationAttrs = ['x', 'y', 'scaleX', 'scaleY'];
+
+        const animationStart = new Date().getTime();
+        const startAttrs = {};
+
+        for (let attr of animationAttrs) {
+            startAttrs[attr] = this[attr]();
+            newAttrs[attr] = newAttrs[attr] ?? startAttrs[attr];
+        }
+
+        const _animationFunction = animationFunc ?? ((x: number) => {
+            return -(Math.cos(Math.PI * x) - 1) / 2;
+        });
+
+        const makeAnimationStep = () => {
+            requestAnimationFrame(() => {
+                let currentTime = new Date().getTime();
+                let shouldStop = (currentTime - animationStart) >= duration
+
+                let percent = _animationFunction((currentTime - animationStart) / duration);
+
+                this.batchTransformChanges(() => {
+                    for (let attr of animationAttrs) {
+                        const newValue = shouldStop
+                            ? newAttrs[attr]
+                            : newAttrs[attr] * percent + startAttrs[attr] * (1 - percent);
+
+                        this[attr](newValue);
+                    }
+                });
+
+                this.getScene().waitingForDraw = false;
+                this.getScene().draw();
+
+                if (!shouldStop) {
+                    makeAnimationStep();
+                } else {
+                    this.inAnimation = false;
+                }
+            });
+        }
+
+        makeAnimationStep();
+    }
+
     name: GetSet<string, this>;
     x: GetSet<number, this>;
     y: GetSet<number, this>;
@@ -817,6 +870,10 @@ Node.prototype.on.call(Node.prototype, TRANSFORM_CHANGE_STR, function () {
 
     this.clearCache(TRANSFORM);
     this.clearSelfAndDescendantCache(ABSOLUTE_TRANSFORM);
+});
+
+Node.prototype.on.call(Node.prototype, 'visibleChange.core', function () {
+    this.clearSelfAndDescendantCache(VISIBLE);
 });
 
 Factory.addGetterSetter(Node, 'name', '');

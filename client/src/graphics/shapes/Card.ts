@@ -8,11 +8,17 @@ import {Rectangle} from "../engine/shapes/Rectangle";
 import {Text} from "../engine/shapes/Text";
 import Color from "../Color";
 
+
+export type ModuleStates = 'DEFAULT' | 'ENABLED' | 'DISABLED' | 'PROTECTED' | 'SELECTED';
+
 export interface CardConfig extends ShapeConfig {
     size: number;
     card: (Module | Event);
     stroke?: string;
     strokeWidth?: number;
+    state?: ModuleStates,
+
+    disabledColor?: string
 }
 
 export class Card extends Group<CardConfig> {
@@ -243,10 +249,44 @@ export class Card extends Group<CardConfig> {
         return this._background.strokeWidth();
     }
 
+    setState(state: ModuleStates): Card {
+        const currState = this.state();
+
+        if (currState === 'ENABLED' && state === 'DISABLED')
+            return this;
+
+        this._hitRect.visible(state !== 'DEFAULT' && state !== 'ENABLED');
+
+        this.setAttr('state', state);
+
+        this.updateStateColor();
+
+        return this;
+    }
+
+    setDisabledColor(color: string): Card {
+        this.setAttr('disabledColor', color);
+
+        this.updateStateColor();
+
+        return this;
+    }
+
+    private updateStateColor() {
+        const state = this.state();
+
+        if (state === 'DISABLED') {
+            this._hitRect.fill(this.disabledColor());
+        }
+    }
+
     size: GetSet<number, this>;
     card: GetSet<Module | Event, this>;
     stroke: GetSet<string, this>;
     strokeWidth: GetSet<number, this>;
+    state: GetSet<ModuleStates, this>;
+
+    disabledColor: GetSet<string, this>;
 }
 
 Factory.addGetterSetter(Card, 'size', 100);
@@ -254,3 +294,7 @@ Factory.addGetterSetter(Card, 'card');
 
 Factory.addGetterSetter(Card, 'stroke');
 Factory.addGetterSetter(Card, 'strokeWidth');
+
+Factory.addGetterSetter(Card, 'state', 'DEFAULT');
+
+Factory.addGetterSetter(Card, 'disabledColor', Color.fromHex('#000000', 0.5).toString());

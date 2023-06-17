@@ -178,16 +178,15 @@ export default class TopBarDefaultDrawer extends TopBarDrawer {
     }
 
     drawMessages() {
-        console.log(this.messages);
-        const group = this.getMessagesGroup(this.sizes.statusWidth - 2 * this.sizes.padding, 5);
+        this.messagesGroup = this.getMessagesGroup(this.sizes.statusWidth - 2 * this.sizes.padding, 5);
         const upperShape = this.status.text ? this.status.backgroundShape : this.playersDataBackground;
         const bottomY = upperShape.getClientRect().bottom + this.sizes.margin;
 
-        group
+        this.messagesGroup
             .y(bottomY)
             .originX(1)
             .x(this.sizes.sceneWidth - this.sizes.margin);
 
-        this.group.add(group);
+        this.group.add(this.messagesGroup);
     }
 }

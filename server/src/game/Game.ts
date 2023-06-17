@@ -16,6 +16,13 @@ import {TimeManager, TimeRecordType} from "./TimeManager";
 import MessageManager from "./MessageManager";
 import {GameSettings} from "../../../common/GameForPlayerDTO";
 import {User} from "../entity/user";
+import {beforeTurn} from "./phases/BeforeTurn";
+import {collectEnergy} from "./phases/CollectEnergy";
+import {rebuildSpaceship} from "./phases/RebuildSpaceship";
+import {fixSpaceship} from "./phases/FixSpaceship";
+import {attack} from "./phases/Attack";
+import {drawCards} from "./phases/DrawCards";
+import {discardCards} from "./phases/DiscardCards";
 
 enum GameState {
     WAIT_FOR_PLAYERS,
@@ -52,6 +59,16 @@ export default class Game {
     timeManager: TimeManager;
 
     messageManager: MessageManager;
+
+    steps: Array<(game: Game) => void> = [
+        beforeTurn,
+        collectEnergy,
+        rebuildSpaceship,
+        fixSpaceship,
+        attack,
+        drawCards,
+        discardCards
+    ];
 
     // logger: Logger;
 

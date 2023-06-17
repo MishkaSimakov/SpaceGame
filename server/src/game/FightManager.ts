@@ -48,11 +48,7 @@ export default class FightManager {
             let attacker = this.isFirstPlayerTurn ? this.first : this.second;
             let target = this.isFirstPlayerTurn ? this.second : this.first;
 
-            this.gameManager.timeManager.addRecord(TimeRecordType.FIGHT_TURN_STARTED, attacker);
-
             let destroyed = await this.makeFightIteration(attacker, target);
-
-            this.gameManager.timeManager.addRecord(TimeRecordType.FIGHT_TURN_ENDED, attacker);
 
             if (destroyed !== undefined) {
                 console.log(`Fight has ended. ${destroyed.name} was destroyed`);
@@ -76,64 +72,69 @@ export default class FightManager {
     protected async makeFightIteration(attacker: Player, target: Player): Promise<Player | undefined> {
         console.log(`Fight iteration. ${attacker.name} attack ${target.name}`);
 
-        if (target.canProtect())
-            await this.chooseProtectors(attacker, target);
-
-        let isEscaped = await this.askForRunaway(attacker);
-
-        if (isEscaped) {
-            this.isFightEnded = true;
-            return;
+        if (target.canProtect()) {
+            await this.measureFightTime(async () => {
+                await this.chooseProtectors(target);
+            }, target);
         }
 
-        if (attacker.spaceship.getMainModuleType() === MainModuleType.AttackOrRunaway) {
-            let isEscaped = await this.askForRunawayUsingMainModule(attacker);
+        return await this.measureFightTime(async () => {
+            let isEscaped = await this.askForRunaway(attacker);
 
             if (isEscaped) {
                 this.isFightEnded = true;
                 return;
             }
-        }
 
-        if (attacker.canDamage()) {
-            let usedWeapon = await this.chooseWeaponAndTarget(attacker, target);
+            if (attacker.spaceship.getMainModuleType() === MainModuleType.AttackOrRunaway) {
+                let isEscaped = await this.askForRunawayUsingMainModule(attacker);
 
-            attacker.energy -= usedWeapon.energyCost;
+                if (isEscaped) {
+                    this.isFightEnded = true;
+                    return;
+                }
+            }
 
-            if (target.spaceship.getModulesByType(ModuleTypes.MainModule).length === 0) {
+            if (attacker.canDamage()) {
+                let usedWeapon = await this.chooseWeaponAndTarget(attacker, target);
+
+                attacker.energy -= usedWeapon.energyCost;
+
+                if (target.spaceship.getModulesByType(ModuleTypes.MainModule).length === 0) {
+                    this.isFightEnded = true;
+                    return target;
+                }
+
+                if (attacker.spaceship.getMainModuleType() === MainModuleType.UseModuleSecondTime && attacker.energy >= usedWeapon.energyCost * 2) {
+                    let useSecondTime = await this.gameManager.askForUseModuleSecondTime(attacker, usedWeapon.type);
+
+                    if (useSecondTime) {
+                        attacker.energy -= usedWeapon.energyCost * 2;
+
+                        let targetModule = await this.chooseTarget(attacker, target, usedWeapon);
+
+                        this.damage(attacker, target, usedWeapon, targetModule);
+                    }
+                }
+            }
+
+            if (target.spaceship.activatedProtector)
+                target.spaceship.activatedProtector.isActivated = false;
+            target.spaceship.activatedProtector = undefined;
+
+            if (!target.spaceship.getMainModule()) {
                 this.isFightEnded = true;
                 return target;
             }
 
-            if (attacker.spaceship.getMainModuleType() === MainModuleType.UseModuleSecondTime && attacker.energy >= usedWeapon.energyCost * 2) {
-                let useSecondTime = await this.gameManager.askForUseModuleSecondTime(attacker, usedWeapon.type);
-
-                if (useSecondTime) {
-                    attacker.energy -= usedWeapon.energyCost * 2;
-
-                    let targetModule = await this.chooseTarget(attacker, target, usedWeapon);
-
-                    this.damage(attacker, target, usedWeapon, targetModule);
-                }
+            if (!target.canDamage() && !attacker.canDamage()) {
+                this.isFightEnded = true;
+                return;
             }
-        }
-
-        if (target.spaceship.activatedProtector)
-            target.spaceship.activatedProtector.isActivated = false;
-        target.spaceship.activatedProtector = undefined;
-
-        if (!target.spaceship.getMainModule()) {
-            this.isFightEnded = true;
-            return target;
-        }
-
-        if (!target.canDamage() && !attacker.canDamage()) {
-            this.isFightEnded = true;
-            return;
-        }
+        }, attacker);
     }
 
-    protected async chooseProtectors(attacker: Player, target: Player) {
+    protected async chooseProtectors(target: Player) {
         await this.gameManager.emitToPlayerAndWait(target, 'chooseProtectors', (protectorPosition?: Vector2) => {
             if (protectorPosition && protectorPosition.x !== undefined && protectorPosition.y !== undefined) {
                 let protector: Module = target.spaceship.getModuleByPosition(protectorPosition);
@@ -216,5 +217,15 @@ export default class FightManager {
         let destroyed = target.spaceship.damage(targetModule, weapon, false);
 
         this.gameManager.handleDestroyedModules(target, attacker, destroyed, false);
+    }
+
+    protected async measureFightTime(func: Function, currentPlayer: Player) {
+        this.gameManager.timeManager.addRecord(TimeRecordType.FIGHT_TURN_STARTED, currentPlayer);
+
+        let result = await func();
+
+        this.gameManager.timeManager.addRecord(TimeRecordType.FIGHT_TURN_ENDED, currentPlayer);
+
+        return result;
     }
 }

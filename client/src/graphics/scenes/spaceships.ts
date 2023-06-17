@@ -173,13 +173,17 @@ export default class Spaceships extends Scene {
 
             for (let shape of this.spaceshipShapes[playerId].children) {
                 const card = shape as Card;
+                const module = card.card() as Module;
+
+                if (!check(module, playerId)) {
+                    card.setState('DISABLED');
+
+                    continue;
+                }
+
+                card.setState('ENABLED');
 
                 shape.on('click.choosemodule', () => {
-                    let module = card.card() as Module;
-
-                    if (!check(module, playerId))
-                        return;
-
                     if (selected !== undefined)
                         selected._background.strokeWidth(0);
 
@@ -191,6 +195,7 @@ export default class Spaceships extends Scene {
                     }
 
                     selected = card;
+
                     card.moveToTop();
                     selected.strokeWidth(5).stroke(outlineColor.toString());
 
@@ -207,13 +212,16 @@ export default class Spaceships extends Scene {
             let playerId = parseInt(key);
             for (let shape of this.spaceshipShapes[playerId].children) {
                 const card = shape as Card;
+                const module = card.card() as Module;
+
+                if (!check(module, playerId)) {
+                    card.setState('DISABLED');
+                    continue;
+                }
+
+                card.setState('ENABLED');
 
                 shape.on('click.choosemodule', () => {
-                    let module = card.card() as Module;
-
-                    if (!check(module, playerId))
-                        return;
-
                     if (selected.includes(card))
                         return;
 
@@ -262,6 +270,7 @@ export default class Spaceships extends Scene {
         for (let key in this.spaceshipShapes) {
             for (let shape of this.spaceshipShapes[key].children) {
                 (shape as Card).strokeWidth(0);
+                (shape as Card).setState('DEFAULT');
 
                 shape.off('click.choosemodule');
             }
@@ -271,6 +280,9 @@ export default class Spaceships extends Scene {
     panToPlayerWithId(playerId: number, duration: number = 500) {
         let position = this.spaceshipShapes[playerId].getPosition();
 
-        this.panTo(position.x, position.y, duration);
+        this.animate({
+            x: -position.x * this.scaleX(),
+            y: -position.y * this.scaleY()
+        }, duration);
     }
 }
