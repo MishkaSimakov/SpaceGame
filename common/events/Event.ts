@@ -1,4 +1,5 @@
 import Module from "../modules/Module";
+import {Options} from "../PlainToClass";
 
 enum EventTypes {
     PutTopThreeCardsInAnyOrder,

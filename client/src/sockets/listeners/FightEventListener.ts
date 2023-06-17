@@ -4,6 +4,7 @@ import Game from "../../Game";
 import {COLORS} from "../../graphics/constants";
 import Vector2 from "../../../../common/Vector2";
 import SocketManager from "../SocketManager";
+import Color from "../../graphics/Color";
 
 export default class FightEventListener extends BaseEventListener {
     socket: SocketManager;
@@ -23,7 +24,11 @@ export default class FightEventListener extends BaseEventListener {
                 text: "Далее",
                 color: COLORS.BUTTON.PRIMARY,
                 onClick: () => {
-                    callback(selectedProtector?.getPosition());
+                    const position = selectedProtector
+                        ? new Vector2(selectedProtector.x, selectedProtector.y)
+                        : undefined;
+
+                    callback(position);
 
                     this.controls().topBarDrawer.removeButtons();
                     this.controls().topBarDrawer.clearStatus();
@@ -41,7 +46,7 @@ export default class FightEventListener extends BaseEventListener {
                     return false;
 
                 return true;
-            }, false, 0xa3b18a);
+            }, false, Color.fromHex('#a3b18a'));
         });
 
         this.socket.on('willYouRunaway', (callback: (isTryingToRunaway: boolean) => void) => {
@@ -83,7 +88,10 @@ export default class FightEventListener extends BaseEventListener {
                     if (selectedWeapon === undefined || selectedTarget === undefined)
                         return;
 
-                    callback(selectedWeapon.getPosition(), selectedTarget.getPosition());
+                    callback(
+                        new Vector2(selectedWeapon.x, selectedWeapon.y),
+                        new Vector2(selectedTarget.x, selectedTarget.y)
+                    );
 
                     this.controls().topBarDrawer.removeButtons();
                     this.controls().topBarDrawer.clearStatus();
@@ -107,7 +115,7 @@ export default class FightEventListener extends BaseEventListener {
                     return false;
 
                 return module.strength > 0;
-            }, true, 0xa3b18a);
+            }, true, Color.fromHex('#a3b18a'));
 
             this.game.spaceshipsScene.chooseModule((module?: Module) => {
                 selectedTarget = module;
@@ -117,7 +125,7 @@ export default class FightEventListener extends BaseEventListener {
                 );
             }, (module?: Module, playerLink?: number) => {
                 return playerLink === targetPlayerLink;
-            }, true, 0xe76f51);
+            }, true, Color.fromHex('#e76f51'));
         });
 
         this.socket.on('chooseTarget', (targetPlayerLink: number, usedWeapon: Module, callback: (targetPosition: Vector2) => void) => {
@@ -132,7 +140,7 @@ export default class FightEventListener extends BaseEventListener {
                     if (selectedTarget === undefined)
                         return;
 
-                    callback(selectedTarget.getPosition());
+                    callback(new Vector2(selectedTarget.x, selectedTarget.y));
 
                     this.controls().topBarDrawer.removeButtons();
                     this.controls().topBarDrawer.clearStatus();
@@ -148,7 +156,7 @@ export default class FightEventListener extends BaseEventListener {
                 this.controls().topBarDrawer.setButtonsDisabled(selectedTarget === undefined);
             }, (module?: Module, playerLink?: number) => {
                 return playerLink === targetPlayerLink;
-            }, true, 0xe76f51);
+            }, true, Color.fromHex('#e76f51'));
         });
     }
 }

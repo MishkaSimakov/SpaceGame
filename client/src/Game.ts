@@ -1,13 +1,14 @@
-import Spaceships from "./graphics/scenes/game/spaceships";
-import Controls from "./graphics/scenes/game/controls";
+import Spaceships from "./graphics/scenes/spaceships";
+import Controls from "./graphics/scenes/controls";
 import Player from "../../common/Player";
 import RebuildSpaceshipManager from "./graphics/RebuildSpaceshipManager";
 import {plainToClass} from "../../common/PlainToClass";
 import SocketManager from "./sockets/SocketManager";
-import config from "./config";
 import {Event, EventTypes} from "../../common/events/Event";
 import {GameForPlayerDTO, GameSettings, OtherPlayer} from "../../common/GameForPlayerDTO";
 import {Message} from "../../common/Types";
+import {Graphics} from "./graphics/engine/Graphics";
+import {DD} from "./graphics/engine/Drag";
 
 export default class Game {
     currentPlayer: Player;
@@ -27,17 +28,24 @@ export default class Game {
     messages: Message[];
 
     constructor() {
+        const graphics = new Graphics({
+            container: 'app',
+            width: window.innerWidth,
+            height: window.innerHeight
+        });
+
+        window["graphics"] = graphics;
+        window["drag"] = DD;
+
         this.spaceshipsScene = new Spaceships(this);
         this.controlsScene = new Controls(this);
 
-        config.scene.push(this.spaceshipsScene);
-        config.scene.push(this.controlsScene);
+        graphics.add(this.spaceshipsScene);
+        graphics.add(this.controlsScene);
 
-        const game = new Phaser.Game(config);
+        this.rebuildSpaceshipManager = new RebuildSpaceshipManager(this);
 
-        game.events.once('ready', () => {
-            this.onReady();
-        });
+        this.socketManager = new SocketManager(this);
 
         let prevTime = (new Date()).getTime();
         setInterval(() => {
@@ -53,12 +61,6 @@ export default class Game {
 
             this.controlsScene.topBarDrawer.updateTime(this.playerTime);
         }, 1000);
-    }
-
-    onReady() {
-        this.rebuildSpaceshipManager = new RebuildSpaceshipManager(this);
-
-        this.socketManager = new SocketManager(this);
     }
 
     setGameData(gameDTO: GameForPlayerDTO) {
@@ -84,15 +86,17 @@ export default class Game {
 
         this.messages = gameDTO.messages;
 
+        this.updatePageTitle();
+
         this.redraw();
     }
 
     redraw() {
-        this.controlsScene.redraw();
-        this.spaceshipsScene.redraw();
+        this.controlsScene.updateData();
+        this.spaceshipsScene.updateData();
 
         if (this.rebuildSpaceshipManager.isRebuildingSpaceship) {
-            this.rebuildSpaceshipManager.allowRebuildSpaceship();
+            this.rebuildSpaceshipManager.setIsRebuildSpaceshipAllowed(true);
         }
     }
 
@@ -109,11 +113,29 @@ export default class Game {
         return allPlayers;
     }
 
+    getPlayerById(id: number): OtherPlayer {
+        if (id === this.currentPlayer.id)
+            return this.currentPlayer.getOtherPlayer();
+
+        for (let player of this.otherPlayers) {
+            if (player.id === id)
+                return player;
+        }
+    }
+
     async useEventCard(event: Event): Promise<boolean> {
         if (event.type === EventTypes.SaveCardAndThenDealDamage) {
             // if (!this.getCurrentPlayer().isInFight) return false;
 
             return await this.socketManager.useEventCard(event);
+        }
+    }
+
+    updatePageTitle() {
+        if (this.timeDecreasingPlayerId === this.currentPlayer.id) {
+            document.title = 'Ваш ход - Космические баталии';
+        } else {
+            document.title = 'Космические баталии';
         }
     }
 }

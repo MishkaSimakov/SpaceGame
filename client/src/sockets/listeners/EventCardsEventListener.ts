@@ -6,6 +6,8 @@ import Vector2 from "../../../../common/Vector2";
 import {COLORS} from "../../graphics/constants";
 import {MoveDamageReason} from "../../../../common/Types";
 import SocketManager from "../SocketManager";
+import Color from "../../graphics/Color";
+import {Button} from "../../graphics/shapes/Button";
 
 export default class EventCardsEventListener extends BaseEventListener {
     socket: SocketManager;
@@ -17,10 +19,14 @@ export default class EventCardsEventListener extends BaseEventListener {
 
     addListeners(): void {
         this.socket.on('choosePlayerToStealCardEvent', (playersWithCards: number[], callback: (id: number) => void) => {
-            // TODO: do this!!!
-            // let players = playersWithCards.map(id => this.game.getAllPlayers().find(p => p.id === id));
+            const allPlayers = this.game.getAllPlayers();
+            const players = playersWithCards.map(id => {
+                let player = allPlayers.find(p => p.id === id);
 
-            this.game.controlsScene.chooseFromList("Выберите игрока", playersWithCards.map(v => v.toString())).then((index: number) => {
+                return player ? player.name : id;
+            });
+
+            this.game.controlsScene.chooseFromList("Выберите игрока", players.map(v => v.toString())).then((index: number) => {
                 callback(playersWithCards[index]);
             });
         });
@@ -57,17 +63,17 @@ export default class EventCardsEventListener extends BaseEventListener {
                     if (playerId !== this.game.currentPlayer.id)
                         return false;
 
-                    if (!module.isDamaged())
+                    if (module.health !== module.totalHealth)
                         return false;
 
                     return true;
-                }, count, 0xa3b18a);
+                }, count, Color.fromHex('#a3b18a'));
 
                 this.controls().topBarDrawer.addButtons([{
                     text: "Починить",
                     color: COLORS.BUTTON.PRIMARY,
                     onClick: () => {
-                        callback(modules.map((m) => m.getPosition()));
+                        callback(modules.map((m) => new Vector2(m.x, m.y)));
 
                         this.controls().topBarDrawer.removeButtons();
                         this.controls().topBarDrawer.clearStatus();
@@ -88,17 +94,21 @@ export default class EventCardsEventListener extends BaseEventListener {
                 if (playerId !== this.game.currentPlayer.id)
                     return false;
 
-                if (!module.isDamaged())
+                if (module.health !== module.totalHealth)
                     return false;
 
                 return true;
-            }, false, 0xa3b18a);
+            }, false, Color.fromHex('#a3b18a'));
 
             this.controls().topBarDrawer.addButtons([{
                 text: "Починить",
                 color: COLORS.BUTTON.PRIMARY,
                 onClick: () => {
-                    callback(module?.getPosition());
+                    const position = module
+                        ? new Vector2(module.x, module.y)
+                        : undefined;
+
+                    callback(position);
 
                     this.controls().topBarDrawer.removeButtons();
                     this.controls().topBarDrawer.clearStatus();
@@ -127,7 +137,7 @@ export default class EventCardsEventListener extends BaseEventListener {
                 module = chosen;
                 id = playerId;
 
-                this.controls().topBarDrawer.buttonsShapes[0].setDisabled(module === undefined);
+                (this.controls().topBarDrawer.buttonsGroup.children[0] as Button).disabled(module === undefined);
             }, (module?: Module, playerId?: number) => {
                 if (playerId === this.game.currentPlayer.id)
                     return false;
@@ -136,14 +146,14 @@ export default class EventCardsEventListener extends BaseEventListener {
                     return false;
 
                 return true;
-            }, false, 0xa3b18a);
+            }, false, Color.fromHex('#a3b18a'));
 
             this.controls().topBarDrawer.addButtons([{
                 text: "Атаковать",
                 color: COLORS.BUTTON.DANGER,
                 onClick: () => {
                     if (module) {
-                        callback(id, module.getPosition());
+                        callback(id, new Vector2(module.x, module.y));
                     } else {
                         callback();
                     }
@@ -164,7 +174,7 @@ export default class EventCardsEventListener extends BaseEventListener {
                 }
             }]);
 
-            this.controls().topBarDrawer.buttonsShapes[0].setDisabled(true);
+            (this.controls().topBarDrawer.buttonsGroup.children[0] as Button).disabled(true);
         });
 
         this.socket.on('destroyTwoSolarPanelsOnYourSpaceshipEvent', (callback: (firstPosition: Vector2, secondPosition?: Vector2) => void) => {
@@ -187,7 +197,7 @@ export default class EventCardsEventListener extends BaseEventListener {
                     return false;
 
                 return true;
-            }, count, 0xa3b18a);
+            }, count, Color.fromHex('#a3b18a'));
 
             this.controls().topBarDrawer.setButtonsDisabled(true);
 
@@ -198,9 +208,12 @@ export default class EventCardsEventListener extends BaseEventListener {
                     if (selectedSolarPanels.length < count) return;
 
                     if (count === 1)
-                        callback(selectedSolarPanels[0].getPosition());
+                        callback(new Vector2(selectedSolarPanels[0].x, selectedSolarPanels[0].y));
                     else
-                        callback(selectedSolarPanels[0].getPosition(), selectedSolarPanels[1].getPosition());
+                        callback(
+                            new Vector2(selectedSolarPanels[0].x, selectedSolarPanels[0].y),
+                            new Vector2(selectedSolarPanels[1].x, selectedSolarPanels[1].y)
+                        );
 
                     this.controls().topBarDrawer.removeButtons();
                     this.controls().topBarDrawer.clearStatus();
@@ -226,7 +239,7 @@ export default class EventCardsEventListener extends BaseEventListener {
                     return false;
 
                 return true;
-            }, true, 0xa3b18a);
+            }, true, Color.fromHex('#a3b18a'));
 
             this.controls().topBarDrawer.setButtonsDisabled(true);
 
@@ -236,7 +249,7 @@ export default class EventCardsEventListener extends BaseEventListener {
                 onClick: () => {
                     if (!selectedModule) return;
 
-                    callback(selectedModule.getPosition());
+                    callback(new Vector2(selectedModule.x, selectedModule.y));
 
                     this.controls().topBarDrawer.removeButtons();
                     this.controls().topBarDrawer.clearStatus();
@@ -285,7 +298,7 @@ export default class EventCardsEventListener extends BaseEventListener {
                     return false;
 
                 return true;
-            }, true, 0xa3b18a);
+            }, true, Color.fromHex('#a3b18a'));
 
             this.controls().topBarDrawer.setButtonsDisabled(true);
 
@@ -295,7 +308,7 @@ export default class EventCardsEventListener extends BaseEventListener {
                 onClick: () => {
                     if (!selectedModule) return;
 
-                    callback(selectedModule.getPosition());
+                    callback(new Vector2(selectedModule.x, selectedModule.y));
 
                     this.controls().topBarDrawer.removeButtons();
                     this.controls().topBarDrawer.clearStatus();

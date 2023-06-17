@@ -7,6 +7,7 @@ import MainGameEventListener from "./listeners/MainGameEventListener";
 import {Event} from "../../../common/events/Event";
 import {HAS_PLAYERS_DATA} from "../../../common/Sockets";
 import {GameForPlayerDTO} from "../../../common/GameForPlayerDTO";
+import {Options, plainToClass} from "../../../common/PlainToClass";
 
 export default class SocketManager {
     game: Game;

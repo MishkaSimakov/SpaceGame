@@ -1,12 +1,17 @@
 import {Request, Response} from "express";
 import {User} from "../../entity/user";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
+import jwt, {JwtPayload} from "jsonwebtoken";
 import path from "path";
 import App from "../../App";
 import {AuthenticatedRequest} from "../middleware/auth";
 
 const HOME = '/';
+
+export interface UserJWTPayload extends JwtPayload {
+    _id: string,
+    login: string
+}
 
 let generateToken = (user: User): string => {
     const SECRET_KEY = process.env.JWT_SECRET_KEY;
@@ -21,6 +26,10 @@ export const login = async (req: Request, res: Response) => {
             login: req.body.login
         });
 
+        if (!user) {
+            throw new Error('user dont exist');
+        }
+
         const isMatch = await bcrypt.compare(req.body.password, user.password);
 
         if (!isMatch) {
@@ -28,13 +37,16 @@ export const login = async (req: Request, res: Response) => {
         }
 
         let token = generateToken(user);
+        user.rememberToken = token;
+        await user.save();
 
         return res.cookie('authentication_token', token, {
             expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365)
         }).redirect(HOME);
     } catch (error) {
-        console.log(error);
-        return res.status(500).send('Something went wrong.');
+        console.error(error);
+
+        return res.redirect('/login');
     }
 };
 
@@ -51,13 +63,18 @@ export const register = async (req: Request, res: Response) => {
         let user = new User();
 
         user.login = req.body.login;
-        user.password = req.body.password;
-
+        user.password = await User.createHashedPassword(req.body.password);
         await user.save();
 
-        let token = generateToken(user);
 
-        return res.cookie('authentication_token', token).redirect(HOME);
+        let token = generateToken(user);
+        user.rememberToken = token;
+        await user.save();
+
+
+        return res.cookie('authentication_token', token, {
+            expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365)
+        }).redirect(HOME);
     } catch (error) {
         console.log(error);
         return res.status(500).send('Something went wrong.');

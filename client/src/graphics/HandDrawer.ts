@@ -1,92 +1,132 @@
-import * as Phaser from "phaser";
-import Vector2 from "../../../common/Vector2";
-import {Event, EventTypes, isEvent} from "../../../common/events/Event";
-import {drawCard} from "./CardsDrawer";
 import Game from "../Game";
 import {SIZES} from "./constants";
-
+import {Card} from "./shapes/Card";
+import Scene from "./engine/Scene";
+import {Rectangle} from "./engine/shapes/Rectangle";
+import Color from "./Color";
+import {isEvent, Event, EventTypes} from "../../../common/events/Event";
+import {Group} from "./engine/Group";
+import Module, {isModule} from "../../../common/modules/Module";
 
 export default class HandDrawer {
-    cardSize: number;
-    cardShapes: Phaser.GameObjects.Container[] = [];
+    group: Group;
 
-    scene: Phaser.Scene;
+    cardSize: number;
+    cardShapes: Card[] = [];
+
+    scene: Scene;
 
     gameManager: Game;
-    background: Phaser.GameObjects.Graphics;
+    background: Rectangle;
 
-    constructor(game: Game, scene: Phaser.Scene) {
+    hand: (Module | Event)[] = [];
+
+    constructor(game: Game, scene: Scene) {
         this.gameManager = game;
-        this.cardSize = Math.max(128 * scene.game.canvas.width / 1440, 75);
+        this.cardSize = Math.max(128 * scene.width() / 1440, 75);
         this.scene = scene;
+
+        this.group = this.scene.createAndAdd.group();
+    }
+
+    setHandData(hand: (Module | Event)[]) {
+        let newHandData = [];
+
+        for (let card of hand) {
+            if (isModule(card)) {
+                const module = card as Module;
+
+                const existingModule = this.hand.find(c => {
+                    return isModule(c) && (c as Module).id === module.id;
+                });
+
+                if (existingModule)
+                    module.rotation = (existingModule as Module).rotation;
+            }
+
+            newHandData.push(card);
+        }
+
+        this.hand = newHandData;
     }
 
     redraw() {
         this.destroy();
 
-        let hand = this.gameManager.getCurrentPlayer().hand;
+        let hand = this.hand;
 
         if (hand.length === 0)
             return;
 
-        let sceneWidth = this.scene.game.canvas.width;
-        let sceneHeight = this.scene.game.canvas.height;
+        let sceneWidth = this.scene.width();
+        let sceneHeight = this.scene.height();
         let spaceBetween = this.cardSize * 0.1;
         let handWidth = hand.length * (this.cardSize + spaceBetween) - spaceBetween;
+
+        let strokeWidth = SIZES.STROKE_WIDTH;
 
         let startPosition = (sceneWidth - handWidth) / 2;
         let handHeight = this.cardSize + spaceBetween * 2;
 
         // draw background
-        this.background = this.scene.add.graphics();
-
-        let strokeWidth = SIZES.STROKE_WIDTH;
-        let borderRadius = 10;
-        this.background.fillStyle(0x0B2545, 0.75);
-        this.background.lineStyle(strokeWidth, 0x3D76BE);
-
         if (startPosition < spaceBetween * 2) {
-            this.background.fillRect(0, sceneHeight - handHeight, sceneWidth, handHeight);
-            this.background.strokeRect(
-                0 - strokeWidth / 2, sceneHeight - handHeight - strokeWidth / 2,
-                sceneWidth + strokeWidth, handHeight + strokeWidth
-            );
+            this.background = new Rectangle({
+                x: -strokeWidth,
+                y: sceneHeight - handHeight,
+                width: sceneWidth + 2 * strokeWidth,
+                height: handHeight + strokeWidth
+            });
         } else {
-            this.background.fillRoundedRect(
-                startPosition - spaceBetween, sceneHeight - handHeight,
-                handWidth + 2 * spaceBetween, handHeight,
-                {tl: borderRadius, tr: borderRadius, bl: 0, br: 0}
-            );
-            this.background.strokeRoundedRect(
-                startPosition - spaceBetween - strokeWidth / 2, sceneHeight - handHeight - strokeWidth / 2,
-                handWidth + 2 * spaceBetween + strokeWidth, handHeight + strokeWidth,
-                {tl: borderRadius, tr: borderRadius, bl: 0, br: 0}
-            );
+            this.background = new Rectangle({
+                x: startPosition - spaceBetween,
+                y: sceneHeight - handHeight,
+                width: handWidth + 2 * spaceBetween,
+                height: handHeight + strokeWidth,
+                cornerRadius: [10, 10, 0, 0]
+            });
         }
+
+        this.background
+            .fill(Color.fromHex('#0B2545', 0.75).toString())
+            .stroke(Color.fromHex('#3D76BE').toString())
+            .strokeWidth(strokeWidth)
 
         startPosition = Math.max(startPosition, spaceBetween);
 
-
         // draw cards
+
+        this.group.add(this.background);
+
         for (let [index, card] of hand.entries()) {
-            let position = new Vector2(
-                startPosition + index * (this.cardSize + spaceBetween),
-                sceneHeight - spaceBetween
-            );
+            let cardShape = new Card({
+                size: this.cardSize,
+                card: card,
+                x: startPosition + index * (this.cardSize + spaceBetween),
+                y: sceneHeight - spaceBetween,
+                originY: 1
+            });
+            this.group.add(cardShape);
 
-            position.add(new Vector2(this.cardSize / 2, -this.cardSize / 2));
+            cardShape.on('click', () => {
+                const module = card as Module;
 
-            let cardShape = drawCard(this.scene, card, position, this.cardSize);
+                module.rotation = (module.rotation + 1) % 4;
+                cardShape.rotateCard(module.rotation * (Math.PI / 2));
+            });
 
             if (isEvent(card) && (card as Event).type === EventTypes.SaveCardAndThenDealDamage) {
-                this.scene.input.setDraggable(cardShape, true);
+                cardShape.draggable(true);
 
-                cardShape.on('drag', (pointer: Phaser.Input.Pointer) => {
-                    cardShape.setPosition(pointer.x, pointer.y);
-                });
+                let dragStartPosition;
 
-                cardShape.on('dragend', async (pointer: Phaser.Input.Pointer) => {
-                    let distance_y = Math.abs(pointer.y - cardShape.input.dragStartY);
+                cardShape.on('dragstart', () => {
+                    dragStartPosition = this.scene.getRelativePointerPosition();
+                })
+
+                cardShape.on('dragend', async ({evt}) => {
+                    const pos = this.scene.getRelativePointerPosition();
+
+                    let distance_y = Math.abs(pos.y - dragStartPosition.y);
 
                     if (distance_y > 50) {
                         let isAccepted = await this.gameManager.useEventCard(card as Event);
@@ -102,7 +142,10 @@ export default class HandDrawer {
                         }
                     }
 
-                    cardShape.setPosition(cardShape.input.dragStartX, cardShape.input.dragStartY);
+                    cardShape.setPosition({
+                        x: dragStartPosition.x,
+                        y: dragStartPosition.y
+                    });
                 });
             }
 
@@ -110,21 +153,10 @@ export default class HandDrawer {
         }
     }
 
-    allowDrag() {
+    setDragEnabled(isEnabled: boolean) {
         for (let shape of this.cardShapes) {
-            if (shape.getData('type') === 'event')
-                continue;
-
-            this.scene.input.setDraggable(shape, true);
-        }
-    }
-
-    disallowDrag() {
-        for (let shape of this.cardShapes) {
-            if (shape.getData('type') === 'event')
-                continue;
-
-            this.scene.input.setDraggable(shape, false);
+            if (shape.isModule)
+                shape.draggable(isEnabled);
         }
     }
 

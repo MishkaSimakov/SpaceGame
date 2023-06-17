@@ -75,15 +75,25 @@ export default class Spaceship {
 
             if (!module_in_direction) continue;
 
-            if (module.getConnector(key) !== module_in_direction.getConnector(this.opposites[key])) {
+            if (this.getConnectorInDirection(module, key) !== this.getConnectorInDirection(module_in_direction, this.opposites[key])) {
                 return false;
             }
 
-            if (module.getConnector(key) !== 0)
+            if (this.getConnectorInDirection(module, key) !== 0)
                 hasConnection = true;
         }
 
         return hasConnection || module.isMain;
+    }
+
+    getConnectorInDirection(module: Module, direction: string): number {
+        let directions = ["right", "top", "left", "bottom"];
+
+        let index = directions.indexOf(direction);
+
+        index = (index + module.rotation) % 4;
+
+        return module.connectors[directions[index]];
     }
 
     removeModule(x: number, y: number);
@@ -109,7 +119,7 @@ export default class Spaceship {
     getModuleByPosition(x: (number | Vector2), y?: number): Module {
         if (typeof x == "number") {
             return this.modules.filter(card => card.x === x && card.y === y)[0];
-        } else {
+        } else if (x && x.x !== undefined && x.y !== undefined) {
             return this.modules.filter(card => card.x === x.x && card.y === x.y)[0];
         }
     }
@@ -135,6 +145,22 @@ export default class Spaceship {
         return possible_connections;
     }
 
+    getPossibleRotationsFor(module: Module): number[] {
+        const initRotation = module.rotation;
+        let possibleRotations = [];
+
+        for (let i = 0; i < 4; ++i) {
+            module.rotation = i;
+
+            if (this.canConnectModule(module, module.x, module.y))
+                possibleRotations.push(i);
+        }
+
+        module.rotation = initRotation;
+
+        return possibleRotations;
+    }
+
     getModulesConnectedTo(module: Module): Module[] {
         let connectedModules: Module[] = [];
 
@@ -142,7 +168,7 @@ export default class Spaceship {
             if (!this.getModuleByPosition(module.x + direction[0], module.y + direction[1]))
                 continue;
 
-            if (module.getConnector(index) === 0)
+            if (this.getConnectorInDirection(module, index) === 0)
                 continue;
 
             connectedModules.push(this.getModuleByPosition(module.x + direction[0], module.y + direction[1]));

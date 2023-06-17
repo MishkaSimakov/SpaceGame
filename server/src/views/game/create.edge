@@ -6,6 +6,7 @@
     <title>Космические баталии</title>
 
     <link href="/css/bootstrap.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
 @include('partials/header')
@@ -51,7 +52,9 @@
 
                     <div class="mb-3">
                         <div class="form-check">
+
                             <input class="form-check-input" type="checkbox" value="on" id="time-control" name="time-control" checked>
+
                             <label class="form-check-label" for="time-control">
                                 контроль времени
                             </label>
@@ -228,7 +231,7 @@
 
         document.getElementById('game-create-form').addEventListener('submit', (evt) => {
             let selected = players.filter(p => p.selected);
-            console.log(selected);
+
             if (selected.length < 2 || selected.length > 5) {
                 evt.preventDefault();
 

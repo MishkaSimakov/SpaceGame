@@ -1,12 +1,17 @@
+import Scene from "./engine/Scene";
+import {Rectangle} from "./engine/shapes/Rectangle";
+import {Text} from "./engine/shapes/Text";
+import Color from "./Color";
+
 export default class Modal {
-    scene: Phaser.Scene;
+    scene: Scene;
 
-    backgroundShape: Phaser.GameObjects.Rectangle;
-    titleShape: Phaser.GameObjects.Text;
-    fadeShape: Phaser.GameObjects.Rectangle;
+    backgroundShape: Rectangle;
+    titleShape: Text;
+    fadeShape: Rectangle;
 
-    lines: Phaser.GameObjects.Text[] = [];
-    bottomTextShape: Phaser.GameObjects.Text;
+    lines: Text[] = [];
+    bottomTextShape: Text;
 
     textStartX: number;
     textStartY: number;
@@ -16,11 +21,11 @@ export default class Modal {
 
     offset: number;
 
-    constructor(scene: Phaser.Scene) {
+    constructor(scene: Scene) {
         this.scene = scene;
 
-        this.sceneWidth = this.scene.game.canvas.width;
-        this.sceneHeight = this.scene.game.canvas.height;
+        this.sceneWidth = this.scene.width();
+        this.sceneHeight = this.scene.height();
 
         this.offset = 10;
 
@@ -29,62 +34,67 @@ export default class Modal {
 
         this.textStartX = (this.sceneWidth - width) / 2 + this.offset;
 
-        this.backgroundShape = this.scene.add.rectangle(
-            this.sceneWidth / 2,
-            this.sceneHeight / 2,
-            width, height,
-            0x0B2545, 0.75
-        )
-            .setOrigin(0.5)
-            .setStrokeStyle(2, 0x3D76BE)
-            .setDepth(10);
+        this.fadeShape = this.scene.createAndAdd.rectangle({
+            x: 0,
+            y: 0,
+            width: this.sceneWidth,
+            height: this.sceneHeight,
+            fill: Color.fromHex('#000000', 0.75).toString(),
+        });
 
-        this.fadeShape = this.scene.add.rectangle(
-            0, 0, this.sceneWidth, this.sceneHeight, 0x000000, 0.75
-        )
-            .setOrigin(0, 0)
-            .setDepth(9);
+        this.backgroundShape = this.scene.createAndAdd.rectangle({
+            x: this.sceneWidth / 2,
+            y: this.sceneHeight / 2,
+            width, height,
+            originX: 0.5,
+            originY: 0.5,
+            fill: Color.fromHex('#0B2545', 0.75).toString(),
+            stroke: Color.fromHex('#3D76BE').toString(),
+            strokeWidth: 2
+        })
     }
 
-    setTitle(title: string): Phaser.GameObjects.Text {
-        this.titleShape = this.scene.add.text(
-            this.sceneWidth / 2,
-            this.sceneHeight / 2 - 250 + this.offset,
-            title
-        )
-            .setFontFamily('Exo2Regular')
-            .setFontSize(20)
-            .setOrigin(0.5, 0)
-            .setDepth(11);
+    setTitle(title: string): Text {
+        this.titleShape = this.scene.createAndAdd.text({
+            x: this.sceneWidth / 2,
+            y: this.sceneHeight / 2 - 250 + this.offset,
+            text: title,
+            fill: "white",
+            fontFamily: "Exo2Regular",
+            fontSize: 20,
+            originX: 0.5
+        });
 
-        this.textStartY = this.titleShape.getBounds().bottom + this.offset;
+        this.textStartY = this.titleShape.getClientRect().bottom + this.offset;
 
         return this.titleShape;
     }
 
-    addLine(text: string): Phaser.GameObjects.Text {
+    addLine(text: string): Text {
         this.lines.push(
-            this.scene.add.text(
-                this.textStartX,
-                this.textStartY + this.lines.length * 20,
-                text
-            )
-                .setFontFamily('Exo2Regular')
-                .setOrigin(0, 0)
-                .setDepth(11)
+            this.scene.createAndAdd.text({
+                x: this.textStartX,
+                y: this.textStartY + this.lines.length * 20,
+                text: text,
+                fontSize: 15,
+                fill: "white",
+                fontFamily: "Exo2Regular"
+            })
         );
 
         return this.lines[this.lines.length - 1];
     }
 
-    setBottomText(text: string): Phaser.GameObjects.Text {
-        this.bottomTextShape = this.scene.add.text(
-            this.textStartX,
-            this.sceneHeight / 2 + 250 - this.offset,
-            text
-        )
-            .setOrigin(0, 1)
-            .setDepth(11);
+    setBottomText(text: string): Text {
+        this.bottomTextShape = this.scene.createAndAdd.text({
+            x: this.textStartX,
+            y: this.sceneHeight / 2 + 250 - this.offset,
+            text: text,
+            fill: "white",
+            fontFamily: "Exo2Bold",
+            fontSize: 15,
+            originY: 1
+        });
 
         this.updateBackground();
 

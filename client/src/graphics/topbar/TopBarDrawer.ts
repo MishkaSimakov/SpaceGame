@@ -1,9 +1,13 @@
 import Player from "../../../../common/Player";
-import Button from "../Button";
-import Controls from "../scenes/game/controls";
+import Controls from "../scenes/controls";
 import {ButtonColors, SIZES} from "../constants";
 import {OtherPlayer} from "../../../../common/GameForPlayerDTO";
 import {Message} from "../../../../common/Types";
+import {Rectangle} from "../engine/shapes/Rectangle";
+import {Text} from "../engine/shapes/Text";
+import {Group} from "../engine/Group";
+import {Button} from "../shapes/Button";
+import {PlayerDataLine} from "../shapes/PlayerDataLine";
 
 type ButtonData = {
     text: string, onClick: () => void, color: ButtonColors
@@ -12,24 +16,26 @@ type ButtonData = {
 export default abstract class TopBarDrawer {
     scene: Controls;
 
+    group: Group;
+
     showPlayersData: boolean = false;
-    playersDataBackground: Phaser.GameObjects.Graphics;
-    playersDataText: Phaser.GameObjects.Container[] = [];
-    playersDataCloseText: Phaser.GameObjects.Text;
-    currentPlayerData: Phaser.GameObjects.Container;
+    playersDataBackground: Rectangle;
+    playersDataText: Map<number, PlayerDataLine> = new Map<number, PlayerDataLine>();
+    playersDataCloseText: Text;
+    currentPlayerData: PlayerDataLine;
 
     status: {
         context?: string,
         contextColor?: string,
-        contextShape?: Phaser.GameObjects.Text,
+        contextShape?: Text,
 
         text?: string,
-        backgroundShape?: Phaser.GameObjects.Graphics,
-        textShape?: Phaser.GameObjects.Text
+        backgroundShape?: Rectangle,
+        textShape?: Text
     } = {};
 
-    buttons: ButtonData[];
-    buttonsShapes: Button[] = [];
+    buttons: ButtonData[] = [];
+    buttonsGroup: Group;
 
     scale: number;
 
@@ -40,7 +46,7 @@ export default abstract class TopBarDrawer {
     sizes = {
         margin: 15,
         fontSize: 15,
-        padding: 7.5,
+        padding: 10,
         strokeWidth: SIZES.STROKE_WIDTH,
         cornerRadius: SIZES.CORNER_RADIUS,
         sceneWidth: undefined,
@@ -56,15 +62,19 @@ export default abstract class TopBarDrawer {
     messagesStartY: number = this.sizes.margin;
 
     messages: Message[] = [];
-    messagesShape: Phaser.GameObjects.Container[] = [];
+    messagesShape: Group[] = [];
     hiddenMessageId: number;
 
     constructor(scene: Controls) {
         this.scene = scene;
 
-        this.sizes.sceneWidth = scene.game.canvas.width;
+        this.group = new Group();
 
-        this.scale = scene.game.canvas.width / 1440;
+        this.scene.add(this.group);
+
+        this.sizes.sceneWidth = scene.width();
+
+        this.scale = scene.width() / 1440;
     }
 
     abstract drawStatus(): void;
@@ -72,8 +82,6 @@ export default abstract class TopBarDrawer {
     abstract drawCurrentPlayerData(): void;
 
     abstract drawPlayersData(): void;
-
-    abstract drawButtons(): void;
 
     abstract drawMessages(): void;
 
@@ -115,14 +123,10 @@ export default abstract class TopBarDrawer {
         this.playersDataBackground?.destroy();
         this.playersDataText.forEach(t => t.destroy());
         this.playersDataCloseText?.destroy();
-        this.playersDataText = [];
+        this.playersDataText.clear();
 
         // clear buttons
-        for (let button of this.buttonsShapes) {
-            button.destroy();
-        }
-        this.buttonsShapes = [];
-
+        this.buttonsGroup?.destroy();
 
         if (this.showPlayersData) {
             this.drawPlayersData();
@@ -144,7 +148,17 @@ export default abstract class TopBarDrawer {
     updateTime(playerTime: Record<number, number>) {
         this.playerTime = playerTime;
 
-        this.redraw();
+        for (let key in playerTime) {
+            const id = parseInt(key);
+
+            if (this.playersDataText.has(id)) {
+                this.playersDataText.get(id).time(this.playerTime[id]);
+            }
+
+            if (id === this.currentPlayer.id) {
+                this.currentPlayerData.time(this.playerTime[id])
+            }
+        }
     }
 
     addButtons(buttons: ButtonData[]) {
@@ -160,91 +174,42 @@ export default abstract class TopBarDrawer {
     }
 
     setButtonsDisabled(isDisabled: boolean) {
-        this.buttonsShapes.forEach(b => b.setDisabled(isDisabled));
+        this.buttonsGroup.children.forEach(b => {
+            (b as Button).disabled(isDisabled);
+        });
     }
 
-    getPlayerStatusStringShape(player: OtherPlayer, withName: boolean): Phaser.GameObjects.Container {
-        let container = this.scene.add.container();
-        let textStyle = {
-            fontFamily: 'Exo2Bold',
-            fontSize: '15px',
-        };
-
-        let startX = 0;
-
-        if (withName) {
-            container.add(
-                this.scene.add.text(0, 0, (player.online ? "🔴 " : "✖️ ") + player.name + ":")
-                    .setStyle(textStyle)
-            );
-
-            startX += 150;
-        }
-
-        container.add(
-            this.scene.add.text(startX, 0, `${player.energy}/${player.spaceship.getTotalCapacity()} ⚡️`)
-                .setStyle(textStyle)
-        );
-
-        container.add(
-            this.scene.add.text(startX + 75, 0, `${player.handSize} 🤚`)
-                .setStyle(textStyle)
-        );
-
-        if (this.scene.gameManager.settings.withTimeControl) {
-            container.add(
-                this.scene.add.text(startX + 150, 0, `${this.timeToString(this.playerTime[player.id])} ⏰`)
-                    .setStyle(textStyle)
-            );
-        }
-
-        let offset = 10;
-        container.setInteractive(
-            new Phaser.Geom.Rectangle(
-                -offset, -offset,
-                container.getBounds().width + offset * 2, container.getBounds().height + offset * 2
-            ),
-            Phaser.Geom.Rectangle.Contains
-        );
-
-        return container;
+    getMessageShape(message: Message): Group {
+        return this.scene.createAndAdd.group();
     }
 
-    getMessageShape(message: Message): Phaser.GameObjects.Container {
-        let container = this.scene.add.container();
-        let textStyle = {
-            fontFamily: 'Exo2Regular',
-            fontSize: '12px',
-            color: '#ffffff'
-        };
+    getButtonsGroup(width: number): Group {
+        let group = new Group({
+            width: width
+        });
 
-        container.add(
-            this.scene.add.text(0, 0, (message.playerId ?? 'ИИ') + ":")
-                .setStyle(textStyle)
-        );
+        if (!this.buttons)
+            return group;
 
-        container.add(
-            this.scene.add.text(50, 0, message.text)
-                .setStyle(textStyle)
-        );
+        let buttonWidth = (width + this.sizes.padding) / this.buttons.length - this.sizes.padding;
+        let buttonHeight = 40;
 
-        return container;
-    }
+        for (let [index, button] of this.buttons.entries()) {
+            let buttonShape = new Button({
+                x: index * (buttonWidth + this.sizes.padding),
+                y: 0,
+                width: buttonWidth,
+                height: buttonHeight,
+                text: button.text,
+                fill: button.color.DEFAULT.toString(),
+                hoverFill: button.color.HOVER.toString(),
+                activeFill: button.color.ACTIVE.toString()
+            })
+                .on('click', button.onClick);
 
-    timeToString(time: number): string {
-        function padWithLeadingZeros(num, totalLength) {
-            return String(num).padStart(totalLength, '0');
+            group.add(buttonShape);
         }
 
-        time = Math.floor(time / 1000);
-
-        if (time >= 0) {
-            let minutes = Math.floor(time / 60);
-            return minutes + ":" + padWithLeadingZeros(time - minutes * 60, 2);
-        } else {
-            time = -time;
-            let minutes = Math.floor(time / 60);
-            return "-" + minutes + ":" + padWithLeadingZeros(time - minutes * 60, 2);
-        }
+        return group;
     }
 }

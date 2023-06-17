@@ -119,8 +119,6 @@ export default class Game {
 
                     let targetModule = target.spaceship.getModuleByPosition(position);
 
-                    // TODO: add check that not main
-
                     let destroyed = target.spaceship.damage(targetModule, 1, false);
 
                     this.handleDestroyedModules(target, player, destroyed, true);
@@ -137,8 +135,6 @@ export default class Game {
         module: Module,
         byReactor: boolean
     }[], isEvent: boolean) {
-        target.energy = Math.min(target.energy, target.spaceship.getTotalCapacity())
-
         for (let destroyedInfo of destroyedModules) {
             let module = destroyedInfo.module
 
@@ -175,6 +171,8 @@ export default class Game {
             target.spaceship.removeModule(modulesExceptMain);
             target.hand.push(...modulesExceptMain);
         }
+
+        target.energy = Math.min(target.energy, target.spaceship.getTotalCapacity());
 
         if (!target.spaceship.getMainModule()) {
             target.setLose();

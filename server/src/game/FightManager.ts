@@ -122,13 +122,15 @@ export default class FightManager {
 
     protected async chooseProtectors(attacker: Player, target: Player) {
         await this.gameManager.emitToPlayerAndWait(target, 'chooseProtectors', (protectorPosition?: Vector2) => {
-            if (protectorPosition !== undefined) {
+            if (protectorPosition && protectorPosition.x !== undefined && protectorPosition.y !== undefined) {
                 let protector: Module = target.spaceship.getModuleByPosition(protectorPosition);
                 target.spaceship.setProtector(protector);
 
                 protector.isActivated = true;
 
                 target.energy -= protector.energyCost;
+
+                this.gameManager.syncPlayersData();
             }
         });
     }

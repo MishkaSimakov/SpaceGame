@@ -1,5 +1,4 @@
 import {Event} from "../events/Event";
-import Vector2 from "../Vector2";
 
 enum ModuleTypes {
     MainModule,
@@ -28,9 +27,12 @@ enum ModuleTypes {
     StructureModule
 }
 
+export let moduleIdCounter = 0;
+
 class Module {
+    id: number = moduleIdCounter++;
+
     name: string;
-    description?: string;
 
     connectors: { top: number, right: number, bottom: number, left: number };
     strength: number = 0;
@@ -49,28 +51,6 @@ class Module {
 
     constructor(connectors: { top: number, right: number, bottom: number, left: number }) {
         this.connectors = connectors;
-    }
-
-    isDamaged(): boolean {
-        return this.health !== this.totalHealth;
-    }
-
-    getConnector(direction: string): number {
-        let directions = ["right", "top", "left", "bottom"];
-
-        let index = directions.indexOf(direction);
-
-        index = (index + this.rotation) % 4;
-
-        return this.connectors[directions[index]];
-    }
-
-    getPosition(): Vector2 {
-        return new Vector2(this.x, this.y);
-    }
-
-    toString(): string {
-        return this.name;
     }
 }
 

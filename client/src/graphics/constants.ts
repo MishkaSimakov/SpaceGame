@@ -1,20 +1,22 @@
-type ButtonColors = { DISABLED: number, DEFAULT: number, HOVER: number, ACTIVE: number };
+import Color from "./Color";
+
+type ButtonColors = { DISABLED: Color, DEFAULT: Color, HOVER: Color, ACTIVE: Color };
 
 const COLORS = {
     BACKGROUND: 0x20202A,
     STROKE: 0x474E68,
     BUTTON: {
         PRIMARY: {
-            DISABLED: 0x9A9AFE,
-            DEFAULT: 0x4343FE,
-            HOVER: 0x0B0BFE,
-            ACTIVE: 0x0101A2,
+            DISABLED: Color.fromHex('#9A9AFE'),
+            DEFAULT: Color.fromHex('#4343FE'),
+            HOVER: Color.fromHex('#0B0BFE'),
+            ACTIVE: Color.fromHex('#0101A2'),
         },
         DANGER: {
-            DISABLED: 0xFF7070,
-            DEFAULT: 0xFF2525,
-            HOVER: 0xE00000,
-            ACTIVE: 0xA30000,
+            DISABLED: Color.fromHex('#FF7070'),
+            DEFAULT: Color.fromHex('#FF2525'),
+            HOVER: Color.fromHex('#E00000'),
+            ACTIVE: Color.fromHex('#A30000'),
         }
     },
     TEXT: 0xFFFFFF,
