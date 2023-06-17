@@ -45,8 +45,13 @@ export default class Scene extends Container<Group | Shape> {
             this.waitingForDraw = true;
 
             requestAnimationFrame(() => {
-                this.draw();
-                this.waitingForDraw = false;
+                try {
+                    this.draw();
+                } catch (err) {
+                    window["errors"].push(err);
+                } finally {
+                    this.waitingForDraw = false;
+                }
             });
         }
     }
@@ -82,7 +87,8 @@ export default class Scene extends Container<Group | Shape> {
         }
     }
 
-    adopted() {};
+    adopted() {
+    };
 }
 
 Scene.prototype.nodeType = 'Scene';

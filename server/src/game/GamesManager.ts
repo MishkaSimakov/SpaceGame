@@ -68,7 +68,13 @@ export default class GamesManager {
                 await this.archiveGame(game);
             }
 
-            this.games.filter(g => g.id !== game.id);
+            // this.games.filter(g => g.id !== game.id);
+
+            let gameId = this.games.findIndex(g => g.id === game.id);
+
+            // TODO: check later
+            // delete this.games[gameId];
+            this.games.splice(gameId, 1);
         });
 
         this.games.push(game);

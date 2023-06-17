@@ -36,6 +36,7 @@ export default class Game {
 
         window["graphics"] = graphics;
         window["drag"] = DD;
+        window["errors"] = [];
 
         this.spaceshipsScene = new Spaceships(this);
         this.controlsScene = new Controls(this);
