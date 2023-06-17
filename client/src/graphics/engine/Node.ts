@@ -12,7 +12,8 @@ import {Draw} from "./Global";
 const TRANSFORM = 'TRANSFORM',
     ABSOLUTE_TRANSFORM = 'ABSOLUTE_TRANSFORM',
     ALL_LISTENERS = 'ALL_LISTENERS',
-    VISIBLE = 'VISIBLE';
+    VISIBLE = 'VISIBLE',
+    GRAPHICS = 'GRAPHICS';
 
 export interface NodeConfig {
     [index: string]: any;
@@ -172,6 +173,10 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
     }
 
     getGraphics(): Graphics {
+        return this.getCache(GRAPHICS, this._getGraphics);
+    }
+
+    _getGraphics(): Graphics {
         let parent = this.getParent();
 
         return parent ? parent.getGraphics() : undefined;
@@ -599,6 +604,12 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         }
     }
 
+    _clearCaches() {
+        this.clearSelfAndDescendantCache(ABSOLUTE_TRANSFORM);
+        this.clearSelfAndDescendantCache(VISIBLE);
+        this.clearSelfAndDescendantCache(GRAPHICS);
+    }
+
     destroy() {
         if (this.isDragging())
             this.stopDrag();
@@ -606,8 +617,7 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         DD._dragElements.delete(this._id);
 
         this.clearCache();
-        this.clearSelfAndDescendantCache(ABSOLUTE_TRANSFORM);
-        this.clearSelfAndDescendantCache(VISIBLE);
+        this._clearCaches();
 
         let parent = this.getParent();
 
@@ -663,11 +673,11 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
 
     clearTransform() {
         let origTransform = {
-            x: this.attrs.x,
-            y: this.attrs.y,
-            scaleX: this.attrs.scaleX,
-            scaleY: this.attrs.scaleY,
-            rotation: this.attrs.rotation
+            x: this.x(),
+            y: this.y(),
+            scaleX: this.scaleX(),
+            scaleY: this.scaleY(),
+            rotation: this.rotation()
         }
 
         this.attrs.x = 0;
@@ -757,7 +767,6 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
 
     setDragPosition(evt, element) {
         const pos = this.getGraphics().getPointerById(element.pointerId);
-
 
         if (!pos)
             return;

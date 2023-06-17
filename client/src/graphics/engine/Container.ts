@@ -109,6 +109,8 @@ export abstract class Container<ChildType extends Node = Node, Config extends No
         child.index = this.children.length;
         child.parent = this;
 
+        child._clearCaches();
+
         this.children.push(child);
 
         this.fire('add', {
@@ -200,23 +202,10 @@ export abstract class Container<ChildType extends Node = Node, Config extends No
             return this.attrs.height;
 
         return this.getClientRect(this, true).height;
-        // if (!this.children)
-        //     return 0;
-        //
-        // let minY = Infinity, maxY = 0;
-        //
-        // this.children.forEach(child => {
-        //     let clRect = child.getClientRect(this);
-        //
-        //     minY = Math.min(minY, clRect.top);
-        //     maxY = Math.max(maxY, clRect.bottom);
-        // });
-        //
-        // return maxY - minY;
     }
 
     clearSelfAndDescendantCache(attr?: string) {
-        super.clearSelfAndDescendantCache();
+        super.clearSelfAndDescendantCache(attr);
 
         this.children?.forEach(node => {
             node.clearSelfAndDescendantCache(attr)
