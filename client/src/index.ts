@@ -24,7 +24,7 @@ async function waitDOMLoad() {
 Promise.all([
     loadFont("Exo2Bold", "/fonts/Exo2-Bold.ttf"),
     loadFont("Exo2Regular", "/fonts/Exo2-Regular.ttf"),
-    waitDOMLoad
+    waitDOMLoad()
 ]).then(() => {
     let game = new Game();
 });

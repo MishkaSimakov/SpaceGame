@@ -34,7 +34,7 @@ export class Spaceship extends Group<SpaceshipConfig> {
             this.add(shape);
 
             if (module.isMain) {
-                shape.draggable(true).dragDistance(0);
+                shape.draggable(true).dragDistance(5);
 
                 shape.on('dragstart', () => {
                     this.moveToTop()

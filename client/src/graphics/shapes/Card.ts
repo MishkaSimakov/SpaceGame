@@ -11,6 +11,8 @@ import Color from "../Color";
 export interface CardConfig extends ShapeConfig {
     size: number;
     card: (Module | Event);
+    stroke?: string;
+    strokeWidth?: number;
 }
 
 export class Card extends Group<CardConfig> {
@@ -203,9 +205,34 @@ export class Card extends Group<CardConfig> {
         return values;
     }
 
+    setStroke(color: string): Card {
+        this._background.stroke(color);
+
+        return this;
+    }
+
+    getStroke(): string {
+        return this._background.stroke();
+    }
+
+    setStrokeWidth(width: number): Card {
+        this._background.strokeWidth(width);
+
+        return this;
+    }
+
+    getStrokeWidth(): number {
+        return this._background.strokeWidth();
+    }
+
     size: GetSet<number, this>;
     card: GetSet<Module | Event, this>;
+    stroke: GetSet<string, this>;
+    strokeWidth: GetSet<number, this>;
 }
 
 Factory.addGetterSetter(Card, 'size', 100);
 Factory.addGetterSetter(Card, 'card');
+
+Factory.addGetterSetter(Card, 'stroke');
+Factory.addGetterSetter(Card, 'strokeWidth');

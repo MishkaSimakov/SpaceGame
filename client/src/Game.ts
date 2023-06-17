@@ -86,6 +86,8 @@ export default class Game {
 
         this.messages = gameDTO.messages;
 
+        this.updatePageTitle();
+
         this.redraw();
     }
 
@@ -126,6 +128,14 @@ export default class Game {
             // if (!this.getCurrentPlayer().isInFight) return false;
 
             return await this.socketManager.useEventCard(event);
+        }
+    }
+
+    updatePageTitle() {
+        if (this.timeDecreasingPlayerId === this.currentPlayer.id) {
+            document.title = 'Ваш ход - Космические баталии';
+        } else {
+            document.title = 'Космические баталии';
         }
     }
 }

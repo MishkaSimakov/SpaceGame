@@ -71,8 +71,22 @@ class TimeManager {
         }
     }
 
+    getLastRecordByType(type: TimeRecordType) {
+        for (let i = this.timeRecords.length - 1; i >= 0; i--) {
+            if (this.timeRecords[i].type === type) {
+                return this.timeRecords[i];
+            }
+        }
+    }
+
     getTimeDecreasingPlayerId(): number {
-        return this.getLastRecord().playerId;
+        const lastRecord = this.getLastRecord();
+
+        if (lastRecord.type === TimeRecordType.FIGHT_TURN_ENDED) {
+            return this.getLastRecordByType(TimeRecordType.DEFAULT_TURN_STARTED).playerId;
+        } else {
+            return lastRecord.playerId;
+        }
     }
 
     getPlayersTime(): Record<number, number> {

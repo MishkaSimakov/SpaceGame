@@ -19,10 +19,14 @@ export default class EventCardsEventListener extends BaseEventListener {
 
     addListeners(): void {
         this.socket.on('choosePlayerToStealCardEvent', (playersWithCards: number[], callback: (id: number) => void) => {
-            // TODO: do this!!!
-            // let players = playersWithCards.map(id => this.game.getAllPlayers().find(p => p.id === id));
+            const allPlayers = this.game.getAllPlayers();
+            const players = playersWithCards.map(id => {
+                let player = allPlayers.find(p => p.id === id);
 
-            this.game.controlsScene.chooseFromList("Выберите игрока", playersWithCards.map(v => v.toString())).then((index: number) => {
+                return player ? player.name : id;
+            });
+
+            this.game.controlsScene.chooseFromList("Выберите игрока", players.map(v => v.toString())).then((index: number) => {
                 callback(playersWithCards[index]);
             });
         });

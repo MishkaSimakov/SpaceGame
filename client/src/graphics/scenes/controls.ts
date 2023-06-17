@@ -326,22 +326,21 @@ export default class Controls extends Scene {
 
                 card.on('click', () => {
                     if (selected.includes(index)) {
-                        card._background.strokeWidth(0);
+                        card.strokeWidth(0);
 
                         selected = selected.filter((s) => s != index);
                         return;
                     }
 
                     if (selected.length == count) {
-                        (cardShapes.children[selected[count - 1]] as Card)._background.strokeWidth(0);
+                        (cardShapes.children[selected[count - 1]] as Card).strokeWidth(0);
 
                         selected[count - 1] = index;
                     } else {
                         selected.push(index);
                     }
 
-                    card._background.strokeWidth(5)
-                        .stroke(outlineColor);
+                    card.strokeWidth(5).stroke(outlineColor);
                 });
             });
         });

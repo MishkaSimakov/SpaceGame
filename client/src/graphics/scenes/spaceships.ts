@@ -6,6 +6,8 @@ import Color from "../Color";
 import {DD} from "../engine/Drag";
 import {Spaceship as SpaceshipShape} from "../shapes/Spaceship";
 import {Card} from "../shapes/Card";
+import {Node} from "../engine/Node";
+import {Shape} from "../engine/Shape";
 
 let spaceshipConfigurations: Vector2[][] = [
     [new Vector2(0, 0)],
@@ -119,7 +121,7 @@ export default class Spaceships extends Scene {
                 return;
             }
 
-            let p1= {
+            let p1 = {
                 x: touch1.clientX,
                 y: touch1.clientY,
             };
@@ -172,7 +174,7 @@ export default class Spaceships extends Scene {
             for (let shape of this.spaceshipShapes[playerId].children) {
                 const card = shape as Card;
 
-                shape.on('click', () => {
+                shape.on('click.choosemodule', () => {
                     let module = card.card() as Module;
 
                     if (!check(module, playerId))
@@ -190,8 +192,7 @@ export default class Spaceships extends Scene {
 
                     selected = card;
                     card.moveToTop();
-                    selected._background.strokeWidth(5)
-                        .stroke(outlineColor.toString());
+                    selected.strokeWidth(5).stroke(outlineColor.toString());
 
                     onSelected(module, playerId);
                 });
@@ -207,7 +208,7 @@ export default class Spaceships extends Scene {
             for (let shape of this.spaceshipShapes[playerId].children) {
                 const card = shape as Card;
 
-                shape.on('click', () => {
+                shape.on('click.choosemodule', () => {
                     let module = card.card() as Module;
 
                     if (!check(module, playerId))
@@ -223,8 +224,7 @@ export default class Spaceships extends Scene {
 
                     selected.push(card);
                     card.moveToTop();
-                    card._background.strokeWidth(5)
-                        .stroke(outlineColor.toString());
+                    card.strokeWidth(5).stroke(outlineColor.toString());
 
                     onSelected(selected.map(s => s.card() as Module));
                 });
@@ -259,14 +259,13 @@ export default class Spaceships extends Scene {
     }
 
     endChoosingModule() {
-        // for (let spaceshipDrawer of Object.values(this.spaceshipDrawers)) {
-        //     for (let shape of spaceshipDrawer.moduleShapes) {
-        //         shape.setStrokeStyle(Color.BLACK, 0);
-        //
-        //         // TODO: add remove listeners and uncomment
-        //         // shape.removeAllListeners('pointerdown');
-        //     }
-        // }
+        for (let key in this.spaceshipShapes) {
+            for (let shape of this.spaceshipShapes[key].children) {
+                (shape as Card).strokeWidth(0);
+
+                shape.off('click.choosemodule');
+            }
+        }
     }
 
     panToPlayerWithId(playerId: number, duration: number = 500) {
