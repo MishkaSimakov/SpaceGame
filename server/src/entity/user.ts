@@ -1,5 +1,13 @@
-import {Entity, PrimaryGeneratedColumn, Column, BaseEntity, BeforeInsert, BeforeUpdate, Unique} from "typeorm"
+import {
+    Entity,
+    PrimaryGeneratedColumn,
+    Column,
+    BaseEntity,
+    ManyToMany,
+    JoinTable
+} from "typeorm"
 import bcrypt from "bcrypt";
+import {Game} from "./game";
 
 @Entity()
 export class User extends BaseEntity {
@@ -12,8 +20,11 @@ export class User extends BaseEntity {
     @Column()
     password: string;
 
-    @Column({ nullable: true })
+    @Column({nullable: true})
     rememberToken: string;
+
+    @ManyToMany(() => Game, (game) => game.players)
+    games: Game[];
 
     static async createHashedPassword(password: string): Promise<string> {
         const saltRounds = 8;

@@ -5,6 +5,7 @@ import jwt, {JwtPayload} from "jsonwebtoken";
 import path from "path";
 import App from "../../App";
 import {AuthenticatedRequest} from "../middleware/auth";
+import {Game} from "../../entity/game";
 
 const HOME = '/';
 
@@ -88,13 +89,49 @@ let getStaticPath = (staticPath: string): string => {
 export const home = async (req: AuthenticatedRequest, res: Response) => {
     let games = App.getInstance().gamesManager.getGamesOfUser(req.user);
 
+    // TODO: return only current player games
+    const user = await User.findOne({
+        where: {
+            id: req.user.id,
+        },
+        relations: {
+            games: {
+                winner: true,
+                players: true
+            }
+        }
+    });
+
+    console.log(user);
+
+    let archivedGames = user?.games ?? [];
+
     res.render('home', {
-        user: req.user,
+        user: {
+            id: user.id,
+            login: user.login
+        },
         games: games.map(game => {
             return {
                 id: game.id,
                 name: game.name,
-                players: game.players.map(p => p.name)
+                players: game.players.map(p => p.name),
+            };
+        }),
+        archivedGames: archivedGames.map(game => {
+            return {
+                id: game.id,
+                name: game.name,
+                winner: {
+                    id: game.winner.id,
+                    login: game.winner.login
+                },
+                players: game.players.map(p => {
+                    return {
+                        id: p.id,
+                        login: p.login
+                    };
+                })
             };
         })
     });
@@ -107,3 +144,47 @@ export const showLoginPage = async (req: Request, res: Response) => {
 export const showRegisterPage = async (req: Request, res: Response) => {
     res.render('auth/register');
 };
+
+export const showUserPage = async (req: Request, res: Response) => {
+    const userId = parseInt(req.url.split('/').pop());
+    const user = await User.findOne({
+        where: {
+            id: userId,
+        },
+        relations: {
+            games: {
+                winner: true,
+                players: true
+            }
+        }
+    });
+
+    if (!user) {
+        return res.status(404).render('error', {
+            code: 404
+        });
+    }
+
+    res.render('user', {
+        user: {
+            id: user.id,
+            login: user.login
+        },
+        archivedGames: user.games?.map(game => {
+            return {
+                id: game.id,
+                name: game.name,
+                winner: {
+                    id: game.winner.id,
+                    login: game.winner.login
+                },
+                players: game.players.map(p => {
+                    return {
+                        id: p.id,
+                        login: p.login
+                    };
+                })
+            };
+        }) || []
+    });
+}

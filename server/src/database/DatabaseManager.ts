@@ -1,5 +1,6 @@
 import {DataSource} from "typeorm";
 import {User} from "../entity/user";
+import {Game} from "../entity/game";
 
 export default class DatabaseManager {
     constructor() {
@@ -14,7 +15,7 @@ export default class DatabaseManager {
             password: process.env.DB_PASSWORD,
             database: process.env.DB_DATABASE,
             synchronize: true,
-            entities: [User],
+            entities: [User, Game],
         });
 
         await AppDataSource.initialize()

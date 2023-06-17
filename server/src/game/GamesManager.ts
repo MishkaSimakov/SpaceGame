@@ -1,10 +1,11 @@
 import {Server, Socket} from "socket.io";
-import Game from "./Game";
 import Player from "../../../common/Player";
 import {GameSettings} from "../../../common/GameForPlayerDTO";
 import {User} from "../entity/user";
 import cookie from "cookie";
 import jwt, {JwtPayload} from "jsonwebtoken";
+import {Game as ArchivedGame} from "../entity/game";
+import Game, {GameState} from "./Game";
 
 export default class GamesManager {
     io: Server;
@@ -57,14 +58,46 @@ export default class GamesManager {
     createGame(name: string, users: User[], settings: GameSettings): Game {
         let game = new Game(this.createGameId(), name, users, settings, this.io);
 
-        game.start().then(() => {
+        console.log("game created!");
+
+        game.start().then(async () => {
             for (let player of game.players)
                 game.getSocket(player).disconnect();
+
+            if (game.state !== GameState.ERROR) {
+                await this.archiveGame(game);
+            }
+
+            this.games.filter(g => g.id !== game.id);
         });
 
         this.games.push(game);
 
         return game;
+    }
+
+    async archiveGame(game: Game) {
+        const users = await User.find();
+        const winnerPlayer = Object.values(game.players).filter(player => !player.isLose())[0];
+        const winnerUser = await User.findOneBy({
+            id: winnerPlayer.id
+        });
+
+        console.log(`Game end. Player ${winnerPlayer.name} has won`);
+
+        if (!winnerUser) {
+            return;
+        }
+
+        let archivedGame = new ArchivedGame();
+
+        archivedGame.name = game.name;
+        archivedGame.winner = winnerUser;
+        archivedGame.players = game.players.map(p => {
+            return users.find(u => u.id === p.id);
+        });
+
+        await archivedGame.save();
     }
 
     getGameById(id: string): Game {
@@ -83,12 +116,17 @@ export default class GamesManager {
     }
 
     private createGameId(length: number = 4): string {
-        let result = '';
-        const characters: string = 'abcdefghjkmnpqrstuvwxyz23456789';
+        let result: string;
 
-        for (let i = 0; i < length; ++i) {
-            result += characters.charAt(Math.floor(Math.random() * characters.length));
-        }
+        do {
+            result = '';
+
+            const characters: string = 'abcdefghjkmnpqrstuvwxyz23456789';
+
+            for (let i = 0; i < length; ++i) {
+                result += characters.charAt(Math.floor(Math.random() * characters.length));
+            }
+        } while (this.getGameById(result));
 
         return result;
     }

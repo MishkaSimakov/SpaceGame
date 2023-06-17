@@ -2,13 +2,10 @@ import Player from "../../../common/Player";
 import GameData from "./GameData";
 import Spaceship from "../../../common/Spaceship";
 import {Server, Socket} from "socket.io";
-import {plainToClass} from "../../../common/PlainToClass";
 import FightManager from "./FightManager";
 import Module, {isModule, ModuleTypes} from "../../../common/modules/Module";
 import {Event, EventTypes} from "../../../common/events/Event";
-import performEvent from "./EventsPerformManager";
-import {MainModuleType} from "../../../common/modules/MainModule";
-import {AttackReason, MoveDamageReason} from "../../../common/Types";
+import {AttackReason} from "../../../common/Types";
 import Vector2 from "../../../common/Vector2";
 import {HAS_PLAYERS_DATA} from "../../../common/Sockets";
 import GameToGameForPlayerMapper from "./GameToGameForPlayerMapper";
@@ -24,10 +21,11 @@ import {attack} from "./phases/Attack";
 import {drawCards} from "./phases/DrawCards";
 import {discardCards} from "./phases/DiscardCards";
 
-enum GameState {
+export enum GameState {
     WAIT_FOR_PLAYERS,
     STARTED,
-    ENDED
+    ENDED,
+    ERROR
 }
 
 export default class Game {
@@ -60,7 +58,7 @@ export default class Game {
 
     messageManager: MessageManager;
 
-    steps: Array<(game: Game) => void> = [
+    phases: Array<(game: Game) => void> = [
         beforeTurn,
         collectEnergy,
         rebuildSpaceship,
@@ -73,6 +71,8 @@ export default class Game {
     // logger: Logger;
 
     constructor(id: string, name: string, users: User[], settings: GameSettings, io: Server) {
+        console.log("inside!");
+
         // this.logger = new Logger(this);
         // this.logger.log("game created!");
         this.id = id;
@@ -378,34 +378,6 @@ export default class Game {
         console.log(`${player.name} lost`);
     }
 
-    end() {
-        let winner = Object.entries(this.players).filter(([_, player]) => !player.isLose())[0][1];
-
-        console.log(`Game end. Player ${winner.name} has won`);
-
-        this.state = GameState.ENDED;
-    }
-
-    collectEnergyPhase() {
-        this.currentPlayer.collectEnergy();
-
-        this.changePlayerData(this.currentPlayer);
-
-        console.log("   Player received energy");
-    }
-
-    async rebuildSpaceshipPhase() {
-        console.log("   Player start rebuilding spaceship");
-
-        await this.emitToCurrentPlayerAndWait('rebuildSpaceship', (changedPlayer: Player) => {
-            this.setRebuildSpaceshipData(plainToClass(changedPlayer, Player.getPropertiesMap()));
-
-            this.syncPlayersData();
-
-            console.log("   Player end rebuilding spaceship");
-        });
-    }
-
     setRebuildSpaceshipData(player: Player) {
         if (this.currentPlayer.socketId !== player.socketId) {
             throw new Error("Wrong player has rebuilt spaceship");
@@ -422,87 +394,6 @@ export default class Game {
         player.energy = Math.min(player.energy, player.spaceship.getTotalCapacity());
 
         this.changePlayerData(player);
-    }
-
-    async useRepairModule(energyCost: number): Promise<boolean> {
-        return await this.emitToCurrentPlayerAndWait('chooseModuleToRepair', async (modulePosition?: Vector2) => {
-            if (!modulePosition)
-                return false;
-
-            this.messageManager.addMessage(`починился ремонтным модулем`, this.currentPlayer);
-
-            let module = this.currentPlayer.spaceship.getModuleByPosition(modulePosition);
-
-            this.currentPlayer.energy -= energyCost;
-            module.health = Math.min(module.health + 1, module.totalHealth);
-
-            return true;
-        });
-    }
-
-    async fixSpaceshipPhase() {
-        console.log("   Player asked for repair spaceship")
-
-        let repairModuleCost = this.currentPlayer.spaceship.getModulesByType(ModuleTypes.RepairModule)[0].energyCost;
-
-        let isRepaired = await this.useRepairModule(repairModuleCost);
-
-        if (!this.currentPlayer.usedRepairOrAttackModuleSecondTimeOnThisTurn && isRepaired
-            && this.currentPlayer.spaceship.getMainModuleType() === MainModuleType.UseModuleSecondTime
-            && this.currentPlayer.spaceship.hasDamagedModules()
-            && this.currentPlayer.energy >= repairModuleCost * 2
-        ) {
-            let useSecondTime = await this.askForUseModuleSecondTime(this.currentPlayer, ModuleTypes.RepairModule);
-
-            if (!useSecondTime)
-                return;
-
-            this.messageManager.addMessage(`починился ремонтным модулем x2`, this.currentPlayer);
-            console.log("   Player use repair module for second time");
-
-            this.currentPlayer.usedRepairOrAttackModuleSecondTimeOnThisTurn = true;
-
-            await this.useRepairModule(repairModuleCost * 2);
-        }
-    }
-
-    async attackPhase() {
-        console.log("   Player asked for attack");
-
-        let attackedPlayer = await this.choosePlayerForAttack(AttackReason.AttackModule);
-
-        if (!attackedPlayer) {
-            console.log(`   Player ${this.currentPlayer.name} is peaceful`);
-
-            return;
-        }
-
-        let energyCost = this.currentPlayer.spaceship.getModulesByType(ModuleTypes.AttackModule)[0].energyCost;
-        this.currentPlayer.energy -= energyCost;
-
-        await this.attackPlayer(attackedPlayer);
-
-        if (!this.currentPlayer.usedRepairOrAttackModuleSecondTimeOnThisTurn
-            && this.currentPlayer.spaceship.getMainModuleType() === MainModuleType.UseModuleSecondTime
-            && this.currentPlayer.energy >= energyCost * 2) {
-            let useSecondTime = await this.askForUseModuleSecondTime(this.currentPlayer, ModuleTypes.AttackModule);
-
-            if (!useSecondTime)
-                return;
-
-            console.log("   Player use attack module for second time");
-
-            this.currentPlayer.energy -= energyCost * 2;
-            this.currentPlayer.usedRepairOrAttackModuleSecondTimeOnThisTurn = true;
-
-            let attackedPlayer = await this.choosePlayerForAttack(AttackReason.UsingAttackModuleSecondTime);
-
-            if (!attackedPlayer) {
-                throw new Error('Attacked player is undefined in UsingAttackModuleSecondTime');
-            }
-
-            await this.attackPlayer(attackedPlayer);
-        }
     }
 
     async choosePlayerForAttack(attackReason: AttackReason): Promise<Player | void> {
@@ -530,106 +421,8 @@ export default class Game {
 
         // if all players destroyed except one
         if (Object.entries(this.players).filter(([_, player]) => !player.isLose()).length === 1) {
-            this.end();
+            this.state = GameState.ENDED;
         }
-    }
-
-    async drawCardsPhase() {
-        console.log("   Player asked to choose card type");
-
-        return await this.emitToCurrentPlayerAndWait('chooseCardType', async (cardType: string) => {
-            console.log(`   Player choose ${cardType} card`);
-
-            if (cardType === 'event') {
-                let event: Event;
-                let drawAnother: boolean;
-
-                do {
-                    drawAnother = false;
-
-                    event = this.gameData.popEventCards()[0];
-
-                    await this.showCardsToPlayer([event], this.currentPlayer, true);
-
-                    console.log(`   Player get event card: ${event.description.replace("\n", " ")}`);
-
-                    if (this.currentPlayer.spaceship.getMainModuleType() === MainModuleType.DrawAnotherEventCard
-                        && this.currentPlayer.energy >= this.ENERGY_TO_DRAG_ANOTHER_EVENT_CARD_BY_MAIN_MODULE) {
-                        await this.emitToCurrentPlayerAndWait('drawAnotherEventCard', (drawAnotherEventCard: boolean) => {
-                            if (!drawAnotherEventCard)
-                                return;
-
-                            this.currentPlayer.energy -= this.ENERGY_TO_DRAG_ANOTHER_EVENT_CARD_BY_MAIN_MODULE;
-
-                            this.gameData.discardCards([event]);
-                            drawAnother = true;
-
-                            console.log(`   Player draw another event card`);
-                        });
-                    }
-                } while (drawAnother);
-
-                console.log(`   Performing event`);
-
-                await performEvent(event, this);
-
-                console.log(`   Event performed`);
-            } else if (cardType === 'module') {
-                // TODO: do later
-                let drawAdditional: boolean;
-
-                do {
-                    drawAdditional = false;
-                    let module = this.gameData.popModuleCards(1)[0];
-
-                    console.log(`   Player get module: ${module.name}`);
-
-                    await this.showCardsToPlayer([module], this.currentPlayer, true);
-
-                    this.currentPlayer.hand.push(module);
-
-                    if (this.currentPlayer.spaceship.getMainModuleType() === MainModuleType.DrawAdditionalModuleCard
-                        && this.currentPlayer.energy >= this.ENERGY_TO_DRAG_ADDITIONAL_CARD_BY_MAIN_MODULE) {
-                        await this.emitToCurrentPlayerAndWait('drawAdditionalModuleCard', (drawAdditionalModuleCard: boolean) => {
-                            if (!drawAdditionalModuleCard)
-                                return;
-
-                            this.currentPlayer.energy -= this.ENERGY_TO_DRAG_ADDITIONAL_CARD_BY_MAIN_MODULE;
-                            drawAdditional = true;
-
-                            console.log(`   Player draw additional module card`);
-                        });
-                    }
-                } while (drawAdditional);
-            }
-
-            this.changePlayerData(this.currentPlayer);
-            this.syncPlayersData();
-        });
-    }
-
-    async discardExtraCardsPhase() {
-        console.log("   Player asked to discard cards");
-
-        await this.emitToCurrentPlayerAndWait('discardCards', (discardedCardsIndexes: number[]) => {
-            console.log(`   Player discarded cards with indexes ${discardedCardsIndexes.join(', ')}`);
-
-            if (this.currentPlayer.hand.length - discardedCardsIndexes.length > 5)
-                throw new Error('Player discarded not enough cards')
-
-            let discardedCards = discardedCardsIndexes.map((index) => {
-                return this.currentPlayer.hand[index];
-            })
-
-            for (let discardedCard of discardedCards) {
-                this.currentPlayer.hand = this.currentPlayer.hand.filter((c) => c !== discardedCard);
-            }
-
-            this.gameData.discardCards(discardedCards);
-
-            this.changePlayerData(this.currentPlayer);
-            this.syncPlayersData();
-        });
     }
 
     async showCardsToPlayer(cards: (Module | Event)[], player: Player, showToOther: boolean) {
@@ -661,80 +454,6 @@ export default class Game {
         return this.getPlayerByIndex(currentPlayerIndex);
     }
 
-    async beforeTurn() {
-        // attack by event card
-        if (this.currentPlayer.hand.filter((m) => {
-            if (isModule(m))
-                return false;
-
-            return (m as Event).type === EventTypes.SaveCardAndThenAttack;
-        }).length !== 0) {
-            let attackedPlayer: Player | void = await this.choosePlayerForAttack(AttackReason.AttackLaterEventCard);
-
-            if (attackedPlayer) {
-                let eventCardIndex: number = this.currentPlayer.hand.findIndex((c) => {
-                    if (isModule(c)) return false;
-
-                    return (c as Event).type === EventTypes.SaveCardAndThenAttack;
-                });
-
-                let discardedEventCard = this.currentPlayer.hand.splice(eventCardIndex, 1);
-                this.gameData.discardCards(discardedEventCard);
-
-                await this.attackPlayer(attackedPlayer);
-            }
-        }
-
-        // attack by command module
-        if (this.currentPlayer.spaceship.getMainModuleType() === MainModuleType.AttackOrRunaway
-            && this.currentPlayer.energy >= this.ENERGY_TO_ATTACK_BY_COMMAND_MODULE) {
-            let attackedPlayer: Player | void = await this.choosePlayerForAttack(AttackReason.MainModule);
-
-            if (attackedPlayer) {
-                this.currentPlayer.energy -= this.ENERGY_TO_ATTACK_BY_COMMAND_MODULE;
-
-                await this.attackPlayer(attackedPlayer);
-            }
-        }
-
-        // repair module by command module
-        if (this.currentPlayer.spaceship.getMainModuleType() === MainModuleType.MoveDamage
-            && this.currentPlayer.energy >= this.ENERGY_TO_MOVE_DAMAGE_BY_COMMAND_MODULE
-            && this.currentPlayer.spaceship.hasDamagedModules()) {
-
-            type MoveData = {
-                from: Vector2,
-                to: Vector2
-            }
-
-            let moveDamageData: MoveData = await this.emitToCurrentPlayerAndWait('chooseModulesToMoveDamage', MoveDamageReason.MainModule, (moveDamage?: MoveData) => {
-                return moveDamage;
-            });
-
-            if (moveDamageData) {
-                let moduleToMoveDamageFrom: Module = this.currentPlayer.spaceship.getModuleByPosition(moveDamageData.from);
-                let moduleToMoveDamageTo: Module = this.currentPlayer.spaceship.getModuleByPosition(moveDamageData.to);
-
-                let newHealth = Math.min(moduleToMoveDamageFrom.totalHealth, moduleToMoveDamageFrom.health + 2);
-
-                moduleToMoveDamageTo.health -= newHealth - moduleToMoveDamageFrom.health;
-                moduleToMoveDamageFrom.health = newHealth;
-
-                if (moduleToMoveDamageTo.health <= 0) {
-                    this.currentPlayer.spaceship.removeModule(moduleToMoveDamageTo);
-
-                    let unconnected = this.currentPlayer.spaceship.getUnconnectedModules();
-                    this.currentPlayer.spaceship.removeModule(unconnected);
-
-                    this.currentPlayer.hand.push(...unconnected);
-
-                    moduleToMoveDamageTo.health = moduleToMoveDamageTo.totalHealth;
-                    this.gameData.discardCards([moduleToMoveDamageTo]);
-                }
-            }
-        }
-    }
-
     async askForUseModuleSecondTime(player: Player, module: ModuleTypes): Promise<boolean> {
         return await this.emitToPlayerAndWait(player, 'askForUseModuleSecondTime', module, (useSecondTime: boolean) => {
             return useSecondTime;
@@ -748,34 +467,20 @@ export default class Game {
 
         this.currentPlayer.usedRepairOrAttackModuleSecondTimeOnThisTurn = false;
 
-        await this.beforeTurn();
+        for (let phase of this.phases) {
+            try {
+                await phase(this);
+            } catch (err) {
+                console.error(err);
 
-        // collect energy
-        this.collectEnergyPhase();
+                this.state = GameState.ERROR;
+            }
 
-        this.syncPlayersData();
-
-        // rebuild spaceship
-        await this.rebuildSpaceshipPhase();
-
-        // fix spaceship
-        if (this.currentPlayer.spaceship.hasRepairModule() && this.currentPlayer.spaceship.hasDamagedModules() && this.currentPlayer.energy >= 2)
-            await this.fixSpaceshipPhase();
-
-        // ask for attack
-        if (this.currentPlayer.spaceship.canAttack() && this.currentPlayer.energy >= 5) {
-            await this.attackPhase();
-
-            if (this.state === GameState.ENDED)
+            if (this.state === GameState.ENDED || this.state === GameState.ERROR)
                 return;
+
+            this.syncPlayersData();
         }
-
-        // take cards
-        await this.drawCardsPhase();
-
-        // discard extra cards
-        if (this.currentPlayer.hand.length > 5)
-            await this.discardExtraCardsPhase();
 
         this.timeManager.addRecord(TimeRecordType.DEFAULT_TURN_ENDED, this.currentPlayer);
     }
