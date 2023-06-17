@@ -52,27 +52,13 @@ export default class FightEventListener extends BaseEventListener {
         this.socket.on('willYouRunaway', (callback: (isTryingToRunaway: boolean) => void) => {
             this.controls().topBarDrawer.setStatus("будете ли вы сбегать?")
 
-            this.controls().topBarDrawer.addButtons([{
-                text: "Да",
-                color: COLORS.BUTTON.PRIMARY,
-                onClick: () => {
-                    callback(true);
+            this.controls().askYesOrNo().then(callback);
+        });
 
-                    this.controls().topBarDrawer.removeButtons();
-                    this.controls().topBarDrawer.clearStatus();
-                    this.game.spaceshipsScene.endChoosingModule();
-                }
-            }, {
-                text: "Нет",
-                color: COLORS.BUTTON.PRIMARY,
-                onClick: () => {
-                    callback(false);
+        this.socket.on('willYouRunawayUsingMainModule', (callback: (isTryingToRunaway: boolean) => void) => {
+            this.controls().topBarDrawer.setStatus("будете ли вы сбегать, используя комадный модуль?")
 
-                    this.controls().topBarDrawer.removeButtons();
-                    this.controls().topBarDrawer.clearStatus();
-                    this.game.spaceshipsScene.endChoosingModule();
-                }
-            }]);
+            this.controls().askYesOrNo().then(callback);
         });
 
         this.socket.on('chooseWeaponAndTarget', (targetPlayerLink: number, callback: (weaponPosition: Vector2, targetPosition: Vector2) => void) => {

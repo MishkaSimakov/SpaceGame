@@ -16,6 +16,8 @@ export default class FightManager {
 
     gameManager: Game;
 
+    MAIN_MODULE_RUNAWAY_ENERGY_COST = 5;
+
     constructor(first: Player, second: Player, gameManager: Game) {
         this.first = first;
         this.second = second;
@@ -80,6 +82,10 @@ export default class FightManager {
         if (isEscaped) {
             this.isFightEnded = true;
             return;
+        }
+
+        if (attacker.spaceship.getMainModuleType() === MainModuleType.AttackOrRunaway) {
+            let isEscaped = this.askForRunawayUsingMainModule(attacker);
         }
 
         if (attacker.canDamage()) {
@@ -152,6 +158,27 @@ export default class FightManager {
             } else {
                 return false;
             }
+        });
+    }
+
+    protected async askForRunawayUsingMainModule(attacker: Player): Promise<boolean> {
+        if (attacker.energy < this.MAIN_MODULE_RUNAWAY_ENERGY_COST)
+            return false;
+
+        return await this.gameManager.emitToPlayerAndWait(attacker, 'willYouRunawayUsingMainModule', (isTryingToRunaway: boolean) => {
+            if (!isTryingToRunaway) {
+                console.log(`   Player dont try to run away using main module`);
+
+                return false;
+            }
+
+            console.log(`   Player has run away using main module`);
+
+            attacker.energy -= this.MAIN_MODULE_RUNAWAY_ENERGY_COST;
+
+            this.gameManager.syncPlayersData();
+
+            return true;
         });
     }
 
