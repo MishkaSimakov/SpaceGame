@@ -78,6 +78,7 @@ let eventsPerformFunctions: Record<EventTypes, (game: Game, event: Event) => Pro
             game.gameData.discardCards([module]);
 
             let unconnected = game.currentPlayer.spaceship.getUnconnectedModules();
+            game.currentPlayer.spaceship.removeModule(unconnected);
             game.currentPlayer.hand.push(...unconnected);
         });
     },
@@ -98,6 +99,7 @@ let eventsPerformFunctions: Record<EventTypes, (game: Game, event: Event) => Pro
             game.gameData.discardCards(solarPanels);
 
             let unconnected = game.currentPlayer.spaceship.getUnconnectedModules();
+            game.currentPlayer.spaceship.removeModule(unconnected);
             game.currentPlayer.hand.push(...unconnected);
         });
     },

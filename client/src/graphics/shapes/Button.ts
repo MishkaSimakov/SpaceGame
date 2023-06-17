@@ -17,6 +17,7 @@ export interface ButtonConfig extends ShapeConfig {
 export class Button extends Group<ButtonConfig> {
     _background: Rectangle;
     _text: Text;
+    _hitRect: Rectangle;
 
     _state: 'DEFAULT' | 'HOVER' | 'ACTIVE' = 'DEFAULT';
 
@@ -43,7 +44,15 @@ export class Button extends Group<ButtonConfig> {
             fontFamily: "Exo2Bold",
         });
 
-        this.add(this._background, this._text);
+        this._hitRect = new Rectangle({
+            x: 0,
+            y: 0,
+            width: width,
+            height: height,
+            visible: false,
+        })
+
+        this.add(this._background, this._text, this._hitRect);
 
         if (this.isPointerInside()) {
             this._state = 'HOVER';
@@ -51,7 +60,7 @@ export class Button extends Group<ButtonConfig> {
             this._updateFill();
         }
 
-        this.on('pointerenter', () => {
+        this._hitRect.on('pointerenter', () => {
             if (this._state !== 'ACTIVE') {
                 this._state = 'HOVER';
 
@@ -59,23 +68,30 @@ export class Button extends Group<ButtonConfig> {
             }
         });
 
-        this.on('pointerout', () => {
+        this._hitRect.on('pointerout', () => {
             this._state = 'DEFAULT';
 
             this._updateFill();
         });
 
-        this.on('pointerdown', () => {
+        this._hitRect.on('pointerdown', () => {
             this._state = 'ACTIVE';
 
             this._updateFill();
         });
 
-        this.on('pointerup', () => {
+        this._hitRect.on('pointerup', () => {
             this._state = 'HOVER';
 
             this._updateFill();
-        })
+        });
+    }
+
+    drawHit() {
+        if (!this.shouldDrawHit())
+            return;
+
+        this._hitRect.drawHit();
     }
 
     isPointerInside(): boolean {

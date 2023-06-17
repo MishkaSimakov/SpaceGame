@@ -2,7 +2,6 @@ import TopBarDrawer from "./TopBarDrawer";
 import Vector2 from "../../../../common/Vector2";
 import {OtherPlayer} from "../../../../common/GameForPlayerDTO";
 import Color from "../Color";
-import {Button} from "../shapes/Button";
 import {Text} from "../engine/shapes/Text";
 import {Rectangle} from "../engine/shapes/Rectangle";
 import {PlayerDataLine} from "../shapes/PlayerDataLine";
@@ -152,11 +151,10 @@ export default class TopBarDefaultDrawer extends TopBarDrawer {
             fontSize: 15,
             fill: "white",
             originY: 1
-        });
-
-        this.playersDataCloseText.on('pointerdown', () => {
-            this.togglePlayerCharacteristics();
-        });
+        })
+            .on('click', () => {
+                this.togglePlayerCharacteristics();
+            });
 
         let totalTextHeight = this.playersDataCloseText.getClientRect().bottom - topY;
 
@@ -180,5 +178,16 @@ export default class TopBarDefaultDrawer extends TopBarDrawer {
     }
 
     drawMessages() {
+        console.log(this.messages);
+        const group = this.getMessagesGroup(this.sizes.statusWidth - 2 * this.sizes.padding, 5);
+        const upperShape = this.status.text ? this.status.backgroundShape : this.playersDataBackground;
+        const bottomY = upperShape.getClientRect().bottom + this.sizes.margin;
+
+        group
+            .y(bottomY)
+            .originX(1)
+            .x(this.sizes.sceneWidth - this.sizes.margin);
+
+        this.group.add(group);
     }
 }

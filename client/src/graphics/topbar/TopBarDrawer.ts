@@ -34,6 +34,8 @@ export default abstract class TopBarDrawer {
         textShape?: Text
     } = {};
 
+    messagesGroup: Group;
+
     buttons: ButtonData[] = [];
     buttonsGroup: Group;
 
@@ -128,6 +130,8 @@ export default abstract class TopBarDrawer {
         // clear buttons
         this.buttonsGroup?.destroy();
 
+        this.messagesGroup?.destroy();
+
         if (this.showPlayersData) {
             this.drawPlayersData();
         } else {
@@ -211,5 +215,27 @@ export default abstract class TopBarDrawer {
         }
 
         return group;
+    }
+
+    getMessagesGroup(width: number, messagesCount: number): Group {
+        const messagesGroup = new Group({
+            width: width
+        });
+
+        const messages= this.messages.slice(-messagesCount);
+
+        let messagesString = messages.map(message => {
+            return (message.playerId ?? 'Игра') + ': ' + message.text;
+        }).join('\n');
+
+        messagesGroup.add(new Text({
+            x: 0,
+            y: 0,
+            text: messagesString,
+            fontFamily: "Exo2Regular",
+            fill: "white"
+        }));
+
+        return messagesGroup;
     }
 }

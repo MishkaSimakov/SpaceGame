@@ -89,6 +89,13 @@ export class PlayerDataLine extends Group<PlayerDataLineConfig> {
         this.add(hitRect);
     }
 
+    drawHit() {
+        if (!this.shouldDrawHit())
+            return;
+
+        this._hitRect.drawHit();
+    }
+
     setTime(time: number) {
         (this.findOne('.time') as Text)?.text(`${this.timeToString(time)} ⏰`);
 

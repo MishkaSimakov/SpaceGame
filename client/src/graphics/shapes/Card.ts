@@ -21,6 +21,7 @@ export class Card extends Group<CardConfig> {
     _title: Text;
     _values: Text;
     _connectors: Rectangle[] = [];
+    _hitRect: Rectangle;
 
     constructor(config: CardConfig) {
         super(config);
@@ -156,6 +157,23 @@ export class Card extends Group<CardConfig> {
 
             this.add(this._values);
         }
+
+        this._hitRect = new Rectangle({
+            x: 0,
+            y: 0,
+            width: size,
+            height: size,
+            visible: false
+        });
+
+        this.add(this._hitRect);
+    }
+
+    drawHit() {
+        if (!this.shouldDrawHit())
+            return false;
+
+        this._hitRect.drawHit();
     }
 
     rotateCard(rotation) {

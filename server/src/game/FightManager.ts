@@ -35,6 +35,8 @@ export default class FightManager {
     }
 
     async fight(): Promise<Player | undefined> {
+        this.gameManager.messageManager.addMessage(this.first.name + ' напал на ' + this.second.name);
+
         if (!this.first.canDamage() && !this.second.canDamage()) {
             this.isFightEnded = true;
             return;
@@ -85,7 +87,12 @@ export default class FightManager {
         }
 
         if (attacker.spaceship.getMainModuleType() === MainModuleType.AttackOrRunaway) {
-            let isEscaped = this.askForRunawayUsingMainModule(attacker);
+            let isEscaped = await this.askForRunawayUsingMainModule(attacker);
+
+            if (isEscaped) {
+                this.isFightEnded = true;
+                return;
+            }
         }
 
         if (attacker.canDamage()) {
