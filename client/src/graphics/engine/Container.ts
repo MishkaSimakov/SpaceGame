@@ -23,6 +23,15 @@ export abstract class Container<ChildType extends Node = Node, Config extends No
         this.requestRedraw();
     }
 
+    destroy() {
+        if (this.hasChildren())
+            this.destroyChildren();
+
+        super.destroy();
+
+        return this;
+    }
+
     hasChildren() {
         return this.getChildren().length > 0;
     }

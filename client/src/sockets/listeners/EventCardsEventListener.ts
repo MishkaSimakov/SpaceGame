@@ -1,5 +1,5 @@
 import BaseEventListener from "./BaseEventListener";
-import {Module, ModuleTypes} from "../../../../common/modules/Module";
+import {isModule, Module, ModuleTypes} from "../../../../common/modules/Module";
 import {Event} from "../../../../common/events/Event";
 import Game from "../../Game";
 import Vector2 from "../../../../common/Vector2";
@@ -33,7 +33,9 @@ export default class EventCardsEventListener extends BaseEventListener {
 
         this.socket.on('chooseCardOfPlayer', (cards: (Module | Event)[], callback: (cardIndex: number) => void) => {
             this.game.controlsScene
-                .chooseFromList("Выберите карту", cards.map(c => c.toString()))
+                .chooseFromList("Выберите карту", cards.map(c => {
+                    return isModule(c) ? (c as Module).name : (c as Event).description;
+                }))
                 .then(callback);
         });
 

@@ -603,6 +603,12 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         if (this.isDragging())
             this.stopDrag();
 
+        DD._dragElements.delete(this._id);
+
+        this.clearCache();
+        this.clearSelfAndDescendantCache(ABSOLUTE_TRANSFORM);
+        this.clearSelfAndDescendantCache(VISIBLE);
+
         let parent = this.getParent();
 
         if (parent && parent.children) {

@@ -67,12 +67,6 @@ export default class Player {
 
     constructor() {}
 
-    protected generateLink(): number {
-        const linkSize = 6;
-
-        return Math.floor(Math.pow(10, linkSize - 1) * (Math.random() * 9 + 1));
-    }
-
     canBeTurnedInto(changedPlayer: Player): boolean {
         let currentCards = [...this.spaceship.modules, ...this.hand];
         let changedCards = [...changedPlayer.spaceship.modules, ...changedPlayer.hand];

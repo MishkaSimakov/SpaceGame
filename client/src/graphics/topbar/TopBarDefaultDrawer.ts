@@ -79,6 +79,7 @@ export default class TopBarDefaultDrawer extends TopBarDrawer {
         this.currentPlayerData = new PlayerDataLine({
             x: this.sizes.sceneWidth - this.sizes.margin - this.sizes.statusWidth + this.sizes.padding,
             y: this.sizes.margin + this.sizes.padding,
+            width: this.sizes.statusWidth - 2 * this.sizes.padding,
 
             player: this.currentPlayer.getOtherPlayer(),
             withName: false,
@@ -125,6 +126,7 @@ export default class TopBarDefaultDrawer extends TopBarDrawer {
             let playersDataLine = new PlayerDataLine({
                 x: textStart.x,
                 y: textStart.y + lineOffset * index,
+                width: this.sizes.statusWidth - 2 * this.sizes.padding,
 
                 player: player,
                 withName: true,

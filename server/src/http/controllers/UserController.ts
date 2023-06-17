@@ -77,7 +77,6 @@ export const register = async (req: Request, res: Response) => {
             expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365)
         }).redirect(HOME);
     } catch (error) {
-        console.log(error);
         return res.status(500).send('Something went wrong.');
     }
 };
@@ -101,8 +100,6 @@ export const home = async (req: AuthenticatedRequest, res: Response) => {
             }
         }
     });
-
-    console.log(user);
 
     let archivedGames = user?.games ?? [];
 

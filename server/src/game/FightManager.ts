@@ -159,7 +159,7 @@ export default class FightManager {
 
             console.log(`   Player try to run away`);
 
-            if (Math.random() * 6 >= 5) {
+            if (Math.random() * 6 >= 4) {
                 console.log(`   Player has run away`);
 
                 return true;

@@ -120,8 +120,6 @@ export default class GameData {
         this.modulesStack = arrayShuffle(this.modulesStack);
         this.eventsStack = arrayShuffle(this.eventsStack);
         this.mainModules = arrayShuffle(this.mainModules);
-
-        this.eventsStack.push(...addEvents(EventTypes.DestroyTwoSolarPanelsOnYourSpaceship, "Уничтожьте 2 солнечные\nбатареи вашего корабля", 2));
     }
 
 

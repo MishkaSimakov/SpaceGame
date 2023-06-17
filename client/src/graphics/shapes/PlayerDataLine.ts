@@ -11,6 +11,7 @@ export interface PlayerDataLineConfig extends NodeConfig {
     withName: boolean,
     withTimeControl: boolean,
     time: number,
+    width: number
 }
 
 export class PlayerDataLine extends Group<PlayerDataLineConfig> {
