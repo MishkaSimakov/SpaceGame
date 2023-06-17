@@ -4,9 +4,16 @@ import {Options} from "./PlainToClass";
 import Module from "./modules/Module";
 import {Message} from "./Types";
 
+type TimeControlSettings = {
+    START_TIME: number;
+    DEFAULT_TIME_INCREASE: number;
+    FIGHT_TIME_INCREASE: number;
+};
+
 type GameSettings = {
     size: number,
     withTimeControl: boolean,
+    timeControlSettings?: TimeControlSettings,
 };
 
 class OtherPlayer {
@@ -43,4 +50,4 @@ class GameForPlayerDTO {
     messages: Message[];
 }
 
-export {GameSettings, GameForPlayerDTO, OtherPlayer};
+export { GameSettings, GameForPlayerDTO, OtherPlayer, TimeControlSettings };
