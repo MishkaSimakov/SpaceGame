@@ -25,9 +25,9 @@ export const DD = {
         return isDragging;
     },
     _drag(evt) {
-        const nodesToFireEvents: Array<Node> = [];
-
         evt.preventDefault();
+
+        const nodesToFireEvents: Array<Node> = [];
 
         DD._dragElements.forEach((element, key) => {
             const {node} = element;

@@ -563,6 +563,8 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
 
         if (draggable) {
             this.on('mousedown.core touchstart.core', (evt) => {
+                evt.evt.preventDefault();
+
                 // TODO: should check button
                 if (this.isDragging())
                     return;
