@@ -41,7 +41,7 @@ export default class RebuildSpaceshipManager {
                 const initRotation = module.rotation;
                 this.spaceship.removeModule(module);
 
-                let possibleRotations = this.spaceship.getPossibleRotationsFor(module);
+                let possibleRotations = this.spaceship.getPossibleRotationsFor(module, module.x, module.y);
 
                 let index = possibleRotations.indexOf(initRotation);
                 index = (index + 1) % possibleRotations.length;
@@ -70,7 +70,24 @@ export default class RebuildSpaceshipManager {
 
                 this.spaceship.removeModule(module.x, module.y);
 
-                if (this.spaceship.addModule(module, localPosition.x, localPosition.y)) {
+                // try possible rotations
+                let canConnect = this.spaceship.canConnectModule(module, localPosition.x, localPosition.y);
+
+                if (!canConnect) {
+                    const possibleRotations = this.spaceship.getPossibleRotationsFor(
+                        module, localPosition.x, localPosition.y
+                    );
+
+                    if (possibleRotations.length) {
+                        module.rotation = possibleRotations[0];
+                        shape.rotation(module.rotation * Math.PI / 2);
+                        canConnect = true;
+                    }
+                }
+
+                if (canConnect) {
+                    this.spaceship.addModule(module, localPosition.x, localPosition.y);
+
                     shape.setPosition({
                         x: localPosition.x * spaceshipCardSize,
                         y: localPosition.y * spaceshipCardSize
@@ -126,7 +143,24 @@ export default class RebuildSpaceshipManager {
                     this.spaceshipShape.getRelativePointerPosition()
                 );
 
-                if (this.spaceship.addModule(module, localPosition.x, localPosition.y)) {
+                // try possible rotations
+                let canConnect = this.spaceship.canConnectModule(module, localPosition.x, localPosition.y);
+
+                if (!canConnect) {
+                    const possibleRotations = this.spaceship.getPossibleRotationsFor(
+                        module, localPosition.x, localPosition.y
+                    );
+
+                    if (possibleRotations.length) {
+                        module.rotation = possibleRotations[0];
+                        shape.rotation(module.rotation * Math.PI / 2);
+                        canConnect = true;
+                    }
+                }
+
+                if (canConnect) {
+                    this.spaceship.addModule(module, localPosition.x, localPosition.y);
+
                     // remove from hand cards
                     this.hand.splice(this.hand.indexOf(module), 1);
 

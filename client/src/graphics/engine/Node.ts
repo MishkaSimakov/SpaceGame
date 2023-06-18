@@ -13,7 +13,8 @@ const TRANSFORM = 'TRANSFORM',
     ABSOLUTE_TRANSFORM = 'ABSOLUTE_TRANSFORM',
     ALL_LISTENERS = 'ALL_LISTENERS',
     VISIBLE = 'VISIBLE',
-    GRAPHICS = 'GRAPHICS';
+    GRAPHICS = 'GRAPHICS',
+    INTERACTIVE = 'INTERACTIVE';
 
 export interface NodeConfig {
     [index: string]: any;
@@ -32,7 +33,8 @@ export interface NodeConfig {
     draggable?: boolean;
     dragDistance?: number;
 
-    visible?: boolean
+    visible?: boolean,
+    interactive?: boolean,
 }
 
 type NodeEventMap = GlobalEventHandlersEventMap & {
@@ -91,6 +93,25 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         }
     }
 
+    isInteractive(): boolean {
+        return this.getCache(INTERACTIVE, this._isInteractive);
+    }
+
+    _isInteractive(): boolean {
+        const interactive = this.interactive();
+
+        if (!interactive)
+            return false;
+
+        const parent = this.getParent();
+
+        if (parent) {
+            return parent.isInteractive();
+        } else {
+            return true;
+        }
+    }
+
     isVisible(): boolean {
         return this.getCache(VISIBLE, this._isVisible);
     }
@@ -111,6 +132,9 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
     }
 
     shouldDrawHit() {
+        if (!this.isInteractive())
+            return false;
+
         const scene = this.getScene();
 
         for (let [_, dragElement] of DD._dragElements) {
@@ -607,6 +631,7 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
     _clearCaches() {
         this.clearSelfAndDescendantCache(ABSOLUTE_TRANSFORM);
         this.clearSelfAndDescendantCache(VISIBLE);
+        this.clearSelfAndDescendantCache(INTERACTIVE);
         this.clearSelfAndDescendantCache(GRAPHICS);
     }
 
@@ -860,6 +885,7 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
     dragDistance: GetSet<number, this>;
 
     visible: GetSet<boolean, this>
+    interactive: GetSet<boolean, this>
 }
 
 Node.prototype.nodeType = 'Node';
@@ -891,6 +917,10 @@ Node.prototype.on.call(Node.prototype, 'visibleChange.core', function () {
     this.clearSelfAndDescendantCache(VISIBLE);
 });
 
+Node.prototype.on.call(Node.prototype, 'interactiveChange.core', function () {
+    this.clearSelfAndDescendantCache(INTERACTIVE);
+});
+
 Factory.addGetterSetter(Node, 'name', '');
 
 Factory.addGetterSetter(Node, 'x', 0);
@@ -915,3 +945,4 @@ Factory.addGetterSetter(Node, 'draggable', false);
 Factory.addGetterSetter(Node, 'dragDistance', undefined);
 
 Factory.addGetterSetter(Node, 'visible', true);
+Factory.addGetterSetter(Node, 'interactive', true);

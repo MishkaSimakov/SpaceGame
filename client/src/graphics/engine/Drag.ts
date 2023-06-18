@@ -27,6 +27,8 @@ export const DD = {
     _drag(evt) {
         const nodesToFireEvents: Array<Node> = [];
 
+        evt.preventDefault();
+
         DD._dragElements.forEach((element, key) => {
             const {node} = element;
             const graphics = node.getGraphics();

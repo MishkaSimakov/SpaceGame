@@ -23,20 +23,24 @@ export class PlayerDataLine extends Group<PlayerDataLineConfig> {
         let startX = 0;
         const player = this.player();
 
-        if (this.withName()) {
-            this.add(
-                new Text({
-                    x: 0,
-                    y: 0,
-                    text: (player.online ? "🔴 " : "✖️ ") + player.name + ":",
-                    fontFamily: "Exo2Bold",
-                    fontSize: 15,
-                    fill: "white"
-                })
-            );
+        let availableSpace = this.width();
 
-            startX += 150;
-        }
+        this.add(
+            new Text({
+                x: 0,
+                y: 0,
+                text: (this.withName() ? (player.online ? "🔴 " : "✖️ ") : "") + player.name + ":",
+                fontFamily: "Exo2Bold",
+                fontSize: 15,
+                fill: "white",
+            })
+        );
+
+        availableSpace -= 150;
+        startX += 150;
+
+        let elementsCount = this.withTimeControl() ? 3 : 2;
+        let spacePerElement = availableSpace / elementsCount;
 
         this.add(
             new Text({
@@ -45,43 +49,44 @@ export class PlayerDataLine extends Group<PlayerDataLineConfig> {
                 text: `${player.energy}/${player.spaceship.getTotalCapacity()} ⚡️`,
                 fontFamily: "Exo2Bold",
                 fontSize: 15,
-                fill: "white"
+                fill: "white",
             })
         );
 
         this.add(
             new Text({
-                x: startX + 75,
+                x: startX + spacePerElement,
                 y: 0,
                 text: `${player.handSize} 🤚`,
                 fontFamily: "Exo2Bold",
                 fontSize: 15,
-                fill: "white"
+                fill: "white",
             })
         );
 
         if (this.withTimeControl()) {
             this.add(
                 new Text({
-                    x: startX + 150,
+                    x: startX + spacePerElement * 3,
                     y: 0,
                     text: `${this.timeToString(this.time())} ⏰`,
                     fontFamily: "Exo2Bold",
                     fontSize: 15,
                     fill: "white",
-                    name: "time"
+                    name: "time",
+
+                    originX: 1,
+                    align: 'right'
                 })
             );
         }
-
-        let sizes = this.getClientRect(this);
 
         let hitOffset = 5;
         let hitRect = new Rectangle({
             x: -hitOffset,
             y: -hitOffset,
-            width: sizes.width + hitOffset * 2,
-            height: sizes.height + hitOffset * 2,
+            width: this.width() + hitOffset * 2,
+            height: this.height() + hitOffset * 2,
             visible: false,
         });
 

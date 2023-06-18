@@ -101,53 +101,6 @@ export default class Game {
         this.messageManager = new MessageManager();
     }
 
-    addUseEventCardEvent(player: Player) {
-        this.getSocket(player).on('useEventCard', async (event: Event, callback: (isAccepted: boolean) => void) => {
-            if (event.type === EventTypes.SaveCardAndThenDealDamage) {
-                if (!this.isPlayerInFight(player)) {
-                    callback(false);
-                    return;
-                }
-
-                let target = this.currentFight.getEnemyOf(player);
-
-                if (target.spaceship.modules.length === 1) {
-                    callback(false);
-                    return;
-                }
-
-                callback(true);
-
-                this.getSocket(player).emit('chooseModuleToDealDamage', target.id, (position: Vector2) => {
-                    this.messageManager.addMessage(`нанёс 1 урон ${target.id} картой действия`, player);
-
-                    player = this.getPlayerById(player.id);
-
-                    let discardedCardIndex = player.hand.findIndex((c) => {
-                        if (isModule(c))
-                            return false;
-
-                        return c.type === EventTypes.SaveCardAndThenDealDamage;
-                    });
-                    let discardedCard = player.hand[discardedCardIndex];
-                    player.hand = player.hand.filter((c) => c != discardedCard);
-
-                    this.changePlayerData(player);
-
-                    let targetModule = target.spaceship.getModuleByPosition(position);
-
-                    let destroyed = target.spaceship.damage(targetModule, 1, false);
-
-                    this.handleDestroyedModules(target, player, destroyed, true);
-
-                    if (player.id === this.currentEmitPlayerId) {
-                        this.currentEmitFunction();
-                    }
-                });
-            }
-        });
-    }
-
     handleDestroyedModules(target: Player, attacker: Player, destroyedModules: {
         module: Module,
         byReactor: boolean
@@ -288,8 +241,6 @@ export default class Game {
         player.online = true;
 
         this.changePlayerData(player);
-
-        this.addUseEventCardEvent(player);
 
         this.syncPlayersData();
 
@@ -476,12 +427,23 @@ export default class Game {
                 this.state = GameState.ERROR;
             }
 
-            if (this.state === GameState.ENDED || this.state === GameState.ERROR)
-                return;
+            if (this.timeManager.getPlayersTime()[this.currentPlayer.id] <= 0 && this.settings.loseWhenTimeout) {
+                this.currentPlayer.setLose();
+            }
+
+            if (this.currentPlayer.isLose()) {
+                break;
+            }
+
+            if (this.state === GameState.ENDED || this.state === GameState.ERROR) {
+                break;
+            }
 
             this.syncPlayersData();
         }
 
         this.timeManager.addRecord(TimeRecordType.DEFAULT_TURN_ENDED, this.currentPlayer);
+
+        this.syncPlayersData();
     }
 }

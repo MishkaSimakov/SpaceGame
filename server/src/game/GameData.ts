@@ -120,6 +120,16 @@ export default class GameData {
         this.modulesStack = arrayShuffle(this.modulesStack);
         this.eventsStack = arrayShuffle(this.eventsStack);
         this.mainModules = arrayShuffle(this.mainModules);
+
+        this.eventsStack.push(
+            ...addEvents(EventTypes.SaveCardAndThenDealDamage, "Сохраните эту карточку\n" +
+                "у себя на руке.\n" +
+                "В свой бой вы можете\n" +
+                "скинуть её,\n" +
+                "нанося 1 урон любому\nмодулю корабля\nсоперника\n" +
+                "(кроме командного)",
+                2),
+        );
     }
 
 

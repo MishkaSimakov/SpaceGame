@@ -114,41 +114,6 @@ export default class HandDrawer {
                 cardShape.rotateCard(module.rotation * (Math.PI / 2));
             });
 
-            if (isEvent(card) && (card as Event).type === EventTypes.SaveCardAndThenDealDamage) {
-                cardShape.draggable(true);
-
-                let dragStartPosition;
-
-                cardShape.on('dragstart', () => {
-                    dragStartPosition = this.scene.getRelativePointerPosition();
-                })
-
-                cardShape.on('dragend', async ({evt}) => {
-                    const pos = this.scene.getRelativePointerPosition();
-
-                    let distance_y = Math.abs(pos.y - dragStartPosition.y);
-
-                    if (distance_y > 50) {
-                        let isAccepted = await this.gameManager.useEventCard(card as Event);
-
-                        if (isAccepted) {
-                            cardShape.destroy();
-
-                            let hand = this.gameManager.getCurrentPlayer().hand;
-                            hand.splice(hand.indexOf(card), 1);
-                            this.redraw();
-
-                            return;
-                        }
-                    }
-
-                    cardShape.setPosition({
-                        x: dragStartPosition.x,
-                        y: dragStartPosition.y
-                    });
-                });
-            }
-
             this.cardShapes.push(cardShape);
         }
     }

@@ -129,6 +129,18 @@ export class Text extends Shape {
         });
     }
 
+    setText(text: string): Text {
+        this.setAttr('text', text);
+
+        this.setTextData();
+        this.clearCache('TRANSFORM');
+        this.clearCache('ABSOLUTE_TRANSFORM');
+
+        this.requestRedraw();
+
+        return this;
+    }
+
     setTextData() {
         let lines = this.text().split('\n');
         let fontSize = this.fontSize();
@@ -150,6 +162,8 @@ export class Text extends Shape {
 
         this.textHeight = lineHeightPx * lines.length;
         this.textWidth = textWidth;
+
+        context.restore();
     }
 
     setWidth() {

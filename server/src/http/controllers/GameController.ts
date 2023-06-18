@@ -3,7 +3,7 @@ import App from "../../App";
 import {User} from "../../entity/user";
 import {AuthenticatedRequest} from "../middleware/auth";
 import {arrayShuffle} from "../../game/GameData";
-import {GameSettings, TimeControlSettings} from "../../../../common/GameForPlayerDTO";
+import {GameSettings} from "../../../../common/GameForPlayerDTO";
 
 export const create = async (req: Request, res: Response) => {
     try {
@@ -23,6 +23,7 @@ export const create = async (req: Request, res: Response) => {
         let gameSettings: GameSettings = {
             withTimeControl: withTimeControl,
             size: selectedUsers.length,
+            loseWhenTimeout: req.body['lose-when-timeout'] === 'on' && withTimeControl
         };
 
         if (withTimeControl) {

@@ -20,6 +20,8 @@ const COLORS = {
         }
     },
     TEXT: 0xFFFFFF,
+    DANGER_STROKE: Color.fromHex('#e76f51'),
+    DEFAULT_STROKE: Color.fromHex('#a3b18a'),
 };
 
 let SIZES = {

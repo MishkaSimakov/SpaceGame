@@ -1,9 +1,10 @@
 import Player from "../../../common/Player";
-import Module, {ModuleTypes} from "../../../common/modules/Module";
+import Module, {isModule} from "../../../common/modules/Module";
 import Game from "./Game";
 import Vector2 from "../../../common/Vector2";
 import {MainModuleType} from "../../../common/modules/MainModule";
 import {TimeRecordType} from "./TimeManager";
+import {Event, EventTypes, isEvent} from "../../../common/events/Event";
 
 // chooseProtectors -> willYouRunaway -> chooseWeaponAndTarget -> updateOtherPlayerData
 export default class FightManager {
@@ -73,12 +74,27 @@ export default class FightManager {
         console.log(`Fight iteration. ${attacker.name} attack ${target.name}`);
 
         if (target.canProtect()) {
+            this.gameManager.syncPlayersData();
+
             await this.measureFightTime(async () => {
                 await this.chooseProtectors(target);
             }, target);
+
+            this.gameManager.syncPlayersData();
         }
 
         return await this.measureFightTime(async () => {
+            if (attacker.hand.filter(c => {
+                if (isEvent(c)) {
+                    return (c as Event).type === EventTypes.SaveCardAndThenDealDamage;
+                }
+
+                return false;
+            }).length) {
+                await this.useEventCardToDealDamage(attacker, target);
+            }
+
+
             let isEscaped = await this.askForRunaway(attacker);
 
             if (isEscaped) {
@@ -100,7 +116,7 @@ export default class FightManager {
 
                 attacker.energy -= usedWeapon.energyCost;
 
-                if (target.spaceship.getModulesByType(ModuleTypes.MainModule).length === 0) {
+                if (!target.spaceship.getMainModule()) {
                     this.isFightEnded = true;
                     return target;
                 }
@@ -146,6 +162,43 @@ export default class FightManager {
 
                 this.gameManager.syncPlayersData();
             }
+        });
+    }
+
+    protected async useEventCardToDealDamage(attacker: Player, target: Player) {
+        if (target.spaceship.modules.length === 1) {
+            return;
+        }
+
+        let result = await this.gameManager.emitToPlayerAndWait(attacker, 'willYouDealDamageByEventCard', (willUse: boolean) => {
+            return willUse;
+        });
+
+        if (!result) {
+            return;
+        }
+
+        await this.gameManager.emitToPlayerAndWait(attacker, 'chooseModuleToDealDamage', target.id, (position: Vector2) => {
+            this.gameManager.messageManager.addMessage(`нанёс 1 урон ${target.name} картой действия`, attacker);
+
+            let discardedCardIndex = attacker.hand.findIndex((c) => {
+                if (isModule(c))
+                    return false;
+
+                return (c as Event).type === EventTypes.SaveCardAndThenDealDamage;
+            });
+
+            let discardedCard = attacker.hand[discardedCardIndex];
+            attacker.hand.splice(discardedCardIndex, 1);
+            this.gameManager.gameData.discardCards([discardedCard]);
+
+            this.gameManager.changePlayerData(attacker);
+
+            let targetModule = target.spaceship.getModuleByPosition(position);
+
+            let destroyed = target.spaceship.damage(targetModule, 1, false);
+
+            this.gameManager.handleDestroyedModules(target, attacker, destroyed, true);
         });
     }
 

@@ -39,6 +39,12 @@ export default class EventCardsEventListener extends BaseEventListener {
                 .then(callback);
         });
 
+        this.socket.on('willYouDealDamageByEventCard', (callback: (willUse: boolean) => void) => {
+            this.controls().topBarDrawer.setStatus("нанести урон карточкой действия с руки?")
+
+            this.controls().askYesOrNo().then(callback);
+        });
+
         this.socket.on('chooseCardsToDiscardAndTakeAnother', (cards: (Module | Event)[], callback: (indexes: number[]) => void) => {
             this.game.controlsScene.chooseCards(cards, 2, "Выберите до 2-х карт").then(callback);
         });
@@ -261,7 +267,7 @@ export default class EventCardsEventListener extends BaseEventListener {
         });
 
         this.socket.on('permuteThreeCardsAndChooseOne', (cards: Event[], callback: (order: number[]) => void) => {
-            this.controls().topBarDrawer.setStatus("переставьте карточки")
+            this.controls().topBarDrawer.setStatus("переставьте карточки и возьмите верхнюю")
 
             this.controls().permuteCards(cards).then((order: number[]) => {
                 this.controls().topBarDrawer.clearStatus();
@@ -300,7 +306,7 @@ export default class EventCardsEventListener extends BaseEventListener {
                     return false;
 
                 return true;
-            }, true, Color.fromHex('#a3b18a'));
+            }, true, COLORS.DANGER_STROKE);
 
             this.controls().topBarDrawer.setButtonsDisabled(true);
 

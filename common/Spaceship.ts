@@ -145,14 +145,14 @@ export default class Spaceship {
         return possible_connections;
     }
 
-    getPossibleRotationsFor(module: Module): number[] {
+    getPossibleRotationsFor(module: Module, x: number, y: number): number[] {
         const initRotation = module.rotation;
         let possibleRotations = [];
 
         for (let i = 0; i < 4; ++i) {
             module.rotation = i;
 
-            if (this.canConnectModule(module, module.x, module.y))
+            if (this.canConnectModule(module, x, y))
                 possibleRotations.push(i);
         }
 

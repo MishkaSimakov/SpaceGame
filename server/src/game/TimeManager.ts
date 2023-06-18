@@ -1,4 +1,4 @@
-import { TimeControlSettings } from "../../../common/GameForPlayerDTO";
+import {TimeControlSettings} from "../../../common/GameForPlayerDTO";
 import Player from "../../../common/Player";
 
 enum TimeRecordType {
@@ -38,10 +38,32 @@ class TimeManager {
             this.playersTime[player.id] -= currentTime - prevRecord.time;
         }
         if (type === TimeRecordType.DEFAULT_TURN_ENDED) {
-            let prevRecord = this.getLastRecordByPlayerIdAndType(player.id, TimeRecordType.DEFAULT_TURN_STARTED);
+            let lastDefaultTurnStart: TimeRecord;
+            let fightStart: TimeRecord;
+
+            for (let i = this.timeRecords.length - 1; i >= 0; i--) {
+                if (this.timeRecords[i].playerId === player.id && this.timeRecords[i].type === TimeRecordType.DEFAULT_TURN_STARTED) {
+                    lastDefaultTurnStart = this.timeRecords[i];
+                    fightStart = this.timeRecords[i + 1];
+                    break;
+                }
+            }
 
             this.playersTime[player.id] += this.timeControlSettings.DEFAULT_TIME_INCREASE;
-            this.playersTime[player.id] -= currentTime - prevRecord.time;
+
+            if (fightStart?.type === TimeRecordType.FIGHT_TURN_STARTED) {
+                // if fight started after turn start
+                let fightEnd = this.getLastRecordByType(TimeRecordType.FIGHT_TURN_ENDED);
+
+                // before fight
+                this.playersTime[player.id] -= fightStart.time - lastDefaultTurnStart.time;
+
+                // after fight
+                this.playersTime[player.id] -= currentTime - fightEnd.time;
+            } else {
+                // simple boring move without fights
+                this.playersTime[player.id] -= currentTime - lastDefaultTurnStart.time;
+            }
         }
 
         this.timeRecords.push({
@@ -92,11 +114,10 @@ class TimeManager {
 
         if (lastRecord.type === TimeRecordType.DEFAULT_TURN_STARTED) {
             playersTime[lastRecord.playerId] -= (currentTime - lastRecord.time);
-        }
-        if (lastRecord.type === TimeRecordType.FIGHT_TURN_STARTED) {
+        } else if (lastRecord.type === TimeRecordType.FIGHT_TURN_STARTED) {
             playersTime[lastRecord.playerId] -= (currentTime - lastRecord.time);
 
-            let lastDefaultTurnStart : TimeRecord;
+            let lastDefaultTurnStart: TimeRecord;
             let fightStart: TimeRecord;
 
             for (let i = this.timeRecords.length - 1; i >= 0; i--) {
@@ -108,6 +129,8 @@ class TimeManager {
             }
 
             playersTime[lastRecord.playerId] -= (fightStart.time - lastDefaultTurnStart.time);
+        } else if (lastRecord.type === TimeRecordType.FIGHT_TURN_ENDED) {
+            // fight in move ended but
         }
 
         return playersTime;

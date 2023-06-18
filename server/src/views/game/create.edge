@@ -61,16 +61,28 @@
                         </div>
                     </div>
 
-                    <div class="row g-3 mb-3" id="time-control-settings">
-                        <div class="col">
-                            <label class="form-label" for="default-time-increase">Прибавка времени за ход</label>
+                    <div id="time-control-settings">
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="on" id="lose-when-timeout" name="lose-when-timeout" checked>
 
-                            <input type="number" min="0" id="default-time-increase" name="default-time-increase" class="form-control" value="45">
+                                <label class="form-check-label" for="lose-when-timeout">
+                                    проигрыш по истечению времени
+                                </label>
+                            </div>
                         </div>
-                        <div class="col">
-                            <label class="form-label" for="fight-time-increase">Прибавка времени в бою</label>
 
-                            <input type="number" min="0" id="fight-time-increase" name="fight-time-increase" class="form-control" value="10">
+                        <div class="row g-3 mb-3">
+                            <div class="col">
+                                <label class="form-label" for="default-time-increase">Прибавка времени за ход</label>
+
+                                <input type="number" min="0" id="default-time-increase" name="default-time-increase" class="form-control" value="45">
+                            </div>
+                            <div class="col">
+                                <label class="form-label" for="fight-time-increase">Прибавка времени в бою</label>
+
+                                <input type="number" min="0" id="fight-time-increase" name="fight-time-increase" class="form-control" value="10">
+                            </div>
                         </div>
                     </div>
 

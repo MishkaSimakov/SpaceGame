@@ -346,6 +346,35 @@ export default class Controls extends Scene {
         });
     }
 
+    getCardIndexByPosition(cardsLength: number, x: number, y: number) {
+        let sceneWidth = this.width();
+        let sceneHeight = this.height();
+
+        let maxCardSize = Math.min(sceneWidth, sceneHeight) * 0.75;
+        let spaceAvailable = Math.max(sceneWidth, sceneHeight) * 0.75;
+        let padding = 20;
+
+        let cardSize = Math.min(maxCardSize, (spaceAvailable + padding) / cardsLength - padding);
+
+        const clamp = (x, min, max) => {
+            return Math.min(Math.max(x, min), max);
+        }
+
+        if (sceneWidth > sceneHeight) {
+            return clamp(
+                Math.floor(x / (cardSize + padding)),
+                0,
+                cardsLength
+            );
+        } else {
+            return clamp(
+                Math.floor(y / (cardSize + padding)),
+                0,
+                cardsLength
+            )
+        }
+    }
+
     drawCardsOnScreen(cards: (Module | Event)[]): Group {
         let sceneWidth = this.width();
         let sceneHeight = this.height();
@@ -366,7 +395,7 @@ export default class Controls extends Scene {
 
         let cardShapes = new Group();
 
-        let position = new Vector2(0, 0)
+        let position = new Vector2(0, 0);
 
         for (let card of cards) {
             cardShapes.add(
@@ -392,118 +421,151 @@ export default class Controls extends Scene {
 
     permuteCards(cards: (Event | Module)[]): Promise<number[]> {
         return new Promise((resolve) => {
-                let outlineColor = 0xa3b18a;
-                let cardShapes: Card[] = [];
-                let cardWidth = 256;
-                let sceneWidth = this.width(),
-                    sceneHeight = this.height();
+            const permuteCardsModal = new Group({
+                visible: false,
+                interactive: false
+            });
 
-                let order: number[] = [];
-                for (let i = 0; i < cards.length; ++i) {
-                    order.push(i);
+            this.topBarDrawer.addButtons([{
+                text: "Переставить",
+                color: COLORS.BUTTON.PRIMARY,
+                onClick: () => {
+                    this.topBarDrawer.setButtonsDisabled(true);
+
+                    permuteCardsModal
+                        .visible(true)
+                        .interactive(true);
                 }
+            }]);
 
-                let backgroundShape = new Rectangle({
-                    x: sceneWidth / 2,
-                    y: sceneHeight / 2,
-                    width: (cardWidth + 50) * cards.length,
-                    height: cardWidth + 100,
-                    originX: 0.5,
-                    originY: 0.5,
+            let offset = 20;
+            let sceneWidth = this.width();
+            let sceneHeight = this.height();
 
-                    fill: Color.fromHex('#0B2545', 0.75).toString(),
-                    stroke: Color.fromHex('#3D76BE').toString(),
-                    strokeWidth: 5,
-                    cornerRadius: 10
+            let cardShapes = this.drawCardsOnScreen(cards);
+
+            const cardPositions = cardShapes.children.map(card => {
+                return card.getPosition();
+            });
+
+            let order: number[] = [];
+            for (let i = 0; i < cards.length; ++i) {
+                order.push(i);
+            }
+
+            let fade = this.createAndAdd.rectangle({
+                x: 0,
+                y: 0,
+                width: sceneWidth,
+                height: sceneHeight,
+                fill: Color.fromHex('#000000', 0.75).toString()
+            });
+
+            let horizontal = sceneWidth > sceneHeight;
+            let titleShape = new Text({
+                x: horizontal
+                    ? cardShapes.getClientRect().left
+                    : sceneWidth / 2,
+                y: cardShapes.getClientRect().top - 15,
+                text: "Верх колоды",
+                originX: horizontal ? 0 : 0.5,
+                originY: 1,
+                fill: "white",
+                fontFamily: "Exo2Bold",
+                fontSize: 20,
+            });
+
+            let buttonShape = new Text({
+                x: this.width() / 2,
+                y: cardShapes.getClientRect().bottom + 15,
+                text: "Далее",
+                fill: "white",
+                fontFamily: "Exo2Bold",
+                originX: 0.5
+            })
+                .on('click', () => {
+                    permuteCardsModal.destroy();
+                    this.topBarDrawer.removeButtons();
+
+                    resolve(order);
                 });
 
-                let buttonShape = new Text({
-                    x: this.width() / 2,
-                    y: this.height() / 2 + cardWidth / 2 + 25,
-                    text: "Далее",
-                    fontFamily: "Exo2Bold",
-                    fontSize: 20,
-                    fill: "white",
-                    originX: 0.5,
-                    originY: 0.5
-                })
-                    .on('click', () => {
-                        backgroundShape.destroy();
-                        for (let cardShape of cardShapes) {
-                            cardShape.destroy();
-                        }
-                        buttonShape.destroy();
+            let backgroundPosition1 = new Vector2(
+                Math.min(cardShapes.getClientRect().left, titleShape.getClientRect().left) - offset,
+                titleShape.getClientRect().top - offset
+            );
+            let backgroundPosition2 = new Vector2(
+                Math.max(cardShapes.getClientRect().right, titleShape.getClientRect().right) + offset,
+                buttonShape.getClientRect().bottom + offset
+            );
+            let backgroundShape = this.createAndAdd.rectangle({
+                x: backgroundPosition1.x,
+                y: backgroundPosition1.y,
+                width: backgroundPosition2.x - backgroundPosition1.x,
+                height: backgroundPosition2.y - backgroundPosition1.y,
+                fill: Color.fromHex('#0B2545', 0.75).toString(),
+                stroke: Color.fromHex('#3D76BE').toString(),
+                strokeWidth: 2
+            });
 
-                        resolve(order);
-                    });
+            //
 
-                let indexByPosition = (x: number): number => {
-                    let index = (x - (sceneWidth / 2 - ((cardWidth + 50) * cards.length - 50) / 2)) / (cardWidth + 50);
-                    index = Math.round(index);
+            for (let [indexInOrder, index] of order.entries()) {
+                let cardShape = cardShapes.children[indexInOrder];
 
-                    index = Math.min(
-                        order.length - 1,
-                        Math.max(0, index)
-                    );
+                console.log(cardShape);
+                cardShape.draggable(true);
+                cardShape.on('dragstart', () => {
+                    cardShape.moveToTop();
+                });
 
-                    return index;
-                }
+                cardShape.on('dragmove', () => {
+                    const pos = cardShapes.getRelativePointerPosition();
+                    let newIndexInOrder = this.getCardIndexByPosition(cards.length, pos.x, pos.y);
 
-                for (let [indexInOrder, index] of order.entries()) {
-                    let card = cards[index];
+                    // because order could be updated
+                    let oldIndexInOrder = order.indexOf(index);
 
-                    let cardShape = new Card({
-                        card: card,
-                        x: this.width() / 2 - ((cardWidth + 50) * cards.length - 50) / 2 + (cardWidth + 50) * indexInOrder,
-                        y: this.height() / 2,
-                        size: cardWidth,
-                        draggable: true,
-                        originY: 0.5
-                    });
+                    if (newIndexInOrder !== oldIndexInOrder) {
+                        order.splice(oldIndexInOrder, 1);
+                        order.splice(newIndexInOrder, 0, index);
 
-                    cardShape.on('dragstart', () => {
-                        cardShape.moveToTop();
-                    });
-
-                    cardShape.on('dragmove', ({evt}) => {
-                        let newIndexInOrder = indexByPosition(cardShape.x());
-
-                        // because order could be updated
-                        let oldIndexInOrder = order.indexOf(index);
-
-                        if (newIndexInOrder !== oldIndexInOrder) {
-                            order.splice(oldIndexInOrder, 1);
-                            order.splice(newIndexInOrder, 0, index);
-
-                            moveCards(index);
-                        }
-                    });
-
-                    cardShape.on('dragend', () => {
-                        moveCards();
-                    });
-
-                    cardShapes[index] = cardShape;
-                }
-
-                this.add(backgroundShape, ...cardShapes, buttonShape);
-
-                let moveCards = (except?: number) => {
-                    for (let [indexInOrder, index] of order.entries()) {
-                        if (index === except)
-                            continue;
-
-                        let cardShape = cardShapes[index];
-                        let position = new Vector2(
-                            sceneWidth / 2 - ((cardWidth + 50) * cards.length - 50) / 2 + (cardWidth + 50) * indexInOrder,
-                            sceneHeight / 2
-                        );
-
-                        cardShape.setPosition({x: position.x, y: position.y});
+                        moveCards(index);
                     }
+                });
+
+                cardShape.on('dragend', () => {
+                    moveCards();
+                });
+
+                cardShapes[index] = cardShape;
+            }
+
+            permuteCardsModal.add(fade, backgroundShape, titleShape, buttonShape, cardShapes);
+            this.add(permuteCardsModal);
+
+            let moveCards = (except?: number) => {
+                for (let [indexInOrder, index] of order.entries()) {
+                    if (index === except)
+                        continue;
+
+                    let cardShape = cardShapes[index];
+                    let position = cardPositions[indexInOrder];
+
+                    cardShape.setPosition(position);
                 }
             }
-        );
+
+            fade.on('click', () => {
+                if (permuteCardsModal.visible()) {
+                    permuteCardsModal
+                        .visible(false)
+                        .interactive(false);
+
+                    this.topBarDrawer.setButtonsDisabled(false);
+                }
+            });
+        });
     }
 
     chooseModulesToMoveDamage(moveDamageReason: MoveDamageReason): Promise<{ from: Vector2, to: Vector2 } | undefined> {
