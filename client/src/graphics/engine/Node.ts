@@ -464,7 +464,7 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
 
     once<K extends keyof NodeEventMap>(evtStr: K, handler: EventListener<this, NodeEventMap[K]>) {
         let newHandler = (...args) => {
-            this.off(evtStr as string, handler);
+            this.off(evtStr as string, newHandler);
 
             handler.call(this, ...args);
         };

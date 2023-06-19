@@ -37,7 +37,7 @@ export default class RebuildSpaceshipManager {
             if (module.isMain)
                 continue;
 
-            shape.on('click.rebuild', () => {
+            shape.on('click.rebuild pointerclick.rebuild', () => {
                 const initRotation = module.rotation;
                 this.spaceship.removeModule(module);
 
@@ -189,16 +189,11 @@ export default class RebuildSpaceshipManager {
 
     protected removeEvents() {
         for (let shape of this.spaceshipShape.getModules()) {
-            shape.off('click.rebuild');
-            shape.off('drag.rebuild');
-            shape.off('dragend.rebuild');
-            shape.off('dragstart.rebuild');
+            shape.off('.rebuild');
         }
 
         for (let shape of this.controlsScene.handDrawer.cardShapes) {
-            shape.off('drag.rebuild');
-            shape.off('dragend.rebuild');
-            shape.off('dragstart.rebuild');
+            shape.off('.rebuild');
         }
     }
 

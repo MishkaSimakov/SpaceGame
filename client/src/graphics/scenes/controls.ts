@@ -513,7 +513,6 @@ export default class Controls extends Scene {
             for (let [indexInOrder, index] of order.entries()) {
                 let cardShape = cardShapes.children[indexInOrder];
 
-                console.log(cardShape);
                 cardShape.draggable(true);
                 cardShape.on('dragstart', () => {
                     cardShape.moveToTop();

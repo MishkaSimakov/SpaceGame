@@ -3,10 +3,9 @@ import GameData from "./GameData";
 import Spaceship from "../../../common/Spaceship";
 import {Server, Socket} from "socket.io";
 import FightManager from "./FightManager";
-import Module, {isModule, ModuleTypes} from "../../../common/modules/Module";
-import {Event, EventTypes} from "../../../common/events/Event";
+import Module, {ModuleTypes} from "../../../common/modules/Module";
+import {Event} from "../../../common/events/Event";
 import {AttackReason} from "../../../common/Types";
-import Vector2 from "../../../common/Vector2";
 import {HAS_PLAYERS_DATA} from "../../../common/Sockets";
 import GameToGameForPlayerMapper from "./GameToGameForPlayerMapper";
 import {TimeManager, TimeRecordType} from "./TimeManager";
@@ -71,8 +70,6 @@ export default class Game {
     // logger: Logger;
 
     constructor(id: string, name: string, users: User[], settings: GameSettings, io: Server) {
-        console.log("inside!");
-
         // this.logger = new Logger(this);
         // this.logger.log("game created!");
         this.id = id;
@@ -327,24 +324,6 @@ export default class Game {
         this.changePlayerData(player);
 
         console.log(`${player.name} lost`);
-    }
-
-    setRebuildSpaceshipData(player: Player) {
-        if (this.currentPlayer.socketId !== player.socketId) {
-            throw new Error("Wrong player has rebuilt spaceship");
-        }
-
-        if (!this.currentPlayer.canBeTurnedInto(player)) {
-            throw new Error("Changed player has wrong cards or energy count");
-        }
-
-        if (!Spaceship.checkConfiguration(player.spaceship)) {
-            throw new Error("Changed player has wrong spaceship configuration");
-        }
-
-        player.energy = Math.min(player.energy, player.spaceship.getTotalCapacity());
-
-        this.changePlayerData(player);
     }
 
     async choosePlayerForAttack(attackReason: AttackReason): Promise<Player | void> {

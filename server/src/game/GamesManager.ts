@@ -68,8 +68,6 @@ export default class GamesManager {
                 await this.archiveGame(game);
             }
 
-            // this.games.filter(g => g.id !== game.id);
-
             let gameId = this.games.findIndex(g => g.id === game.id);
 
             // TODO: check later

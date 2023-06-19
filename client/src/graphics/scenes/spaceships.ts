@@ -70,9 +70,11 @@ export default class Spaceships extends Scene {
                 newZoom = zoom,
                 pos = this.getRelativePointerPosition();
 
+            const scrollCoefficient = 0.0025;
+
             newZoom = Math.min(
                 2,
-                Math.max(0.1, zoom - deltaY * 0.01)
+                Math.max(0.1, zoom - deltaY * scrollCoefficient)
             );
 
             this.move({
