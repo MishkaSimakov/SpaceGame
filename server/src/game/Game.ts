@@ -7,7 +7,6 @@ import Module, {ModuleTypes} from "../../../common/modules/Module";
 import {Event} from "../../../common/events/Event";
 import {AttackReason} from "../../../common/Types";
 import {HAS_PLAYERS_DATA} from "../../../common/Sockets";
-import GameToGameForPlayerMapper from "./GameToGameForPlayerMapper";
 import {TimeManager, TimeRecordType} from "./TimeManager";
 import MessageManager from "./MessageManager";
 import {GameSettings} from "../../../common/GameForPlayerDTO";
@@ -19,6 +18,10 @@ import {fixSpaceship} from "./phases/FixSpaceship";
 import {attack} from "./phases/Attack";
 import {drawCards} from "./phases/DrawCards";
 import {discardCards} from "./phases/DiscardCards";
+import {getDTO} from "./GameToGameForPlayerMapper";
+import {Logger} from "tslog";
+import {appendFileSync} from "fs";
+import path from "path";
 
 export enum GameState {
     WAIT_FOR_PLAYERS,
@@ -67,11 +70,16 @@ export default class Game {
         discardCards
     ];
 
-    // logger: Logger;
+    logger: Logger<unknown>;
 
     constructor(id: string, name: string, users: User[], settings: GameSettings, io: Server) {
-        // this.logger = new Logger(this);
-        // this.logger.log("game created!");
+        const logPath = path.join(__dirname, '/../../logs/', `game_${new Date().toJSON()}.txt`)
+
+        this.logger = new Logger({type: "pretty"});
+        this.logger.attachTransport((logObj) => {
+            appendFileSync(logPath, JSON.stringify(logObj) + "\n");
+        });
+
         this.id = id;
         this.name = name;
 
@@ -96,6 +104,8 @@ export default class Game {
         this.timeManager = new TimeManager(this.settings.timeControlSettings, this.players);
 
         this.messageManager = new MessageManager();
+
+        this.logger.debug('game initialized');
     }
 
     handleDestroyedModules(target: Player, attacker: Player, destroyedModules: {
@@ -157,7 +167,7 @@ export default class Game {
             message.splice(0, 2);
         }
 
-        message.unshift(HAS_PLAYERS_DATA, GameToGameForPlayerMapper.getDTO(this, player));
+        message.unshift(HAS_PLAYERS_DATA, getDTO(this, player));
 
         return message;
     }
@@ -272,7 +282,7 @@ export default class Game {
 
     syncPlayersData() {
         for (let player of this.players) {
-            this.getSocket(player)?.emit('setGameData', GameToGameForPlayerMapper.getDTO(this, player));
+            this.getSocket(player)?.emit('setGameData', getDTO(this, player));
         }
     }
 

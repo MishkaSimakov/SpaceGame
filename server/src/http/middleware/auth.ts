@@ -1,4 +1,4 @@
-import jwt, {Jwt, JwtPayload} from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
 import {User} from "../../entity/user";
 import {UserJWTPayload} from "../controllers/UserController";
@@ -20,10 +20,6 @@ export const auth = async (req: Request, res: Response, next: NextFunction) => {
         let user = await User.findOneBy({
             id: parseInt(decoded._id)
         });
-
-        if (!user || user.rememberToken !== token) {
-            throw new Error("remember token != token");
-        }
 
         (req as AuthenticatedRequest).user = user;
 

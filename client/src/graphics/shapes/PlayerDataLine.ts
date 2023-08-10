@@ -69,7 +69,7 @@ export class PlayerDataLine extends Group<PlayerDataLineConfig> {
                 new Text({
                     x: startX + spacePerElement * 3,
                     y: 0,
-                    text: `${this.timeToString(this.time())} ` + (this.time() >= 0) ? '⏰' : '🤡',
+                    text: `${this.timeToString(this.time())} ` + (this.time() >= 0 ? '⏰' : '🤡'),
                     fontFamily: "Exo2Bold",
                     fontSize: 15,
                     fill: "white",
@@ -103,7 +103,7 @@ export class PlayerDataLine extends Group<PlayerDataLineConfig> {
     }
 
     setTime(time: number) {
-        (this.findOne('.time') as Text)?.text(`${this.timeToString(time)} ⏰`);
+        (this.findOne('.time') as Text)?.text(`${this.timeToString(time)} ` + (this.time() >= 0 ? '⏰' : '🤡'));
 
         this.setAttr('time', time);
 

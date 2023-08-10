@@ -14,7 +14,8 @@ type GameSettings = {
     size: number,
     withTimeControl: boolean,
     timeControlSettings?: TimeControlSettings,
-    loseWhenTimeout: boolean
+    loseWhenTimeout: boolean,
+    isPublic: boolean
 };
 
 class OtherPlayer {

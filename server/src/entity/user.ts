@@ -20,9 +20,6 @@ export class User extends BaseEntity {
     @Column()
     password: string;
 
-    @Column({nullable: true})
-    rememberToken: string;
-
     @ManyToMany(() => Game, (game) => game.players)
     games: Game[];
 

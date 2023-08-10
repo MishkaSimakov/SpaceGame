@@ -27,6 +27,9 @@ export default class HandDrawer {
         this.scene = scene;
 
         this.group = this.scene.createAndAdd.group();
+        this.background = new Rectangle();
+
+        this.group.add(this.background);
     }
 
     setHandData(hand: (Module | Event)[]) {
@@ -70,20 +73,23 @@ export default class HandDrawer {
 
         // draw background
         if (startPosition < spaceBetween * 2) {
-            this.background = new Rectangle({
-                x: -strokeWidth,
-                y: sceneHeight - handHeight,
-                width: sceneWidth + 2 * strokeWidth,
-                height: handHeight + strokeWidth
-            });
+            this.background
+                .position({
+                    x: -strokeWidth,
+                    y: sceneHeight - handHeight,
+                })
+                .width(sceneWidth + 2 * strokeWidth)
+                .height(handHeight + strokeWidth)
+                .cornerRadius([10, 10, 0, 0]);
         } else {
-            this.background = new Rectangle({
-                x: startPosition - spaceBetween,
-                y: sceneHeight - handHeight,
-                width: handWidth + 2 * spaceBetween,
-                height: handHeight + strokeWidth,
-                cornerRadius: [10, 10, 0, 0]
-            });
+            this.background
+                .position({
+                    x: startPosition - spaceBetween,
+                    y: sceneHeight - handHeight,
+                })
+                .width(handWidth + 2 * spaceBetween)
+                .height(handHeight + strokeWidth)
+                .cornerRadius([10, 10, 0, 0]);
         }
 
         this.background
@@ -94,8 +100,6 @@ export default class HandDrawer {
         startPosition = Math.max(startPosition, spaceBetween);
 
         // draw cards
-
-        this.group.add(this.background);
 
         for (let [index, card] of hand.entries()) {
             let cardShape = new Card({
@@ -116,6 +120,21 @@ export default class HandDrawer {
 
             this.cardShapes.push(cardShape);
         }
+
+        // const arrowsWidth = 25;
+        // if (handWidth > sceneWidth) {
+        //     const arrowBackground = new Rectangle({
+        //         x: 0,
+        //         y: sceneHeight,
+        //         height: handHeight,
+        //         width: arrowsWidth,
+        //         originY: 1,
+        //
+        //         fill: 'black'
+        //     });
+        //
+        //     this.group.add(arrowBackground);
+        // }
     }
 
     setDragEnabled(isEnabled: boolean) {

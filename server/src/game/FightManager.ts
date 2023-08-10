@@ -36,6 +36,8 @@ export default class FightManager {
     }
 
     async fight(): Promise<Player | undefined> {
+        this.gameManager.timeManager.addRecord(TimeRecordType.DEFAULT_TURN_INTERRUPTED, this.first);
+
         this.gameManager.messageManager.addMessage(this.first.name + ' напал на ' + this.second.name);
 
         if (!this.first.canDamage() && !this.second.canDamage()) {
@@ -52,7 +54,10 @@ export default class FightManager {
             let destroyed = await this.makeFightIteration(attacker, target);
 
             if (destroyed !== undefined) {
+                this.gameManager.timeManager.addRecord(TimeRecordType.DEFAULT_TURN_CONTINUED, this.first);
+
                 console.log(`Fight has ended. ${destroyed.name} was destroyed`);
+
                 return destroyed;
             }
 
@@ -66,6 +71,8 @@ export default class FightManager {
         if (this.second.spaceship.activatedProtector)
             this.second.spaceship.activatedProtector.isActivated = false;
         this.second.spaceship.activatedProtector = undefined;
+
+        this.gameManager.timeManager.addRecord(TimeRecordType.DEFAULT_TURN_CONTINUED, this.first);
 
         console.log(`Fight has ended. No one destroyed`);
     }

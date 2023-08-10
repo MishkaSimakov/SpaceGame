@@ -23,7 +23,8 @@ export const create = async (req: Request, res: Response) => {
         let gameSettings: GameSettings = {
             withTimeControl: withTimeControl,
             size: selectedUsers.length,
-            loseWhenTimeout: req.body['lose-when-timeout'] === 'on' && withTimeControl
+            loseWhenTimeout: req.body['lose-when-timeout'] === 'on' && withTimeControl,
+            isPublic: req.body['is-public'] === 'on'
         };
 
         if (withTimeControl) {
@@ -52,7 +53,8 @@ export const joinGame = async (req: AuthenticatedRequest, res: Response) => {
     let gameId = req.url.split('/').pop();
     let game = App.getInstance().gamesManager.getGameById(gameId);
 
-    if (!game || !game.players.find(p => p.id === req.user.id)) {
+    const isPlayerInGame = !!game.players.find(p => p.id === req.user.id);
+    if (!game || !(isPlayerInGame || game.settings.isPublic)) {
         return res.redirect('/');
     }
 

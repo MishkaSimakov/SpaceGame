@@ -133,10 +133,13 @@ export default class RebuildSpaceshipManager {
                 continue;
 
             let module = shape.card() as Module;
+            let dragStartPos;
 
             shape.on('dragstart.rebuild', () => {
                 shape.moveToTop();
-            })
+
+                dragStartPos = this.controlsScene.getRelativePointerPosition();
+            });
 
             shape.on('dragend.rebuild', () => {
                 let localPosition = this.spaceshipShape.transformToCardPosition(

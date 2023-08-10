@@ -4,7 +4,7 @@ import {plainToClass} from "../../../../common/PlainToClass";
 import Spaceship from "../../../../common/Spaceship";
 
 function setRebuildSpaceshipData(game: Game, player: Player) {
-    if (!this.currentPlayer.canBeTurnedInto(player)) {
+    if (!game.currentPlayer.canBeTurnedInto(player)) {
         throw new Error("Changed player has wrong cards or energy count");
     }
 
