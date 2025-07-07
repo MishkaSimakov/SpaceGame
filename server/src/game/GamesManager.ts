@@ -31,11 +31,13 @@ export default class GamesManager {
                     game = this.getGameById(gameId);
                     player = game?.getPlayerById(user.id);
 
-                    if (!player) {
+                    if (!player && !game.settings.isPublic) {
                         throw Error();
+                    } else if (player) {
+                        game.playerConnected(player, socket.id);
+                    } else { // game is public and player is undefined
+                        game.viewerConnected(socket.id);
                     }
-
-                    game.playerConnected(player, socket.id);
                 } catch (e) {
                     socket.disconnect();
                     return;
@@ -43,6 +45,8 @@ export default class GamesManager {
             });
 
             socket.on('disconnect', () => {
+                game.viewers = game.viewers.filter(sid => sid != socket.id);
+
                 if (!player || !game)
                     return;
 

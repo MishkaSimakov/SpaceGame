@@ -1,0 +1,20 @@
+services:
+  database:
+    image: postgres:14.18-bookworm
+    environment:
+      POSTGRES_PASSWORD: secret
+      POSTGRES_USER: user
+      POSTGRES_DB: spaceships
+  #    TODO: healthcheck
+  adminer:
+    image: adminer:5.3.0-standalone
+    restart: always
+    ports:
+      - "8080:8080"
+  server:
+    build:
+      context: ./server
+    #    environment:
+    #      NODE_ENV: production
+    ports:
+      - "3000:3000"

@@ -3,10 +3,12 @@ import {SIZES} from "./constants";
 import {Card} from "./shapes/Card";
 import Scene from "./engine/Scene";
 import {Rectangle} from "./engine/shapes/Rectangle";
+import {Text} from "./engine/shapes/Text";
 import Color from "./Color";
 import {isEvent, Event, EventTypes} from "../../../common/events/Event";
 import {Group} from "./engine/Group";
 import Module, {isModule} from "../../../common/modules/Module";
+import {Button} from "./shapes/Button";
 
 export default class HandDrawer {
     group: Group;
@@ -79,8 +81,7 @@ export default class HandDrawer {
                     y: sceneHeight - handHeight,
                 })
                 .width(sceneWidth + 2 * strokeWidth)
-                .height(handHeight + strokeWidth)
-                .cornerRadius([10, 10, 0, 0]);
+                .height(handHeight + strokeWidth);
         } else {
             this.background
                 .position({
@@ -98,6 +99,8 @@ export default class HandDrawer {
             .strokeWidth(strokeWidth)
 
         startPosition = Math.max(startPosition, spaceBetween);
+
+        this.group.add(this.background);
 
         // draw cards
 
@@ -120,21 +123,6 @@ export default class HandDrawer {
 
             this.cardShapes.push(cardShape);
         }
-
-        // const arrowsWidth = 25;
-        // if (handWidth > sceneWidth) {
-        //     const arrowBackground = new Rectangle({
-        //         x: 0,
-        //         y: sceneHeight,
-        //         height: handHeight,
-        //         width: arrowsWidth,
-        //         originY: 1,
-        //
-        //         fill: 'black'
-        //     });
-        //
-        //     this.group.add(arrowBackground);
-        // }
     }
 
     setDragEnabled(isEnabled: boolean) {

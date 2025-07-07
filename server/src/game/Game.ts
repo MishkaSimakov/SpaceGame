@@ -18,7 +18,7 @@ import {fixSpaceship} from "./phases/FixSpaceship";
 import {attack} from "./phases/Attack";
 import {drawCards} from "./phases/DrawCards";
 import {discardCards} from "./phases/DiscardCards";
-import {getDTO} from "./GameToGameForPlayerMapper";
+import {getDTO} from "./mappers/GameToGameForPlayerMapper";
 import {Logger} from "tslog";
 import {appendFileSync} from "fs";
 import path from "path";
@@ -53,6 +53,8 @@ export default class Game {
     ENERGY_TO_MOVE_DAMAGE_BY_COMMAND_MODULE: number = 4;
     ENERGY_TO_DRAG_ANOTHER_EVENT_CARD_BY_MAIN_MODULE: number = 4;
     ENERGY_TO_DRAG_ADDITIONAL_CARD_BY_MAIN_MODULE: number = 15;
+
+    viewers: string[] = [];
 
     currentFight?: FightManager;
 
@@ -254,6 +256,13 @@ export default class Game {
         this.tryToEmitEvent(player);
     }
 
+    viewerConnected(socketId: string) {
+        if (!this.settings.isPublic)
+            return;
+
+        this.viewers.push(socketId);
+    }
+
     async start() {
         console.log("Spaceships started");
 
@@ -284,14 +293,24 @@ export default class Game {
         for (let player of this.players) {
             this.getSocket(player)?.emit('setGameData', getDTO(this, player));
         }
+
+        // for (let viewer of this.viewers) {
+            // this.getSocket(viewer).emit('setGameData', getViewerDTO(this));
+        // }
     }
 
     getSocketById(id: number): Socket {
         return this.getSocket(this.getPlayerById(id));
     }
 
-    getSocket(player: Player): Socket {
-        return this.io.sockets.sockets.get(player.socketId);
+    getSocket(socketId: string): Socket;
+    getSocket(player: Player): Socket;
+    getSocket(value: Player | string): Socket {
+        let socketId : string;
+
+        socketId = (typeof value === 'string') ? value : value.socketId;
+
+        return this.io.sockets.sockets.get(socketId);
     }
 
     getNextTurnPlayer() {

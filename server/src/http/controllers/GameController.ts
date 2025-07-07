@@ -53,7 +53,7 @@ export const joinGame = async (req: AuthenticatedRequest, res: Response) => {
     let gameId = req.url.split('/').pop();
     let game = App.getInstance().gamesManager.getGameById(gameId);
 
-    const isPlayerInGame = !!game.players.find(p => p.id === req.user.id);
+    const isPlayerInGame = !!game?.players.find(p => p.id === req.user.id);
     if (!game || !(isPlayerInGame || game.settings.isPublic)) {
         return res.redirect('/');
     }

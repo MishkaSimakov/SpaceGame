@@ -7,6 +7,8 @@ import {Text} from "../engine/shapes/Text";
 
 export interface ButtonConfig extends ShapeConfig {
     text?: string;
+    fontSize?: number;
+    fontFamily?: string;
     disabled?: boolean;
 
     fill?: string;
@@ -41,7 +43,8 @@ export class Button extends Group<ButtonConfig> {
             originY: 0.5,
             originX: 0.5,
             fill: "white",
-            fontFamily: "Exo2Bold",
+            fontFamily: this.fontFamily(),
+            fontSize: this.fontSize()
         });
 
         this._hitRect = new Rectangle({
@@ -101,13 +104,15 @@ export class Button extends Group<ButtonConfig> {
     }
 
     _updateFill() {
-        if (this._state === 'DEFAULT') {
-            this._background.fill(this.fill());
-        } else if (this._state === 'HOVER') {
-            this._background.fill(this.hoverFill());
-        } else if (this._state === 'ACTIVE') {
-            this._background.fill(this.activeFill());
+        const stateDesign = {
+            'DEFAULT': ['default', this.fill()],
+            'HOVER': ['pointer', this.hoverFill()],
+            'ACTIVE': ['pointer', this.activeFill()],
         }
+
+        // TODO: decide whether make or not cursor pointer
+        // document.body.style.cursor = stateDesign[this._state][0];
+        this._background.fill(stateDesign[this._state][1]);
     }
 
     fill: GetSet<string, this>;
@@ -115,6 +120,8 @@ export class Button extends Group<ButtonConfig> {
     activeFill: GetSet<string, this>;
 
     text: GetSet<string, this>;
+    fontSize: GetSet<number, this>;
+    fontFamily: GetSet<string, this>;
     disabled: GetSet<boolean, this>;
 }
 
@@ -123,4 +130,6 @@ Factory.addGetterSetter(Button, 'hoverFill', '');
 Factory.addGetterSetter(Button, 'activeFill', '');
 
 Factory.addGetterSetter(Button, 'text', '');
+Factory.addGetterSetter(Button, 'fontSize', 12);
+Factory.addGetterSetter(Button, 'fontFamily', 'Exo2Bold');
 Factory.addGetterSetter(Button, 'disabled', false);

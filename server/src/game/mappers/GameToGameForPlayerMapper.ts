@@ -1,6 +1,6 @@
-import Game from "./Game";
-import {GameForPlayerDTO} from "../../../common/GameForPlayerDTO";
-import Player from "../../../common/Player";
+import Game from "../Game";
+import {GameForPlayerDTO} from "../../../../common/GameForPlayerDTO";
+import Player from "../../../../common/Player";
 
 export const getDTO = (game: Game, forPlayer: Player): GameForPlayerDTO => {
     let dto = new GameForPlayerDTO();
