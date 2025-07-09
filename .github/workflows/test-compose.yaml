@@ -5,18 +5,18 @@ jobs:
     runs-on: ubuntu-latest
     services:
       docker:
-        image: docker:20.10.9
+        image: docker/compose:debian-1.29.2
         options: --privileged
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
       - name: Build Docker images
         run: |
-          docker-compose -f docker-compose.yml build
+          docker compose -f docker-compose.yml build
       - name: Run Docker-compose
         run: |
-          docker-compose -f docker-compose.yml up -d
-          docker-compose -f docker-compose.yml ps
+          docker compose -f docker-compose.yml up -d
+          docker compose -f docker-compose.yml ps
           sleep 60
       - name: Test Node.js service with curl
         run: |
@@ -32,4 +32,4 @@ jobs:
             exit 1
           fi
       - name: Stop and remove containers
-        run: docker-compose -f docker-compose.yml down
+        run: docker compose -f docker-compose.yml down
