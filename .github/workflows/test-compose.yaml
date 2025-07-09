@@ -21,7 +21,7 @@ jobs:
       - name: Test Node.js service with curl
         run: |
           SERVICE_URL="http://localhost:3000"
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$SERVICE_URL")
+          HTTP_STATUS=$(curl --fail --show-error -o /dev/null -w "%{http_code}" "$SERVICE_URL")
           
           if [ "$HTTP_STATUS" -eq 200 ]; then
             echo "Test Passed: Service returned HTTP 200 OK."
