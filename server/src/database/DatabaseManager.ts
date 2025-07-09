@@ -8,7 +8,7 @@ export default class DatabaseManager {
 
     async initConnection() {
         const AppDataSource = new DataSource({
-            type: "mysql",
+            type: "postgres",
             host: process.env.DB_HOST,
             port: parseInt(process.env.DB_PORT),
             username: process.env.DB_USERNAME,
@@ -23,7 +23,8 @@ export default class DatabaseManager {
                 console.log("Data Source has been initialized!");
             })
             .catch((err) => {
-                throw new Error("Error during Data Source initialization", err);
+                console.warn(err);
+                throw new Error("Error during Data Source initialization");
             });
     }
 }

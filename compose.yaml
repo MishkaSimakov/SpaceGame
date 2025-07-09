@@ -5,16 +5,21 @@ services:
       POSTGRES_PASSWORD: secret
       POSTGRES_USER: user
       POSTGRES_DB: spaceships
-  #    TODO: healthcheck
+    ports:
+      - "8001:5432"
   adminer:
     image: adminer:5.3.0-standalone
     restart: always
     ports:
       - "8080:8080"
   server:
-    build:
-      context: ./server
-    #    environment:
-    #      NODE_ENV: production
+    depends_on:
+      - database
+    user: "node"
+    volumes:
+      - ./:/usr/src/game
+      - /usr/src/game/server/node_modules
+      - /usr/src/game/client/node_modules
+    build: .
     ports:
       - "3000:3000"

@@ -15,7 +15,9 @@ export default class App {
 
     async init() {
         // init environment
-        dotenv.config();
+        dotenv.config({
+            path: "./server/.env"
+        });
 
         // init database connection
         this.databaseManager = new DatabaseManager();

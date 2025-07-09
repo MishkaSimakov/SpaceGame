@@ -16,14 +16,12 @@
     "express-validator": "^7.0.1",
     "jsonwebtoken": "^9.0.0",
     "mysql": "^2.18.1",
+    "pg": "^8.16.3",
     "reflect-metadata": "^0.1.13",
     "serve-static": "^1.15.0",
     "socket.io": "^4.5.1",
     "ts-node": "^10.9.1",
     "tslog": "^4.8.2",
     "typeorm": "^0.3.16"
-  },
-  "scripts": {
-    "serve": "nodemon src/index.ts"
   }
 }
