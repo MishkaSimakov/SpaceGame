@@ -1,6 +1,8 @@
 # System and IDE files
-.DS_Store
-.idea
-*.suo
-*.sublime-project
-*.sublime-workspace
+**/.DS_Store
+**/.idea
+**/*.suo
+**/*.sublime-project
+**/*.sublime-workspace
+
+**/node_modules/
