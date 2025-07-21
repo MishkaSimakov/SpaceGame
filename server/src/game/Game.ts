@@ -1,5 +1,5 @@
-import Player from "../../../common/Player";
-import GameData from "./GameData";
+import Player, {PlayerId} from "../../../common/Player";
+import GameState from "./GameState";
 import Spaceship from "../../../common/Spaceship";
 import {Server, Socket} from "socket.io";
 import FightManager from "./FightManager";
@@ -9,160 +9,245 @@ import {AttackReason} from "../../../common/Types";
 import {HAS_PLAYERS_DATA} from "../../../common/Sockets";
 import {TimeManager, TimeRecordType} from "./TimeManager";
 import MessageManager from "./MessageManager";
-import {GameSettings} from "../../../common/GameForPlayerDTO";
 import {User} from "../entity/user";
-import {beforeTurn} from "./phases/BeforeTurn";
-import {collectEnergy} from "./phases/CollectEnergy";
-import {rebuildSpaceship} from "./phases/RebuildSpaceship";
-import {fixSpaceship} from "./phases/FixSpaceship";
-import {attack} from "./phases/Attack";
-import {drawCards} from "./phases/DrawCards";
-import {discardCards} from "./phases/DiscardCards";
 import {getDTO} from "./mappers/GameToGameForPlayerMapper";
-import {Logger} from "tslog";
-import {appendFileSync} from "fs";
-import path from "path";
+import SocketsManager from "./io/SocketsManager";
+import {GameSettings} from "../../../common/GameSettings";
+import ActionsBus from "./actions/ActionsBus";
+import {Effect, SagaGenerator} from "./Effects";
+import {gameSaga} from "./sagas/Main";
+import {Logger} from "./Logger";
+import {Action} from "./actions/Action";
+import {initGameState, rebuildSpaceshipRequest, rebuildSpaceshipResponse} from "./actions/Actions";
+import {reducers} from "./reducers/Main";
 
-export enum GameState {
+function isEmptyObject(value: any): value is {} {
+    return Object.keys(value).length === 0;
+}
+
+export enum GameStateLegacy {
     WAIT_FOR_PLAYERS,
     STARTED,
     ENDED,
     ERROR
 }
 
+interface EffectProcessingResult {
+    payload: Promise<any>;
+    emitted_actions: Action[];
+    new_listeners: any[],
+}
+
+
 export default class Game {
     id: string;
     name: string;
 
-    gameData: GameData;
+    users: User[];
 
+    state: GameState;
     settings: GameSettings;
+    bus: ActionsBus;
+    sockets: SocketsManager;
+    saga: SagaGenerator;
+    logger: Logger;
 
-    players: Player[] = [];
-
-    currentPlayer: Player;
-
-    io: Server;
-
-    state: GameState = GameState.WAIT_FOR_PLAYERS;
-
-    currentEmitPlayerId: number;
-    currentEmitFunction: () => void;
-
-    ENERGY_TO_ATTACK_BY_COMMAND_MODULE: number = 7;
-    ENERGY_TO_MOVE_DAMAGE_BY_COMMAND_MODULE: number = 4;
-    ENERGY_TO_DRAG_ANOTHER_EVENT_CARD_BY_MAIN_MODULE: number = 4;
-    ENERGY_TO_DRAG_ADDITIONAL_CARD_BY_MAIN_MODULE: number = 15;
-
-    viewers: string[] = [];
-
-    currentFight?: FightManager;
-
-    timeManager: TimeManager;
+    // state: GameState = GameState.WAIT_FOR_PLAYERS;
 
     messageManager: MessageManager;
+    timeManager: TimeManager;
 
-    phases: Array<(game: Game) => void> = [
-        beforeTurn,
-        collectEnergy,
-        rebuildSpaceship,
-        fixSpaceship,
-        attack,
-        drawCards,
-        discardCards
-    ];
-
-    logger: Logger<unknown>;
-
-    constructor(id: string, name: string, users: User[], settings: GameSettings, io: Server) {
-        const logPath = path.join(__dirname, '/../../logs/', `game_${new Date().toJSON()}.txt`)
-
-        this.logger = new Logger({type: "pretty"});
-        this.logger.attachTransport((logObj) => {
-            appendFileSync(logPath, JSON.stringify(logObj) + "\n");
-        });
-
+    constructor(id: string, name: string, users: User[], settings: GameSettings, io: Server, sockets: new (io: Server, players: PlayerId[]) => any) {
         this.id = id;
         this.name = name;
+        this.users = users;
+
+        this.saga = gameSaga();
 
         this.settings = settings;
+        this.state = new GameState();
+        this.bus = new ActionsBus();
+        this.sockets = new sockets(io, users.map(user => user.id));
 
-        this.gameData = new GameData();
-
-        this.io = io;
-
-        for (let user of users)
-            this.players.push(this.createPlayer(user));
-
-        this.currentPlayer = this.players[0];
-
-        if (!this.settings.timeControlSettings) {
-            this.settings.timeControlSettings = {
-                START_TIME: 5 * 60 * 1000,
-                DEFAULT_TIME_INCREASE: 45 * 1000,
-                FIGHT_TIME_INCREASE: 10 * 1000,
-            };
-        }
-        this.timeManager = new TimeManager(this.settings.timeControlSettings, this.players);
+        this.logger = new Logger();
 
         this.messageManager = new MessageManager();
 
-        this.logger.debug('game initialized');
+        this.registerReduceListeners();
+
+        this.#initGameState();
+
+        // this.currentPlayer = this.players[0];
+
+        // if (!this.settings.timeControlSettings) {
+        //     this.settings.timeControlSettings = {
+        //         START_TIME: 5 * 60 * 1000,
+        //         DEFAULT_TIME_INCREASE: 45 * 1000,
+        //         FIGHT_TIME_INCREASE: 10 * 1000,
+        //     };
+        // }
+        //
+        // this.timeManager = new TimeManager(this.settings.timeControlSettings, users.map(user => user.id));
     }
 
-    handleDestroyedModules(target: Player, attacker: Player, destroyedModules: {
-        module: Module,
-        byReactor: boolean
-    }[], isEvent: boolean) {
-        for (let destroyedInfo of destroyedModules) {
-            let module = destroyedInfo.module
+    registerLogListeners() {
+        this.bus.on('*', this.logger.handleAction.bind(this.logger));
+    }
 
-            console.log(`   Module at x: ${module.x}, y: ${module.y} has been destroyed`);
+    registerIOListeners() {
+        this.bus.on(rebuildSpaceshipRequest, this.rebuildSpaceshipRequest.bind(this));
+        // this.bus.on(numberRequest, this.sockets.numberRequest.bind(this.io));
+    }
 
-            module.isActivated = false;
+    registerReduceListeners() {
+        this.bus.on(initGameState, (action: Action) => {
+            let copy = structuredClone(this.state);
+            reducers['initGameState'](copy, this.settings, action.payload);
+            this.state = copy;
+            console.log(copy.players);
+        })
+    }
 
-            target.spaceship.removeModule(module);
+    rebuildSpaceshipRequest(action: Action) {
+        const playerId: PlayerId = action.payload.player;
 
-            if (module.type === ModuleTypes.MainModule) {
-                return;
+        this.sockets.emitAndWait(playerId, 'rebuildSpaceship', true).then((newPlayer: Player) => {
+            this.bus.emit(rebuildSpaceshipResponse(newPlayer));
+        });
+    }
+
+    process_effect(effect: Effect): EffectProcessingResult {
+        switch (effect.type) {
+            case "select": {
+                return {
+                    payload: Promise.resolve(structuredClone(this.state)),
+                    emitted_actions: [],
+                    new_listeners: [],
+                }
+            }
+            case "take": {
+                let resolve, reject;
+                const promise = new Promise<object>((res, rej) => {
+                    resolve = res;
+                    reject = rej;
+                });
+
+                return {
+                    payload: promise,
+                    emitted_actions: [],
+                    new_listeners: [
+                        {
+                            name: effect.name,
+                            listener: resolve
+                        }
+                    ]
+                };
+            }
+            case "put": {
+                return {
+                    payload: Promise.resolve({}),
+                    emitted_actions: [effect.action],
+                    new_listeners: []
+                }
+            }
+            case "all": {
+                const result = {
+                    promises: [] as Promise<any>[],
+                    emitted_actions: [] as Action[],
+                    new_listeners: [] as any[]
+                };
+
+                for (const index in effect.effects) {
+                    const child_effect = effect.effects[index].next().value as Effect;
+
+                    // payload slot passed as reference
+                    const child_result = this.process_effect(child_effect);
+
+                    result.promises.push(child_result.payload);
+                    result.emitted_actions.push(...child_result.emitted_actions);
+                    result.new_listeners.push(...child_result.new_listeners);
+                }
+
+                return {
+                    payload: Promise.all(result.promises),
+                    emitted_actions: result.emitted_actions,
+                    new_listeners: result.new_listeners
+                };
+            }
+        }
+    }
+
+    async start() {
+        let call_args: any = {}
+
+        while (true) {
+            const result = this.saga.next(call_args);
+
+            if (result.done) {
+                break;
             }
 
-            module.health = module.totalHealth;
+            const effect = this.process_effect(result.value);
 
-            if (isEvent || destroyedInfo.byReactor) {
-                this.gameData.discardCards([module]);
-            } else {
-                attacker.hand.push(module);
+            for (const listener of effect.new_listeners) {
+                this.bus.once(listener.name, listener.listener);
             }
-        }
 
-        if (destroyedModules.length !== 0) {
-            let unconnectedModules = target.spaceship.getUnconnectedModules();
+            for (const action of effect.emitted_actions) {
+                this.bus.emit(action);
+            }
 
-            target.spaceship.removeModule(unconnectedModules);
-            target.hand.push(...unconnectedModules);
-        }
-
-        // dark matter generator destroyed
-        if (destroyedModules.filter((d) => d.module.type === ModuleTypes.DarkMatterGenerator).length) {
-            let modulesExceptMain = target.spaceship.modules.filter(m => m.type !== ModuleTypes.MainModule);
-
-            target.spaceship.removeModule(modulesExceptMain);
-            target.hand.push(...modulesExceptMain);
-        }
-
-        target.energy = Math.min(target.energy, target.spaceship.getTotalCapacity());
-
-        if (!target.spaceship.getMainModule()) {
-            target.setLose();
+            call_args = await effect.payload;
         }
     }
 
-    isPlayerInFight(player: Player): boolean {
-        if (!this.currentFight) return false;
-
-        return player.id === this.currentFight.first.id || player.id === this.currentFight.second.id;
-    }
+    // handleDestroyedModules(target: Player, attacker: Player, destroyedModules: {
+    //     module: Module,
+    //     byReactor: boolean
+    // }[], isEvent: boolean) {
+    //     for (let destroyedInfo of destroyedModules) {
+    //         let module = destroyedInfo.module
+    //
+    //         console.log(`   Module at x: ${module.x}, y: ${module.y} has been destroyed`);
+    //
+    //         module.isActivated = false;
+    //
+    //         target.spaceship.removeModule(module);
+    //
+    //         if (module.type === ModuleTypes.MainModule) {
+    //             return;
+    //         }
+    //
+    //         module.health = module.totalHealth;
+    //
+    //         if (isEvent || destroyedInfo.byReactor) {
+    //             this.gameData.discardCards([module]);
+    //         } else {
+    //             attacker.hand.push(module);
+    //         }
+    //     }
+    //
+    //     if (destroyedModules.length !== 0) {
+    //         let unconnectedModules = target.spaceship.getUnconnectedModules();
+    //
+    //         target.spaceship.removeModule(unconnectedModules);
+    //         target.hand.push(...unconnectedModules);
+    //     }
+    //
+    //     // dark matter generator destroyed
+    //     if (destroyedModules.filter((d) => d.module.type === ModuleTypes.DarkMatterGenerator).length) {
+    //         let modulesExceptMain = target.spaceship.modules.filter(m => m.type !== ModuleTypes.MainModule);
+    //
+    //         target.spaceship.removeModule(modulesExceptMain);
+    //         target.hand.push(...modulesExceptMain);
+    //     }
+    //
+    //     target.energy = Math.min(target.energy, target.spaceship.getTotalCapacity());
+    //
+    //     if (!target.spaceship.getMainModule()) {
+    //         target.setLose();
+    //     }
+    // }
 
     addPlayersData(message: any[], player: Player) {
         if (message[0] === HAS_PLAYERS_DATA) {
@@ -174,284 +259,196 @@ export default class Game {
         return message;
     }
 
-    emitToPlayerAndWait(player: Player, event: string, ...args): Promise<any> {
-        return new Promise(resolve => {
-            // generate function that must be called when player connected
-
-            let emitFunction = () => {
-                // add information that players data contains in this message
-                // add players data to the front to keep state on client online
-                args = this.addPlayersData(args, player);
-
-                if (typeof args[args.length - 1] === 'function') {
-                    let acknowledgement = args[args.length - 1];
-
-                    let newAcknowledgement = async (...ackArgs) => {
-                        this.currentEmitFunction = undefined;
-                        this.currentEmitPlayerId = undefined;
-
-                        let result = await acknowledgement(...ackArgs);
-
-                        resolve(result);
-                    };
-
-                    this.getSocket(player).emit(event, ...args.slice(0, args.length - 1), newAcknowledgement);
-                } else {
-                    this.currentEmitFunction = undefined;
-                    this.currentEmitPlayerId = undefined;
-
-                    this.getSocket(player).emit(event, ...args);
-
-                    resolve(undefined);
-                }
-            };
-
-            this.currentEmitFunction = emitFunction;
-            this.currentEmitPlayerId = player.id;
-
-            if (this.getSocket(player) !== undefined && !this.getSocket(player).disconnected)
-                emitFunction();
-        });
-    }
-
-    emitToCurrentPlayerAndWait(event: string, ...args): Promise<any> {
-        return this.emitToPlayerAndWait(this.currentPlayer, event, ...args);
-    }
-
-    tryToEmitEvent(player: Player) {
-        if (this.currentEmitPlayerId !== player.id)
-            return;
-
-        if (this.getSocketById(this.currentEmitPlayerId) === undefined || this.getSocketById(this.currentEmitPlayerId).disconnected)
-            return;
-
-        this.currentEmitFunction();
-    }
-
+    // async emitToPlayerAndWaitAcknowledgment(player: Player, event: string, ...args): Promise<any> {
+    //     args = this.addPlayersData(args, this.currentPlayer);
+    //
+    //     return await this.sockets.emitAndWait(player.id, event, true, ...args);
+    // }
+    //
+    // async emitToCurrentPlayerAndWaitAcknowledgment(event: string, ...args): Promise<any> {
+    //     args = this.addPlayersData(args, this.currentPlayer);
+    //
+    //     return await this.sockets.emitAndWait(this.currentPlayer.id, event, true, ...args);
+    // }
+    //
     getPlayerById(id: number): Player {
-        return this.players.filter(p => p.id === id)[0];
+        return this.state.players.filter(p => p.id === id)[0];
     }
 
-    createPlayer(user: User): Player {
-        let player = new Player();
+    #initGameState() {
+        const state = new GameState();
 
-        player.id = user.id;
-        player.name = user.login;
-        player.spaceship = new Spaceship(this.gameData.popMainModule());
-        player.hand = this.gameData.popModuleCards(this.gameData.startCardsCount);
+        for (const user of this.users) {
+            const player = new Player();
 
-        return player;
+            player.id = user.id;
+            player.name = user.login;
+            player.spaceship = new Spaceship(state.popMainModule());
+            player.hand = state.popModuleCards(this.settings.startCardsCount);
+
+            state.players.push(player)
+        }
+
+        this.bus.emit(initGameState(state));
     }
 
     playerConnected(player: Player, socketId: string) {
-        console.log(`Player ${player.name} connected`);
+        // console.log(`Player ${player.name} connected`);
 
-        player.socketId = socketId;
-        player.online = true;
+        // player.socketId = socketId;
+        // player.online = true;
 
-        this.changePlayerData(player);
+        // this.changePlayerData(player);
 
         this.syncPlayersData();
-
-        this.tryToEmitEvent(player);
     }
 
-    viewerConnected(socketId: string) {
-        if (!this.settings.isPublic)
-            return;
-
-        this.viewers.push(socketId);
-    }
-
-    async start() {
-        console.log("Spaceships started");
-
-        this.state = GameState.STARTED;
-
-        while (this.state === GameState.STARTED) {
-            this.syncPlayersData();
-
-            await this.makeGameIteration();
-
-            this.currentPlayer = this.getNextTurnPlayer();
-        }
-    }
+    // async start() {
+    //     console.log("Spaceships started");
+    //
+    //     this.state = GameState.STARTED;
+    //
+    //     while (this.state === GameState.STARTED) {
+    //         this.syncPlayersData();
+    //
+    //         await this.makeGameIteration();
+    //
+    //         this.gameData.advanceCurrentPlayer();
+    //     }
+    // }
 
     changePlayerData(player: Player) {
-        for (let i = 0; i < this.players.length; ++i) {
-            if (this.players[i].id === player.id) {
-                this.players[i] = player;
-                break;
-            }
-        }
-
-        if (this.currentPlayer.id === player.id)
-            this.currentPlayer = player;
+        // TODO: think about it
+        // for (let i = 0; i < this.players.length; ++i) {
+        //     if (this.players[i].id === player.id) {
+        //         this.players[i] = player;
+        //         break;
+        //     }
+        // }
+        //
+        // if (this.currentPlayer.id === player.id)
+        //     this.currentPlayer = player;
     }
 
     syncPlayersData() {
-        for (let player of this.players) {
-            this.getSocket(player)?.emit('setGameData', getDTO(this, player));
+        for (let player of this.state.players) {
+            this.sockets.getSocket(player.id)?.emit('setGameData', getDTO(this, player));
         }
 
         // for (let viewer of this.viewers) {
-            // this.getSocket(viewer).emit('setGameData', getViewerDTO(this));
+        // this.getSocket(viewer).emit('setGameData', getViewerDTO(this));
         // }
     }
 
-    getSocketById(id: number): Socket {
-        return this.getSocket(this.getPlayerById(id));
-    }
+    // setDestroyed(player: Player) {
+    //     player.setLose();
+    //
+    //     this.gameData.discardCards(player.hand);
+    //     player.hand = [];
+    //
+    //     player.spaceship.modules = player.spaceship.modules.filter(m => !m.isMain);
+    //     this.gameData.discardCards(player.spaceship.modules);
+    //     player.spaceship.modules = [];
+    //
+    //     this.changePlayerData(player);
+    //
+    //     console.log(`${player.name} lost`);
+    // }
 
-    getSocket(socketId: string): Socket;
-    getSocket(player: Player): Socket;
-    getSocket(value: Player | string): Socket {
-        let socketId : string;
+    // async choosePlayerForAttack(attackReason: AttackReason): Promise<Player | void> {
+    //     const attackedPlayerId: number | undefined = await this.emitToCurrentPlayerAndWaitAcknowledgment('choosePlayerForAttack', attackReason);
+    //     if (attackedPlayerId === undefined) {
+    //         return;
+    //     }
+    //
+    //     return this.getPlayerById(attackedPlayerId);
+    // }
 
-        socketId = (typeof value === 'string') ? value : value.socketId;
+    // async attackPlayer(attackedPlayer: Player) {
+    //     console.log(`   Player ${this.currentPlayer.name} has attacked player ${attackedPlayer.name}`);
+    //
+    //     this.currentFight = new FightManager(this.currentPlayer, attackedPlayer, this);
+    //     let destroyedPlayer = await this.currentFight.fight();
+    //
+    //     this.currentFight = undefined;
+    //
+    //     if (destroyedPlayer !== undefined) {
+    //         console.log(`   Player ${destroyedPlayer.name} was destroyed`);
+    //         this.setDestroyed(destroyedPlayer);
+    //     }
+    //
+    //     // if all players destroyed except one
+    //     if (Object.entries(this.gameData.getPlayers()).filter(([_, player]) => !player.isLose()).length === 1) {
+    //         this.state = GameState.ENDED;
+    //     }
+    // }
 
-        return this.io.sockets.sockets.get(socketId);
-    }
+    // async showCardsToPlayer(cards: (Module | Event)[], player: Player, showToOther: boolean) {
+    //     if (!showToOther) {
+    //         await this.emitToPlayerAndWaitAcknowledgment(player, 'showCardsAndWait', player.id, cards);
+    //     } else {
+    //         for (let playerToEmit of this.gameData.getPlayers()) {
+    //             if (playerToEmit.id === player.id) {
+    //                 await this.emitToPlayerAndWaitAcknowledgment(player, 'showCardsAndWait', player.id, cards);
+    //             } else {
+    //                 this.sockets.getSocket(playerToEmit.id)?.emit('showCards', player.id, cards);
+    //             }
+    //         }
+    //     }
+    // }
 
-    getNextTurnPlayer() {
-        let currentPlayerId = this.players.indexOf(this.currentPlayer);
+    // getPlayerIndexByOffset(offset: number): number {
+    //     let currentPlayerIndex = this.gameData.getCurrentPlayerIndex();
+    //     const playersCount = this.gameData.getPlayers().length;
+    //
+    //     do {
+    //         currentPlayerIndex = (currentPlayerIndex + Math.sign(offset) + playersCount) % playersCount;
+    //
+    //         if (!this.gameData.getPlayers()[currentPlayerIndex].isLose()) {
+    //             offset += -Math.sign(offset);
+    //         }
+    //     } while (offset !== 0);
+    //
+    //     return currentPlayerIndex;
+    // }
 
-        while (true) {
-            currentPlayerId++;
+    // async askForUseModuleSecondTime(player: Player, module: ModuleTypes): Promise<boolean> {
+    //     return await this.emitToPlayerAndWaitAcknowledgment(player, 'askForUseModuleSecondTime', module);
+    // }
 
-            currentPlayerId %= this.players.length;
-
-            if (this.players[currentPlayerId].skipNextTurn) {
-                this.players[currentPlayerId].skipNextTurn = false;
-                continue;
-            }
-
-            if (this.players[currentPlayerId].isLose()) {
-                continue;
-            }
-
-            break;
-        }
-
-        return this.players[currentPlayerId];
-    }
-
-    getPlayerByIndex(index: number) {
-        return this.players[Object.keys(this.players)[index]];
-    }
-
-    setDestroyed(player: Player) {
-        player.setLose();
-
-        this.gameData.discardCards(player.hand);
-        player.hand = [];
-
-        player.spaceship.modules = player.spaceship.modules.filter(m => !m.isMain);
-        this.gameData.discardCards(player.spaceship.modules);
-        player.spaceship.modules = [];
-
-        this.changePlayerData(player);
-
-        console.log(`${player.name} lost`);
-    }
-
-    async choosePlayerForAttack(attackReason: AttackReason): Promise<Player | void> {
-        return await this.emitToCurrentPlayerAndWait('choosePlayerForAttack', attackReason, async (attackedPlayerId?: number) => {
-            if (attackedPlayerId === undefined) {
-                return;
-            }
-
-            return this.getPlayerById(attackedPlayerId);
-        });
-    }
-
-    async attackPlayer(attackedPlayer: Player) {
-        console.log(`   Player ${this.currentPlayer.name} has attacked player ${attackedPlayer.name}`);
-
-        this.currentFight = new FightManager(this.currentPlayer, attackedPlayer, this);
-        let destroyedPlayer = await this.currentFight.fight();
-
-        this.currentFight = undefined;
-
-        if (destroyedPlayer !== undefined) {
-            console.log(`   Player ${destroyedPlayer.name} was destroyed`);
-            this.setDestroyed(destroyedPlayer);
-        }
-
-        // if all players destroyed except one
-        if (Object.entries(this.players).filter(([_, player]) => !player.isLose()).length === 1) {
-            this.state = GameState.ENDED;
-        }
-    }
-
-    async showCardsToPlayer(cards: (Module | Event)[], player: Player, showToOther: boolean) {
-        if (!showToOther) {
-            await this.emitToPlayerAndWait(player, 'showCardsAndWait', player.id, cards, () => {
-            });
-        } else {
-            for (let playerToEmit of this.players) {
-                if (playerToEmit.id === player.id) {
-                    await this.emitToPlayerAndWait(player, 'showCardsAndWait', player.id, cards, () => {
-                    });
-                } else {
-                    this.getSocket(playerToEmit)?.emit('showCards', player.id, cards);
-                }
-            }
-        }
-    }
-
-    getPlayerByOffsetFromCurrent(offset: number): Player {
-        let currentPlayerIndex = this.players.findIndex(p => p.id === this.currentPlayer.id);
-
-        do {
-            currentPlayerIndex = (currentPlayerIndex + Math.sign(offset) + this.players.length) % this.players.length;
-
-            if (!this.getPlayerByIndex(currentPlayerIndex).isLose())
-                offset += -Math.sign(offset);
-        } while (offset !== 0);
-
-        return this.getPlayerByIndex(currentPlayerIndex);
-    }
-
-    async askForUseModuleSecondTime(player: Player, module: ModuleTypes): Promise<boolean> {
-        return await this.emitToPlayerAndWait(player, 'askForUseModuleSecondTime', module, (useSecondTime: boolean) => {
-            return useSecondTime;
-        });
-    }
-
-    async makeGameIteration() {
-        console.log(`Turn of player ${this.currentPlayer.name}`);
-
-        this.timeManager.addRecord(TimeRecordType.DEFAULT_TURN_STARTED, this.currentPlayer);
-
-        this.currentPlayer.usedRepairOrAttackModuleSecondTimeOnThisTurn = false;
-
-        for (let phase of this.phases) {
-            try {
-                await phase(this);
-            } catch (err) {
-                console.error(err);
-
-                this.state = GameState.ERROR;
-            }
-
-            if (this.timeManager.getPlayersTime()[this.currentPlayer.id] <= 0 && this.settings.loseWhenTimeout) {
-                this.currentPlayer.setLose();
-            }
-
-            if (this.currentPlayer.isLose()) {
-                break;
-            }
-
-            if (this.state === GameState.ENDED || this.state === GameState.ERROR) {
-                break;
-            }
-
-            this.syncPlayersData();
-        }
-
-        this.timeManager.addRecord(TimeRecordType.DEFAULT_TURN_ENDED, this.currentPlayer);
-
-        this.syncPlayersData();
-    }
+    // async makeGameIteration() {
+    //     console.log(`Turn of player ${this.currentPlayer.name}`);
+    //
+    //     this.timeManager.addRecord(TimeRecordType.DEFAULT_TURN_STARTED, this.currentPlayer.id);
+    //
+    //     this.currentPlayer.usedRepairOrAttackModuleSecondTimeOnThisTurn = false;
+    //
+    //     for (let phase of this.phases) {
+    //         try {
+    //             await phase(this);
+    //         } catch (err) {
+    //             console.error(err);
+    //
+    //             this.state = GameState.ERROR;
+    //         }
+    //
+    //         if (this.timeManager.getPlayersTime()[this.currentPlayer.id] <= 0 && this.settings.loseWhenTimeout) {
+    //             this.currentPlayer.setLose();
+    //         }
+    //
+    //         if (this.currentPlayer.isLose()) {
+    //             break;
+    //         }
+    //
+    //         if (this.state === GameState.ENDED || this.state === GameState.ERROR) {
+    //             break;
+    //         }
+    //
+    //         this.syncPlayersData();
+    //     }
+    //
+    //     this.timeManager.addRecord(TimeRecordType.DEFAULT_TURN_ENDED, this.currentPlayer.id);
+    //
+    //     this.syncPlayersData();
+    // }
 }

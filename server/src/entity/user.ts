@@ -12,7 +12,7 @@ import {Game} from "./game";
 @Entity()
 export class User extends BaseEntity {
     @PrimaryGeneratedColumn()
-    id: number
+    id: number;
 
     @Column({unique: true})
     login: string;

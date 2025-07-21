@@ -1,5 +1,5 @@
-import { TimeControlSettings } from "../../../common/GameForPlayerDTO";
-import Player from "../../../common/Player";
+import {TimeControlSettings} from "../../../common/GameForPlayerDTO";
+import {PlayerId} from "../../../common/Player";
 
 enum TimeRecordType {
     DEFAULT_TURN_STARTED,
@@ -17,7 +17,7 @@ enum TimeRecordType {
 
 type TimeRecord = {
     type: TimeRecordType,
-    playerId: number,
+    playerId: PlayerId,
     time: number
 };
 
@@ -27,15 +27,15 @@ class TimeManager {
 
     timeControlSettings: TimeControlSettings;
 
-    constructor(timeControlSettings: TimeControlSettings, players: Player[]) {
+    constructor(timeControlSettings: TimeControlSettings, players: PlayerId[]) {
         this.timeControlSettings = timeControlSettings;
 
-        for (let player of players) {
-            this.playersTime[player.id] = this.timeControlSettings.START_TIME;
+        for (let player_id of players) {
+            this.playersTime[player_id] = this.timeControlSettings.START_TIME;
         }
     }
 
-    addRecord(type: TimeRecordType, player: Player) {
+    addRecord(type: TimeRecordType, player_id: PlayerId) {
         let currentTime = (new Date()).getTime();
 
         if (type === TimeRecordType.DEFAULT_TURN_INTERRUPTED) {
@@ -45,25 +45,25 @@ class TimeManager {
                 TimeRecordType.DEFAULT_TURN_STARTED
             ]);
 
-            this.playersTime[player.id] -= (currentTime - prevRecord.time);
+            this.playersTime[player_id] -= (currentTime - prevRecord.time);
         } else if (type === TimeRecordType.FIGHT_TURN_ENDED) {
             let prevRecord = this.getLastRecordByType(TimeRecordType.FIGHT_TURN_STARTED);
 
-            this.playersTime[player.id] += this.timeControlSettings.FIGHT_TIME_INCREASE;
-            this.playersTime[player.id] -= currentTime - prevRecord.time;
+            this.playersTime[player_id] += this.timeControlSettings.FIGHT_TIME_INCREASE;
+            this.playersTime[player_id] -= currentTime - prevRecord.time;
         } else if (type === TimeRecordType.DEFAULT_TURN_ENDED) {
             let prevRecord = this.getLastRecordByTypes([
                 TimeRecordType.DEFAULT_TURN_CONTINUED,
                 TimeRecordType.DEFAULT_TURN_STARTED
             ]);
 
-            this.playersTime[player.id] += this.timeControlSettings.DEFAULT_TIME_INCREASE;
-            this.playersTime[player.id] -= (currentTime - prevRecord.time);
+            this.playersTime[player_id] += this.timeControlSettings.DEFAULT_TIME_INCREASE;
+            this.playersTime[player_id] -= (currentTime - prevRecord.time);
         }
 
         this.timeRecords.push({
             type: type,
-            playerId: player.id,
+            playerId: player_id,
             time: currentTime
         });
     }

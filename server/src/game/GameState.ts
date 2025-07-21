@@ -16,6 +16,7 @@ import QuantumDestabilizer from "../../../common/modules/QuantumDestabilizer";
 import Battery from "../../../common/modules/Battery";
 import StructureModule from "../../../common/modules/StructureModule";
 import IonDestroyer from "../../../common/modules/IonDestroyer";
+import Player, {PlayerId} from "../../../common/Player";
 
 // shuffle array in place
 export function arrayShuffle<T>(array: T[]): T[] {
@@ -27,7 +28,32 @@ export function arrayShuffle<T>(array: T[]): T[] {
     return array;
 }
 
-export default class GameData {
+export class FightData {
+    first: PlayerId;
+    second: PlayerId;
+
+    isFirstPlayerTurn: boolean = true;
+
+    isFightEnded: boolean = false;
+}
+
+const moduleName = {
+    "dark_matter_generator": DarkMatterGenerator,
+    "small_quantum_protector": SmallQuantumProtector,
+    "quantum_protector": QuantumProtector,
+    "attack_module": AttackModule,
+    "solar_panel": SolarPanel,
+    "space_solver": SpaceSolver,
+    "nuclear_reactor": NuclearReactor,
+    "small_battery": SmallBattery,
+    "quantum_destabilizer": QuantumDestabilizer,
+    "battery": Battery,
+    "repair_module": RepairModule,
+    "structure_module": StructureModule,
+    "ion_destroyer": IonDestroyer,
+}
+
+export default class GameState {
     protected modulesStack: Module[] = [];
 
     protected eventsStack: Event[] = [
@@ -90,29 +116,16 @@ export default class GameData {
     protected moduleDiscards: Module[] = [];
     protected eventDiscards: Event[] = [];
 
-    readonly startCardsCount: number = 4;
+    players: Player[] = [];
+    currentPlayerIndex: number = 0;
 
-    moduleName = {
-        "dark_matter_generator": DarkMatterGenerator,
-        "small_quantum_protector": SmallQuantumProtector,
-        "quantum_protector": QuantumProtector,
-        "attack_module": AttackModule,
-        "solar_panel": SolarPanel,
-        "space_solver": SpaceSolver,
-        "nuclear_reactor": NuclearReactor,
-        "small_battery": SmallBattery,
-        "quantum_destabilizer": QuantumDestabilizer,
-        "battery": Battery,
-        "repair_module": RepairModule,
-        "structure_module": StructureModule,
-        "ion_destroyer": IonDestroyer,
-    }
+    fight?: FightData = undefined;
 
     constructor() {
         for (let module in modules) {
             for (let configuration of modules[module]["configurations"]) {
                 this.modulesStack.push(
-                    new this.moduleName[module](configuration[3], configuration[0], configuration[1], configuration[2])
+                    new moduleName[module](configuration[3], configuration[0], configuration[1], configuration[2])
                 );
             }
         }
@@ -122,9 +135,41 @@ export default class GameData {
         this.mainModules = arrayShuffle(this.mainModules);
     }
 
+    getPlayers(): Readonly<Player[]> {
+        return Object.freeze(this.players);
+    }
+
+    getCurrentPlayer(): Readonly<Player> {
+        return Object.freeze(this.players[this.currentPlayerIndex]);
+    }
+
+    getCurrentPlayerIndex(): number {
+        return this.currentPlayerIndex;
+    }
 
     popMainModule(): MainModule {
         return this.mainModules.pop();
+    }
+
+    advanceCurrentPlayer() {
+        let currentPlayerIndex = this.currentPlayerIndex;
+
+        while (true) {
+            currentPlayerIndex = (currentPlayerIndex + 1) % this.players.length;
+
+            if (this.players[currentPlayerIndex].skipNextTurn) {
+                this.players[currentPlayerIndex].skipNextTurn = false;
+                continue;
+            }
+
+            if (this.players[currentPlayerIndex].isLose()) {
+                continue;
+            }
+
+            break;
+        }
+
+        this.currentPlayerIndex = currentPlayerIndex;
     }
 
     popModuleCards(count: number = 1): Module[] {

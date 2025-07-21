@@ -1,11 +1,12 @@
 import {Server, Socket} from "socket.io";
 import Player from "../../../common/Player";
-import {GameSettings} from "../../../common/GameForPlayerDTO";
 import {User} from "../entity/user";
 import cookie from "cookie";
 import jwt, {JwtPayload} from "jsonwebtoken";
 import {Game as ArchivedGame} from "../entity/game";
-import Game, {GameState} from "./Game";
+import Game from "./Game";
+import SocketsManager from "./io/SocketsManager";
+import {GameSettings} from "../../../common/GameSettings";
 
 export default class GamesManager {
     io: Server;
@@ -17,7 +18,7 @@ export default class GamesManager {
 
         io.on('connection', async (socket: Socket) => {
             let game: Game;
-            let player: Player;
+            let player: Readonly<Player>;
 
             socket.on('gameId', async (gameId: string) => {
                 try {
@@ -29,30 +30,36 @@ export default class GamesManager {
                     });
 
                     game = this.getGameById(gameId);
-                    player = game?.getPlayerById(user.id);
 
-                    if (!player && !game.settings.isPublic) {
-                        throw Error();
-                    } else if (player) {
-                        game.playerConnected(player, socket.id);
+                    if (!game) {
+                        throw Error("No game found for the given id.")
+                    }
+
+                    player = game!.getPlayerById(user.id);
+
+                    if (player) {
+                        // game.playerConnected(player, socket.id);
+
+                        game.sockets.onPlayerConnect(player.id, socket.id);
+                        game.syncPlayersData();
                     } else { // game is public and player is undefined
-                        game.viewerConnected(socket.id);
+                        throw new Error("Viewers are not implemented!");
                     }
                 } catch (e) {
+                    console.log(e);
                     socket.disconnect();
                     return;
                 }
             });
 
             socket.on('disconnect', () => {
-                game.viewers = game.viewers.filter(sid => sid != socket.id);
-
-                if (!player || !game)
+                if (!game || !player) {
                     return;
+                }
 
-                console.log(`${player.name} disconnected`)
-                player.socketId = undefined;
-                player.online = false;
+                console.log(`${player.name} disconnected`);
+
+                game.sockets.onPlayerDisconnect(player.id);
 
                 game.syncPlayersData();
             });
@@ -60,17 +67,18 @@ export default class GamesManager {
     }
 
     createGame(name: string, users: User[], settings: GameSettings): Game {
-        let game = new Game(this.createGameId(), name, users, settings, this.io);
+        console.log(users);
+
+        let game = new Game(this.createGameId(), name, users, settings, this.io, SocketsManager);
 
         console.log("game created!");
 
         game.start().then(async () => {
-            for (let player of game.players)
-                game.getSocket(player).disconnect();
+            game.sockets.disconnectEveryone();
 
-            if (game.state !== GameState.ERROR) {
-                await this.archiveGame(game);
-            }
+            // if (game.state !== GameState.ERROR) {
+            //     await this.archiveGame(game);
+            // }
 
             let gameId = this.games.findIndex(g => g.id === game.id);
 
@@ -85,27 +93,28 @@ export default class GamesManager {
     }
 
     async archiveGame(game: Game) {
-        const users = await User.find();
-        const winnerPlayer = Object.values(game.players).filter(player => !player.isLose())[0];
-        const winnerUser = await User.findOneBy({
-            id: winnerPlayer.id
-        });
-
-        console.log(`Game end. Player ${winnerPlayer.name} has won`);
-
-        if (!winnerUser) {
-            return;
-        }
-
-        let archivedGame = new ArchivedGame();
-
-        archivedGame.name = game.name;
-        archivedGame.winner = winnerUser;
-        archivedGame.players = game.players.map(p => {
-            return users.find(u => u.id === p.id);
-        });
-
-        await archivedGame.save();
+        // TODO: uncomment
+        // const users = await User.find();
+        // const winnerPlayer = Object.values(game.players).filter(player => !player.isLose())[0];
+        // const winnerUser = await User.findOneBy({
+        //     id: winnerPlayer.id
+        // });
+        //
+        // console.log(`Game end. Player ${winnerPlayer.name} has won`);
+        //
+        // if (!winnerUser) {
+        //     return;
+        // }
+        //
+        // let archivedGame = new ArchivedGame();
+        //
+        // archivedGame.name = game.name;
+        // archivedGame.winner = winnerUser;
+        // archivedGame.players = game.players.map(p => {
+        //     return users.find(u => u.id === p.id);
+        // });
+        //
+        // await archivedGame.save();
     }
 
     getGameById(id: string): Game {
@@ -119,7 +128,7 @@ export default class GamesManager {
 
     getGamesOfUser(user: User) {
         return this.games.filter(game => {
-            return game.players.find(u => u.id === user.id) !== undefined || game.settings.isPublic;
+            return game.users.find(u => u.id === user.id) !== undefined || game.settings.isPublic;
         });
     }
 

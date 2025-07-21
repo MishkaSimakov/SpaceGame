@@ -107,7 +107,7 @@ export const home = async (req: AuthenticatedRequest, res: Response) => {
             return {
                 id: game.id,
                 name: game.name,
-                players: game.players.map(p => p.name),
+                players: game.users.map(p => p.login),
             };
         }),
         archivedGames: archivedGames.map(game => {

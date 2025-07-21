@@ -30,7 +30,7 @@ enum ModuleTypes {
 export let moduleIdCounter = 0;
 
 class Module {
-    id: number = moduleIdCounter++;
+    // id: number = moduleIdCounter++;
 
     name: string;
 

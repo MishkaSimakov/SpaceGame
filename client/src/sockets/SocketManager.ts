@@ -54,6 +54,7 @@ export default class SocketManager {
         });
 
         this.on('setGameData', (gameDTO: GameForPlayerDTO) => {
+            console.log("game data received");
             this.game.setGameData(gameDTO);
         });
     }

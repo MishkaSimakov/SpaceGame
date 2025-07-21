@@ -46,9 +46,10 @@ function arrayCompare<T>(arr1: Array<T>, arr2: Array<T>) {
     return !arr2.length;
 }
 
+export type PlayerId = number;
 
 export default class Player {
-    id: number;
+    id: PlayerId;
     name: string;
 
     socketId: string;
@@ -65,7 +66,8 @@ export default class Player {
 
     protected lose: boolean = false;
 
-    constructor() {}
+    constructor() {
+    }
 
     canBeTurnedInto(changedPlayer: Player): boolean {
         let currentCards = [...this.spaceship.modules, ...this.hand];

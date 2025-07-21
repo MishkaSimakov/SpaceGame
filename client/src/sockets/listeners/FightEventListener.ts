@@ -61,7 +61,7 @@ export default class FightEventListener extends BaseEventListener {
             this.controls().askYesOrNo().then(callback);
         });
 
-        this.socket.on('chooseWeaponAndTarget', (targetPlayerLink: number, callback: (weaponPosition: Vector2, targetPosition: Vector2) => void) => {
+        this.socket.on('chooseWeaponAndTarget', (targetPlayerLink: number, callback: (value: {weaponPosition: Vector2, targetPosition: Vector2}) => void) => {
             let selectedWeapon: Module;
             let selectedTarget: Module;
 
@@ -74,10 +74,10 @@ export default class FightEventListener extends BaseEventListener {
                     if (selectedWeapon === undefined || selectedTarget === undefined)
                         return;
 
-                    callback(
-                        new Vector2(selectedWeapon.x, selectedWeapon.y),
-                        new Vector2(selectedTarget.x, selectedTarget.y)
-                    );
+                    callback({
+                        weaponPosition: new Vector2(selectedWeapon.x, selectedWeapon.y),
+                        targetPosition: new Vector2(selectedTarget.x, selectedTarget.y)
+                    });
 
                     this.controls().topBarDrawer.removeButtons();
                     this.controls().topBarDrawer.clearStatus();

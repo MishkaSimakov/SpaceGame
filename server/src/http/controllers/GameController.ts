@@ -2,8 +2,8 @@ import {Request, Response} from "express";
 import App from "../../App";
 import {User} from "../../entity/user";
 import {AuthenticatedRequest} from "../middleware/auth";
-import {arrayShuffle} from "../../game/GameData";
-import {GameSettings} from "../../../../common/GameForPlayerDTO";
+import {arrayShuffle} from "../../game/GameState";
+import {GameSettings} from "../../../../common/GameSettings";
 
 export const create = async (req: Request, res: Response) => {
     try {
@@ -20,12 +20,12 @@ export const create = async (req: Request, res: Response) => {
 
         let withTimeControl = req.body['time-control'] === 'on';
 
-        let gameSettings: GameSettings = {
-            withTimeControl: withTimeControl,
-            size: selectedUsers.length,
-            loseWhenTimeout: req.body['lose-when-timeout'] === 'on' && withTimeControl,
-            isPublic: req.body['is-public'] === 'on'
-        };
+        let gameSettings = new GameSettings();
+
+        gameSettings.withTimeControl = withTimeControl;
+        gameSettings.size = selectedUsers.length;
+        gameSettings.loseWhenTimeout = req.body['lose-when-timeout'] === 'on' && withTimeControl;
+        gameSettings.isPublic = req.body['is-public'] === 'on';
 
         if (withTimeControl) {
             let defaultTimeIncrease = parseInt(req.body['default-time-increase']);
@@ -45,6 +45,7 @@ export const create = async (req: Request, res: Response) => {
 
         return res.redirect('/');
     } catch (err) {
+        console.log(err);
         return res.redirect('/game/create');
     }
 };
@@ -53,7 +54,7 @@ export const joinGame = async (req: AuthenticatedRequest, res: Response) => {
     let gameId = req.url.split('/').pop();
     let game = App.getInstance().gamesManager.getGameById(gameId);
 
-    const isPlayerInGame = !!game?.players.find(p => p.id === req.user.id);
+    const isPlayerInGame = !!game?.users.find(p => p.id === req.user.id);
     if (!game || !(isPlayerInGame || game.settings.isPublic)) {
         return res.redirect('/');
     }

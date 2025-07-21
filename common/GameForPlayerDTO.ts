@@ -3,20 +3,7 @@ import Spaceship from "./Spaceship";
 import {Options} from "./PlainToClass";
 import Module from "./modules/Module";
 import {Message} from "./Types";
-
-type TimeControlSettings = {
-    START_TIME: number;
-    DEFAULT_TIME_INCREASE: number;
-    FIGHT_TIME_INCREASE: number;
-};
-
-type GameSettings = {
-    size: number,
-    withTimeControl: boolean,
-    timeControlSettings?: TimeControlSettings,
-    loseWhenTimeout: boolean,
-    isPublic: boolean
-};
+import {GameSettings, TimeControlSettings} from "./GameSettings";
 
 class OtherPlayer {
     id: number;
@@ -52,4 +39,4 @@ class GameForPlayerDTO {
     messages: Message[];
 }
 
-export { GameSettings, GameForPlayerDTO, OtherPlayer, TimeControlSettings };
+export {GameForPlayerDTO, OtherPlayer};

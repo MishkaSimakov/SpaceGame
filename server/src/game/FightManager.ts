@@ -17,8 +17,6 @@ export default class FightManager {
 
     gameManager: Game;
 
-    MAIN_MODULE_RUNAWAY_ENERGY_COST = 5;
-
     constructor(first: Player, second: Player, gameManager: Game) {
         this.first = first;
         this.second = second;
@@ -36,7 +34,7 @@ export default class FightManager {
     }
 
     async fight(): Promise<Player | undefined> {
-        this.gameManager.timeManager.addRecord(TimeRecordType.DEFAULT_TURN_INTERRUPTED, this.first);
+        this.gameManager.timeManager.addRecord(TimeRecordType.DEFAULT_TURN_INTERRUPTED, this.first.id);
 
         this.gameManager.messageManager.addMessage(this.first.name + ' напал на ' + this.second.name);
 
@@ -54,7 +52,7 @@ export default class FightManager {
             let destroyed = await this.makeFightIteration(attacker, target);
 
             if (destroyed !== undefined) {
-                this.gameManager.timeManager.addRecord(TimeRecordType.DEFAULT_TURN_CONTINUED, this.first);
+                this.gameManager.timeManager.addRecord(TimeRecordType.DEFAULT_TURN_CONTINUED, this.first.id);
 
                 console.log(`Fight has ended. ${destroyed.name} was destroyed`);
 
@@ -72,7 +70,7 @@ export default class FightManager {
             this.second.spaceship.activatedProtector.isActivated = false;
         this.second.spaceship.activatedProtector = undefined;
 
-        this.gameManager.timeManager.addRecord(TimeRecordType.DEFAULT_TURN_CONTINUED, this.first);
+        this.gameManager.timeManager.addRecord(TimeRecordType.DEFAULT_TURN_CONTINUED, this.first.id);
 
         console.log(`Fight has ended. No one destroyed`);
     }
@@ -158,18 +156,17 @@ export default class FightManager {
     }
 
     protected async chooseProtectors(target: Player) {
-        await this.gameManager.emitToPlayerAndWait(target, 'chooseProtectors', (protectorPosition?: Vector2) => {
-            if (protectorPosition && protectorPosition.x !== undefined && protectorPosition.y !== undefined) {
-                let protector: Module = target.spaceship.getModuleByPosition(protectorPosition);
-                target.spaceship.setProtector(protector);
+        const protectorPosition: Vector2 | undefined = await this.gameManager.emitToPlayerAndWaitAcknowledgment(target, 'chooseProtectors');
+        if (protectorPosition && protectorPosition.x !== undefined && protectorPosition.y !== undefined) {
+            let protector: Module = target.spaceship.getModuleByPosition(protectorPosition);
+            target.spaceship.setProtector(protector);
 
-                protector.isActivated = true;
+            protector.isActivated = true;
 
-                target.energy -= protector.energyCost;
+            target.energy -= protector.energyCost;
 
-                this.gameManager.syncPlayersData();
-            }
-        });
+            this.gameManager.syncPlayersData();
+        }
     }
 
     protected async useEventCardToDealDamage(attacker: Player, target: Player) {
@@ -177,100 +174,97 @@ export default class FightManager {
             return;
         }
 
-        let result = await this.gameManager.emitToPlayerAndWait(attacker, 'willYouDealDamageByEventCard', (willUse: boolean) => {
-            return willUse;
-        });
+        let result = await this.gameManager.emitToPlayerAndWaitAcknowledgment(attacker, 'willYouDealDamageByEventCard');
 
         if (!result) {
             return;
         }
 
-        await this.gameManager.emitToPlayerAndWait(attacker, 'chooseModuleToDealDamage', target.id, (position: Vector2) => {
-            this.gameManager.messageManager.addMessage(`нанёс 1 урон ${target.name} картой действия`, attacker);
+        const position: Vector2 = await this.gameManager.emitToPlayerAndWaitAcknowledgment(attacker, 'chooseModuleToDealDamage', target.id);
+        this.gameManager.messageManager.addMessage(`нанёс 1 урон ${target.name} картой действия`, attacker);
 
-            let discardedCardIndex = attacker.hand.findIndex((c) => {
-                if (isModule(c))
-                    return false;
+        let discardedCardIndex = attacker.hand.findIndex((c) => {
+            if (isModule(c))
+                return false;
 
-                return (c as Event).type === EventTypes.SaveCardAndThenDealDamage;
-            });
-
-            let discardedCard = attacker.hand[discardedCardIndex];
-            attacker.hand.splice(discardedCardIndex, 1);
-            this.gameManager.gameData.discardCards([discardedCard]);
-
-            this.gameManager.changePlayerData(attacker);
-
-            let targetModule = target.spaceship.getModuleByPosition(position);
-
-            let destroyed = target.spaceship.damage(targetModule, 1, false);
-
-            this.gameManager.handleDestroyedModules(target, attacker, destroyed, true);
+            return (c as Event).type === EventTypes.SaveCardAndThenDealDamage;
         });
+
+        let discardedCard = attacker.hand[discardedCardIndex];
+        attacker.hand.splice(discardedCardIndex, 1);
+        this.gameManager.gameData.discardCards([discardedCard]);
+
+        this.gameManager.changePlayerData(attacker);
+
+        let targetModule = target.spaceship.getModuleByPosition(position);
+
+        let destroyed = target.spaceship.damage(targetModule, 1, false);
+
+        this.gameManager.handleDestroyedModules(target, attacker, destroyed, true);
     }
 
     protected async askForRunaway(attacker: Player): Promise<boolean> {
-        return await this.gameManager.emitToPlayerAndWait(attacker, 'willYouRunaway', (isTryingToRunaway: boolean) => {
-            if (!isTryingToRunaway) {
-                console.log(`   Player dont try to run away`);
+        const isTryingToRunaway: boolean = await this.gameManager.emitToPlayerAndWaitAcknowledgment(attacker, 'willYouRunaway');
+        if (!isTryingToRunaway) {
+            console.log(`   Player dont try to run away`);
 
-                return false;
-            }
+            return false;
+        }
 
-            console.log(`   Player try to run away`);
+        console.log(`   Player try to run away`);
 
-            if (Math.random() * 6 >= 4) {
-                console.log(`   Player has run away`);
+        if (Math.random() * 6 >= 4) {
+            console.log(`   Player has run away`);
 
-                return true;
-            } else {
-                return false;
-            }
-        });
+            return true;
+        } else {
+            return false;
+        }
     }
 
     protected async askForRunawayUsingMainModule(attacker: Player): Promise<boolean> {
-        if (attacker.energy < this.MAIN_MODULE_RUNAWAY_ENERGY_COST)
+        if (attacker.energy < this.gameManager.settings.mainModuleRunawayEnergyCost)
             return false;
 
-        return await this.gameManager.emitToPlayerAndWait(attacker, 'willYouRunawayUsingMainModule', (isTryingToRunaway: boolean) => {
-            if (!isTryingToRunaway) {
-                console.log(`   Player dont try to run away using main module`);
+        const isTryingToRunaway: boolean = await this.gameManager.emitToPlayerAndWaitAcknowledgment(attacker, 'willYouRunawayUsingMainModule');
+        if (!isTryingToRunaway) {
+            console.log(`   Player dont try to run away using main module`);
 
-                return false;
-            }
+            return false;
+        }
 
-            console.log(`   Player has run away using main module`);
+        console.log(`   Player has run away using main module`);
 
-            attacker.energy -= this.MAIN_MODULE_RUNAWAY_ENERGY_COST;
+        attacker.energy -= this.gameManager.settings.mainModuleRunawayEnergyCost;
 
-            this.gameManager.syncPlayersData();
+        this.gameManager.syncPlayersData();
 
-            return true;
-        });
+        return true;
     }
 
     protected async chooseWeaponAndTarget(attacker: Player, target: Player): Promise<Module> {
-        return await this.gameManager.emitToPlayerAndWait(attacker, 'chooseWeaponAndTarget', target.id, (weaponPosition: Vector2, targetPosition: Vector2) => {
-            let weapon: Module = attacker.spaceship.getModuleByPosition(weaponPosition);
-            let targetModule: Module = target.spaceship.getModuleByPosition(targetPosition);
+        const {
+            weaponPosition,
+            targetPosition
+        } = await this.gameManager.emitToPlayerAndWaitAcknowledgment(attacker, 'chooseWeaponAndTarget', target.id);
 
-            console.log(`   Player has chosen weapon (module at x: ${weapon.x}, y: ${weapon.y}) to attack target (module at x: ${targetModule.x}, y: ${targetModule.y})`);
+        let weapon: Module = attacker.spaceship.getModuleByPosition(weaponPosition);
+        let targetModule: Module = target.spaceship.getModuleByPosition(targetPosition);
 
-            this.damage(attacker, target, weapon, targetModule);
+        console.log(`   Player has chosen weapon (module at x: ${weapon.x}, y: ${weapon.y}) to attack target (module at x: ${targetModule.x}, y: ${targetModule.y})`);
 
-            return weapon;
-        });
+        this.damage(attacker, target, weapon, targetModule);
+
+        return weapon;
     }
 
     protected async chooseTarget(attacker: Player, target: Player, weapon: Module): Promise<Module> {
-        return await this.gameManager.emitToPlayerAndWait(attacker, 'chooseTarget', target.id, weapon, (targetPosition: Vector2) => {
-            let targetModule: Module = target.spaceship.getModuleByPosition(targetPosition);
+        const targetPosition: Vector2 = await this.gameManager.emitToPlayerAndWaitAcknowledgment(attacker, 'chooseTarget', target.id, weapon);
+        let targetModule: Module = target.spaceship.getModuleByPosition(targetPosition);
 
-            console.log(`   Player has chosen attack module at x: ${targetModule.x}, y: ${targetModule.y}`);
+        console.log(`   Player has chosen attack module at x: ${targetModule.x}, y: ${targetModule.y}`);
 
-            return targetModule;
-        });
+        return targetModule;
     }
 
     protected damage(attacker: Player, target: Player, weapon: Module, targetModule: Module) {
@@ -280,11 +274,11 @@ export default class FightManager {
     }
 
     protected async measureFightTime(func: Function, currentPlayer: Player) {
-        this.gameManager.timeManager.addRecord(TimeRecordType.FIGHT_TURN_STARTED, currentPlayer);
+        this.gameManager.timeManager.addRecord(TimeRecordType.FIGHT_TURN_STARTED, currentPlayer.id);
 
         let result = await func();
 
-        this.gameManager.timeManager.addRecord(TimeRecordType.FIGHT_TURN_ENDED, currentPlayer);
+        this.gameManager.timeManager.addRecord(TimeRecordType.FIGHT_TURN_ENDED, currentPlayer.id);
 
         return result;
     }

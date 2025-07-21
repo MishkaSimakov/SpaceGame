@@ -135,7 +135,10 @@ export default class EventCardsEventListener extends BaseEventListener {
             }]);
         });
 
-        this.socket.on('chooseModuleToDamageEvent', (damageToDeal: number, callback: (playerId?: number, module?: Vector2) => void) => {
+        this.socket.on('chooseModuleToDamageEvent', (damageToDeal: number, callback: (value: {
+            playerId?: number,
+            modulePosition?: Vector2
+        }) => void) => {
             this.controls().topBarDrawer.setStatus(`выберите модуль, чтобы нанести урон (${damageToDeal})`);
 
             let module: Module;
@@ -161,9 +164,12 @@ export default class EventCardsEventListener extends BaseEventListener {
                 color: COLORS.BUTTON.DANGER,
                 onClick: () => {
                     if (module) {
-                        callback(id, new Vector2(module.x, module.y));
+                        callback({
+                            playerId: id,
+                            modulePosition: new Vector2(module.x, module.y)
+                        });
                     } else {
-                        callback();
+                        callback({});
                     }
 
                     this.controls().topBarDrawer.removeButtons();
@@ -174,7 +180,7 @@ export default class EventCardsEventListener extends BaseEventListener {
                 text: "Пропустить",
                 color: COLORS.BUTTON.PRIMARY,
                 onClick: () => {
-                    callback();
+                    callback({});
 
                     this.controls().topBarDrawer.removeButtons();
                     this.controls().topBarDrawer.clearStatus();
@@ -185,7 +191,7 @@ export default class EventCardsEventListener extends BaseEventListener {
             (this.controls().topBarDrawer.buttonsGroup.children[0] as Button).disabled(true);
         });
 
-        this.socket.on('destroyTwoSolarPanelsOnYourSpaceshipEvent', (callback: (firstPosition: Vector2, secondPosition?: Vector2) => void) => {
+        this.socket.on('destroyTwoSolarPanelsOnYourSpaceshipEvent', (callback: (positions: Vector2[]) => void) => {
             let count = Math.min(
                 this.game.getCurrentPlayer().spaceship.getModulesByType(ModuleTypes.SolarPanel).length, 2
             );
@@ -216,12 +222,12 @@ export default class EventCardsEventListener extends BaseEventListener {
                     if (selectedSolarPanels.length < count) return;
 
                     if (count === 1)
-                        callback(new Vector2(selectedSolarPanels[0].x, selectedSolarPanels[0].y));
+                        callback([new Vector2(selectedSolarPanels[0].x, selectedSolarPanels[0].y)]);
                     else
-                        callback(
+                        callback([
                             new Vector2(selectedSolarPanels[0].x, selectedSolarPanels[0].y),
                             new Vector2(selectedSolarPanels[1].x, selectedSolarPanels[1].y)
-                        );
+                        ]);
 
                     this.controls().topBarDrawer.removeButtons();
                     this.controls().topBarDrawer.clearStatus();

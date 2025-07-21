@@ -4,19 +4,20 @@ import {MainModuleType} from "../../../../common/modules/MainModule";
 import Vector2 from "../../../../common/Vector2";
 
 const useRepairModule = async (game: Game, energyCost: number): Promise<boolean> => {
-    return await game.emitToCurrentPlayerAndWait('chooseModuleToRepair', async (modulePosition?: Vector2) => {
-        if (!modulePosition)
-            return false;
+    const modulePosition: Vector2 | undefined = await game.emitToCurrentPlayerAndWaitAcknowledgment('chooseModuleToRepair');
 
-        game.messageManager.addMessage(`починился ремонтным модулем`, game.currentPlayer);
+    if (modulePosition === undefined) {
+        return false;
+    }
 
-        let module = game.currentPlayer.spaceship.getModuleByPosition(modulePosition);
+    game.messageManager.addMessage(`починился ремонтным модулем`, game.currentPlayer);
 
-        game.currentPlayer.energy -= energyCost;
-        module.health = Math.min(module.health + 1, module.totalHealth);
+    let module = game.currentPlayer.spaceship.getModuleByPosition(modulePosition);
 
-        return true;
-    });
+    game.currentPlayer.energy -= energyCost;
+    module.health = Math.min(module.health + 1, module.totalHealth);
+
+    return true;
 }
 
 export const fixSpaceship = async (game: Game) => {

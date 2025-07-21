@@ -7,7 +7,7 @@ export const getDTO = (game: Game, forPlayer: Player): GameForPlayerDTO => {
 
     dto.player = game.getPlayerById(forPlayer.id);
 
-    dto.otherPlayers = game.players
+    dto.otherPlayers = game.state.players
         .filter(p => p.id !== forPlayer.id)
         .map(p => p.getOtherPlayer());
 

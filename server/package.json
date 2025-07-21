@@ -15,7 +15,6 @@
     "express-edge": "^3.0.0",
     "express-validator": "^7.0.1",
     "jsonwebtoken": "^9.0.0",
-    "mysql": "^2.18.1",
     "pg": "^8.16.3",
     "reflect-metadata": "^0.1.13",
     "serve-static": "^1.15.0",
@@ -23,5 +22,17 @@
     "ts-node": "^10.9.1",
     "tslog": "^4.8.2",
     "typeorm": "^0.3.16"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.31.0",
+    "eslint": "^9.31.0",
+    "tsm": "^2.3.0",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.37.0",
+    "uvu": "^0.5.6"
+  },
+  "scripts": {
+    "test": "uvu -r tsm tests",
+    "lint": "npx eslint ."
   }
 }
