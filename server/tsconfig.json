@@ -2,13 +2,13 @@
   "compilerOptions": {
     "sourceMap": true,
     "outDir": "dist",
-    "target": "es2022",
+    "target": "es2024",
     "module": "node16",
     "lib": ["esnext"],
     "esModuleInterop": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "moduleResolution": "node",
+    "moduleResolution": "node16",
     "resolveJsonModule": true,
     "inlineSourceMap": true,
   },
@@ -17,7 +17,8 @@
   ],
   "include": [
     "./src/**/*",
-    "./tests/**/*"
+    "./tests/**/*",
+    "../common/**/*",
   ],
   "rootDirs": [
     ".",

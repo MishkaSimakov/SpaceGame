@@ -11,22 +11,16 @@ RUN apk add --update --no-cache make gcc build-base
 # Use production node environment by default.
 #ENV NODE_ENV production
 
-
-WORKDIR /usr/src/game
+WORKDIR /usr/src/game/server
 
 # Install nodemon
 RUN npm i -g nodemon
 RUN npm i -g typescript ts-node
 
 # Server
-COPY ./server/package.json ./server/package-lock.json ./server/
+COPY ./package.json ./package-lock.json ./
 
-RUN cd server && npm ci
-
-# Client
-COPY ./client/package.json ./client/package-lock.json ./client/
-
-RUN cd client && npm ci
+RUN npm ci
 
 # Run the application as a non-root user.
 USER node

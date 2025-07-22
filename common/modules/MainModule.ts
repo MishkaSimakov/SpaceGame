@@ -11,7 +11,12 @@ enum MainModuleType {
 class MainModule extends Module {
     mainModuleType: MainModuleType;
 
-    constructor(index: number, type: MainModuleType, connectors: { top: number, right: number, bottom: number, left: number }) {
+    constructor(index: number, type: MainModuleType, connectors: {
+        top: number,
+        right: number,
+        bottom: number,
+        left: number
+    }) {
         super(connectors);
 
         this.mainModuleType = type;
@@ -19,6 +24,7 @@ class MainModule extends Module {
         let indexToRomanian: string[] = ['I', 'II', 'III', 'IV', 'V'];
 
         this.name = 'Командный модуль ' + indexToRomanian[index - 1];
+        this.sprite = 'main-module';
         this.type = ModuleTypes.MainModule;
         this.isMain = true;
 

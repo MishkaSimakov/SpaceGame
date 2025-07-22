@@ -1,7 +1,7 @@
-import Game from "../Game";
-import {AttackReason} from "../../../../common/Types";
-import {ModuleTypes} from "../../../../common/modules/Module";
-import {MainModuleType} from "../../../../common/modules/MainModule";
+import Game from "../../Game";
+import {AttackReason} from "../../../../../common/Types";
+import {ModuleTypes} from "../../../../../common/modules/Module";
+import {MainModuleType} from "../../../../../common/modules/MainModule";
 
 export const attack = async (game: Game) => {
     if (!game.currentPlayer.spaceship.canAttack() || game.currentPlayer.energy < 5) {

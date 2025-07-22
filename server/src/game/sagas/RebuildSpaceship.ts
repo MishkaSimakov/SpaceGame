@@ -14,6 +14,5 @@ export function* rebuildSpaceship() {
         res: take(rebuildSpaceshipResponse)
     });
 
-    console.log(res);
     yield* put(playerRebuiltSpaceship(currentPlayerId, res.payload.newSpaceship, res.payload.newHand));
 }

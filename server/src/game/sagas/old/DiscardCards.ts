@@ -1,4 +1,4 @@
-import Game from "../Game";
+import Game from "../../Game";
 
 export const discardCards = async (game: Game) => {
     if (game.currentPlayer.hand.length <= 5) {

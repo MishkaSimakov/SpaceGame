@@ -13,11 +13,12 @@ import ActionsBus from "./actions/ActionsBus";
 import {gameSaga} from "./sagas/Main";
 import {Logger} from "./Logger";
 import {Action} from "./actions/Action";
-import {initGameState, rebuildSpaceshipRequest, rebuildSpaceshipResponse} from "./actions/Actions";
+import {initGameState} from "./actions/Actions";
 import {reducers} from "./reducers/Main";
 import {SagaRunner} from "./SagaRunner";
 import Module from "../../../common/modules/Module";
 import {Event} from "../../../common/events/Event";
+import {IOListeners} from "./io/Listeners";
 
 export enum GameStateLegacy {
     WAIT_FOR_PLAYERS,
@@ -84,8 +85,14 @@ export default class Game {
     }
 
     registerIOListeners() {
-        this.bus.on(rebuildSpaceshipRequest, this.rebuildSpaceshipRequest.bind(this));
-        // this.bus.on(numberRequest, this.sockets.numberRequest.bind(this.io));
+        this.bus.on('*', (action: Action) => {
+            if (action.type in IOListeners) {
+                IOListeners[action.type](action, {
+                    bus: this.bus,
+                    sockets: this.sockets
+                });
+            }
+        });
     }
 
     registerReduceListeners() {
@@ -97,18 +104,6 @@ export default class Game {
                 // SagaRunner relies on stateRef. Plain assignment would invalidate its reference
                 Object.assign(this.state, copy);
             }
-        });
-    }
-
-    rebuildSpaceshipRequest(action: Action) {
-        console.log("rebuild spaceship!!!!")
-        const playerId: PlayerId = action.payload.player;
-
-        this.sockets.emitAndWait(playerId, 'rebuildSpaceship', true).then((response: {
-            hand: (Module | Event)[],
-            spaceship: Spaceship
-        }) => {
-            this.bus.emit(rebuildSpaceshipResponse(response.spaceship, response.hand));
         });
     }
 
@@ -198,8 +193,15 @@ export default class Game {
 
             player.id = user.id;
             player.name = user.login;
-            player.spaceship = new Spaceship(state.popMainModule());
             player.hand = state.popModuleCards(this.settings.startCardsCount);
+
+            // initialize spaceship
+            const mainModule = state.popMainModule();
+            mainModule.x = 0;
+            mainModule.y = 0;
+
+            player.spaceship = new Spaceship();
+            player.spaceship.modules.push(mainModule);
 
             state.players.push(player)
         }
@@ -232,18 +234,18 @@ export default class Game {
     //     }
     // }
 
-    changePlayerData(player: Player) {
-        // TODO: think about it
-        // for (let i = 0; i < this.players.length; ++i) {
-        //     if (this.players[i].id === player.id) {
-        //         this.players[i] = player;
-        //         break;
-        //     }
-        // }
-        //
-        // if (this.currentPlayer.id === player.id)
-        //     this.currentPlayer = player;
-    }
+    // changePlayerData(player: Player) {
+    // TODO: think about it
+    // for (let i = 0; i < this.players.length; ++i) {
+    //     if (this.players[i].id === player.id) {
+    //         this.players[i] = player;
+    //         break;
+    //     }
+    // }
+    //
+    // if (this.currentPlayer.id === player.id)
+    //     this.currentPlayer = player;
+    // }
 
     syncPlayersData() {
         console.log("🔄 syncing player data");
@@ -307,18 +309,18 @@ export default class Game {
     //     }
     // }
 
-    // async showCardsToPlayer(cards: (Module | Event)[], player: Player, showToOther: boolean) {
-    //     if (!showToOther) {
-    //         await this.emitToPlayerAndWaitAcknowledgment(player, 'showCardsAndWait', player.id, cards);
-    //     } else {
-    //         for (let playerToEmit of this.gameData.getPlayers()) {
-    //             if (playerToEmit.id === player.id) {
-    //                 await this.emitToPlayerAndWaitAcknowledgment(player, 'showCardsAndWait', player.id, cards);
-    //             } else {
-    //                 this.sockets.getSocket(playerToEmit.id)?.emit('showCards', player.id, cards);
+    // async showCardsToPlayer(cards: (Module | Event)[], player: PlayerId, showToOther: boolean) {
+    //     if (showToOther) {
+    //         for (let playerToEmit of this.state.players) {
+    //             if (playerToEmit.id === player) {
+    //                 continue;
     //             }
+    //
+    //             this.sockets.getSocket(playerToEmit.id)?.emit('showCards', player, cards);
     //         }
     //     }
+    //
+    //     await this.sockets.emitAndWait(player, 'showCardsAndWait', true, player, cards);
     // }
 
     // getPlayerIndexByOffset(offset: number): number {

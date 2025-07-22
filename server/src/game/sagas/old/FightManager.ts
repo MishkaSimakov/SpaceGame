@@ -1,10 +1,10 @@
-import Player from "../../../common/Player";
-import Module, {isModule} from "../../../common/modules/Module";
-import Game from "./Game";
-import Vector2 from "../../../common/Vector2";
-import {MainModuleType} from "../../../common/modules/MainModule";
-import {TimeRecordType} from "./TimeManager";
-import {Event, EventTypes, isEvent} from "../../../common/events/Event";
+import Player from "../../../../../common/Player";
+import Module, {isModule} from "../../../../../common/modules/Module";
+import Game from "../../Game";
+import Vector2 from "../../../../../common/Vector2";
+import {MainModuleType} from "../../../../../common/modules/MainModule";
+import {TimeRecordType} from "../../TimeManager";
+import {Event, EventTypes, isEvent} from "../../../../../common/events/Event";
 
 // chooseProtectors -> willYouRunaway -> chooseWeaponAndTarget -> updateOtherPlayerData
 export default class FightManager {

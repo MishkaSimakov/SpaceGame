@@ -1,9 +1,15 @@
-import Game from "../Game";
+import {put, select} from "../Effects";
+import {SpaceshipGetters} from "../../../../common/getters/Spaceship";
+import {collectEnergyBeforeTurn} from "../actions/Actions";
 
-export const collectEnergy = async (game: Game) => {
-    game.currentPlayer.collectEnergy();
+export function* collectEnergy() {
+    const state = yield* select();
+    const player = state.players[state.currentPlayerIndex];
 
-    game.changePlayerData(game.currentPlayer);
+    const maxEnergy = SpaceshipGetters.getTotalCapacity(player.spaceship);
+    const newEnergy = Math.max(maxEnergy, SpaceshipGetters.getTotalEnergyIncrease(player.spaceship))
 
-    console.log("   Player received energy");
+    yield* put(
+        collectEnergyBeforeTurn(player.id, newEnergy - player.energy)
+    );
 }

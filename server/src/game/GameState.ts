@@ -17,6 +17,7 @@ import Battery from "../../../common/modules/Battery";
 import StructureModule from "../../../common/modules/StructureModule";
 import IonDestroyer from "../../../common/modules/IonDestroyer";
 import Player, {PlayerId} from "../../../common/Player";
+import {GameSettings} from "../../../common/GameSettings";
 
 // shuffle array in place
 export function arrayShuffle<T>(array: T[]): T[] {
@@ -54,9 +55,9 @@ const moduleName = {
 }
 
 export default class GameState {
-    protected modulesStack: Module[] = [];
+    modulesStack: Module[] = [];
 
-    protected eventsStack: Event[] = [
+    eventsStack: Event[] = [
         ...addEvents(EventTypes.TakeOneBuildingCard, "Возьмите 1 карту\nстроительства", 2),
         ...addEvents(EventTypes.TakeTwoBuildingCards, "Возьмите 2 карты\nстроительства", 2),
         ...addEvents(EventTypes.LooseFiveEnergy, "Сбросьте 1 энергию", 2),
@@ -105,7 +106,7 @@ export default class GameState {
             "(кроме командного)", 2),
     ];
 
-    protected mainModules: MainModule[] = [
+    mainModules: MainModule[] = [
         new MainModule(1, MainModuleType.DrawAnotherEventCard, {top: 1, right: 1, bottom: 1, left: 2}),
         new MainModule(2, MainModuleType.DrawAdditionalModuleCard, {top: 2, right: 1, bottom: 2, left: 2}),
         new MainModule(3, MainModuleType.MoveDamage, {top: 2, right: 2, bottom: 1, left: 1}),
@@ -113,13 +114,15 @@ export default class GameState {
         new MainModule(5, MainModuleType.AttackOrRunaway, {top: 1, right: 1, bottom: 1, left: 1})
     ];
 
-    protected moduleDiscards: Module[] = [];
-    protected eventDiscards: Event[] = [];
+    moduleDiscards: Module[] = [];
+    eventDiscards: Event[] = [];
 
     players: Player[] = [];
     currentPlayerIndex: number = 0;
 
     fight?: FightData = undefined;
+
+    settings: GameSettings;
 
     constructor() {
         for (let module in modules) {

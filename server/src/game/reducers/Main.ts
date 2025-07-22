@@ -1,36 +1,47 @@
 import {DeepReadonly} from "../../../../common/Types";
 import {GameSettings} from "../../../../common/GameSettings";
-import {isModule, Module} from "../../../../common/modules/Module";
-import {Event, EventTypes} from "../../../../common/events/Event";
+import {isModule} from "../../../../common/modules/Module";
+import {Event, EventTypes, isEvent} from "../../../../common/events/Event";
 import GameState from "../GameState";
-import {PlayerId} from "../../../../common/Player";
 import * as assert from "node:assert";
-import Spaceship from "../../../../common/Spaceship";
+import {areCardSetsEqual} from "../../../../common/Utils";
+import {SpaceshipGetters} from "../../../../common/getters/Spaceship";
+import * as Actions from '../actions/Main';
 
-export const reducers = {
-    initGameState(state: GameState, settings: DeepReadonly<GameSettings>, payload: { state: GameState }) {
+type ReducersType = {
+    [Key in keyof typeof Actions]?:
+    typeof Actions[Key] extends (...args: any[]) => { type: string, payload?: infer P }
+        ? (state: GameState, settings: DeepReadonly<GameSettings>, payload: P) => void
+        : never
+};
+
+export const reducers: ReducersType = {
+    initGameState(state: GameState, settings: DeepReadonly<GameSettings>, payload) {
         Object.assign(state, payload.state);
     },
-    playerRebuiltSpaceship(state: GameState, settings: DeepReadonly<GameSettings>, payload: {
-        newHand: (Module | Event)[],
-        newSpaceship: Spaceship,
-    }) {
+    playerRebuiltSpaceship(state: GameState, settings: DeepReadonly<GameSettings>, payload) {
         const currentPlayer = state.players[state.currentPlayerIndex];
 
-        if (!currentPlayer.canBeTurnedInto(payload.newHand, payload.newSpaceship)) {
-            throw new Error("Changed player has wrong cards or energy count");
+        let oldPlayerCards = [...currentPlayer.spaceship.modules, ...currentPlayer.hand];
+        let newPlayerCards = [...payload.newSpaceship.modules, ...payload.newHand];
+
+        if (!areCardSetsEqual(oldPlayerCards, newPlayerCards)) {
+            throw new Error("Changed player has wrong cards");
         }
 
-        if (!Spaceship.checkConfiguration(payload.newSpaceship)) {
+        if (!SpaceshipGetters.checkConfiguration(payload.newSpaceship)) {
             throw new Error("Changed player has wrong spaceship configuration");
         }
 
-        currentPlayer.energy = Math.min(currentPlayer.energy, currentPlayer.spaceship.getTotalCapacity());
+        currentPlayer.spaceship = payload.newSpaceship;
+        currentPlayer.hand = payload.newHand;
+
+        currentPlayer.energy = Math.min(
+            currentPlayer.energy,
+            SpaceshipGetters.getTotalCapacity(currentPlayer.spaceship)
+        );
     },
-    useAttackLaterEventCard(state: GameState, settings: DeepReadonly<GameSettings>, payload: {
-        attacker: PlayerId,
-        victim: PlayerId
-    }) {
+    useAttackLaterEventCard(state: GameState, settings: DeepReadonly<GameSettings>, payload) {
         let attackLaterCardIndex: number = state.getCurrentPlayer().hand
             .findIndex((c) => {
                 if (isModule(c)) return false;
@@ -40,21 +51,43 @@ export const reducers = {
 
         let discardedEventCard = state.getCurrentPlayer().hand.splice(attackLaterCardIndex, 1);
         state.discardCards(discardedEventCard);
-
-        this.beginFight(state, settings, payload);
     },
 
-    beginFight(state: GameState, settings: DeepReadonly<GameSettings>, payload: {
-        attacker: PlayerId,
-        victim: PlayerId
-    }) {
-        assert.equal(state.fight, undefined);
+    playerDrawCardFromHeap(state: GameState, settings: DeepReadonly<GameSettings>, payload) {
+        const stack = isEvent(payload.card) ? state.eventsStack : state.modulesStack;
+        const card = stack.pop();
+        const player = state.players.find(p => p.id === payload.player);
 
-        state.fight = {
-            first: payload.attacker,
-            second: payload.victim,
-            isFirstPlayerTurn: true,
-            isFightEnded: false
+        // precondition
+        assert.ok(stack.length > 0);
+        // TODO: card === payload.card (add ids later and check this)
+
+        player.hand.push(card);
+    },
+
+    shiftTurnToNextPlayer(state: GameState, settings: DeepReadonly<GameSettings>) {
+        while (true) {
+            state.currentPlayerIndex++;
+            state.currentPlayerIndex %= state.players.length;
+
+            const player = state.players[state.currentPlayerIndex];
+
+            if (player.skipNextTurn) {
+                player.skipNextTurn = false;
+                continue;
+            }
+
+            if (player.lose) {
+                continue;
+            }
+
+            break;
         }
+    },
+
+    collectEnergyBeforeTurn(state: GameState, settings: DeepReadonly<GameSettings>, payload) {
+        const player = state.players.filter(p => p.id === payload.player)[0];
+
+        player.energy += payload.amount;
     }
 }

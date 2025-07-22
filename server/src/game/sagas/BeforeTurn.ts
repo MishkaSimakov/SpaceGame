@@ -2,7 +2,7 @@ import {isModule} from "../../../../common/modules/Module";
 import {Event, EventTypes} from "../../../../common/events/Event";
 import {AttackReason} from "../../../../common/Types";
 
-import {fight} from "./Fight";
+import {fight} from "./old/Fight";
 import {all, put, select, take} from "../Effects";
 import {choosePlayerForAttackRequest, choosePlayerForAttackResponse, useAttackLaterEventCard} from "../actions/Actions";
 

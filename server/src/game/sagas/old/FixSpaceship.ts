@@ -1,7 +1,7 @@
-import Game from "../Game";
-import {ModuleTypes} from "../../../../common/modules/Module";
-import {MainModuleType} from "../../../../common/modules/MainModule";
-import Vector2 from "../../../../common/Vector2";
+import Game from "../../Game";
+import {ModuleTypes} from "../../../../../common/modules/Module";
+import {MainModuleType} from "../../../../../common/modules/MainModule";
+import Vector2 from "../../../../../common/Vector2";
 
 const useRepairModule = async (game: Game, energyCost: number): Promise<boolean> => {
     const modulePosition: Vector2 | undefined = await game.emitToCurrentPlayerAndWaitAcknowledgment('chooseModuleToRepair');

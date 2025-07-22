@@ -22,14 +22,7 @@ export default class Player {
 
     usedRepairOrAttackModuleSecondTimeOnThisTurn: boolean = false;
 
-    protected lose: boolean = false;
-
-    constructor() {
-    }
-
-    collectEnergy() {
-        this.energy = Math.min(this.energy + this.spaceship.getTotalEnergyIncrease(), this.spaceship.getTotalCapacity());
-    }
+    lose: boolean = false;
 
     canDamage(): boolean {
         let weaponCost = this.spaceship.modules.filter(m => m.strength > 0).map(m => m.energyCost);
@@ -79,18 +72,5 @@ export default class Player {
 
     isLose(): boolean {
         return this.lose;
-    }
-
-    getOtherPlayer(): OtherPlayer {
-        let otherPlayer = new OtherPlayer();
-
-        otherPlayer.id = this.id;
-        otherPlayer.name = this.name;
-        otherPlayer.energy = this.energy;
-        otherPlayer.online = this.online;
-        otherPlayer.spaceship = this.spaceship;
-        otherPlayer.handSize = this.hand.length;
-
-        return otherPlayer;
     }
 }

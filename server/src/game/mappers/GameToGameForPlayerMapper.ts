@@ -1,6 +1,7 @@
 import Game from "../Game";
 import {GameForPlayerDTO} from "../../../../common/GameForPlayerDTO";
 import Player from "../../../../common/Player";
+import {PlayerGetters} from "../../../../common/getters/Player";
 
 export const getDTO = (game: Game, forPlayer: Player): GameForPlayerDTO => {
     let dto = new GameForPlayerDTO();
@@ -9,7 +10,7 @@ export const getDTO = (game: Game, forPlayer: Player): GameForPlayerDTO => {
 
     dto.otherPlayers = game.state.players
         .filter(p => p.id !== forPlayer.id)
-        .map(p => p.getOtherPlayer());
+        .map(PlayerGetters.forOtherPlayer);
 
     dto.settings = game.settings;
 
