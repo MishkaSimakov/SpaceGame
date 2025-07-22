@@ -34,10 +34,10 @@ export const rebuildSpaceshipRequest = (player: PlayerId): Action => {
     };
 }
 
-export const rebuildSpaceshipResponse = (playerData: Player): Action => {
+export const rebuildSpaceshipResponse = (newSpaceship: Spaceship, newHand: (Module | Event)[]): Action => {
     return {
         type: 'rebuildSpaceshipResponse',
-        payload: {playerData}
+        payload: {newSpaceship, newHand}
     };
 }
 

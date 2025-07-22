@@ -5,10 +5,11 @@ import RebuildSpaceshipManager from "./graphics/RebuildSpaceshipManager";
 import {plainToClass} from "../../common/PlainToClass";
 import SocketManager from "./sockets/SocketManager";
 import {Event, EventTypes} from "../../common/events/Event";
-import {GameForPlayerDTO, GameSettings, OtherPlayer} from "../../common/GameForPlayerDTO";
+import {GameForPlayerDTO, OtherPlayer} from "../../common/GameForPlayerDTO";
 import {Message} from "../../common/Types";
 import {Graphics} from "./graphics/engine/Graphics";
 import {DD} from "./graphics/engine/Drag";
+import {GameSettings} from "../../common/GameSettings";
 
 export default class Game {
     currentPlayer: Player;

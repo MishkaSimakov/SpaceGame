@@ -24,7 +24,7 @@ export default class ActionsBus {
         }
     }
 
-    off(actionDescriptor: ActionConstructor | '*', listener: ActionListener) {
+    off(actionDescriptor: ActionConstructor | '*' | string, listener: ActionListener) {
         const listeners = this.listeners.get(this.#getActionName(actionDescriptor));
 
         if (listeners && listeners.indexOf(listener) != -1) {
@@ -32,7 +32,7 @@ export default class ActionsBus {
         }
     }
 
-    once(actionDescriptor: ActionConstructor | '*', listener: ActionListener) {
+    once(actionDescriptor: ActionConstructor | '*' | string, listener: ActionListener) {
         const onceListener = (payload: any) => {
             listener(payload);
             this.off(actionDescriptor, onceListener);

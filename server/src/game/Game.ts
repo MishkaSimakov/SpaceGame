@@ -2,10 +2,6 @@ import Player, {PlayerId} from "../../../common/Player";
 import GameState from "./GameState";
 import Spaceship from "../../../common/Spaceship";
 import {Server, Socket} from "socket.io";
-import FightManager from "./FightManager";
-import Module, {ModuleTypes} from "../../../common/modules/Module";
-import {Event} from "../../../common/events/Event";
-import {AttackReason} from "../../../common/Types";
 import {HAS_PLAYERS_DATA} from "../../../common/Sockets";
 import {TimeManager, TimeRecordType} from "./TimeManager";
 import MessageManager from "./MessageManager";
@@ -14,16 +10,14 @@ import {getDTO} from "./mappers/GameToGameForPlayerMapper";
 import SocketsManager from "./io/SocketsManager";
 import {GameSettings} from "../../../common/GameSettings";
 import ActionsBus from "./actions/ActionsBus";
-import {Effect, SagaGenerator} from "./Effects";
 import {gameSaga} from "./sagas/Main";
 import {Logger} from "./Logger";
 import {Action} from "./actions/Action";
 import {initGameState, rebuildSpaceshipRequest, rebuildSpaceshipResponse} from "./actions/Actions";
 import {reducers} from "./reducers/Main";
-
-function isEmptyObject(value: any): value is {} {
-    return Object.keys(value).length === 0;
-}
+import {SagaRunner} from "./SagaRunner";
+import Module from "../../../common/modules/Module";
+import {Event} from "../../../common/events/Event";
 
 export enum GameStateLegacy {
     WAIT_FOR_PLAYERS,
@@ -31,13 +25,6 @@ export enum GameStateLegacy {
     ENDED,
     ERROR
 }
-
-interface EffectProcessingResult {
-    payload: Promise<any>;
-    emitted_actions: Action[];
-    new_listeners: any[],
-}
-
 
 export default class Game {
     id: string;
@@ -48,8 +35,8 @@ export default class Game {
     state: GameState;
     settings: GameSettings;
     bus: ActionsBus;
+    sagaRunner: SagaRunner;
     sockets: SocketsManager;
-    saga: SagaGenerator;
     logger: Logger;
 
     // state: GameState = GameState.WAIT_FOR_PLAYERS;
@@ -62,20 +49,22 @@ export default class Game {
         this.name = name;
         this.users = users;
 
-        this.saga = gameSaga();
-
         this.settings = settings;
         this.state = new GameState();
         this.bus = new ActionsBus();
+        this.sagaRunner = new SagaRunner(this.state, this.bus, gameSaga());
         this.sockets = new sockets(io, users.map(user => user.id));
-
         this.logger = new Logger();
 
         this.messageManager = new MessageManager();
 
         this.registerReduceListeners();
+        this.registerLogListeners();
+        this.registerIOListeners();
 
         this.#initGameState();
+
+        this.syncPlayersData();
 
         // this.currentPlayer = this.players[0];
 
@@ -100,105 +89,31 @@ export default class Game {
     }
 
     registerReduceListeners() {
-        this.bus.on(initGameState, (action: Action) => {
-            let copy = structuredClone(this.state);
-            reducers['initGameState'](copy, this.settings, action.payload);
-            this.state = copy;
-            console.log(copy.players);
-        })
-    }
+        this.bus.on('*', (action: Action) => {
+            if (action.type in reducers) {
+                let copy = structuredClone(this.state);
+                reducers[action.type](copy, this.settings, action.payload);
 
-    rebuildSpaceshipRequest(action: Action) {
-        const playerId: PlayerId = action.payload.player;
-
-        this.sockets.emitAndWait(playerId, 'rebuildSpaceship', true).then((newPlayer: Player) => {
-            this.bus.emit(rebuildSpaceshipResponse(newPlayer));
+                // SagaRunner relies on stateRef. Plain assignment would invalidate its reference
+                Object.assign(this.state, copy);
+            }
         });
     }
 
-    process_effect(effect: Effect): EffectProcessingResult {
-        switch (effect.type) {
-            case "select": {
-                return {
-                    payload: Promise.resolve(structuredClone(this.state)),
-                    emitted_actions: [],
-                    new_listeners: [],
-                }
-            }
-            case "take": {
-                let resolve, reject;
-                const promise = new Promise<object>((res, rej) => {
-                    resolve = res;
-                    reject = rej;
-                });
+    rebuildSpaceshipRequest(action: Action) {
+        console.log("rebuild spaceship!!!!")
+        const playerId: PlayerId = action.payload.player;
 
-                return {
-                    payload: promise,
-                    emitted_actions: [],
-                    new_listeners: [
-                        {
-                            name: effect.name,
-                            listener: resolve
-                        }
-                    ]
-                };
-            }
-            case "put": {
-                return {
-                    payload: Promise.resolve({}),
-                    emitted_actions: [effect.action],
-                    new_listeners: []
-                }
-            }
-            case "all": {
-                const result = {
-                    promises: [] as Promise<any>[],
-                    emitted_actions: [] as Action[],
-                    new_listeners: [] as any[]
-                };
-
-                for (const index in effect.effects) {
-                    const child_effect = effect.effects[index].next().value as Effect;
-
-                    // payload slot passed as reference
-                    const child_result = this.process_effect(child_effect);
-
-                    result.promises.push(child_result.payload);
-                    result.emitted_actions.push(...child_result.emitted_actions);
-                    result.new_listeners.push(...child_result.new_listeners);
-                }
-
-                return {
-                    payload: Promise.all(result.promises),
-                    emitted_actions: result.emitted_actions,
-                    new_listeners: result.new_listeners
-                };
-            }
-        }
+        this.sockets.emitAndWait(playerId, 'rebuildSpaceship', true).then((response: {
+            hand: (Module | Event)[],
+            spaceship: Spaceship
+        }) => {
+            this.bus.emit(rebuildSpaceshipResponse(response.spaceship, response.hand));
+        });
     }
 
     async start() {
-        let call_args: any = {}
-
-        while (true) {
-            const result = this.saga.next(call_args);
-
-            if (result.done) {
-                break;
-            }
-
-            const effect = this.process_effect(result.value);
-
-            for (const listener of effect.new_listeners) {
-                this.bus.once(listener.name, listener.listener);
-            }
-
-            for (const action of effect.emitted_actions) {
-                this.bus.emit(action);
-            }
-
-            call_args = await effect.payload;
-        }
+        await this.sagaRunner.run();
     }
 
     // handleDestroyedModules(target: Player, attacker: Player, destroyedModules: {
@@ -270,7 +185,7 @@ export default class Game {
     //
     //     return await this.sockets.emitAndWait(this.currentPlayer.id, event, true, ...args);
     // }
-    //
+
     getPlayerById(id: number): Player {
         return this.state.players.filter(p => p.id === id)[0];
     }
@@ -331,8 +246,17 @@ export default class Game {
     }
 
     syncPlayersData() {
+        console.log("🔄 syncing player data");
+
         for (let player of this.state.players) {
-            this.sockets.getSocket(player.id)?.emit('setGameData', getDTO(this, player));
+            const socket = this.sockets.getSocket(player.id);
+
+            if (!socket) {
+                console.log(`🔄 sync with player ${player.id} failed`);
+            } else {
+                console.log(`🔄 sync with player ${player.id} successful`);
+                this.sockets.getSocket(player.id).emit('setGameData', getDTO(this, player));
+            }
         }
 
         // for (let viewer of this.viewers) {

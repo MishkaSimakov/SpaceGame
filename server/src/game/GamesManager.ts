@@ -38,10 +38,12 @@ export default class GamesManager {
                     player = game!.getPlayerById(user.id);
 
                     if (player) {
-                        // game.playerConnected(player, socket.id);
-
+                        // TODO: better encapsulate reemit inside SocketsManager
                         game.sockets.onPlayerConnect(player.id, socket.id);
+
                         game.syncPlayersData();
+
+                        game.sockets.tryToEmitEvent(player.id);
                     } else { // game is public and player is undefined
                         throw new Error("Viewers are not implemented!");
                     }
@@ -67,8 +69,6 @@ export default class GamesManager {
     }
 
     createGame(name: string, users: User[], settings: GameSettings): Game {
-        console.log(users);
-
         let game = new Game(this.createGameId(), name, users, settings, this.io, SocketsManager);
 
         console.log("game created!");

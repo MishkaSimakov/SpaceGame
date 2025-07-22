@@ -69,11 +69,11 @@ export default class Player {
     constructor() {
     }
 
-    canBeTurnedInto(changedPlayer: Player): boolean {
+    canBeTurnedInto(newHand: (Module | Event)[], newSpaceship: Spaceship): boolean {
         let currentCards = [...this.spaceship.modules, ...this.hand];
-        let changedCards = [...changedPlayer.spaceship.modules, ...changedPlayer.hand];
+        let changedCards = [...newSpaceship.modules, ...newHand];
 
-        return arrayCompare(currentCards, changedCards) && this.energy === changedPlayer.energy;
+        return arrayCompare(currentCards, changedCards);
     }
 
     collectEnergy() {

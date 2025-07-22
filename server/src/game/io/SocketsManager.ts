@@ -41,8 +41,6 @@ export default class SocketsManager {
 
         this.players[playerId].online = true;
         this.players[playerId].socketId = socketId;
-
-        this.tryToEmitEvent(playerId);
     }
 
     onPlayerDisconnect(playerId: PlayerId) {
@@ -89,7 +87,7 @@ export default class SocketsManager {
         });
     }
 
-    private tryToEmitEvent(playerId: PlayerId) {
+    tryToEmitEvent(playerId: PlayerId) {
         if (this.currentEmitPlayerId !== playerId) {
             return;
         }

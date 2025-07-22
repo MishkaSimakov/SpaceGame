@@ -1,4 +1,4 @@
-import {TimeControlSettings} from "../../../common/GameForPlayerDTO";
+import {TimeControlSettings} from "../../../common/GameSettings";
 import {PlayerId} from "../../../common/Player";
 
 enum TimeRecordType {

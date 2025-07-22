@@ -1,12 +1,13 @@
 import BaseEventListener from "./BaseEventListener";
 import Module, {ModuleTypes} from "../../../../common/modules/Module";
 import Game from "../../Game";
-import Player from "../../../../common/Player";
+import {Event} from "../../../../common/events/Event";
 import {COLORS} from "../../graphics/constants";
 import {AttackReason} from "../../../../common/Types";
 import Vector2 from "../../../../common/Vector2";
 import SocketManager from "../SocketManager";
 import Color from "../../graphics/Color";
+import Spaceship from "../../../../common/Spaceship";
 
 export default class MainGameEventListener extends BaseEventListener {
     socket: SocketManager;
@@ -17,7 +18,10 @@ export default class MainGameEventListener extends BaseEventListener {
     }
 
     addListeners(): void {
-        this.socket.on('rebuildSpaceship', (callback: (player: Player) => void) => {
+        this.socket.on('rebuildSpaceship', (callback: (result: {
+            hand: (Module | Event)[],
+            spaceship: Spaceship
+        }) => void) => {
             // this.controls.drawHand(this.player.hand);
             // this.controls.drawStatusBar(this.player);
             //
@@ -35,7 +39,10 @@ export default class MainGameEventListener extends BaseEventListener {
             this.controls().rebuildSpaceship().then(() => {
                 this.rebuildSpaceshipManager().setIsRebuildSpaceshipAllowed(false);
 
-                callback(this.game.getCurrentPlayer());
+                callback({
+                    hand: this.game.currentPlayer.hand,
+                    spaceship: this.game.currentPlayer.spaceship
+                });
             });
         });
 
