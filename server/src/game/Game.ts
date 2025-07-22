@@ -16,8 +16,6 @@ import {Action} from "./actions/Action";
 import {initGameState} from "./actions/Main";
 import {reducers} from "./reducers/Main";
 import {SagaRunner} from "./SagaRunner";
-import Module from "../../../common/modules/Module";
-import {Event} from "../../../common/events/Event";
 import {IOListeners} from "./io/Listeners";
 
 export enum GameStateLegacy {
@@ -34,7 +32,6 @@ export default class Game {
     users: User[];
 
     state: GameState;
-    settings: GameSettings;
     bus: ActionsBus;
     sagaRunner: SagaRunner;
     sockets: SocketsManager;
@@ -50,7 +47,6 @@ export default class Game {
         this.name = name;
         this.users = users;
 
-        this.settings = settings;
         this.state = new GameState();
         this.bus = new ActionsBus();
         this.sagaRunner = new SagaRunner(this.state, this.bus, gameSaga());
@@ -63,7 +59,7 @@ export default class Game {
         this.registerLogListeners();
         this.registerIOListeners();
 
-        this.#initGameState();
+        this.#initGameState(settings);
 
         this.syncPlayersData();
 
@@ -99,7 +95,7 @@ export default class Game {
         this.bus.on('*', (action: Action) => {
             if (action.type in reducers) {
                 let copy = structuredClone(this.state);
-                reducers[action.type](copy, this.settings, action.payload);
+                reducers[action.type](copy, action.payload);
 
                 // SagaRunner relies on stateRef. Plain assignment would invalidate its reference
                 Object.assign(this.state, copy);
@@ -188,15 +184,17 @@ export default class Game {
         return this.state.players.filter(p => p.id === id)[0];
     }
 
-    #initGameState() {
+    #initGameState(settings: GameSettings) {
         const state = new GameState();
+
+        state.settings = settings;
 
         for (const user of this.users) {
             const player = new Player();
 
             player.id = user.id;
             player.name = user.login;
-            player.hand = state.popModuleCards(this.settings.startCardsCount);
+            player.hand = state.popModuleCards(state.settings.startCardsCount);
 
             // initialize spaceship
             const mainModule = state.popMainModule();

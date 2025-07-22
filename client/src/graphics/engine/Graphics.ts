@@ -51,6 +51,9 @@ const STRING = 'string',
         [MOUSEOVER, '_pointerover'],
         [WHEEL, '_wheel'],
         [CONTEXTMENU, '_contextmenu'],
+
+        // maybe should replace touch & mouse events with pointer
+        // https://medium.com/@elmarti/farewell-mouse-touch-events-welcome-pointer-events-db36cee48a8a
         [POINTERDOWN, '_pointerdown'],
         [POINTERMOVE, '_pointermove'],
         [POINTERUP, '_pointerup'],

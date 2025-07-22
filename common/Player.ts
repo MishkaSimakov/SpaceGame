@@ -10,8 +10,6 @@ export default class Player {
     id: PlayerId;
     name: string;
 
-    socketId: string;
-
     spaceship: Spaceship;
     hand: (Module | Event)[] = [];
 

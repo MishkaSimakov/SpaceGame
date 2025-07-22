@@ -128,7 +128,7 @@ export default class GamesManager {
 
     getGamesOfUser(user: User) {
         return this.games.filter(game => {
-            return game.users.find(u => u.id === user.id) !== undefined || game.settings.isPublic;
+            return game.users.find(u => u.id === user.id) !== undefined || game.state.settings.isPublic;
         });
     }
 

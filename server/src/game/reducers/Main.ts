@@ -1,25 +1,23 @@
-import {DeepReadonly} from "../../../../common/Types";
-import {GameSettings} from "../../../../common/GameSettings";
-import {isModule} from "../../../../common/modules/Module";
-import {Event, EventTypes, isEvent} from "../../../../common/events/Event";
+import {isModule} from "@common/modules/Module";
+import {Event, EventTypes, isEvent} from "@common/events/Event";
 import GameState from "../GameState";
 import * as assert from "node:assert";
-import {areCardSetsEqual} from "../../../../common/Utils";
-import {SpaceshipGetters} from "../../../../common/getters/Spaceship";
+import {areCardSetsEqual} from "@common/Utils";
+import {SpaceshipGetters} from "@common/getters/Spaceship";
 import * as Actions from '../actions/Main';
 
 type ReducersType = {
     [Key in keyof typeof Actions]?:
     typeof Actions[Key] extends (...args: any[]) => { type: string, payload?: infer P }
-        ? (state: GameState, settings: DeepReadonly<GameSettings>, payload: P) => void
+        ? (state: GameState, payload: P) => void
         : never
 };
 
 export const reducers: ReducersType = {
-    initGameState(state: GameState, settings: DeepReadonly<GameSettings>, payload) {
+    initGameState(state: GameState, payload) {
         Object.assign(state, payload.state);
     },
-    playerRebuiltSpaceship(state: GameState, settings: DeepReadonly<GameSettings>, payload) {
+    playerRebuiltSpaceship(state: GameState, payload) {
         const currentPlayer = state.players[state.currentPlayerIndex];
 
         let oldPlayerCards = [...currentPlayer.spaceship.modules, ...currentPlayer.hand];
@@ -41,7 +39,7 @@ export const reducers: ReducersType = {
             SpaceshipGetters.getTotalCapacity(currentPlayer.spaceship)
         );
     },
-    useAttackLaterEventCard(state: GameState, settings: DeepReadonly<GameSettings>, payload) {
+    useAttackLaterEventCard(state: GameState, payload) {
         let attackLaterCardIndex: number = state.getCurrentPlayer().hand
             .findIndex((c) => {
                 if (isModule(c)) return false;
@@ -53,7 +51,7 @@ export const reducers: ReducersType = {
         state.discardCards(discardedEventCard);
     },
 
-    playerDrawCardFromHeap(state: GameState, settings: DeepReadonly<GameSettings>, payload) {
+    playerDrawCardFromHeap(state: GameState, payload) {
         const stack = isEvent(payload.card) ? state.eventsStack : state.modulesStack;
         const card = stack.pop();
         const player = state.players.find(p => p.id === payload.player);
@@ -65,7 +63,7 @@ export const reducers: ReducersType = {
         player.hand.push(card);
     },
 
-    shiftTurnToNextPlayer(state: GameState, settings: DeepReadonly<GameSettings>) {
+    shiftTurnToNextPlayer(state: GameState) {
         while (true) {
             state.currentPlayerIndex++;
             state.currentPlayerIndex %= state.players.length;
@@ -85,7 +83,7 @@ export const reducers: ReducersType = {
         }
     },
 
-    collectEnergyBeforeTurn(state: GameState, settings: DeepReadonly<GameSettings>, payload) {
+    collectEnergyBeforeTurn(state: GameState, payload) {
         const player = state.players.filter(p => p.id === payload.player)[0];
 
         player.energy += payload.amount;
