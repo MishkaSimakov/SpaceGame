@@ -1,14 +1,10 @@
-import Game from "../Game";
-import {Event} from "../../../../common/events/Event";
-import {MainModuleType} from "../../../../common/modules/MainModule";
-import performEvent from "./old/EventsPerformManager";
 import {all, put, select, take} from "../Effects";
 import {
     chooseCardTypeRequest,
     chooseCardTypeResponse,
     playerAcknowledgedDrawnCard,
     playerDrawCardFromHeap
-} from "../actions/Actions";
+} from "../actions/Main";
 
 export function* drawCards() {
     const state = yield* select();

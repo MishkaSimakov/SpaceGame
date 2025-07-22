@@ -10,6 +10,7 @@ import {Message} from "../../common/Types";
 import {Graphics} from "./graphics/engine/Graphics";
 import {DD} from "./graphics/engine/Drag";
 import {GameSettings} from "../../common/GameSettings";
+import {PlayerGetters} from "../../common/getters/Player";
 
 export default class Game {
     currentPlayer: Player;
@@ -110,14 +111,14 @@ export default class Game {
         let allPlayers: OtherPlayer[] = [];
 
         allPlayers.push(...this.otherPlayers);
-        allPlayers.push(this.currentPlayer.getOtherPlayer());
+        allPlayers.push(PlayerGetters.forOtherPlayer(this.currentPlayer));
 
         return allPlayers;
     }
 
     getPlayerById(id: number): OtherPlayer {
         if (id === this.currentPlayer.id)
-            return this.currentPlayer.getOtherPlayer();
+            return PlayerGetters.forOtherPlayer(this.currentPlayer);
 
         for (let player of this.otherPlayers) {
             if (player.id === id)

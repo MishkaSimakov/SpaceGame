@@ -38,24 +38,13 @@ function getTotalEnergyIncrease(ship: Spaceship): number {
     return ship.modules.reduce((ps, card) => ps + card.energyIncrease, 0);
 }
 
-function addModule(ship: Spaceship, module: Module, x: number, y: number): boolean {
-    if (!canConnectModule(ship, module, x, y))
-        return false;
-
-    module.x = x;
-    module.y = y;
-    this.modules.push(module);
-
-    return true;
-}
-
 function canConnectModule(ship: Spaceship, module: Module, x: number, y: number): boolean;
 function canConnectModule(ship: Spaceship, module: Module): boolean;
 function canConnectModule(ship: Spaceship, module: Module, x?: number, y?: number): boolean {
     if (ship.modules.indexOf(module) !== -1 && x === undefined && y === undefined) {
         x = module.x;
         y = module.y;
-    } else if (this.getModuleByPosition(x, y))
+    } else if (getModuleByPosition(ship, x, y))
         return false;
 
     let hasConnection = false;
@@ -86,24 +75,6 @@ function getConnectorInDirection(module: Module, direction: string): number {
     return module.connectors[directions[index]];
 }
 
-function removeModule(ship: Spaceship, x: number, y: number);
-function removeModule(ship: Spaceship, module: Module);
-function removeModule(ship: Spaceship, module: Module[]);
-function removeModule(ship: Spaceship, x: number | Module | Module[], y?: number) {
-    if (typeof x === 'number') {
-        ship.modules = ship.modules.filter(card => (card.x !== x || card.y !== y));
-
-        return;
-    } else if (Array.isArray(x)) {
-        for (let m of x)
-            removeModule(ship, m);
-
-        return;
-    }
-
-    removeModule(ship, x.x, x.y);
-}
-
 function getModuleByPosition(ship: Spaceship, x: number, y: number);
 function getModuleByPosition(ship: Spaceship, position: Vector2);
 function getModuleByPosition(ship: Spaceship, x: (number | Vector2), y?: number): Module {
@@ -123,7 +94,7 @@ function getPossibleConnectionsFor(ship: Spaceship, module: Module): number[][] 
             const x = spaceship_module.x + directions[direction][0];
             const y = spaceship_module.y + directions[direction][1];
 
-            if (!getModuleByPosition(ship, x, y) && this.canConnectModule(module, x, y)) {
+            if (!getModuleByPosition(ship, x, y) && canConnectModule(ship, module, x, y)) {
                 possible_connections.push([x, y]);
             }
         }
@@ -181,67 +152,8 @@ function canAttack(ship: Spaceship): boolean {
     return getModulesByType(ship, ModuleTypes.AttackModule).length !== 0;
 }
 
-function damageModule(ship: Spaceship, target: Module, weapon: Module, byNuclearReactor: boolean)
-function damageModule(ship: Spaceship, target: Module, weapon: number, byNuclearReactor: boolean)
-function damageModule(ship: Spaceship, target: Module, weapon: Module | number, byNuclearReactor: boolean): {
-    module: Module,
-    byNuclearReactor: boolean
-}[] {
-    let damage: number;
-    if (typeof weapon == "number") {
-        damage = weapon;
-    } else {
-        damage = weapon.strength;
-    }
-
-    let destroyed: {
-        module: Module,
-        byNuclearReactor: boolean
-    }[] = [];
-
-    if (ship.activatedProtector && isAdjacent(ship, target, ship.activatedProtector)) {
-        if (ship.activatedProtector.health > damage) {
-            ship.activatedProtector.health -= damage;
-
-            return;
-        } else {
-            damage -= ship.activatedProtector.health;
-
-            destroyed.push({
-                module: ship.activatedProtector,
-                byNuclearReactor: byNuclearReactor
-            });
-
-            ship.activatedProtector = undefined;
-        }
-    }
-
-    target.health -= damage;
-
-    if (target.health <= 0) {
-        destroyed.push({
-            module: target,
-            byNuclearReactor: byNuclearReactor
-        });
-
-        if (target.type === ModuleTypes.NuclearReactor) {
-            for (let module of getModulesConnectedTo(ship, target)) {
-                // handle loop made of nuclear reactors (only one damage to all connected modules)
-                if (destroyed.filter((d) => d.module === module).length)
-                    continue;
-
-                destroyed.push(
-                    ...damageModule(ship, module, 1, true)
-                );
-            }
-        }
-    }
-
-    return destroyed;
-}
-
 function hasWeapon(ship: Spaceship): boolean {
-    for (let module of this.modules) {
+    for (let module of ship.modules) {
         if (module.strength > 0)
             return true;
     }
@@ -262,13 +174,6 @@ function hasDamagedModules(ship: Spaceship): boolean {
     }
 
     return false;
-}
-
-function setProtector(ship: Spaceship, protector: Module) {
-    if (protector.type !== ModuleTypes.SmallQuantumProtector && protector.type !== ModuleTypes.QuantumProtector)
-        throw new Error('Set protector called but module is not protector');
-
-    ship.activatedProtector = protector;
 }
 
 function getUnconnectedModules(ship: Spaceship): Module[] {
@@ -309,10 +214,8 @@ export const SpaceshipGetters = {
     getMainModuleType,
     getTotalCapacity,
     getTotalEnergyIncrease,
-    addModule,
     canConnectModule,
     getConnectorInDirection,
-    removeModule,
     getModuleByPosition,
     getPossibleConnectionsFor,
     getPossibleRotationsFor,
@@ -320,11 +223,9 @@ export const SpaceshipGetters = {
     isAdjacent,
     getModulesByType,
     canAttack,
-    damageModule,
     hasWeapon,
     hasProtectors,
     hasDamagedModules,
-    setProtector,
     getUnconnectedModules,
     hasRepairModule,
     checkConfiguration

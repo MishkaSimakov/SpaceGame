@@ -1,12 +1,12 @@
 import {Server, Socket} from "socket.io";
 import Player from "../../../common/Player";
 import {User} from "../entity/user";
-import cookie from "cookie";
+import {parse} from "cookie";
 import jwt, {JwtPayload} from "jsonwebtoken";
 import {Game as ArchivedGame} from "../entity/game";
 import Game from "./Game";
 import SocketsManager from "./io/SocketsManager";
-import {GameSettings} from "../../../common/GameSettings";
+import {GameSettings} from "@common/GameSettings";
 
 export default class GamesManager {
     io: Server;
@@ -22,7 +22,7 @@ export default class GamesManager {
 
             socket.on('gameId', async (gameId: string) => {
                 try {
-                    let cookies = cookie.parse(socket.request.headers.cookie);
+                    let cookies = parse(socket.request.headers.cookie);
                     let decodedToken = jwt.verify(cookies.authentication_token, process.env.JWT_SECRET_KEY);
 
                     let user = await User.findOneBy({

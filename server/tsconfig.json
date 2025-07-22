@@ -4,13 +4,22 @@
     "outDir": "dist",
     "target": "es2024",
     "module": "node16",
-    "lib": ["esnext"],
+    "lib": [
+      "esnext"
+    ],
     "esModuleInterop": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "moduleResolution": "node16",
     "resolveJsonModule": true,
     "inlineSourceMap": true,
+    "baseUrl": "src",
+
+    "paths": {
+      "@common/*": [
+        "../../common/*"
+      ]
+    }
   },
   "exclude": [
     "node_modules"
@@ -18,10 +27,10 @@
   "include": [
     "./src/**/*",
     "./tests/**/*",
-    "../common/**/*",
+    "../common/**/*"
   ],
   "rootDirs": [
     ".",
     "../common"
-  ]
+  ],
 }

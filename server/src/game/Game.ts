@@ -2,18 +2,18 @@ import Player, {PlayerId} from "../../../common/Player";
 import GameState from "./GameState";
 import Spaceship from "../../../common/Spaceship";
 import {Server, Socket} from "socket.io";
-import {HAS_PLAYERS_DATA} from "../../../common/Sockets";
+import {HAS_PLAYERS_DATA} from "@common/Sockets";
 import {TimeManager, TimeRecordType} from "./TimeManager";
 import MessageManager from "./MessageManager";
 import {User} from "../entity/user";
 import {getDTO} from "./mappers/GameToGameForPlayerMapper";
 import SocketsManager from "./io/SocketsManager";
-import {GameSettings} from "../../../common/GameSettings";
+import {GameSettings} from "@common/GameSettings";
 import ActionsBus from "./actions/ActionsBus";
 import {gameSaga} from "./sagas/Main";
 import {Logger} from "./Logger";
 import {Action} from "./actions/Action";
-import {initGameState} from "./actions/Actions";
+import {initGameState} from "./actions/Main";
 import {reducers} from "./reducers/Main";
 import {SagaRunner} from "./SagaRunner";
 import Module from "../../../common/modules/Module";
@@ -87,7 +87,7 @@ export default class Game {
     registerIOListeners() {
         this.bus.on('*', (action: Action) => {
             if (action.type in IOListeners) {
-                IOListeners[action.type](action, {
+                IOListeners[action.type](action.payload, {
                     bus: this.bus,
                     sockets: this.sockets
                 });
@@ -103,6 +103,9 @@ export default class Game {
 
                 // SagaRunner relies on stateRef. Plain assignment would invalidate its reference
                 Object.assign(this.state, copy);
+
+                // notify players about state update
+                this.syncPlayersData();
             }
         });
     }

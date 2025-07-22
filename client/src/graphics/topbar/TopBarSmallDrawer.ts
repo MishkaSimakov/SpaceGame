@@ -5,6 +5,7 @@ import {Rectangle} from "../engine/shapes/Rectangle";
 import Color from "../Color";
 import {Button} from "../shapes/Button";
 import {PlayerDataLine} from "../shapes/PlayerDataLine";
+import {PlayerGetters} from "../../../../common/getters/Player";
 
 export default class TopBarSmallDrawer extends TopBarDrawer {
     drawStatus(): void {
@@ -59,7 +60,7 @@ export default class TopBarSmallDrawer extends TopBarDrawer {
             y: this.sizes.padding,
             width: this.sizes.sceneWidth - 2 * this.sizes.padding,
 
-            player: this.currentPlayer.getOtherPlayer(),
+            player: PlayerGetters.forOtherPlayer(this.currentPlayer),
             withName: false,
             withTimeControl: this.scene.gameManager.settings.withTimeControl,
             time: this.playerTime[this.currentPlayer.id],
@@ -99,7 +100,7 @@ export default class TopBarSmallDrawer extends TopBarDrawer {
 
         let players: OtherPlayer[] = [];
         players.push(...this.otherPlayers);
-        players.push(this.currentPlayer.getOtherPlayer());
+        players.push(PlayerGetters.forOtherPlayer(this.currentPlayer));
 
         let topY = Infinity;
         let bottomY = 0;

@@ -3,7 +3,7 @@ import {
     rebuildSpaceshipRequest,
     rebuildSpaceshipResponse,
     playerRebuiltSpaceship
-} from "../actions/Actions";
+} from "../actions/Main";
 
 export function* rebuildSpaceship() {
     const state = yield* select();

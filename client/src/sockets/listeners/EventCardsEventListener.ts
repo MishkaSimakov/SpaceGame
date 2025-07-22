@@ -8,6 +8,7 @@ import {MoveDamageReason} from "../../../../common/Types";
 import SocketManager from "../SocketManager";
 import Color from "../../graphics/Color";
 import {Button} from "../../graphics/shapes/Button";
+import {SpaceshipGetters} from "../../../../common/getters/Spaceship";
 
 export default class EventCardsEventListener extends BaseEventListener {
     socket: SocketManager;
@@ -192,9 +193,11 @@ export default class EventCardsEventListener extends BaseEventListener {
         });
 
         this.socket.on('destroyTwoSolarPanelsOnYourSpaceshipEvent', (callback: (positions: Vector2[]) => void) => {
-            let count = Math.min(
-                this.game.getCurrentPlayer().spaceship.getModulesByType(ModuleTypes.SolarPanel).length, 2
-            );
+            const solarPanelsCount = SpaceshipGetters.getModulesByType(
+                this.game.getCurrentPlayer().spaceship,
+                ModuleTypes.SolarPanel
+            ).length;
+            const count = Math.min(solarPanelsCount, 2);
             this.controls().topBarDrawer.setStatus(`уничтожьте солнечные батареи: ${count}`);
 
             let selectedSolarPanels: Module[] = [];

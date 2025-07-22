@@ -3,7 +3,7 @@ import App from "../../App";
 import {User} from "../../entity/user";
 import {AuthenticatedRequest} from "../middleware/auth";
 import {arrayShuffle} from "../../game/GameState";
-import {GameSettings} from "../../../../common/GameSettings";
+import {GameSettings} from "@common/GameSettings";
 
 export const create = async (req: Request, res: Response) => {
     try {

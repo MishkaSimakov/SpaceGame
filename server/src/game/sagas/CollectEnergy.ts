@@ -1,6 +1,6 @@
 import {put, select} from "../Effects";
-import {SpaceshipGetters} from "../../../../common/getters/Spaceship";
-import {collectEnergyBeforeTurn} from "../actions/Actions";
+import {SpaceshipGetters} from "@common/getters/Spaceship";
+import {collectEnergyBeforeTurn} from "../actions/Main";
 
 export function* collectEnergy() {
     const state = yield* select();

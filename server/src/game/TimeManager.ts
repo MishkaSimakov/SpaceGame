@@ -1,5 +1,5 @@
-import {TimeControlSettings} from "../../../common/GameSettings";
-import {PlayerId} from "../../../common/Player";
+import {TimeControlSettings} from "@common/GameSettings";
+import {PlayerId} from "@common/Player";
 
 enum TimeRecordType {
     DEFAULT_TURN_STARTED,

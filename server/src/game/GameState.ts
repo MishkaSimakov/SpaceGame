@@ -1,23 +1,25 @@
-import Module, {isModule} from "../../../common/modules/Module";
-import SpaceSolver from "../../../common/modules/SpaceSolver";
-import SolarPanel from "../../../common/modules/SolarPanel";
-import AttackModule from "../../../common/modules/AttackModule";
-import {Event, EventTypes, addEvents} from "../../../common/events/Event";
-import {MainModule, MainModuleType} from "../../../common/modules/MainModule";
-import SmallQuantumProtector from "../../../common/modules/SmallQuantumProtector";
+import Module, {isModule} from "@common/modules/Module";
+import {Event, EventTypes, addEvents} from "@common/events/Event";
+import {MainModule, MainModuleType} from "@common/modules/MainModule";
 
-import RepairModule from "../../../common/modules/RepairModule";
 import modules from "./modules";
-import DarkMatterGenerator from "../../../common/modules/DarkMatterGenerator";
-import QuantumProtector from "../../../common/modules/QuantumProtector";
-import NuclearReactor from "../../../common/modules/NuclearReactor";
-import SmallBattery from "../../../common/modules/SmallBattery";
-import QuantumDestabilizer from "../../../common/modules/QuantumDestabilizer";
-import Battery from "../../../common/modules/Battery";
-import StructureModule from "../../../common/modules/StructureModule";
-import IonDestroyer from "../../../common/modules/IonDestroyer";
-import Player, {PlayerId} from "../../../common/Player";
-import {GameSettings} from "../../../common/GameSettings";
+
+import SpaceSolver from "@common/modules/SpaceSolver";
+import SolarPanel from "@common/modules/SolarPanel";
+import AttackModule from "@common/modules/AttackModule";
+import SmallQuantumProtector from "@common/modules/SmallQuantumProtector";
+import RepairModule from "@common/modules/RepairModule";
+import DarkMatterGenerator from "@common/modules/DarkMatterGenerator";
+import QuantumProtector from "@common/modules/QuantumProtector";
+import NuclearReactor from "@common/modules/NuclearReactor";
+import SmallBattery from "@common/modules/SmallBattery";
+import QuantumDestabilizer from "@common/modules/QuantumDestabilizer";
+import Battery from "@common/modules/Battery";
+import StructureModule from "@common/modules/StructureModule";
+import IonDestroyer from "@common/modules/IonDestroyer";
+
+import Player, {PlayerId} from "@common/Player";
+import {GameSettings} from "@common/GameSettings";
 
 // shuffle array in place
 export function arrayShuffle<T>(array: T[]): T[] {

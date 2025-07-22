@@ -24,8 +24,6 @@ services:
     ports:
       - "3000:3000"
   build_client:
-    depends_on:
-      - database
     user: "node"
     volumes:
       - ./:/usr/src/game

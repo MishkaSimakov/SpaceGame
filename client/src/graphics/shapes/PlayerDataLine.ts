@@ -5,6 +5,7 @@ import {Text} from "../engine/shapes/Text";
 import {GetSet} from "../engine/types";
 import {Factory} from "../engine/Factory";
 import {Rectangle} from "../engine/shapes/Rectangle";
+import {SpaceshipGetters} from "../../../../common/getters/Spaceship";
 
 export interface PlayerDataLineConfig extends NodeConfig {
     player: OtherPlayer,
@@ -46,7 +47,7 @@ export class PlayerDataLine extends Group<PlayerDataLineConfig> {
             new Text({
                 x: startX,
                 y: 0,
-                text: `${player.energy}/${player.spaceship.getTotalCapacity()} ⚡️`,
+                text: `${player.energy}/${SpaceshipGetters.getTotalCapacity(player.spaceship)} ⚡️`,
                 fontFamily: "Exo2Bold",
                 fontSize: 15,
                 fill: "white",

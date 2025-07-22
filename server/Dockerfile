@@ -29,4 +29,4 @@ USER node
 EXPOSE 3000
 
 # Run the application.
-CMD ["nodemon", "--legacy-watch", "server/src/index.ts"]
+CMD ["nodemon", "-r", "tsconfig-paths/register", "--legacy-watch", "src/index.ts"]

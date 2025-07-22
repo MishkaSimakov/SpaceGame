@@ -5,6 +5,7 @@ import Color from "../Color";
 import {Text} from "../engine/shapes/Text";
 import {Rectangle} from "../engine/shapes/Rectangle";
 import {PlayerDataLine} from "../shapes/PlayerDataLine";
+import {PlayerGetters} from "../../../../common/getters/Player";
 
 export default class TopBarDefaultDrawer extends TopBarDrawer {
     drawStatus(): void {
@@ -81,7 +82,7 @@ export default class TopBarDefaultDrawer extends TopBarDrawer {
             y: this.sizes.margin + this.sizes.padding,
             width: this.sizes.statusWidth - 2 * this.sizes.padding,
 
-            player: this.currentPlayer.getOtherPlayer(),
+            player: PlayerGetters.forOtherPlayer(this.currentPlayer),
             withName: false,
             withTimeControl: this.scene.gameManager.settings.withTimeControl,
             time: this.playerTime[this.currentPlayer.id],
@@ -118,7 +119,7 @@ export default class TopBarDefaultDrawer extends TopBarDrawer {
 
         let players: OtherPlayer[] = [];
         players.push(...this.otherPlayers);
-        players.push(this.currentPlayer.getOtherPlayer());
+        players.push(PlayerGetters.forOtherPlayer(this.currentPlayer));
 
         let topY = Infinity, bottomY = 0;
 

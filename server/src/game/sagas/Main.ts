@@ -2,7 +2,7 @@ import {put, SagaGenerator} from "../Effects";
 import {beforeTurn} from "./BeforeTurn";
 import {drawCards} from "./DrawCards";
 import {rebuildSpaceship} from "./RebuildSpaceship";
-import {shiftTurnToNextPlayer} from "../actions/Actions";
+import {shiftTurnToNextPlayer} from "../actions/Main";
 import {collectEnergy} from "./CollectEnergy";
 
 export function* gameSaga() {

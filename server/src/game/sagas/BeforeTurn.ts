@@ -1,10 +1,10 @@
-import {isModule} from "../../../../common/modules/Module";
-import {Event, EventTypes} from "../../../../common/events/Event";
-import {AttackReason} from "../../../../common/Types";
+import {isModule} from "@common/modules/Module";
+import {Event, EventTypes} from "@common/events/Event";
 
 import {fight} from "./old/Fight";
 import {all, put, select, take} from "../Effects";
-import {choosePlayerForAttackRequest, choosePlayerForAttackResponse, useAttackLaterEventCard} from "../actions/Actions";
+import {choosePlayerForAttackRequest, choosePlayerForAttackResponse, useAttackLaterEventCard} from "../actions/Main";
+import {AttackReason} from "@common/Types";
 
 export function* beforeTurn() {
     const state = yield* select();

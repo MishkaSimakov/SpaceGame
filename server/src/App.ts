@@ -11,17 +11,23 @@ export default class App {
     gamesManager: GamesManager;
     serverManager: ServerManager;
 
-    private constructor() {}
+    private constructor() {
+    }
 
     async init() {
         // init environment
-        dotenv.config({
-            path: "./server/.env"
+        const output = dotenv.config({
+            path: ".env"
         });
+
+        if (output.error) {
+            throw output.error;
+        }
 
         // init database connection
         this.databaseManager = new DatabaseManager();
         await this.databaseManager.initConnection();
+        await this.databaseManager.fakeUsers();
 
         // init http server
         this.serverManager = new ServerManager();
