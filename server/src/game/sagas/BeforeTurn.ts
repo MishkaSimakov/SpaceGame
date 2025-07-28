@@ -3,8 +3,14 @@ import {Event, EventTypes} from "@common/events/Event";
 
 import {fight} from "./old/Fight";
 import {all, put, select, take} from "../Effects";
-import {choosePlayerForAttackRequest, choosePlayerForAttackResponse, useAttackLaterEventCard} from "../actions/Main";
+import {
+    beginFight,
+    choosePlayerForAttackRequest,
+    choosePlayerForAttackResponse,
+    disposeCardsFromPlayerHand,
+} from "../actions/Main";
 import {AttackReason} from "@common/Types";
+import {request} from "./Utils";
 
 export function* beforeTurn() {
     const state = yield* select();
@@ -19,13 +25,14 @@ export function* beforeTurn() {
         });
 
     if (attackLaterCardIndex !== -1) {
-        const {req, res} = yield* all({
-            req: put(choosePlayerForAttackRequest(currentPlayer.id, AttackReason.MainModule)),
-            res: take(choosePlayerForAttackResponse)
-        });
+        const {victim} = yield* request(
+            choosePlayerForAttackRequest(currentPlayer.id, AttackReason.MainModule),
+            choosePlayerForAttackResponse
+        );
 
-        if (res.payload.victim) {
-            yield* put(useAttackLaterEventCard(currentPlayer.id, res.payload.victim));
+        if (victim) {
+            yield* put(disposeCardsFromPlayerHand(currentPlayer, [attackLaterCardIndex], "attack later event card used"));
+            yield* put(beginFight(currentPlayer.id, victim, "attack later event card used"));
             yield* fight();
         }
     }

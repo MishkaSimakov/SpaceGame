@@ -2,7 +2,6 @@ import {Request, Response} from "express";
 import App from "../../App";
 import {User} from "../../entity/user";
 import {AuthenticatedRequest} from "../middleware/auth";
-import {arrayShuffle} from "../../game/GameState";
 import {GameSettings} from "@common/GameSettings";
 
 export const create = async (req: Request, res: Response) => {
@@ -15,8 +14,6 @@ export const create = async (req: Request, res: Response) => {
 
         if (selectedUsers.length < 2 || selectedUsers.length > 5)
             throw Error('Wrong users count on game creation');
-
-        selectedUsers = arrayShuffle(selectedUsers);
 
         let withTimeControl = req.body['time-control'] === 'on';
 
@@ -55,7 +52,7 @@ export const joinGame = async (req: AuthenticatedRequest, res: Response) => {
     let game = App.getInstance().gamesManager.getGameById(gameId);
 
     const isPlayerInGame = !!game?.users.find(p => p.id === req.user.id);
-    if (!game || !(isPlayerInGame || game.settings.isPublic)) {
+    if (!game || !(isPlayerInGame || game.state.settings.isPublic)) {
         return res.redirect('/');
     }
 

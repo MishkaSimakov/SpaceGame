@@ -54,7 +54,7 @@ class Module {
     }
 }
 
-function isModule(card: Module | Event) {
+function isModule(card: Module | Event): card is Module {
     return (card as Module).name !== undefined;
 }
 

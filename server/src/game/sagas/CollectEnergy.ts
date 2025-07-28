@@ -1,6 +1,6 @@
 import {put, select} from "../Effects";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
-import {collectEnergyBeforeTurn} from "../actions/Main";
+import {changePlayerEnergy} from "../actions/Main";
 
 export function* collectEnergy() {
     const state = yield* select();
@@ -10,6 +10,6 @@ export function* collectEnergy() {
     const newEnergy = Math.max(maxEnergy, SpaceshipGetters.getTotalEnergyIncrease(player.spaceship))
 
     yield* put(
-        collectEnergyBeforeTurn(player.id, newEnergy - player.energy)
+        changePlayerEnergy(player, newEnergy - player.energy, "before turn")
     );
 }

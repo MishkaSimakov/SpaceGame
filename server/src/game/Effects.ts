@@ -22,7 +22,16 @@ export type AllEffect = {
     effects: AllInput
 }
 
-export type Effect = SelectEffect | PutEffect | TakeEffect | AllEffect;
+export type DiceEffect = {
+    type: "dice"
+}
+
+export type ShuffleEffect = {
+    type: "shuffle",
+    array: any[]
+}
+
+export type Effect = SelectEffect | PutEffect | TakeEffect | AllEffect | DiceEffect | ShuffleEffect;
 
 type SelectGenerator = Generator<SelectEffect, GameState, GameState>;
 type PutGenerator = Generator<PutEffect, EmptyObject, EmptyObject>;
@@ -48,6 +57,22 @@ export function* take(action: (...args: any[]) => Action): TakeGenerator {
     };
 }
 
+type DiceResult = 0 | 1 | 2 | 3 | 4 | 5;
+
+export function* dice(): Generator<DiceEffect, DiceResult, DiceResult> {
+    return yield {
+        type: "dice"
+    };
+}
+
+export function* shuffle<T>(array: T[]): Generator<ShuffleEffect, EmptyObject, EmptyObject> {
+    return yield {
+        type: "shuffle",
+        array: array
+    };
+}
+
+// TODO: support shuffle and dice in all
 type GeneratorReturnType<T extends Generator> = T extends Generator<any, infer R, any> ? R : never
 type AllOutput<T extends AllInput> = {
     [Key in keyof T]: GeneratorReturnType<T[Key]>

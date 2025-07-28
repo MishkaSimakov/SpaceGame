@@ -1,71 +1,119 @@
-import {all, put, select, take} from "../Effects";
+import {all, put, select, shuffle, take} from "../Effects";
 import {
+    changePlayerEnergy,
     chooseCardTypeRequest,
     chooseCardTypeResponse,
-    playerAcknowledgedDrawnCard,
-    playerDrawCardFromHeap
+    drawAdditionalModuleCardRequest,
+    drawAdditionalModuleCardResponse,
+    drawAnotherEventCardRequest, drawAnotherEventCardResponse,
+    playerDrawCardFromHeap,
+    returnDiscardsToStack,
+    showCardsToPlayersRequest,
+    showCardsToPlayersResponse
 } from "../actions/Main";
+import GameState from "../GameState";
+import Module from "@common/modules/Module";
+import {Event} from "@common/events/Event";
+import {StateGetters} from "@common/getters/State";
+import {SpaceshipGetters} from "@common/getters/Spaceship";
+import {MainModuleType} from "@common/modules/MainModule";
+import {request} from "./Utils";
+
+export function canDrawAnotherEventCard(state: GameState) {
+    const player = StateGetters.currentPlayer(state);
+
+    return SpaceshipGetters.getMainModuleType(player.spaceship) === MainModuleType.DrawAnotherEventCard
+        && player.energy >= state.settings.energyToDragAnotherEventCardByMainModule;
+}
+
+export function canDrawAdditionalModuleCard(state: GameState) {
+    const player = StateGetters.currentPlayer(state);
+
+    return SpaceshipGetters.getMainModuleType(player.spaceship) === MainModuleType.DrawAdditionalModuleCard
+        && player.energy >= state.settings.energyToDragAdditionalCardByMainModule;
+}
+
+export function* drawOneCard(type: "module" | "event") {
+    let state = yield* select();
+
+    let discards = state.discards[type];
+
+    if (state.stack[type].length === 0) {
+        if (type === "module") {
+            yield* shuffle(discards as Module[]);
+        } else {
+            yield* shuffle(discards as Event[]);
+        }
+
+        yield* put(returnDiscardsToStack(type, discards));
+
+        // update state after reduce
+        state = yield* select();
+    }
+
+    const topCard = state.stack[type].pop();
+    yield* put(playerDrawCardFromHeap(StateGetters.currentPlayer(state).id, topCard));
+
+    return topCard;
+}
 
 export function* drawCards() {
     const state = yield* select();
-    const currentPlayer = state.players[state.currentPlayerIndex];
+    const currentPlayer = StateGetters.currentPlayer(state);
 
-    const {req, res} = yield* all({
-        req: put(chooseCardTypeRequest(currentPlayer.id)),
-        res: take(chooseCardTypeResponse)
-    });
+    const {chosenType} = yield* request(chooseCardTypeRequest(currentPlayer.id), chooseCardTypeResponse);
 
-    switch (res.payload.chosenType) {
-        case 'event': {
-            break;
-        }
-        case 'module': {
-            // TODO: refill heap when it's empty
-            const topCard = state.modulesStack[state.modulesStack.length - 1];
+    if (chosenType === "module") {
+        let drawAdditionalCard = false;
 
-            yield* all({
-                reduce: put(playerDrawCardFromHeap(currentPlayer.id, topCard)),
-                waitAcknowledgment: take(playerAcknowledgedDrawnCard)
-            });
+        do {
+            const card = yield* drawOneCard("module");
 
-            break;
-        }
+            yield* request(
+                showCardsToPlayersRequest([card], currentPlayer, true),
+                showCardsToPlayersResponse
+            );
+
+            if (canDrawAdditionalModuleCard(state)) {
+                drawAdditionalCard = yield* request(
+                    drawAdditionalModuleCardRequest(currentPlayer.id),
+                    drawAdditionalModuleCardResponse
+                );
+
+                if (drawAdditionalCard) {
+                    yield* put(changePlayerEnergy(
+                        currentPlayer,
+                        -state.settings.energyToDragAdditionalCardByMainModule,
+                        "draw additional module card by main module"
+                    ));
+                }
+            }
+        } while (drawAdditionalCard);
+    } else {
+        let drawAnotherCard = false;
+
+        do {
+            const card = yield* drawOneCard("event");
+
+            yield* request(
+                showCardsToPlayersRequest([card], currentPlayer, true),
+                showCardsToPlayersResponse
+            );
+
+            if (canDrawAnotherEventCard(state)) {
+                drawAnotherCard = yield* request(
+                    drawAnotherEventCardRequest(currentPlayer.id),
+                    drawAnotherEventCardResponse
+                );
+
+                if (drawAnotherCard) {
+                    yield* put(changePlayerEnergy(
+                        currentPlayer,
+                        -state.settings.energyToDragAnotherEventCardByMainModule,
+                        "draw another event card by main module"
+                    ));
+                }
+            }
+        } while (drawAnotherCard);
     }
-    // if (res.payload.chosenType === 'event') {
-    //     // let event: Event;
-    //     // let drawAnother: boolean;
-    //     //
-    //     // do {
-    //     //     drawAnother = false;
-    //     //
-    //     //     event = game.gameData.popEventCards()[0];
-    //     //
-    //     //     await game.showCardsToPlayer([event], game.currentPlayer, true);
-    //     //
-    //     //     console.log(`   Player get event card: ${event.description.replace("\n", " ")}`);
-    //     //
-    //     //     if (game.currentPlayer.spaceship.getMainModuleType() === MainModuleType.DrawAnotherEventCard
-    //     //         && game.currentPlayer.energy >= game.ENERGY_TO_DRAG_ANOTHER_EVENT_CARD_BY_MAIN_MODULE) {
-    //     //         const drawAnotherEventCard: boolean = await game.emitToCurrentPlayerAndWaitAcknowledgment('drawAnotherEventCard');
-    //     //         if (drawAnotherEventCard) {
-    //     //             game.currentPlayer.energy -= game.ENERGY_TO_DRAG_ANOTHER_EVENT_CARD_BY_MAIN_MODULE;
-    //     //
-    //     //             game.gameData.discardCards([event]);
-    //     //             drawAnother = true;
-    //     //
-    //     //             console.log(`   Player draw another event card`);
-    //     //         }
-    //     //     }
-    //     // } while (drawAnother);
-    //     //
-    //     // console.log(`   Performing event`);
-    //     //
-    //     // await performEvent(event, game);
-    //     //
-    //     // console.log(`   Event performed`);
-    // } else if (cardType === 'module') {
-
-    // }
-
-    // game.changePlayerData(game.currentPlayer);
 }

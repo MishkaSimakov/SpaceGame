@@ -5,10 +5,8 @@ import Module from "@common/modules/Module";
 import {Event} from "@common/events/Event";
 import Spaceship from "@common/Spaceship";
 import {
-    chooseCardTypeRequest,
-    chooseCardTypeResponse,
-    playerAcknowledgedDrawnCard,
-    rebuildSpaceshipResponse
+    chooseCardTypeResponse, drawAdditionalModuleCardResponse, drawAnotherEventCardResponse,
+    rebuildSpaceshipResponse, showCardsToPlayersResponse
 } from "../actions/Main";
 import * as Actions from "../actions/Main";
 
@@ -19,24 +17,7 @@ type IOListenersType = {
         : never
 };
 
-
-// TODO: move later somewhere...
-async function showCardsToPlayer(sockets: SocketsManager, cards: (Module | Event)[], player: PlayerId, showToOther: boolean) {
-    // if (showToOther) {
-    //     for (let [otherPlayer, socket] of Object.entries(sockets.players)) {
-    //         if (otherPlayer === player) {
-    //             continue;
-    //         }
-    //
-    //         sockets.getSocket(playerToEmit.id)?.emit('showCards', player, cards);
-    //     }
-    // }
-
-    // TODO: show to others
-
-    await sockets.emitAndWait(player, 'showCardsAndWait', true, player, cards);
-}
-
+// TODO: validation layer
 export const IOListeners: IOListenersType = {
     rebuildSpaceshipRequest(payload, {bus, sockets}) {
         const playerId: PlayerId = payload.player;
@@ -48,17 +29,39 @@ export const IOListeners: IOListenersType = {
             bus.emit(rebuildSpaceshipResponse(response.spaceship, response.hand));
         });
     },
-    playerDrawCardFromHeap(payload, {sockets, bus}) {
-        showCardsToPlayer(sockets, [payload.card], payload.player, true)
+    showCardsToPlayersRequest({cards, player, showToOthers}, {sockets, bus}) {
+        // if (showToOther) {
+        //     for (let [otherPlayer, socket] of Object.entries(sockets.players)) {
+        //         if (otherPlayer === player) {
+        //             continue;
+        //         }
+        //
+        //         sockets.getSocket(playerToEmit.id)?.emit('showCards', player, cards);
+        //     }
+        // }
+
+        // TODO: show to others
+        sockets.emitAndWait(player, 'showCardsAndWait', true, player, cards)
             .then(() => {
-                bus.emit(playerAcknowledgedDrawnCard());
+                bus.emit(showCardsToPlayersResponse());
             });
     },
-    chooseCardTypeRequest(payload, {sockets, bus}) {
-        const playerId: PlayerId = payload.player;
-
-        sockets.emitAndWait(playerId, 'chooseCardType', true).then((cardType: string) => {
-            bus.emit(chooseCardTypeResponse(cardType));
-        });
+    chooseCardTypeRequest({player}, {sockets, bus}) {
+        sockets.emitAndWait(player, 'chooseCardType', true)
+            .then((cardType: string) => {
+                bus.emit(chooseCardTypeResponse(cardType as ("module" | "event")));
+            });
+    },
+    drawAdditionalModuleCardRequest({player}, {sockets, bus}) {
+        sockets.emitAndWait(player, 'drawAdditionalModuleCard', true)
+            .then((drawAdditional: boolean) => {
+                bus.emit(drawAdditionalModuleCardResponse(drawAdditional));
+            });
+    },
+    drawAnotherEventCardRequest({player}, {sockets, bus}) {
+        sockets.emitAndWait(player, 'drawAnotherEventCard', true)
+            .then((drawAnother: boolean) => {
+                bus.emit(drawAnotherEventCardResponse(drawAnother));
+            });
     }
 };

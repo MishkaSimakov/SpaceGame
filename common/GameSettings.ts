@@ -17,4 +17,5 @@ export class GameSettings {
     energyToMoveDamageByCommandModule = 4;
     energyToDragAnotherEventCardByMainModule = 4;
     energyToDragAdditionalCardByMainModule = 15;
+    maxCardsOnHand = 5;
 }

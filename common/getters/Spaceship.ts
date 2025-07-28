@@ -75,8 +75,8 @@ function getConnectorInDirection(module: Module, direction: string): number {
     return module.connectors[directions[index]];
 }
 
-function getModuleByPosition(ship: Spaceship, x: number, y: number);
-function getModuleByPosition(ship: Spaceship, position: Vector2);
+function getModuleByPosition(ship: Spaceship, x: number, y: number): Module;
+function getModuleByPosition(ship: Spaceship, position: Vector2): Module;
 function getModuleByPosition(ship: Spaceship, x: (number | Vector2), y?: number): Module {
     if (typeof x == "number") {
         return ship.modules.filter(card => card.x === x && card.y === y)[0];

@@ -1,10 +1,12 @@
-import {isModule} from "@common/modules/Module";
+import Module, {isModule} from "@common/modules/Module";
 import {Event, EventTypes, isEvent} from "@common/events/Event";
 import GameState from "../GameState";
 import * as assert from "node:assert";
 import {areCardSetsEqual} from "@common/Utils";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
 import * as Actions from '../actions/Main';
+import {StateGetters} from "@common/getters/State";
+import {SpaceshipModifiers} from "@common/modifiers/Spaceship";
 
 type ReducersType = {
     [Key in keyof typeof Actions]?:
@@ -39,22 +41,41 @@ export const reducers: ReducersType = {
             SpaceshipGetters.getTotalCapacity(currentPlayer.spaceship)
         );
     },
-    useAttackLaterEventCard(state: GameState, payload) {
-        let attackLaterCardIndex: number = state.getCurrentPlayer().hand
-            .findIndex((c) => {
-                if (isModule(c)) return false;
+    disposeCardsFromPlayerHand(state: GameState, payload) {
+        const player = StateGetters.playerById(state, payload.player);
 
-                return (c as Event).type === EventTypes.SaveCardAndThenAttack;
-            });
+        assert.ok(player);
+        assert.ok(player.hand.length > Math.max(...payload.indices));
 
-        let discardedEventCard = state.getCurrentPlayer().hand.splice(attackLaterCardIndex, 1);
-        state.discardCards(discardedEventCard);
+        player.hand = player.hand.filter((card, index) => {
+            if (payload.indices.indexOf(index) === -1) {
+                return true;
+            }
+
+            if (isModule(card)) {
+                state.discards.module.push(card);
+            } else {
+                state.discards.event.push(card);
+            }
+
+            return false;
+        });
     },
+    beginFight(state: GameState, payload) {
+        assert.equal(state.fight, undefined);
 
+        state.fight = {
+            first: payload.attacker,
+            second: payload.victim,
+            isFirstPlayerTurn: true,
+            isFightEnded: false
+        };
+    },
     playerDrawCardFromHeap(state: GameState, payload) {
-        const stack = isEvent(payload.card) ? state.eventsStack : state.modulesStack;
+        const player = StateGetters.playerById(state, payload.player);
+
+        const stack = isEvent(payload.card) ? state.stack.event : state.stack.module;
         const card = stack.pop();
-        const player = state.players.find(p => p.id === payload.player);
 
         // precondition
         assert.ok(stack.length > 0);
@@ -83,9 +104,53 @@ export const reducers: ReducersType = {
         }
     },
 
-    collectEnergyBeforeTurn(state: GameState, payload) {
-        const player = state.players.filter(p => p.id === payload.player)[0];
+    changePlayerEnergy(state: GameState, payload) {
+        const player = StateGetters.playerById(state, payload.player);
+        const capacity = SpaceshipGetters.getTotalCapacity(player.spaceship);
 
-        player.energy += payload.amount;
+        player.energy += payload.delta;
+        player.energy = Math.max(0, Math.min(player.energy, capacity));
+    },
+
+    returnDiscardsToStack(state: GameState, {type, discards}) {
+        if (type === "module") {
+            state.stack.module = discards as Module[];
+            state.discards.module = [];
+        } else {
+            state.stack.event = discards as Event[];
+            state.discards.event = [];
+        }
+    },
+
+    playerSkipNextTurn(state: GameState, payload) {
+        const player = StateGetters.playerById(state, payload.player);
+        player.skipNextTurn = true;
+    },
+
+    destructSpaceshipModules(state: GameState, payload) {
+        const player = StateGetters.playerById(state, payload.player);
+        const modules = payload.positions.map(p => SpaceshipGetters.getModuleByPosition(player.spaceship, p));
+
+        SpaceshipModifiers.removeModule(player.spaceship, modules);
+
+        const unconnected = SpaceshipGetters.getUnconnectedModules(player.spaceship);
+        modules.push(...unconnected);
+
+        SpaceshipModifiers.removeModule(player.spaceship, unconnected);
+
+        if (payload.cardsDestiny === "hand") {
+            player.hand.push(...modules);
+        } else {
+            state.discards.module.push(...modules);
+        }
+    },
+
+    pushCurrentEventToPlayerHand(state: GameState, payload) {
+        const player = StateGetters.playerById(state, payload.player);
+
+        assert.ok(state.currentEvent !== undefined);
+
+        player.hand.push(state.currentEvent);
+        state.currentEvent = undefined;
     }
 }

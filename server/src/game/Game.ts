@@ -13,10 +13,11 @@ import ActionsBus from "./actions/ActionsBus";
 import {gameSaga} from "./sagas/Main";
 import {Logger} from "./Logger";
 import {Action} from "./actions/Action";
-import {initGameState} from "./actions/Main";
+import {initGameState, reducerUpdatedState} from "./actions/Main";
 import {reducers} from "./reducers/Main";
-import {SagaRunner} from "./SagaRunner";
+import {IRandomizer, SagaRunner} from "./SagaRunner";
 import {IOListeners} from "./io/Listeners";
+import Rand, {PRNG} from 'rand-seed';
 
 export enum GameStateLegacy {
     WAIT_FOR_PLAYERS,
@@ -25,12 +26,32 @@ export enum GameStateLegacy {
     ERROR
 }
 
+export class Randomizer implements IRandomizer {
+    rand: Rand;
+
+    constructor(seed: string) {
+        this.rand = new Rand(seed);
+    }
+
+    dice(): number {
+        return (this.rand.next() * 6) % 6;
+    }
+
+    shuffle<T>(array: T[]) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(this.rand.next() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
+}
+
 export default class Game {
     id: string;
     name: string;
 
     users: User[];
 
+    randomizer: Randomizer;
     state: GameState;
     bus: ActionsBus;
     sagaRunner: SagaRunner;
@@ -47,9 +68,10 @@ export default class Game {
         this.name = name;
         this.users = users;
 
+        this.randomizer = new Randomizer("abracadabra");
         this.state = new GameState();
         this.bus = new ActionsBus();
-        this.sagaRunner = new SagaRunner(this.state, this.bus, gameSaga());
+        this.sagaRunner = new SagaRunner(this.state, this.bus, this.randomizer, gameSaga());
         this.sockets = new sockets(io, users.map(user => user.id));
         this.logger = new Logger();
 
@@ -100,6 +122,9 @@ export default class Game {
                 // SagaRunner relies on stateRef. Plain assignment would invalidate its reference
                 Object.assign(this.state, copy);
 
+                // for the sake of logging
+                this.bus.emit(reducerUpdatedState(this.state));
+
                 // notify players about state update
                 this.syncPlayersData();
             }
@@ -109,54 +134,6 @@ export default class Game {
     async start() {
         await this.sagaRunner.run();
     }
-
-    // handleDestroyedModules(target: Player, attacker: Player, destroyedModules: {
-    //     module: Module,
-    //     byReactor: boolean
-    // }[], isEvent: boolean) {
-    //     for (let destroyedInfo of destroyedModules) {
-    //         let module = destroyedInfo.module
-    //
-    //         console.log(`   Module at x: ${module.x}, y: ${module.y} has been destroyed`);
-    //
-    //         module.isActivated = false;
-    //
-    //         target.spaceship.removeModule(module);
-    //
-    //         if (module.type === ModuleTypes.MainModule) {
-    //             return;
-    //         }
-    //
-    //         module.health = module.totalHealth;
-    //
-    //         if (isEvent || destroyedInfo.byReactor) {
-    //             this.gameData.discardCards([module]);
-    //         } else {
-    //             attacker.hand.push(module);
-    //         }
-    //     }
-    //
-    //     if (destroyedModules.length !== 0) {
-    //         let unconnectedModules = target.spaceship.getUnconnectedModules();
-    //
-    //         target.spaceship.removeModule(unconnectedModules);
-    //         target.hand.push(...unconnectedModules);
-    //     }
-    //
-    //     // dark matter generator destroyed
-    //     if (destroyedModules.filter((d) => d.module.type === ModuleTypes.DarkMatterGenerator).length) {
-    //         let modulesExceptMain = target.spaceship.modules.filter(m => m.type !== ModuleTypes.MainModule);
-    //
-    //         target.spaceship.removeModule(modulesExceptMain);
-    //         target.hand.push(...modulesExceptMain);
-    //     }
-    //
-    //     target.energy = Math.min(target.energy, target.spaceship.getTotalCapacity());
-    //
-    //     if (!target.spaceship.getMainModule()) {
-    //         target.setLose();
-    //     }
-    // }
 
     addPlayersData(message: any[], player: Player) {
         if (message[0] === HAS_PLAYERS_DATA) {
@@ -187,6 +164,10 @@ export default class Game {
     #initGameState(settings: GameSettings) {
         const state = new GameState();
 
+        this.randomizer.shuffle(state.stack.module);
+        this.randomizer.shuffle(state.stack.event);
+        this.randomizer.shuffle(state.mainModules)
+
         state.settings = settings;
 
         for (const user of this.users) {
@@ -194,10 +175,10 @@ export default class Game {
 
             player.id = user.id;
             player.name = user.login;
-            player.hand = state.popModuleCards(state.settings.startCardsCount);
+            player.hand = state.stack.module.splice(0, state.settings.startCardsCount);
 
             // initialize spaceship
-            const mainModule = state.popMainModule();
+            const mainModule = state.mainModules.pop();
             mainModule.x = 0;
             mainModule.y = 0;
 
@@ -206,6 +187,8 @@ export default class Game {
 
             state.players.push(player)
         }
+
+        this.randomizer.shuffle(state.players);
 
         this.bus.emit(initGameState(state));
     }
@@ -322,21 +305,6 @@ export default class Game {
     //     }
     //
     //     await this.sockets.emitAndWait(player, 'showCardsAndWait', true, player, cards);
-    // }
-
-    // getPlayerIndexByOffset(offset: number): number {
-    //     let currentPlayerIndex = this.gameData.getCurrentPlayerIndex();
-    //     const playersCount = this.gameData.getPlayers().length;
-    //
-    //     do {
-    //         currentPlayerIndex = (currentPlayerIndex + Math.sign(offset) + playersCount) % playersCount;
-    //
-    //         if (!this.gameData.getPlayers()[currentPlayerIndex].isLose()) {
-    //             offset += -Math.sign(offset);
-    //         }
-    //     } while (offset !== 0);
-    //
-    //     return currentPlayerIndex;
     // }
 
     // async askForUseModuleSecondTime(player: Player, module: ModuleTypes): Promise<boolean> {
