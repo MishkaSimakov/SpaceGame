@@ -2,7 +2,7 @@ import {test} from "uvu";
 import GameState from "../../src/game/GameState";
 import ActionsBus from "../../src/game/actions/ActionsBus";
 import {SagaRunner} from "../../src/game/SagaRunner";
-import {beforeTurn} from "../../src/game/sagas/BeforeTurn";
+import {beforeTurn} from "../../src/game/sagas/phases/BeforeTurn";
 import Player from "@common/Player";
 import {EventTypes} from "@common/events/Event";
 import {

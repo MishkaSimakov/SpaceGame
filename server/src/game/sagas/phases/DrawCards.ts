@@ -1,4 +1,4 @@
-import {all, put, select, shuffle, take} from "../Effects";
+import {all, put, select, shuffle, take} from "../../Effects";
 import {
     changePlayerEnergy,
     chooseCardTypeRequest,
@@ -6,18 +6,15 @@ import {
     drawAdditionalModuleCardRequest,
     drawAdditionalModuleCardResponse,
     drawAnotherEventCardRequest, drawAnotherEventCardResponse,
-    playerDrawCardFromHeap,
-    returnDiscardsToStack,
     showCardsToPlayersRequest,
     showCardsToPlayersResponse
-} from "../actions/Main";
-import GameState from "../GameState";
-import Module from "@common/modules/Module";
-import {Event} from "@common/events/Event";
+} from "../../actions/Main";
+import GameState from "../../GameState";
 import {StateGetters} from "@common/getters/State";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
 import {MainModuleType} from "@common/modules/MainModule";
-import {request} from "./Utils";
+import {request} from "../components/Request";
+import {popOneCard} from "../components/PopCards";
 
 export function canDrawAnotherEventCard(state: GameState) {
     const player = StateGetters.currentPlayer(state);
@@ -33,30 +30,6 @@ export function canDrawAdditionalModuleCard(state: GameState) {
         && player.energy >= state.settings.energyToDragAdditionalCardByMainModule;
 }
 
-export function* drawOneCard(type: "module" | "event") {
-    let state = yield* select();
-
-    let discards = state.discards[type];
-
-    if (state.stack[type].length === 0) {
-        if (type === "module") {
-            yield* shuffle(discards as Module[]);
-        } else {
-            yield* shuffle(discards as Event[]);
-        }
-
-        yield* put(returnDiscardsToStack(type, discards));
-
-        // update state after reduce
-        state = yield* select();
-    }
-
-    const topCard = state.stack[type].pop();
-    yield* put(playerDrawCardFromHeap(StateGetters.currentPlayer(state).id, topCard));
-
-    return topCard;
-}
-
 export function* drawCards() {
     const state = yield* select();
     const currentPlayer = StateGetters.currentPlayer(state);
@@ -67,7 +40,7 @@ export function* drawCards() {
         let drawAdditionalCard = false;
 
         do {
-            const card = yield* drawOneCard("module");
+            const card = yield* popOneCard("module");
 
             yield* request(
                 showCardsToPlayersRequest([card], currentPlayer, true),
@@ -93,7 +66,7 @@ export function* drawCards() {
         let drawAnotherCard = false;
 
         do {
-            const card = yield* drawOneCard("event");
+            const card = yield* popOneCard("event");
 
             yield* request(
                 showCardsToPlayersRequest([card], currentPlayer, true),

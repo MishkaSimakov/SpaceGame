@@ -1,16 +1,16 @@
 import {isModule} from "@common/modules/Module";
 import {Event, EventTypes} from "@common/events/Event";
 
-import {fight} from "./old/Fight";
-import {all, put, select, take} from "../Effects";
+import {fight} from "../old/Fight";
+import {all, put, select, take} from "../../Effects";
 import {
     beginFight,
     choosePlayerForAttackRequest,
     choosePlayerForAttackResponse,
     disposeCardsFromPlayerHand,
-} from "../actions/Main";
+} from "../../actions/Main";
 import {AttackReason} from "@common/Types";
-import {request} from "./Utils";
+import {request} from "../components/Request";
 
 export function* beforeTurn() {
     const state = yield* select();

@@ -1,9 +1,9 @@
-import {all, put, select, take} from "../Effects";
+import {all, put, select, take} from "../../Effects";
 import {
     rebuildSpaceshipRequest,
     rebuildSpaceshipResponse,
     playerRebuiltSpaceship
-} from "../actions/Main";
+} from "../../actions/Main";
 
 export function* rebuildSpaceship() {
     const state = yield* select();

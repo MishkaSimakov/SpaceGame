@@ -1,7 +1,7 @@
 import {StateGetters} from "@common/getters/State";
-import {put, select} from "../Effects";
-import {request} from "./Utils";
-import {discardCardsRequest, discardCardsResponse, disposeCardsFromPlayerHand} from "../actions/Main";
+import {put, select} from "../../Effects";
+import {request} from "../components/Request";
+import {discardCardsRequest, discardCardsResponse, disposeCardsFromPlayerHand} from "../../actions/Main";
 
 export function* discardCards() {
     const state = yield* select();

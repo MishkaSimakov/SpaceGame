@@ -129,19 +129,23 @@ export const reducers: ReducersType = {
 
     destructSpaceshipModules(state: GameState, payload) {
         const player = StateGetters.playerById(state, payload.player);
-        const modules = payload.positions.map(p => SpaceshipGetters.getModuleByPosition(player.spaceship, p));
+        const destructed = payload.positions.map(p => SpaceshipGetters.getModuleByPosition(player.spaceship, p));
 
-        SpaceshipModifiers.removeModule(player.spaceship, modules);
+        SpaceshipModifiers.removeModule(player.spaceship, destructed);
 
-        const unconnected = SpaceshipGetters.getUnconnectedModules(player.spaceship);
-        modules.push(...unconnected);
+        const detached = SpaceshipGetters.getUnconnectedModules(player.spaceship);
+        SpaceshipModifiers.removeModule(player.spaceship, detached);
 
-        SpaceshipModifiers.removeModule(player.spaceship, unconnected);
-
-        if (payload.cardsDestiny === "hand") {
-            player.hand.push(...modules);
+        if (payload.destructedCardsDestiny === "hand") {
+            player.hand.push(...destructed);
         } else {
-            state.discards.module.push(...modules);
+            state.discards.module.push(...destructed);
+        }
+
+        if (payload.detachedCardsDestiny === "hand") {
+            player.hand.push(...detached);
+        } else {
+            state.discards.module.push(...detached);
         }
     },
 
@@ -152,5 +156,39 @@ export const reducers: ReducersType = {
 
         player.hand.push(state.currentEvent);
         state.currentEvent = undefined;
+    },
+
+    pushCardsToStack(state: GameState, {type, cards}) {
+        if (type === "module") {
+            state.stack.module.push(...(cards as Module[]));
+        } else {
+            state.stack.event.push(...(cards) as Event[]);
+        }
+    },
+
+    disposeCurrentEventCard(state: GameState) {
+        assert.ok(state.currentEvent !== undefined);
+
+        state.discards.event.push(state.currentEvent);
+        state.currentEvent = undefined;
+    },
+
+    setCardAsCurrentEventCard(state: GameState, card) {
+        assert.ok(state.currentEvent === undefined);
+
+        state.currentEvent = card;
+    },
+
+    pushCardsToPlayerHand(state: GameState, payload) {
+        const player = StateGetters.playerById(state, payload.player);
+
+        player.hand.push(...payload.cards);
+    },
+
+    changeModuleHealth(state: GameState, payload) {
+        const player = StateGetters.playerById(state, payload.player);
+        const module = SpaceshipGetters.getModuleByPosition(player.spaceship, payload.position);
+
+        module.health = Math.min(module.health + payload.delta, module.totalHealth);
     }
 }

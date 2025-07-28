@@ -1,10 +1,10 @@
 import {put, SagaGenerator} from "../Effects";
-import {beforeTurn} from "./BeforeTurn";
-import {drawCards} from "./DrawCards";
-import {rebuildSpaceship} from "./RebuildSpaceship";
+import {beforeTurn} from "./phases/BeforeTurn";
+import {drawCards} from "./phases/DrawCards";
+import {rebuildSpaceship} from "./phases/RebuildSpaceship";
 import {shiftTurnToNextPlayer} from "../actions/Main";
-import {collectEnergy} from "./CollectEnergy";
-import {discardCards} from "./DiscardCards";
+import {collectEnergy} from "./phases/CollectEnergy";
+import {discardCards} from "./phases/DiscardCards";
 
 export function* gameSaga() {
     while (true) {
