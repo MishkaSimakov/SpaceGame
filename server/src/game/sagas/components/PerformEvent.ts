@@ -6,15 +6,24 @@ import {
     changePlayerEnergy,
     chooseCardsForRepairSpaceshipRequest,
     chooseCardsForRepairSpaceshipResponse,
-    chooseCardsToDiscardAndTakeAnotherRequest, chooseCardsToDiscardAndTakeAnotherResponse,
+    chooseCardsToDiscardAndTakeAnotherRequest,
+    chooseCardsToDiscardAndTakeAnotherResponse,
+    chooseCardToStealRequest,
+    chooseCardToStealResponse,
     chooseModulesToRepairByDiscardedCardsRequest,
-    chooseModulesToRepairByDiscardedCardsResponse, chooseModuleToDamageRequest, chooseModuleToDamageResponse,
+    chooseModulesToRepairByDiscardedCardsResponse,
+    chooseModuleToDamageRequest,
+    chooseModuleToDamageResponse,
     chooseModuleToDestroyRequest,
-    chooseModuleToDestroyResponse, chooseModuleToMoveDamageRequest, chooseModuleToMoveDamageResponse,
+    chooseModuleToDestroyResponse,
+    chooseModuleToMoveDamageRequest,
+    chooseModuleToMoveDamageResponse,
     chooseModuleToRepairByDiceRequest,
     chooseModuleToRepairByDiceResponse,
     choosePlayerForAttackRequest,
     choosePlayerForAttackResponse,
+    choosePlayerToStealCardRequest,
+    choosePlayerToStealCardResponse,
     chooseTwoSolarPanelsToDestroyRequest,
     chooseTwoSolarPanelsToDestroyResponse,
     destructSpaceshipModules,
@@ -23,13 +32,14 @@ import {
     permuteTopThreeEventCardsRequest,
     permuteTopThreeEventCardsResponse,
     playerSkipNextTurn,
+    popCardFromPlayerHand,
     pushCardsToPlayerHand,
     pushCardsToStack,
     pushCurrentEventToPlayerHand,
     setCardAsCurrentEventCard,
     showCardsToPlayersRequest,
     showCardsToPlayersResponse
-} from "../../actions/Main";
+} from "@common/actions/Main";
 import {StateGetters} from "@common/getters/State";
 import {dice, put, select} from "../../Effects";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
@@ -173,7 +183,6 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
         yield* fight();
     },
     [EventTypes.AttackAny]: function* (state: GameState) {
-        // let attackedPlayer = await game.choosePlayerForAttack(AttackReason.AttackAnyEventCard);
         const {victim} = yield* request(
             choosePlayerForAttackRequest(StateGetters.currentPlayer(state).id, AttackReason.AttackAnyEventCard),
             choosePlayerForAttackResponse
@@ -249,14 +258,21 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
 
         if (playersWithCards.length === 0) return;
 
-        let chosenPlayerId: number = await game.emitToCurrentPlayerAndWaitAcknowledgment('choosePlayerToStealCardEvent', playersWithCards.map(p => p.id));
-        let chosenPlayer = game.getPlayerById(chosenPlayerId);
+        const chosenPlayerId = yield* request(
+            choosePlayerToStealCardRequest(currentPlayer, playersWithCards.map(p => p.id)),
+            choosePlayerToStealCardResponse
+        );
 
-        let chosenCardIndex: number = await game.emitToCurrentPlayerAndWaitAcknowledgment('chooseCardOfPlayer', chosenPlayer.hand);
+        const chosenPlayer = StateGetters.playerById(state, chosenPlayerId);
 
-        let chosenCard = chosenPlayer.hand[chosenCardIndex];
-        chosenPlayer.hand.splice(chosenCardIndex, 1);
-        game.currentPlayer.hand.push(chosenCard);
+        const chosenCardIndex = yield* request(
+            chooseCardToStealRequest(currentPlayer, chosenPlayer.hand),
+            chooseCardToStealResponse
+        );
+
+        const chosenCard = chosenPlayer.hand[chosenCardIndex];
+        yield* put(popCardFromPlayerHand(chosenPlayer, chosenCardIndex));
+        yield* put(pushCardsToPlayerHand(currentPlayer, [chosenCard]));
     },
     [EventTypes.DiscardCardAndRepairSpaceship]: function* (state: GameState) {
         const currentPlayer = StateGetters.currentPlayer(state);

@@ -1,4 +1,4 @@
-import {Action} from "./actions/Action";
+import {Action} from "@common/actions/Action";
 import GameState from "./GameState";
 
 type EmptyObject = Record<string, never>;

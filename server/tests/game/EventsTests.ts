@@ -1,6 +1,6 @@
 import {test} from "uvu";
 import GameState from "../../src/game/GameState";
-import ActionsBus from "../../src/game/actions/ActionsBus";
+import ActionsBus from "@common/actions/ActionsBus";
 import {SagaRunner} from "../../src/game/SagaRunner";
 import {beforeTurn} from "../../src/game/sagas/phases/BeforeTurn";
 import Player from "@common/Player";
@@ -9,7 +9,7 @@ import {
     beginFight,
     choosePlayerForAttackRequest,
     choosePlayerForAttackResponse, disposeCardsFromPlayerHand,
-} from "../../src/game/actions/Main";
+} from "@common/actions/Main";
 import * as assert from "node:assert";
 import {Randomizer} from "../../src/game/Game";
 

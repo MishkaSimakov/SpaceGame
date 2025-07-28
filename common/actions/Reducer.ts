@@ -1,9 +1,9 @@
-import Module from "@common/modules/Module";
-import {Event} from "@common/events/Event";
-import Player, {PlayerId} from "@common/Player";
-import Vector2 from "@common/Vector2";
-import Spaceship from "@common/Spaceship";
-import GameState from "../GameState";
+import Module from "../modules/Module";
+import {Event} from "../events/Event";
+import Player, {PlayerId} from "../Player";
+import Vector2 from "../Vector2";
+import Spaceship from "../Spaceship";
+import GameState from "../../server/src/game/GameState";
 
 export const initGameState = (state: GameState) => {
     return {
@@ -112,5 +112,12 @@ export const changeModuleHealth = (player: Player, position: Vector2, delta: num
         type: 'changeModuleHealth',
         payload: {player: player.id, position, delta},
         meta: {reason}
+    };
+}
+
+export const popCardFromPlayerHand = (player: Player, index: number) => {
+    return {
+        type: 'popCardFromPlayerHand',
+        payload: {player: player.id, index},
     };
 }

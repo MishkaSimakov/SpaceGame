@@ -4,7 +4,7 @@ import GameState from "../GameState";
 import * as assert from "node:assert";
 import {areCardSetsEqual} from "@common/Utils";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
-import * as Actions from '../actions/Main';
+import * as Actions from '@common/actions/Main';
 import {StateGetters} from "@common/getters/State";
 import {SpaceshipModifiers} from "@common/modifiers/Spaceship";
 
@@ -190,5 +190,13 @@ export const reducers: ReducersType = {
         const module = SpaceshipGetters.getModuleByPosition(player.spaceship, payload.position);
 
         module.health = Math.min(module.health + payload.delta, module.totalHealth);
+    },
+
+    popCardFromPlayerHand(state: GameState, payload) {
+        const player = StateGetters.playerById(state, payload.player);
+
+        assert.ok(player.hand.length > payload.index);
+
+        player.hand.splice(payload.index, 1);
     }
 }

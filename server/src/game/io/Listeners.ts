@@ -1,4 +1,4 @@
-import ActionsBus from "../actions/ActionsBus";
+import ActionsBus from "@common/actions/ActionsBus";
 import SocketsManager from "./SocketsManager";
 import {PlayerId} from "@common/Player";
 import Module from "@common/modules/Module";
@@ -7,8 +7,8 @@ import Spaceship from "@common/Spaceship";
 import {
     chooseCardTypeResponse, drawAdditionalModuleCardResponse, drawAnotherEventCardResponse,
     rebuildSpaceshipResponse, showCardsToPlayersResponse
-} from "../actions/Main";
-import * as Actions from "../actions/Main";
+} from "@common/actions/Main";
+import * as Actions from "@common/actions/Main";
 
 type IOListenersType = {
     [Key in keyof typeof Actions]?:

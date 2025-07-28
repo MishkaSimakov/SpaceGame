@@ -1,10 +1,10 @@
-import Player, {PlayerId} from "@common/Player";
-import {AttackReason} from "@common/Types";
-import Spaceship from "@common/Spaceship";
-import Module from "@common/modules/Module";
-import {Event} from "@common/events/Event";
-import GameState from "../GameState";
-import Vector2 from "@common/Vector2";
+import Player, {PlayerId} from "../Player";
+import {AttackReason} from "../Types";
+import Spaceship from "../Spaceship";
+import Module from "../modules/Module";
+import {Event} from "../events/Event";
+import GameState from "../../server/src/game/GameState";
+import Vector2 from "../Vector2";
 
 export * from "./Reducer";
 
@@ -234,5 +234,33 @@ export const chooseModuleToDamageResponse = (victimId: PlayerId, victimModulePos
     return {
         type: 'chooseModuleToDamageResponse',
         payload: {victimId, victimModulePosition},
+    };
+}
+
+export const choosePlayerToStealCardRequest = (player: Player, options: PlayerId[]) => {
+    return {
+        type: 'choosePlayerToStealCardRequest',
+        payload: {player: player.id, options}
+    };
+}
+
+export const choosePlayerToStealCardResponse = (target: PlayerId) => {
+    return {
+        type: 'choosePlayerToStealCardResponse',
+        payload: target,
+    };
+}
+
+export const chooseCardToStealRequest = (player: Player, cards: (Module | Event)[]) => {
+    return {
+        type: 'chooseCardToStealRequest',
+        payload: {player: player.id, cards}
+    };
+}
+
+export const chooseCardToStealResponse = (chosenCardIndex: number) => {
+    return {
+        type: 'chooseCardToStealResponse',
+        payload: chosenCardIndex,
     };
 }

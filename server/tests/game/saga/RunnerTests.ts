@@ -2,8 +2,8 @@ import {test} from "uvu";
 import * as assert from "uvu/assert";
 import {all, put, SagaGenerator, select, take} from "../../../src/game/Effects";
 import {SagaRunner} from "../../../src/game/SagaRunner";
-import ActionsBus from "../../../src/game/actions/ActionsBus";
-import {Action} from "../../../src/game/actions/Action";
+import ActionsBus from "@common/actions/ActionsBus";
+import {Action} from "@common/actions/Action";
 import GameState from "../../../src/game/GameState";
 import {CountingRandomizer} from "../Utils";
 

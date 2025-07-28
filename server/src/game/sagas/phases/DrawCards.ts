@@ -8,7 +8,7 @@ import {
     drawAnotherEventCardRequest, drawAnotherEventCardResponse,
     showCardsToPlayersRequest,
     showCardsToPlayersResponse
-} from "../../actions/Main";
+} from "@common/actions/Main";
 import GameState from "../../GameState";
 import {StateGetters} from "@common/getters/State";
 import {SpaceshipGetters} from "@common/getters/Spaceship";

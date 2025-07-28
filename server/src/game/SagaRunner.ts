@@ -1,6 +1,6 @@
 import {Effect, SagaGenerator} from "./Effects";
-import {Action} from "./actions/Action";
-import ActionsBus from "./actions/ActionsBus";
+import {Action} from "@common/actions/Action";
+import ActionsBus from "@common/actions/ActionsBus";
 import GameState from "./GameState";
 
 interface EffectProcessingResult {

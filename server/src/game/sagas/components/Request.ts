@@ -1,4 +1,4 @@
-import {Action} from "../../actions/Action";
+import {Action} from "@common/actions/Action";
 import {all, put, take} from "../../Effects";
 
 export function* request<Req extends Action, Res extends Action>(request: Req, response: (...args: any[]) => Res) {

@@ -1,7 +1,7 @@
 import {put, select, shuffle} from "../../Effects";
 import Module from "@common/modules/Module";
 import {Event} from "@common/events/Event";
-import {playerDrawCardFromHeap, returnDiscardsToStack} from "../../actions/Main";
+import {playerDrawCardFromHeap, returnDiscardsToStack} from "@common/actions/Main";
 import {StateGetters} from "@common/getters/State";
 
 type NameToType<T> = T extends "module"

@@ -2,8 +2,8 @@ import GameState from "../../src/game/GameState";
 import Player from "@common/Player";
 import Spaceship from "@common/Spaceship";
 import {GameSettings} from "@common/GameSettings";
-import ActionsBus from "../../src/game/actions/ActionsBus";
-import {Action} from "../../src/game/actions/Action";
+import ActionsBus from "@common/actions/ActionsBus";
+import {Action} from "@common/actions/Action";
 import {reducers} from "game/reducers/Main";
 import {IRandomizer} from "../../src/game/SagaRunner";
 

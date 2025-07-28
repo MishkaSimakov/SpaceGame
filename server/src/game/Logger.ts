@@ -1,4 +1,4 @@
-import {Action} from "./actions/Action";
+import {Action} from "@common/actions/Action";
 import path from "path";
 import {appendFileSync} from "fs";
 

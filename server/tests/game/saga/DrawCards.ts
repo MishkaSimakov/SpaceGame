@@ -1,5 +1,5 @@
 import {test} from "uvu";
-import ActionsBus from "../../../src/game/actions/ActionsBus";
+import ActionsBus from "@common/actions/ActionsBus";
 import {SagaRunner} from "../../../src/game/SagaRunner";
 import {attachReducers, CountingRandomizer, fakeGameState} from "../Utils";
 import * as assert from "node:assert";

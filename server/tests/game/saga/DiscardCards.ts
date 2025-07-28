@@ -2,9 +2,9 @@ import {test} from "uvu";
 import * as assert from "node:assert";
 import {attachReducers, attachTerminalLogger, CountingRandomizer, fakeGameState} from "../Utils";
 import {SagaRunner} from "../../../src/game/SagaRunner";
-import ActionsBus from "../../../src/game/actions/ActionsBus";
+import ActionsBus from "@common/actions/ActionsBus";
 import {discardCards} from "../../../src/game/sagas/phases/DiscardCards";
-import {discardCardsRequest, discardCardsResponse} from "../../../src/game/actions/Main";
+import {discardCardsRequest, discardCardsResponse} from "@common/actions/Main";
 
 
 test('doesntDiscardWhenNotEnoughCards', async () => {

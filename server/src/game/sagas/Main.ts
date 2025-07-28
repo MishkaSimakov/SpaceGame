@@ -2,7 +2,7 @@ import {put, SagaGenerator} from "../Effects";
 import {beforeTurn} from "./phases/BeforeTurn";
 import {drawCards} from "./phases/DrawCards";
 import {rebuildSpaceship} from "./phases/RebuildSpaceship";
-import {shiftTurnToNextPlayer} from "../actions/Main";
+import {shiftTurnToNextPlayer} from "@common/actions/Main";
 import {collectEnergy} from "./phases/CollectEnergy";
 import {discardCards} from "./phases/DiscardCards";
 

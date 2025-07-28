@@ -8,7 +8,7 @@ import {
     choosePlayerForAttackRequest,
     choosePlayerForAttackResponse,
     disposeCardsFromPlayerHand,
-} from "../../actions/Main";
+} from "@common/actions/Main";
 import {AttackReason} from "@common/Types";
 import {request} from "../components/Request";
 
