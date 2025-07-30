@@ -21,25 +21,6 @@ export default class Player {
 
     lose: boolean = false;
 
-    canDamage(): boolean {
-        let weaponCost = this.spaceship.modules.filter(m => m.strength > 0).map(m => m.energyCost);
-
-        if (weaponCost.length === 0)
-            return false;
-
-        return Math.min(...weaponCost) <= this.energy;
-    }
-
-    canProtect(): boolean {
-        let protectorCost = this.spaceship.modules.filter(m => m.type === ModuleTypes.QuantumProtector || m.type === ModuleTypes.SmallQuantumProtector)
-            .map(m => m.energyCost);
-
-        if (protectorCost.length === 0)
-            return false;
-
-        return Math.min(...protectorCost) <= this.energy;
-    }
-
     static getPropertiesMap(): Options {
         return {
             class: Player,

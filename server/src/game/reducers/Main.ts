@@ -1,5 +1,5 @@
-import Module, {isModule} from "@common/modules/Module";
-import {Event, EventTypes, isEvent} from "@common/events/Event";
+import Module, {isModule, ModuleTypes} from "@common/modules/Module";
+import {Event} from "@common/events/Event";
 import GameState from "../GameState";
 import * as assert from "node:assert";
 import {areCardSetsEqual} from "@common/Utils";
@@ -7,6 +7,8 @@ import {SpaceshipGetters} from "@common/getters/Spaceship";
 import * as Actions from '@common/actions/Main';
 import {StateGetters} from "@common/getters/State";
 import {SpaceshipModifiers} from "@common/modifiers/Spaceship";
+import SmallQuantumProtector from "@common/modules/SmallQuantumProtector";
+import {deactivateProtectorIfActive} from "@common/actions/Main";
 
 type ReducersType = {
     [Key in keyof typeof Actions]?:
@@ -144,34 +146,12 @@ export const reducers: ReducersType = {
         }
     },
 
-    pushCurrentEventToPlayerHand(state: GameState, payload) {
-        const player = StateGetters.playerById(state, payload.player);
-
-        assert.ok(state.currentEvent !== undefined);
-
-        player.hand.push(state.currentEvent);
-        state.currentEvent = undefined;
-    },
-
     pushCardsToStack(state: GameState, {type, cards}) {
         if (type === "module") {
             state.stack.module.push(...(cards as Module[]));
         } else {
             state.stack.event.push(...(cards) as Event[]);
         }
-    },
-
-    disposeCurrentEventCard(state: GameState) {
-        assert.ok(state.currentEvent !== undefined);
-
-        state.discards.event.push(state.currentEvent);
-        state.currentEvent = undefined;
-    },
-
-    setCardAsCurrentEventCard(state: GameState, card) {
-        assert.ok(state.currentEvent === undefined);
-
-        state.currentEvent = card;
     },
 
     pushCardsToHand(state: GameState, payload) {
@@ -195,11 +175,32 @@ export const reducers: ReducersType = {
         player.hand.splice(payload.index, 1);
     },
 
-    deactivateProtector(state: GameState, payload) {
+    deactivateProtectorIfActive(state: GameState, payload) {
         const player = StateGetters.playerById(state, payload.player);
 
-        assert.ok(player.spaceship.activatedProtector !== undefined);
-
         player.spaceship.activatedProtector = undefined;
+    },
+
+    endFight(state: GameState) {
+        assert.ok(state.fight !== undefined);
+
+        state.fight = undefined;
+    },
+
+    activateProtector(state: GameState, payload) {
+        const player = StateGetters.playerById(state, payload.player);
+        const protector = SpaceshipGetters.getModuleByPosition(player.spaceship, payload.position);
+
+        assert.ok(player.spaceship.activatedProtector === undefined);
+        assert.ok(protector)
+        assert.ok(protector.type in [ModuleTypes.SmallQuantumProtector, ModuleTypes.QuantumProtector]);
+
+        player.spaceship.activatedProtector = protector;
+    },
+
+    shiftFightTurnToNextPlayer(state: GameState) {
+        assert.ok(state.fight !== undefined);
+
+        state.fight.isFirstPlayerTurn = !state.fight.isFirstPlayerTurn;
     }
 }

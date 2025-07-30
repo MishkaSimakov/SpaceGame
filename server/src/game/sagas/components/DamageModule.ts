@@ -4,8 +4,8 @@ import Spaceship from "@common/Spaceship";
 import {DamageInfo, SpaceshipGetters} from "@common/getters/Spaceship";
 import {StateGetters} from "@common/getters/State";
 import {
-    changeModuleHealth,
-    deactivateProtector, playerLost,
+    changeModuleHealth, deactivateProtectorIfActive,
+    playerLost,
     pushCardsToDiscard, pushCardsToHand,
     removeSpaceshipModules
 } from "@common/actions/Reducer";
@@ -23,7 +23,7 @@ export function* damageModule(victim: Player, attacker: Player, module: Module, 
     const info = SpaceshipGetters.damageInfo(victim.spaceship, module, damage);
 
     if (info.shouldDeactivateProtector) {
-        yield* put(deactivateProtector(victim));
+        yield* put(deactivateProtectorIfActive(victim));
     }
 
     for (let damaged of info.damaged) {

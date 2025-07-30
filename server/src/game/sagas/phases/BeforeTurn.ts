@@ -1,7 +1,7 @@
 import {isModule} from "@common/modules/Module";
 import {Event, EventTypes} from "@common/events/Event";
 
-import {fight} from "../old/Fight";
+import {fight} from "../components/Fight";
 import {all, put, select, take} from "../../Effects";
 import {
     beginFight,
@@ -21,18 +21,18 @@ export function* beforeTurn() {
         .findIndex((c) => {
             if (isModule(c)) return false;
 
-            return (c as Event).type === EventTypes.SaveCardAndThenAttack;
+            return c.type === EventTypes.SaveCardAndThenAttack;
         });
 
     if (attackLaterCardIndex !== -1) {
         const {victim} = yield* request(
-            choosePlayerForAttackRequest(currentPlayer.id, AttackReason.MainModule),
+            choosePlayerForAttackRequest(currentPlayer.id, AttackReason.AttackLaterEventCard),
             choosePlayerForAttackResponse
         );
 
         if (victim) {
-            yield* put(disposeCardsFromPlayerHand(currentPlayer, [attackLaterCardIndex], "attack later event card used"));
-            yield* put(beginFight(currentPlayer.id, victim, "attack later event card used"));
+            yield* put(disposeCardsFromPlayerHand(currentPlayer, [attackLaterCardIndex], "event card (attack later)"));
+            yield* put(beginFight(currentPlayer.id, victim, "event card (attack later)"));
             yield* fight();
         }
     }

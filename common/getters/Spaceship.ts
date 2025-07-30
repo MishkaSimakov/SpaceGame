@@ -273,13 +273,13 @@ function damageInfoInternal(shipCopy: Spaceship, target: Vector2, damage: number
     }
 
     return {
-        destroyed: destroyed.keys().map(p => {
-            return {position: p, byNuclearReactor: destroyed.get(p)};
-        }).toArray(),
+        destroyed: Array.from(destroyed).map(([p, b]) => {
+            return {position: p, byNuclearReactor: b};
+        }),
 
-        damaged: damaged.keys().map(p => {
-            return {position: p, damage: damaged.get(p)};
-        }).toArray(),
+        damaged: Array.from(damaged).map(([p, d]) => {
+            return {position: p, damage: d};
+        }),
 
         shouldDeactivateProtector
     };

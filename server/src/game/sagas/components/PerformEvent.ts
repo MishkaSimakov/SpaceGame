@@ -28,15 +28,12 @@ import {
     chooseTwoSolarPanelsToDestroyResponse,
     destructSpaceshipModules,
     disposeCardsFromPlayerHand,
-    disposeCurrentEventCard,
     permuteTopThreeEventCardsRequest,
     permuteTopThreeEventCardsResponse,
     playerSkipNextTurn,
-    popCardFromPlayerHand,
+    popCardFromPlayerHand, pushCardsToDiscard,
     pushCardsToHand,
     pushCardsToStack,
-    pushCurrentEventToPlayerHand,
-    setCardAsCurrentEventCard,
     showCardsToPlayersRequest,
     showCardsToPlayersResponse
 } from "@common/actions/Main";
@@ -46,10 +43,9 @@ import {SpaceshipGetters} from "@common/getters/Spaceship";
 import Module, {ModuleTypes} from "@common/modules/Module";
 import {request} from "./Request";
 import Vector2 from "@common/Vector2";
-import {fight} from "../old/Fight";
+import {fight} from "./Fight";
 import {AttackReason} from "@common/Types";
 import {damageModule} from "./DamageModule";
-import * as assert from "node:assert";
 import {popCards, popOneCard} from "./PopCards";
 
 // pop n cards from the stack
@@ -85,15 +81,14 @@ function* takeBuildingCards(state: GameState, count: number) {
 
 let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) => Generator> = {
     [EventTypes.PutTopThreeCardsInAnyOrder]: putTopThreeCardsInAnyOrder,
-    [EventTypes.PutTopThreeCardsInAnyOrderAndTakeTop]: function* (state: GameState) {
+    [EventTypes.PutTopThreeCardsInAnyOrderAndTakeTop]: function* (state: GameState, event: Event) {
         yield* putTopThreeCardsInAnyOrder(state);
 
-        const event = yield* popOneCard("event");
+        const topEvent = yield* popOneCard("event");
 
-        yield* put(disposeCurrentEventCard());
-        yield* put(setCardAsCurrentEventCard(event));
+        yield* put(pushCardsToDiscard("event", [event]));
 
-        yield* performEvent();
+        yield* performEvent(topEvent);
     },
     [EventTypes.TakeOneBuildingCard]: function* (state: GameState) {
         yield* takeBuildingCards(state, 1);
@@ -246,11 +241,11 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
 
         yield* put(changeModuleHealth(currentPlayer, moduleToRepairPosition, diceResult, "event card (toss dice & repair)"));
     },
-    [EventTypes.SaveCardAndThenAttack]: function* (state: GameState) {
-        yield* put(pushCurrentEventToPlayerHand(StateGetters.currentPlayer(state)));
+    [EventTypes.SaveCardAndThenAttack]: function* (state: GameState, event: Event) {
+        yield* put(pushCardsToHand(StateGetters.currentPlayer(state), [event]));
     },
-    [EventTypes.SaveCardAndThenDealDamage]: function* (state: GameState) {
-        yield* put(pushCurrentEventToPlayerHand(StateGetters.currentPlayer(state)));
+    [EventTypes.SaveCardAndThenDealDamage]: function* (state: GameState, event: Event) {
+        yield* put(pushCardsToHand(StateGetters.currentPlayer(state), [event]));
     },
     [EventTypes.ChoosePlayerAndStealHisCard]: function* (state: GameState) {
         const currentPlayer = StateGetters.currentPlayer(state);
@@ -356,13 +351,9 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
             showCardsToPlayersResponse
         );
     }
-}
+};
 
-export function* performEvent() {
+export function* performEvent(event: Event) {
     const state = yield* select();
-    const event = state.currentEvent;
-
-    assert.ok(event !== undefined);
-
     yield* eventsPerformFunctions[event.type](state, event);
 }

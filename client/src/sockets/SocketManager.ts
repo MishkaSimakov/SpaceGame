@@ -11,11 +11,13 @@ import {ListenersContainer} from "./listeners/ListenersContainer";
 import {mainListeners} from "./listeners/MainListeners";
 import {infoListeners} from "./listeners/InfoListeners";
 import {eventCardsListeners} from "./listeners/EventCardsListeners";
+import {fightListeners} from "./listeners/FightListeners";
 
 const listeners: ListenersContainer = {
     ...mainListeners,
     ...infoListeners,
-    ...eventCardsListeners
+    ...eventCardsListeners,
+    ...fightListeners
 };
 
 export default class SocketManager {

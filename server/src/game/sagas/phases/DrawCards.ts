@@ -88,6 +88,6 @@ export function* drawCards() {
             }
         } while (drawAnotherCard);
 
-        yield* performEvent();
+        yield* performEvent(card);
     }
 }

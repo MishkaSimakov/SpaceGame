@@ -14,7 +14,6 @@
     "resolveJsonModule": true,
     "inlineSourceMap": true,
     "baseUrl": "src",
-
     "paths": {
       "@common/*": [
         "../../common/*"
@@ -32,5 +31,5 @@
   "rootDirs": [
     ".",
     "../common"
-  ],
+  ]
 }

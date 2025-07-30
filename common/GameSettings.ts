@@ -18,4 +18,5 @@ export class GameSettings {
     energyToDragAnotherEventCardByMainModule = 4;
     energyToDragAdditionalCardByMainModule = 15;
     maxCardsOnHand = 5;
+    diceResultToRunaway = 4;
 }

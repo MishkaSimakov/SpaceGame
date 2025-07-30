@@ -75,28 +75,10 @@ export const destructSpaceshipModules = (player: Player, positions: Vector2[], d
     };
 }
 
-export const pushCurrentEventToPlayerHand = (player: Player) => {
-    return {
-        type: 'pushCurrentEventToPlayerHand',
-        payload: {player: player.id}
-    };
-}
-
 export const pushCardsToStack = (type: "module" | "event", cards: Module[] | Event[]) => {
     return {
         type: 'pushCardsToStack',
         payload: {type, cards}
-    };
-};
-
-export const disposeCurrentEventCard = () => {
-    return {type: 'disposeCurrentEventCard'};
-};
-
-export const setCardAsCurrentEventCard = (card: Event) => {
-    return {
-        type: 'setCardAsCurrentEventCard',
-        payload: card
     };
 };
 
@@ -122,9 +104,9 @@ export const popCardFromPlayerHand = (player: Player, index: number) => {
     };
 }
 
-export const deactivateProtector = (player: Player) => {
+export const deactivateProtectorIfActive = (player: Player) => {
     return {
-        type: 'deactivateProtector',
+        type: 'deactivateProtectorIfActive',
         payload: {player: player.id}
     };
 }
@@ -140,12 +122,29 @@ export const pushCardsToDiscard = (type: "module" | "event", cards: Module[] | E
     return {
         type: 'pushCardsToDiscard',
         payload: {type, cards}
-    }
+    };
 }
 
 export const playerLost = (player: Player) => {
     return {
         type: 'playerLost',
         payload: {player}
-    }
+    };
+}
+
+export const endFight = () => {
+    return {
+        type: 'endFight'
+    };
+}
+
+export const activateProtector = (player: Player, position: Vector2) => {
+    return {
+        type: 'activateProtector',
+        payload: {player: player.id, position}
+    };
+}
+
+export const shiftFightTurnToNextPlayer = () => {
+    return {type: 'shiftFightTurnToNextPlayer'};
 }

@@ -110,3 +110,59 @@ export const discardCardsResponse = (indexes: number[]) => {
         payload: indexes,
     };
 }
+
+export const chooseProtectorRequest = (player: Player) => {
+    return {
+        type: 'chooseProtectorRequest',
+        payload: {player: player.id}
+    };
+}
+
+export const chooseProtectorResponse = (position: Vector2 | undefined) => {
+    return {
+        type: 'chooseProtectorResponse',
+        payload: position,
+    };
+}
+
+export const chooseWeaponAndTargetRequest = (player: Player, victim: Player) => {
+    return {
+        type: 'chooseWeaponAndTargetRequest',
+        payload: {player: player.id, victim: victim.id}
+    };
+}
+
+export const chooseWeaponAndTargetResponse = (targetPosition: Vector2, weaponPosition: Vector2) => {
+    return {
+        type: 'chooseWeaponAndTargetResponse',
+        payload: {targetPosition, weaponPosition},
+    };
+}
+
+export const useWeaponSecondTimeRequest = (player: Player) => {
+    return {
+        type: 'useWeaponSecondTimeRequest',
+        payload: {player: player.id}
+    };
+}
+
+export const useWeaponSecondTimeResponse = (use: boolean) => {
+    return {
+        type: 'useWeaponSecondTimeResponse',
+        payload: use,
+    };
+}
+
+export const chooseTargetRequest = (player: Player, victim: Player) => {
+    return {
+        type: 'chooseTargetRequest',
+        payload: {player: player.id, victim: victim.id}
+    };
+}
+
+export const chooseTargetResponse = (position: Vector2) => {
+    return {
+        type: 'chooseTargetResponse',
+        payload: position,
+    };
+}

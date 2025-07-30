@@ -8,11 +8,16 @@ import {COLORS} from "../../graphics/constants";
 import SocketManager from "../SocketManager";
 import Color from "../../graphics/Color";
 import {ListenersContainer} from "./ListenersContainer";
-import {chooseCardTypeResponse, rebuildSpaceshipResponse} from "@common/actions/Main";
+import {
+    chooseCardTypeResponse, choosePlayerForAttackResponse, discardCardsResponse,
+    drawAdditionalModuleCardResponse,
+    drawAnotherEventCardResponse,
+    rebuildSpaceshipResponse
+} from "@common/actions/Main";
 
 
 export const mainListeners: ListenersContainer = {
-    async rebuildSpaceshipRequest(payload, {game}) {
+    async rebuildSpaceshipRequest({}, {game}) {
         game.rebuildSpaceshipManager.setIsRebuildSpaceshipAllowed(true);
 
         await game.controlsScene.rebuildSpaceship();
@@ -21,7 +26,7 @@ export const mainListeners: ListenersContainer = {
         return rebuildSpaceshipResponse(game.currentPlayer.spaceship, game.currentPlayer.hand);
     },
 
-    async chooseCardTypeRequest(payload, {game}) {
+    async chooseCardTypeRequest({}, {game}) {
         game.controlsScene.topBarDrawer.setStatus("выберите тип карты")
 
         const chosenType = await new Promise<'module' | 'event'>((resolve) => {
@@ -49,5 +54,29 @@ export const mainListeners: ListenersContainer = {
         });
 
         return chooseCardTypeResponse(chosenType);
+    },
+
+    async drawAnotherEventCardRequest({}, {game}) {
+        game.controlsScene.topBarDrawer.setStatus("взять другую карточку действия?");
+        const response = await game.controlsScene.askYesOrNo();
+        return drawAnotherEventCardResponse(response);
+    },
+
+    async drawAdditionalModuleCardRequest({}, {game}) {
+        game.controlsScene.topBarDrawer.setStatus("взять дополнительную карточку строительства?");
+        const response = await game.controlsScene.askYesOrNo();
+        return drawAdditionalModuleCardResponse(response);
+    },
+
+    async choosePlayerForAttackRequest({reason}, {game}) {
+        const chosen = await game.controlsScene.choosePlayerForAttack(game.otherPlayers, reason);
+        return choosePlayerForAttackResponse(chosen);
+    },
+
+    async discardCardsRequest({}, {game}) {
+        const requiredDiscardCount = game.getCurrentPlayer().hand.length - game.settings.maxCardsOnHand;
+
+        const indexes = await game.controlsScene.discardCards(requiredDiscardCount);
+        return discardCardsResponse(indexes);
     }
-};
+}

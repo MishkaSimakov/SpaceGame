@@ -186,4 +186,21 @@ export const chooseModuleToDamageByEventCardResponse = (position: Vector2) => {
     };
 }
 
+export enum RunawayType {
+    DICE,
+    MAIN_MODULE
+}
 
+export const tryToRunawayRequest = (player: Player, type: RunawayType) => {
+    return {
+        type: 'tryToRunawayRequest',
+        payload: {player: player.id, type}
+    };
+}
+
+export const tryToRunawayResponse = (willRunaway: boolean) => {
+    return {
+        type: 'tryToRunawayResponse',
+        payload: willRunaway
+    };
+}

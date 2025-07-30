@@ -80,10 +80,6 @@ export default class MainGameEventListener extends BaseEventListener {
             }]);
         });
 
-        this.socket.on('choosePlayerForAttack', (attackReason: AttackReason, callback: (playerId: number) => {}) => {
-            this.controls().choosePlayerForAttack(this.game.otherPlayers, attackReason).then(callback);
-        });
-
         this.socket.on('chooseCardType', (callback: (cardType: string) => void) => {
             this.controls().topBarDrawer.setStatus("выберите тип карты")
 
@@ -114,18 +110,6 @@ export default class MainGameEventListener extends BaseEventListener {
             let requiredDiscardCount = this.game.getCurrentPlayer().hand.length - 5;
 
             this.game.controlsScene.discardCards(requiredDiscardCount).then(callback);
-        });
-
-        this.socket.on('drawAnotherEventCard', (callback: (drawAnotherEventCard: boolean) => void) => {
-            this.controls().topBarDrawer.setStatus("взять другую карточку действия?");
-
-            this.controls().askYesOrNo().then(callback);
-        });
-
-        this.socket.on('drawAdditionalModuleCard', (callback: (drawAdditionalModuleCard: boolean) => void) => {
-            this.controls().topBarDrawer.setStatus("взять дополнительную карточку строительства?");
-
-            this.controls().askYesOrNo().then(callback);
         });
 
         this.socket.on('askForUseModuleSecondTime', async (module: ModuleTypes, callback: (useSecondTime: boolean) => void) => {
