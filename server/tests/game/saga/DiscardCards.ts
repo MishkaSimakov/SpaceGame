@@ -1,6 +1,6 @@
 import {test} from "uvu";
 import * as assert from "node:assert";
-import {attachReducers, attachTerminalLogger, CountingRandomizer, fakeGameState} from "../Utils";
+import {attachReducers, CountingRandomizer, fakeGameState} from "../Utils";
 import {SagaRunner} from "../../../src/game/SagaRunner";
 import ActionsBus from "@common/actions/ActionsBus";
 import {discardCards} from "../../../src/game/sagas/phases/DiscardCards";
@@ -50,7 +50,6 @@ test('discardCardsWhenThereAreTooMany', async () => {
     const randomizer = new CountingRandomizer();
     const bus = new ActionsBus();
 
-    attachTerminalLogger(bus);
     attachReducers(bus, state);
     bus.on(discardCardsRequest, () => {
         bus.emit(discardCardsResponse([1, 2, 3, 4]));

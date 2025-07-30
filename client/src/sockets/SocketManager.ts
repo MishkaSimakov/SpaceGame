@@ -1,19 +1,27 @@
 import io, {Socket} from "socket.io-client";
-import EventCardsEventListener from "./listeners/EventCardsEventListener";
-import FightEventListener from "./listeners/FightEventListener";
-import InfoEventListener from "./listeners/InfoEventListener";
+
+import {Event} from "@common/events/Event";
+import {HAS_PLAYERS_DATA} from "@common/Sockets";
+import {GameForPlayerDTO} from "@common/GameForPlayerDTO";
+import {Action} from "@common/actions/Action";
+
 import Game from "../Game";
-import MainGameEventListener from "./listeners/MainGameEventListener";
-import {Event} from "../../../common/events/Event";
-import {HAS_PLAYERS_DATA} from "../../../common/Sockets";
-import {GameForPlayerDTO} from "../../../common/GameForPlayerDTO";
-import {Options, plainToClass} from "../../../common/PlainToClass";
+import {ListenersContainer} from "./listeners/ListenersContainer";
+
+import {mainListeners} from "./listeners/MainListeners";
+import {infoListeners} from "./listeners/InfoListeners";
+import {eventCardsListeners} from "./listeners/EventCardsListeners";
+
+const listeners: ListenersContainer = {
+    ...mainListeners,
+    ...infoListeners,
+    ...eventCardsListeners
+};
 
 export default class SocketManager {
     game: Game;
 
     socket: Socket;
-    listeners: any[] = [MainGameEventListener, EventCardsEventListener, FightEventListener, InfoEventListener];
 
     constructor(game: Game) {
         this.game = game;
@@ -21,9 +29,20 @@ export default class SocketManager {
         this.initSocket(window.location.origin);
 
         // register socket listeners
-        for (let listener of this.listeners) {
-            new listener(this, this.game);
+        for (const actionType of Object.keys(listeners)) {
+            this.socket.on(actionType, (payload, callback) => {
+                listeners[actionType](payload, {
+                    game: this.game,
+                    socket: this.socket
+                }).then((action: Action) => {
+                    callback(action);
+                });
+            });
         }
+
+        this.socket.onAny((...args) => {
+            console.log("⚡", ...args);
+        });
     }
 
     on(ev: string, listener: (...args) => any) {

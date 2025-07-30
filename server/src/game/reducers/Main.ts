@@ -71,17 +71,12 @@ export const reducers: ReducersType = {
             isFightEnded: false
         };
     },
-    playerDrawCardFromHeap(state: GameState, payload) {
-        const player = StateGetters.playerById(state, payload.player);
+    popCardFromHeap(state: GameState, {type}) {
+        const stack = state.stack[type];
 
-        const stack = isEvent(payload.card) ? state.stack.event : state.stack.module;
-        const card = stack.pop();
-
-        // precondition
         assert.ok(stack.length > 0);
-        // TODO: card === payload.card (add ids later and check this)
 
-        player.hand.push(card);
+        stack.pop();
     },
 
     shiftTurnToNextPlayer(state: GameState) {
@@ -179,7 +174,7 @@ export const reducers: ReducersType = {
         state.currentEvent = card;
     },
 
-    pushCardsToPlayerHand(state: GameState, payload) {
+    pushCardsToHand(state: GameState, payload) {
         const player = StateGetters.playerById(state, payload.player);
 
         player.hand.push(...payload.cards);
@@ -198,5 +193,13 @@ export const reducers: ReducersType = {
         assert.ok(player.hand.length > payload.index);
 
         player.hand.splice(payload.index, 1);
+    },
+
+    deactivateProtector(state: GameState, payload) {
+        const player = StateGetters.playerById(state, payload.player);
+
+        assert.ok(player.spaceship.activatedProtector !== undefined);
+
+        player.spaceship.activatedProtector = undefined;
     }
 }

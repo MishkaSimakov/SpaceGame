@@ -12,8 +12,8 @@ import {
     chooseCardToStealResponse,
     chooseModulesToRepairByDiscardedCardsRequest,
     chooseModulesToRepairByDiscardedCardsResponse,
-    chooseModuleToDamageRequest,
-    chooseModuleToDamageResponse,
+    chooseModuleToDamageByDiceRequest,
+    chooseModuleToDamageByDiceResponse,
     chooseModuleToDestroyRequest,
     chooseModuleToDestroyResponse,
     chooseModuleToMoveDamageRequest,
@@ -33,7 +33,7 @@ import {
     permuteTopThreeEventCardsResponse,
     playerSkipNextTurn,
     popCardFromPlayerHand,
-    pushCardsToPlayerHand,
+    pushCardsToHand,
     pushCardsToStack,
     pushCurrentEventToPlayerHand,
     setCardAsCurrentEventCard,
@@ -75,7 +75,7 @@ function* takeBuildingCards(state: GameState, count: number) {
     const player = StateGetters.currentPlayer(state);
     const cards = yield* popCards("module", count);
 
-    yield* put(pushCardsToPlayerHand(player, cards));
+    yield* put(pushCardsToHand(player, cards));
 
     yield* request(
         showCardsToPlayersRequest(cards, player, false),
@@ -207,11 +207,11 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
     },
     [EventTypes.TossDiceAndDealDamage]: function* (state: GameState) {
         const currentPlayer = StateGetters.currentPlayer(state);
-        let damageToDeal = (yield* dice()) <= 4 ? 1 : 2;
+        let damage = (yield* dice()) <= 4 ? 1 : 2;
 
         const {victimId, victimModulePosition} = yield* request(
-            chooseModuleToDamageRequest(currentPlayer),
-            chooseModuleToDamageResponse
+            chooseModuleToDamageByDiceRequest(currentPlayer, damage),
+            chooseModuleToDamageByDiceResponse
         );
 
         if (victimId === undefined) return;
@@ -219,7 +219,7 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
         let victim = StateGetters.playerById(state, victimId);
         let victimModule = SpaceshipGetters.getModuleByPosition(victim.spaceship, victimModulePosition);
 
-        yield* damageModule(victim, currentPlayer, victimModule, true);
+        yield* damageModule(victim, currentPlayer, victimModule, damage, true);
     },
     [EventTypes.TossDiceAndGetEnergy]: function* (state: GameState) {
         const energyCount = (yield* dice()) <= 4 ? 1 : 2;
@@ -272,7 +272,7 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
 
         const chosenCard = chosenPlayer.hand[chosenCardIndex];
         yield* put(popCardFromPlayerHand(chosenPlayer, chosenCardIndex));
-        yield* put(pushCardsToPlayerHand(currentPlayer, [chosenCard]));
+        yield* put(pushCardsToHand(currentPlayer, [chosenCard]));
     },
     [EventTypes.DiscardCardAndRepairSpaceship]: function* (state: GameState) {
         const currentPlayer = StateGetters.currentPlayer(state);
@@ -349,7 +349,7 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
         yield* put(disposeCardsFromPlayerHand(currentPlayer, cardsToDiscardIndexes, "event card (discard & take modules)"));
 
         const cards = yield* popCards("module", cardsToDiscardIndexes.length);
-        yield* put(pushCardsToPlayerHand(currentPlayer, cards));
+        yield* put(pushCardsToHand(currentPlayer, cards));
 
         yield* request(
             showCardsToPlayersRequest(cards, currentPlayer, false),

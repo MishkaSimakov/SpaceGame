@@ -22,10 +22,6 @@ test('drawOneCard', async () => {
 
         assert.deepEqual(actualCard, expectedCard);
 
-        const hand = state.players[0].hand;
-        assert.equal(hand.length, 1);
-        assert.deepEqual(hand[0], expectedCard);
-
         assert.equal(state.stack[type].length, modulesCount - 1);
 
         assert.equal(randomizer.diceCalls, 0);
@@ -53,10 +49,6 @@ test('drawOneCardWithDiscards', async () => {
         const actualCard = await runner.run();
 
         assert.deepEqual(actualCard, expectedCard);
-
-        const hand = state.players[0].hand;
-        assert.equal(hand.length, 1);
-        assert.deepEqual(hand[0], expectedCard);
 
         assert.equal(state.stack[type].length, modulesCount - 1);
 

@@ -1,23 +1,26 @@
-import Player, {PlayerId} from "../../../common/Player";
-import GameState from "./GameState";
-import Spaceship from "../../../common/Spaceship";
 import {Server, Socket} from "socket.io";
+import Rand from 'rand-seed';
+
+import Player, {PlayerId} from "@common/Player";
+import Spaceship from "@common/Spaceship";
+import ActionsBus from "@common/actions/ActionsBus";
 import {HAS_PLAYERS_DATA} from "@common/Sockets";
+import {GameSettings} from "@common/GameSettings";
+import {Action} from "@common/actions/Action";
+import * as Actions from "@common/actions/Main";
+
+import GameState from "./GameState";
 import {TimeManager, TimeRecordType} from "./TimeManager";
 import MessageManager from "./MessageManager";
 import {User} from "../entity/user";
 import {getDTO} from "./mappers/GameToGameForPlayerMapper";
 import SocketsManager from "./io/SocketsManager";
-import {GameSettings} from "@common/GameSettings";
-import ActionsBus from "@common/actions/ActionsBus";
 import {gameSaga} from "./sagas/Main";
 import {Logger} from "./Logger";
-import {Action} from "@common/actions/Action";
-import {initGameState, reducerUpdatedState} from "@common/actions/Main";
 import {reducers} from "./reducers/Main";
 import {IRandomizer, SagaRunner} from "./SagaRunner";
 import {IOListeners} from "./io/Listeners";
-import Rand, {PRNG} from 'rand-seed';
+import * as assert from "node:assert";
 
 export enum GameStateLegacy {
     WAIT_FOR_PLAYERS,
@@ -104,12 +107,27 @@ export default class Game {
 
     registerIOListeners() {
         this.bus.on('*', (action: Action) => {
-            if (action.type in IOListeners) {
-                IOListeners[action.type](action.payload, {
-                    bus: this.bus,
-                    sockets: this.sockets
-                });
+            // actions that match `*Request` are broadcasted through sockets
+            // they must contain payload.player field, the field specify to which player
+            // the action is broadcasted.
+
+            if (action.type.endsWith("Request")) {
+                const responseType = action.type.replace("Request", "Response");
+
+                assert.ok("player" in action.payload);
+                assert.ok(responseType in Actions);
+
+                this.sockets.emitAndWait(action.payload.player, action.type, true, action.payload)
+                    .then((payload: Action) => {
+                        this.bus.emit(payload);
+                    });
             }
+            // if (action.type in IOListeners) {
+            //     IOListeners[action.type](action.payload, {
+            //         bus: this.bus,
+            //         sockets: this.sockets
+            //     });
+            // }
         });
     }
 
@@ -123,7 +141,7 @@ export default class Game {
                 Object.assign(this.state, copy);
 
                 // for the sake of logging
-                this.bus.emit(reducerUpdatedState(this.state));
+                this.bus.emit(Actions.reducerUpdatedState(this.state));
 
                 // notify players about state update
                 this.syncPlayersData();
@@ -190,7 +208,7 @@ export default class Game {
 
         this.randomizer.shuffle(state.players);
 
-        this.bus.emit(initGameState(state));
+        this.bus.emit(Actions.initGameState(state));
     }
 
     playerConnected(player: Player, socketId: string) {

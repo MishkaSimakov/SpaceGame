@@ -34,7 +34,8 @@ test('destructOneSpaceshipModule', async () => {
     reducers.destructSpaceshipModules(state, {
         player: player.id,
         positions: [new Vector2(-2, 0)],
-        cardsDestiny: "hand"
+        destructedCardsDestiny: "hand",
+        detachedCardsDestiny: "hand"
     });
 
     // check state
@@ -55,7 +56,8 @@ test('destructOneSpaceshipModuleWithChainDestruction', async () => {
     reducers.destructSpaceshipModules(state, {
         player: player.id,
         positions: [new Vector2(-1, 0)],
-        cardsDestiny: "discard"
+        destructedCardsDestiny: "discard",
+        detachedCardsDestiny: "discard"
     });
 
     // check state

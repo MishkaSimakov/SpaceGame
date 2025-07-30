@@ -1,12 +1,13 @@
-import Module, {isModule} from "../../../../common/modules/Module";
-import HandDrawer from "../HandDrawer";
-import Vector2 from "../../../../common/Vector2";
-import {Event} from "../../../../common/events/Event";
+import Module, {isModule} from "@common/modules/Module";
+import Vector2 from "@common/Vector2";
+import {Event} from "@common/events/Event";
+import {AttackReason, MoveDamageReason} from "@common/Types";
+import {OtherPlayer} from "@common/GameForPlayerDTO";
+
 import Game from "../../Game";
 import Modal from "../Modal";
+import HandDrawer from "../HandDrawer";
 import {COLORS} from "../constants";
-import {AttackReason, MoveDamageReason} from "../../../../common/Types";
-import {OtherPlayer} from "../../../../common/GameForPlayerDTO";
 import TopBarDrawer from "../topbar/TopBarDrawer";
 import Scene from "../engine/Scene";
 import {Text} from "../engine/shapes/Text";

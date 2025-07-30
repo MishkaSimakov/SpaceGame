@@ -1,52 +1,70 @@
-// target: Player, attacker: Player, destroyedModules: {
-//     module: Module,
-//         byReactor: boolean
-// }[], isEvent: boolean
-
 import Player from "@common/Player";
-import Module from "@common/modules/Module";
+import Module, {ModuleTypes} from "@common/modules/Module";
+import Spaceship from "@common/Spaceship";
+import {DamageInfo, SpaceshipGetters} from "@common/getters/Spaceship";
+import {StateGetters} from "@common/getters/State";
+import {
+    changeModuleHealth,
+    deactivateProtector, playerLost,
+    pushCardsToDiscard, pushCardsToHand,
+    removeSpaceshipModules
+} from "@common/actions/Reducer";
+import Vector2 from "@common/Vector2";
 
-export function* damageModule(victim: Player, attacker: Player, module: Module, isEvent: boolean) {
-    for (let destroyedInfo of destroyedModules) {
-        let module = destroyedInfo.module
+import {put, select} from "../../Effects";
 
-        console.log(`   Module at x: ${module.x}, y: ${module.y} has been destroyed`);
+function isDarkMatterGeneratorDestroyed(info: DamageInfo, spaceship: Spaceship): boolean {
+    return info.destroyed.some(
+        m => SpaceshipGetters.getModuleByPosition(spaceship, m.position).type === ModuleTypes.DarkMatterGenerator
+    );
+}
 
-        module.isActivated = false;
+export function* damageModule(victim: Player, attacker: Player, module: Module, damage: number, isEvent: boolean) {
+    const info = SpaceshipGetters.damageInfo(victim.spaceship, module, damage);
 
-        target.spaceship.removeModule(module);
+    if (info.shouldDeactivateProtector) {
+        yield* put(deactivateProtector(victim));
+    }
 
-        if (module.type === ModuleTypes.MainModule) {
-            return;
-        }
+    for (let damaged of info.damaged) {
+        yield* put(changeModuleHealth(victim, damaged.position, damaged.damage, "damage module"));
+    }
 
-        module.health = module.totalHealth;
+    for (let destroyed of info.destroyed) {
+        const destroyedModule = SpaceshipGetters.getModuleByPosition(victim.spaceship, destroyed.position);
 
-        if (isEvent || destroyedInfo.byReactor) {
-            this.gameData.discardCards([module]);
+        yield* put(removeSpaceshipModules(victim, [destroyed.position]));
+
+        if (isEvent || destroyed.byNuclearReactor) {
+            yield* put(pushCardsToDiscard("module", [destroyedModule]));
         } else {
-            attacker.hand.push(module);
+            yield* put(pushCardsToHand(attacker, [destroyedModule]));
         }
     }
 
-    if (destroyedModules.length !== 0) {
-        let unconnectedModules = target.spaceship.getUnconnectedModules();
+    // update victim state
+    victim = StateGetters.playerById(yield* select(), victim.id);
 
-        target.spaceship.removeModule(unconnectedModules);
-        target.hand.push(...unconnectedModules);
+    if (info.destroyed.length !== 0) {
+        let unconnectedModules = SpaceshipGetters.getUnconnectedModules(victim.spaceship);
+
+        yield* put(removeSpaceshipModules(victim, unconnectedModules.map(m => new Vector2(m.x, m.y))));
+        yield* put(pushCardsToHand(victim, unconnectedModules))
     }
 
-    // dark matter generator destroyed
-    if (destroyedModules.filter((d) => d.module.type === ModuleTypes.DarkMatterGenerator).length) {
-        let modulesExceptMain = target.spaceship.modules.filter(m => m.type !== ModuleTypes.MainModule);
+    if (isDarkMatterGeneratorDestroyed(info, victim.spaceship)) {
+        let modulesExceptMain = victim.spaceship.modules.filter(m => m.type !== ModuleTypes.MainModule);
 
-        target.spaceship.removeModule(modulesExceptMain);
-        target.hand.push(...modulesExceptMain);
+        yield* put(removeSpaceshipModules(victim, modulesExceptMain.map(m => new Vector2(m.x, m.y))));
+        yield* put(pushCardsToHand(victim, modulesExceptMain));
     }
 
-    target.energy = Math.min(target.energy, target.spaceship.getTotalCapacity());
+    // update victim state
+    victim = StateGetters.playerById(yield* select(), victim.id);
 
-    if (!target.spaceship.getMainModule()) {
-        target.setLose();
+    // target.energy = Math.min(victim.energy, victim.spaceship.getTotalCapacity());
+
+    if (!SpaceshipGetters.getMainModule(victim.spaceship)) {
+        yield* put(playerLost(victim));
     }
 }

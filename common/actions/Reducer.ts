@@ -35,10 +35,10 @@ export const beginFight = (attacker: PlayerId, victim: PlayerId, reason: string)
     }
 }
 
-export const playerDrawCardFromHeap = (player: PlayerId, card: Module | Event) => {
+export const popCardFromHeap = (type: "module" | "event") => {
     return {
-        type: 'playerDrawCardFromHeap',
-        payload: {player, card}
+        type: 'popCardFromHeap',
+        payload: {type}
     };
 }
 
@@ -100,9 +100,9 @@ export const setCardAsCurrentEventCard = (card: Event) => {
     };
 };
 
-export const pushCardsToPlayerHand = (player: Player, cards: (Module | Event)[]) => {
+export const pushCardsToHand = (player: Player, cards: (Module | Event)[]) => {
     return {
-        type: 'pushCardsToPlayerHand',
+        type: 'pushCardsToHand',
         payload: {player: player.id, cards}
     };
 }
@@ -120,4 +120,32 @@ export const popCardFromPlayerHand = (player: Player, index: number) => {
         type: 'popCardFromPlayerHand',
         payload: {player: player.id, index},
     };
+}
+
+export const deactivateProtector = (player: Player) => {
+    return {
+        type: 'deactivateProtector',
+        payload: {player: player.id}
+    };
+}
+
+export const removeSpaceshipModules = (player: Player, positions: Vector2[]) => {
+    return {
+        type: 'removeSpaceshipModules',
+        payload: {player: player.id, positions}
+    };
+}
+
+export const pushCardsToDiscard = (type: "module" | "event", cards: Module[] | Event[]) => {
+    return {
+        type: 'pushCardsToDiscard',
+        payload: {type, cards}
+    }
+}
+
+export const playerLost = (player: Player) => {
+    return {
+        type: 'playerLost',
+        payload: {player}
+    }
 }

@@ -2,7 +2,6 @@ import Spaceship from "./Spaceship";
 import Module, {isModule, ModuleTypes} from "./modules/Module";
 import {Event} from "./events/Event";
 import {Options} from "./PlainToClass";
-import {OtherPlayer} from "./GameForPlayerDTO";
 
 export type PlayerId = number;
 

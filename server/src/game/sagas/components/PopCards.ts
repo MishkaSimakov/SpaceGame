@@ -1,7 +1,7 @@
 import {put, select, shuffle} from "../../Effects";
 import Module from "@common/modules/Module";
 import {Event} from "@common/events/Event";
-import {playerDrawCardFromHeap, returnDiscardsToStack} from "@common/actions/Main";
+import {popCardFromHeap, returnDiscardsToStack} from "@common/actions/Main";
 import {StateGetters} from "@common/getters/State";
 
 type NameToType<T> = T extends "module"
@@ -27,7 +27,7 @@ export function* popOneCard<T extends "module" | "event">(type: T): Generator<an
     }
 
     const topCard = state.stack[type].pop() as NameToType<T>;
-    yield* put(playerDrawCardFromHeap(StateGetters.currentPlayer(state).id, topCard));
+    yield* put(popCardFromHeap(type));
 
     return topCard;
 }

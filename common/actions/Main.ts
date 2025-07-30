@@ -7,6 +7,7 @@ import GameState from "../../server/src/game/GameState";
 import Vector2 from "../Vector2";
 
 export * from "./Reducer";
+export * from "./EventCards";
 
 export const choosePlayerForAttackRequest = (player: PlayerId, reason: AttackReason) => {
     return {
@@ -61,10 +62,10 @@ export const showCardsToPlayersResponse = () => {
     return {type: 'showCardsToPlayersResponse'};
 }
 
-export const drawAdditionalModuleCardRequest = (player: PlayerId) => {
+export const drawAdditionalModuleCardRequest = (player: Player) => {
     return {
         type: 'drawAdditionalModuleCardRequest',
-        payload: {player}
+        payload: {player: player.id}
     };
 }
 
@@ -107,160 +108,5 @@ export const discardCardsResponse = (indexes: number[]) => {
     return {
         type: 'discardCardsResponse',
         payload: indexes,
-    };
-}
-
-export const permuteTopThreeEventCardsRequest = (player: Player, cards: Event[]) => {
-    return {
-        type: 'permuteTopThreeEventCardsRequest',
-        payload: {player: player.id, cards}
-    };
-}
-
-export const permuteTopThreeEventCardsResponse = (order: number[]) => {
-    return {
-        type: 'permuteTopThreeEventCardsResponse',
-        payload: order,
-    };
-}
-
-
-export const chooseModuleToDestroyRequest = (player: Player) => {
-    return {
-        type: 'chooseModuleToDestroyRequest',
-        payload: {player: player.id}
-    };
-}
-
-export const chooseModuleToDestroyResponse = (position: Vector2) => {
-    return {
-        type: 'chooseModuleToDestroyResponse',
-        payload: position,
-    };
-}
-
-export const chooseCardsForRepairSpaceshipRequest = (player: Player) => {
-    return {
-        type: 'chooseCardsForRepairSpaceshipRequest',
-        payload: {player: player.id}
-    };
-}
-
-export const chooseCardsForRepairSpaceshipResponse = (indexes: number[]) => {
-    return {
-        type: 'chooseCardsForRepairSpaceshipResponse',
-        payload: indexes,
-    };
-}
-
-export const chooseModulesToRepairByDiscardedCardsRequest = (player: Player, count: number) => {
-    return {
-        type: 'chooseModulesToRepairByDiscardedCardsRequest',
-        payload: {player: player.id, count}
-    };
-}
-
-export const chooseModulesToRepairByDiscardedCardsResponse = (positions: Vector2[]) => {
-    return {
-        type: 'chooseModulesToRepairByDiscardedCardsResponse',
-        payload: positions,
-    };
-}
-
-export const chooseTwoSolarPanelsToDestroyRequest = (player: Player) => {
-    return {
-        type: 'chooseTwoSolarPanelsToDestroyRequest',
-        payload: {player: player.id}
-    };
-}
-
-export const chooseTwoSolarPanelsToDestroyResponse = (positions: Vector2[]) => {
-    return {
-        type: 'chooseTwoSolarPanelsToDestroyResponse',
-        payload: positions,
-    };
-}
-
-export const chooseModuleToRepairByDiceRequest = (player: Player, amount: number) => {
-    return {
-        type: 'chooseModuleToRepairByDiceRequest',
-        payload: {player: player.id, amount}
-    };
-}
-
-export const chooseModuleToRepairByDiceResponse = (position: Vector2) => {
-    return {
-        type: 'chooseModuleToRepairByDiceResponse',
-        payload: position,
-    };
-}
-
-export const chooseCardsToDiscardAndTakeAnotherRequest = (player: Player) => {
-    return {
-        type: 'chooseCardsToDiscardAndTakeAnotherRequest',
-        payload: {player: player.id}
-    };
-}
-
-export const chooseCardsToDiscardAndTakeAnotherResponse = (indexes: number[]) => {
-    return {
-        type: 'chooseCardsToDiscardAndTakeAnotherResponse',
-        payload: indexes,
-    };
-}
-
-export const chooseModuleToMoveDamageRequest = (player: Player) => {
-    return {
-        type: 'chooseModuleToMoveDamageRequest',
-        payload: {player: player.id}
-    };
-}
-
-export const chooseModuleToMoveDamageResponse = (from: Vector2, to: Vector2) => {
-    return {
-        type: 'chooseModuleToMoveDamageResponse',
-        payload: {from, to},
-    };
-}
-
-export const chooseModuleToDamageRequest = (player: Player) => {
-    return {
-        type: 'chooseModuleToDamageRequest',
-        payload: {player: player.id}
-    };
-}
-
-export const chooseModuleToDamageResponse = (victimId: PlayerId, victimModulePosition: Vector2) => {
-    return {
-        type: 'chooseModuleToDamageResponse',
-        payload: {victimId, victimModulePosition},
-    };
-}
-
-export const choosePlayerToStealCardRequest = (player: Player, options: PlayerId[]) => {
-    return {
-        type: 'choosePlayerToStealCardRequest',
-        payload: {player: player.id, options}
-    };
-}
-
-export const choosePlayerToStealCardResponse = (target: PlayerId) => {
-    return {
-        type: 'choosePlayerToStealCardResponse',
-        payload: target,
-    };
-}
-
-export const chooseCardToStealRequest = (player: Player, cards: (Module | Event)[]) => {
-    return {
-        type: 'chooseCardToStealRequest',
-        payload: {player: player.id, cards}
-    };
-}
-
-export const chooseCardToStealResponse = (chosenCardIndex: number) => {
-    return {
-        type: 'chooseCardToStealResponse',
-        payload: chosenCardIndex,
     };
 }

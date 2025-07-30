@@ -1,0 +1,15 @@
+import Game from "../../Game";
+import SocketManager from "../SocketManager";
+import * as Actions from "@common/actions/Main";
+
+type ReplaceRequestWithResponse<T extends string> =
+    T extends `${infer Prefix}Request` ? `${Prefix}Response` : T;
+
+type Services = { sockets: SocketManager, game: Game };
+
+export type ListenersContainer = {
+    [Key in keyof typeof Actions]?:
+    typeof Actions[Key] extends (...args: any[]) => { type: string, payload?: infer P }
+        ? (payload: P, services: Services) => Promise<ReturnType<typeof Actions[ReplaceRequestWithResponse<Key>]>>
+        : never
+};

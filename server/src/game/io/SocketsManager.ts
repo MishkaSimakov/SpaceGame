@@ -6,10 +6,12 @@ export type SocketPlayerInfo = {
     socketId: string;
 };
 
+type AnyListener = (player: PlayerId, payload: any) => void;
+
 export default class SocketsManager {
     io: Server;
 
-    currentEmitPlayerId: number;
+    currentEmitPlayerId: PlayerId;
     currentEmitFunction: () => void;
 
     players: Record<PlayerId, SocketPlayerInfo> = {};
@@ -51,6 +53,25 @@ export default class SocketsManager {
 
         this.players[playerId].online = false;
         this.players[playerId].socketId = undefined;
+    }
+
+    emit(player: PlayerId, event: string, payload: any) {
+        // generate function that must be called when player connected
+        const emitFunction = () => {
+            const socket = this.getSocket(player);
+
+            this.currentEmitFunction = undefined;
+            this.currentEmitPlayerId = undefined;
+
+            socket.emit(event, payload);
+        };
+
+        this.currentEmitFunction = emitFunction;
+        this.currentEmitPlayerId = player;
+
+        if (this.isPlayerConnected(player)) {
+            emitFunction();
+        }
     }
 
     async emitAndWait(playerId: PlayerId, event: string, withAcknowledgment: boolean, ...args) {

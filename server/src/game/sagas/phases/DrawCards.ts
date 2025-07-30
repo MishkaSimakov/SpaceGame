@@ -5,7 +5,7 @@ import {
     chooseCardTypeResponse,
     drawAdditionalModuleCardRequest,
     drawAdditionalModuleCardResponse,
-    drawAnotherEventCardRequest, drawAnotherEventCardResponse,
+    drawAnotherEventCardRequest, drawAnotherEventCardResponse, pushCardsToHand,
     showCardsToPlayersRequest,
     showCardsToPlayersResponse
 } from "@common/actions/Main";
@@ -15,6 +15,9 @@ import {SpaceshipGetters} from "@common/getters/Spaceship";
 import {MainModuleType} from "@common/modules/MainModule";
 import {request} from "../components/Request";
 import {popOneCard} from "../components/PopCards";
+import {showCards} from "../components/ShowCard";
+import {Event} from "@common/events/Event";
+import {performEvent} from "../components/PerformEvent";
 
 export function canDrawAnotherEventCard(state: GameState) {
     const player = StateGetters.currentPlayer(state);
@@ -41,15 +44,13 @@ export function* drawCards() {
 
         do {
             const card = yield* popOneCard("module");
+            yield* put(pushCardsToHand(currentPlayer, [card]));
 
-            yield* request(
-                showCardsToPlayersRequest([card], currentPlayer, true),
-                showCardsToPlayersResponse
-            );
+            yield* showCards(currentPlayer, [card], true);
 
             if (canDrawAdditionalModuleCard(state)) {
                 drawAdditionalCard = yield* request(
-                    drawAdditionalModuleCardRequest(currentPlayer.id),
+                    drawAdditionalModuleCardRequest(currentPlayer),
                     drawAdditionalModuleCardResponse
                 );
 
@@ -64,14 +65,12 @@ export function* drawCards() {
         } while (drawAdditionalCard);
     } else {
         let drawAnotherCard = false;
+        let card: Event;
 
         do {
-            const card = yield* popOneCard("event");
+            card = yield* popOneCard("event");
 
-            yield* request(
-                showCardsToPlayersRequest([card], currentPlayer, true),
-                showCardsToPlayersResponse
-            );
+            yield* showCards(currentPlayer, [card], true);
 
             if (canDrawAnotherEventCard(state)) {
                 drawAnotherCard = yield* request(
@@ -88,5 +87,7 @@ export function* drawCards() {
                 }
             }
         } while (drawAnotherCard);
+
+        yield* performEvent();
     }
 }
