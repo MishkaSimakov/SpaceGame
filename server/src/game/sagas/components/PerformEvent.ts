@@ -40,7 +40,7 @@ import {
 import {StateGetters} from "@common/getters/State";
 import {dice, put, select} from "../../Effects";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
-import Module, {ModuleTypes} from "@common/modules/Module";
+import Module, {ModuleType} from "@common/modules/Module";
 import {request} from "./Request";
 import Vector2 from "@common/Vector2";
 import {fight} from "./Fight";
@@ -130,7 +130,7 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
     [EventTypes.DestroyTwoSolarPanelsOnYourSpaceship]: function* (state: GameState) {
         const player = StateGetters.currentPlayer(state);
 
-        if (SpaceshipGetters.getModulesByType(player.spaceship, ModuleTypes.SolarPanel).length === 0) {
+        if (SpaceshipGetters.getModulesByType(player.spaceship, ModuleType.SolarPanel).length === 0) {
             return;
         }
 
@@ -145,7 +145,7 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
         }
 
         const modules: Module[] = positions.map(pos => SpaceshipGetters.getModuleByPosition(player.spaceship, pos));
-        if (modules.some(m => m.type !== ModuleTypes.SolarPanel)) {
+        if (modules.some(m => m.type !== ModuleType.SolarPanel)) {
             throw new Error("User have chosen wrong module type.");
         }
 
@@ -179,7 +179,7 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
     },
     [EventTypes.AttackAny]: function* (state: GameState) {
         const {victim} = yield* request(
-            choosePlayerForAttackRequest(StateGetters.currentPlayer(state).id, AttackReason.AttackAnyEventCard),
+            choosePlayerForAttackRequest(StateGetters.currentPlayer(state), AttackReason.AttackAnyEventCard),
             choosePlayerForAttackResponse
         );
 

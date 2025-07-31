@@ -1,6 +1,8 @@
 import {OtherPlayer} from "../GameForPlayerDTO";
 import Player from "../Player";
-import {ModuleTypes} from "../modules/Module";
+import {ModuleType} from "../modules/Module";
+import Spaceship from "../Spaceship";
+import {SpaceshipGetters} from "./Spaceship";
 
 export const PlayerGetters = {
     forOtherPlayer(player: Player): OtherPlayer {
@@ -16,6 +18,16 @@ export const PlayerGetters = {
         return otherPlayer;
     },
 
+    canAttack(player: Player): boolean {
+        const modules = SpaceshipGetters.getModulesByType(player.spaceship, ModuleType.AttackModule);
+
+        if (modules.length === 0) {
+            return false;
+        }
+
+        return Math.min(...modules.map(m => m.energyCost)) <= player.energy;
+    },
+
     canDamage(player: Player): boolean {
         let weaponCost = player.spaceship.modules.filter(m => m.strength > 0).map(m => m.energyCost);
 
@@ -27,7 +39,7 @@ export const PlayerGetters = {
     },
 
     canProtect(player: Player): boolean {
-        let protectorCost = player.spaceship.modules.filter(m => m.type === ModuleTypes.QuantumProtector || m.type === ModuleTypes.SmallQuantumProtector)
+        let protectorCost = player.spaceship.modules.filter(m => m.type === ModuleType.QuantumProtector || m.type === ModuleType.SmallQuantumProtector)
             .map(m => m.energyCost);
 
         if (protectorCost.length === 0)

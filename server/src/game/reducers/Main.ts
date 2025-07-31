@@ -1,4 +1,4 @@
-import Module, {isModule, ModuleTypes} from "@common/modules/Module";
+import Module, {isModule, ModuleType} from "@common/modules/Module";
 import {Event} from "@common/events/Event";
 import GameState from "../GameState";
 import * as assert from "node:assert";
@@ -193,7 +193,7 @@ export const reducers: ReducersType = {
 
         assert.ok(player.spaceship.activatedProtector === undefined);
         assert.ok(protector)
-        assert.ok(protector.type in [ModuleTypes.SmallQuantumProtector, ModuleTypes.QuantumProtector]);
+        assert.ok(protector.type in [ModuleType.SmallQuantumProtector, ModuleType.QuantumProtector]);
 
         player.spaceship.activatedProtector = protector;
     },

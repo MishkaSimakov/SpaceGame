@@ -31,3 +31,8 @@ export type DeepReadonly<T> =
         T extends Function ? T :
             T extends object ? DeepReadonlyObject<T> :
                 T;
+
+export type SocketInitPayload = {
+    gameId: string,
+    token: string
+}

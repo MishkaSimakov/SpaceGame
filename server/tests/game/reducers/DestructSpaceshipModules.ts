@@ -2,7 +2,7 @@ import {test} from "uvu";
 import * as assert from "node:assert";
 import {reducers} from "../../../src/game/reducers/Main";
 import {fakeGameState} from "../Utils";
-import {ModuleTypes} from "@common/modules/Module";
+import {ModuleType} from "@common/modules/Module";
 import SolarPanel from "@common/modules/SolarPanel";
 import QuantumProtector from "@common/modules/QuantumProtector";
 import Vector2 from "@common/Vector2";
@@ -40,10 +40,10 @@ test('destructOneSpaceshipModule', async () => {
 
     // check state
     assert.equal(player.spaceship.modules.length, 2);
-    assert.equal(SpaceshipGetters.getModulesByType(player.spaceship, ModuleTypes.QuantumProtector).length, 0);
+    assert.equal(SpaceshipGetters.getModulesByType(player.spaceship, ModuleType.QuantumProtector).length, 0);
 
     assert.equal(player.hand.length, 1);
-    assert.equal(player.hand[0].type, ModuleTypes.QuantumProtector);
+    assert.equal(player.hand[0].type, ModuleType.QuantumProtector);
 });
 
 test('destructOneSpaceshipModuleWithChainDestruction', async () => {
@@ -62,7 +62,7 @@ test('destructOneSpaceshipModuleWithChainDestruction', async () => {
 
     // check state
     assert.equal(player.spaceship.modules.length, 1);
-    assert.equal(player.spaceship.modules[0].type, ModuleTypes.MainModule);
+    assert.equal(player.spaceship.modules[0].type, ModuleType.MainModule);
 
     assert.equal(state.discards.module.length, 2);
 });

@@ -38,7 +38,7 @@ export const create = async (req: Request, res: Response) => {
             };
         }
 
-        App.getInstance().gamesManager.createGame(req.body.name, selectedUsers, gameSettings);
+        await App.getInstance().gamesManager.createGame(req.body.name, selectedUsers, gameSettings);
 
         return res.redirect('/');
     } catch (err) {

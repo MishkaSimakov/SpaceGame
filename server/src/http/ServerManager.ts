@@ -1,9 +1,9 @@
 import initRoutes from "./routes";
 
-const express = require('express');
-const http = require('http');
+import express from 'express';
+import http, {Server as HTTPServer} from 'http';
 
-import {Server, Socket} from "socket.io";
+import {Server as SocketServer, Socket} from "socket.io";
 
 import cors from "cors";
 import path from "path";
@@ -14,12 +14,13 @@ import {Express} from "express";
 
 export default class ServerManager {
     server: Express;
-    httpServer;
-    io: Server;
+    httpServer: HTTPServer;
+    io: SocketServer;
 
     staticBasePath: string;
 
-    constructor() {}
+    constructor() {
+    }
 
     initServer() {
         this.staticBasePath = path.join(__dirname, '../../../client/dist');
@@ -42,10 +43,10 @@ export default class ServerManager {
         });
     }
 
-    initSockets(): Server {
+    initSockets(): SocketServer {
         this.httpServer = http.createServer(this.server);
 
-        this.io = new Server(this.httpServer, {
+        this.io = new SocketServer(this.httpServer, {
             cors: {
                 origin: "http://127.0.0.1:3000",
                 methods: ["GET", "POST"]

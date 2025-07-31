@@ -1,7 +1,7 @@
 import Player, {PlayerId} from "../Player";
 import {AttackReason} from "../Types";
 import Spaceship from "../Spaceship";
-import Module from "../modules/Module";
+import Module, {ModuleType} from "../modules/Module";
 import {Event} from "../events/Event";
 import GameState from "../../server/src/game/GameState";
 import Vector2 from "../Vector2";
@@ -9,10 +9,10 @@ import Vector2 from "../Vector2";
 export * from "./Reducer";
 export * from "./EventCards";
 
-export const choosePlayerForAttackRequest = (player: PlayerId, reason: AttackReason) => {
+export const choosePlayerForAttackRequest = (player: Player, reason: AttackReason) => {
     return {
         type: 'choosePlayerForAttackRequest',
-        payload: {player, reason}
+        payload: {player: player.id, reason}
     };
 }
 
@@ -139,16 +139,16 @@ export const chooseWeaponAndTargetResponse = (targetPosition: Vector2, weaponPos
     };
 }
 
-export const useWeaponSecondTimeRequest = (player: Player) => {
+export const useModuleSecondTimeRequest = (player: Player, moduleType: ModuleType) => {
     return {
-        type: 'useWeaponSecondTimeRequest',
-        payload: {player: player.id}
+        type: 'useModuleSecondTimeRequest',
+        payload: {player: player.id, moduleType}
     };
 }
 
-export const useWeaponSecondTimeResponse = (use: boolean) => {
+export const useModuleSecondTimeResponse = (use: boolean) => {
     return {
-        type: 'useWeaponSecondTimeResponse',
+        type: 'useModuleSecondTimeResponse',
         payload: use,
     };
 }

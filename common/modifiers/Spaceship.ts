@@ -1,5 +1,5 @@
 import Spaceship from "../Spaceship";
-import Module, {ModuleTypes} from "../modules/Module";
+import Module, {ModuleType} from "../modules/Module";
 import {SpaceshipGetters} from "../getters/Spaceship";
 
 function addModule(ship: Spaceship, module: Module, x: number, y: number): boolean {
@@ -76,7 +76,7 @@ function damageModule(ship: Spaceship, target: Module, weapon: Module | number, 
             byNuclearReactor: byNuclearReactor
         });
 
-        if (target.type === ModuleTypes.NuclearReactor) {
+        if (target.type === ModuleType.NuclearReactor) {
             for (let module of SpaceshipGetters.getModulesConnectedTo(ship, target)) {
                 // handle loop made of nuclear reactors (only one damage to all connected modules)
                 if (destroyed.filter((d) => d.module === module).length)
@@ -93,7 +93,7 @@ function damageModule(ship: Spaceship, target: Module, weapon: Module | number, 
 }
 
 function setProtector(ship: Spaceship, protector: Module) {
-    if (protector.type !== ModuleTypes.SmallQuantumProtector && protector.type !== ModuleTypes.QuantumProtector)
+    if (protector.type !== ModuleType.SmallQuantumProtector && protector.type !== ModuleType.QuantumProtector)
         throw new Error('Set protector called but module is not protector');
 
     ship.activatedProtector = protector;

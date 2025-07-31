@@ -12,6 +12,7 @@ import {mainListeners} from "./listeners/MainListeners";
 import {infoListeners} from "./listeners/InfoListeners";
 import {eventCardsListeners} from "./listeners/EventCardsListeners";
 import {fightListeners} from "./listeners/FightListeners";
+import {SocketInitPayload} from "@common/Types";
 
 const listeners: ListenersContainer = {
     ...mainListeners,
@@ -67,7 +68,13 @@ export default class SocketManager {
         this.on('connect', () => {
             console.log('connected!');
 
-            this.socket.emit('gameId', window.location.href.split('/').pop());
+            this.socket.emit('init', {
+                gameId: window.location.href.split('/').pop(),
+                token: document.cookie
+                    .split("; ")
+                    .find((row) => row.startsWith("authentication_token"))
+                    ?.split("=")[1]
+            } as SocketInitPayload);
         });
 
         this.on('disconnect', () => {

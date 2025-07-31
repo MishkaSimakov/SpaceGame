@@ -81,8 +81,6 @@ let getStaticPath = (staticPath: string): string => {
 }
 
 export const home = async (req: AuthenticatedRequest, res: Response) => {
-    let games = App.getInstance().gamesManager.getGamesOfUser(req.user);
-
     // TODO: return only current player games
     const user = await User.findOne({
         where: {
@@ -91,41 +89,47 @@ export const home = async (req: AuthenticatedRequest, res: Response) => {
         relations: {
             games: {
                 winner: true,
-                players: true
+                players: true,
             }
         }
     });
 
-    let archivedGames = user?.games ?? [];
+    if (!user) {
+        throw new Error("Failed to find user in DB");
+    }
 
     res.render('home', {
         user: {
             id: user.id,
             login: user.login
         },
-        games: games.map(game => {
-            return {
-                id: game.id,
-                name: game.name,
-                players: game.users.map(p => p.login),
-            };
-        }),
-        archivedGames: archivedGames.map(game => {
-            return {
-                id: game.id,
-                name: game.name,
-                winner: {
-                    id: game.winner.id,
-                    login: game.winner.login
-                },
-                players: game.players.map(p => {
-                    return {
-                        id: p.id,
-                        login: p.login
-                    };
-                })
-            };
-        })
+        games: user.games
+            .filter(g => !g.finishedAt)
+            .map(game => {
+                return {
+                    id: game.id,
+                    name: game.name,
+                    players: game.players.map(p => p.login),
+                };
+            }),
+        archivedGames: user.games
+            .filter(g => g.finishedAt)
+            .map(game => {
+                return {
+                    id: game.id,
+                    name: game.name,
+                    winner: {
+                        id: game.winner.id,
+                        login: game.winner.login
+                    },
+                    players: game.players.map(p => {
+                        return {
+                            id: p.id,
+                            login: p.login
+                        };
+                    })
+                };
+            })
     });
 };
 

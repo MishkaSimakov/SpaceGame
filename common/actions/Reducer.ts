@@ -148,3 +148,10 @@ export const activateProtector = (player: Player, position: Vector2) => {
 export const shiftFightTurnToNextPlayer = () => {
     return {type: 'shiftFightTurnToNextPlayer'};
 }
+
+export const playerUseRepairOrAttackModuleSecondTimeOnThisTurn = (player: Player) => {
+    return {
+        type: 'playerUseRepairOrAttackModuleSecondTimeOnThisTurn',
+        payload: {player: player.id}
+    };
+}

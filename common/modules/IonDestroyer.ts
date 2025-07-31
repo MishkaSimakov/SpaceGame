@@ -1,4 +1,4 @@
-import {Module, ModuleTypes} from "./Module";
+import {Module, ModuleType} from "./Module";
 
 export default class IonDestroyer extends Module {
     constructor(left: number, top: number, right: number, bottom: number) {
@@ -10,7 +10,7 @@ export default class IonDestroyer extends Module {
         });
 
         this.name = 'Ионный разрушитель';
-        this.type = ModuleTypes.IonDestroyer;
+        this.type = ModuleType.IonDestroyer;
         this.sprite = 'ion-destroyer';
 
         this.strength = 3;

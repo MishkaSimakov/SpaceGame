@@ -1,5 +1,5 @@
 import Game from "../../Game";
-import {ModuleTypes} from "../../../../../common/modules/Module";
+import {ModuleType} from "../../../../../common/modules/Module";
 import {MainModuleType} from "../../../../../common/modules/MainModule";
 import Vector2 from "../../../../../common/Vector2";
 
@@ -30,7 +30,7 @@ export const fixSpaceship = async (game: Game) => {
 
     console.log("   Player asked for repair spaceship")
 
-    let repairModuleCost = game.currentPlayer.spaceship.getModulesByType(ModuleTypes.RepairModule)[0].energyCost;
+    let repairModuleCost = game.currentPlayer.spaceship.getModulesByType(ModuleType.RepairModule)[0].energyCost;
 
     let isRepaired = await useRepairModule(game, repairModuleCost);
 
@@ -39,7 +39,7 @@ export const fixSpaceship = async (game: Game) => {
         && game.currentPlayer.spaceship.hasDamagedModules()
         && game.currentPlayer.energy >= repairModuleCost * 2
     ) {
-        let useSecondTime = await game.askForUseModuleSecondTime(game.currentPlayer, ModuleTypes.RepairModule);
+        let useSecondTime = await game.askForUseModuleSecondTime(game.currentPlayer, ModuleType.RepairModule);
 
         if (!useSecondTime)
             return;

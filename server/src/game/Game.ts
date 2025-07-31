@@ -66,7 +66,7 @@ export default class Game {
     messageManager: MessageManager;
     timeManager: TimeManager;
 
-    constructor(id: string, name: string, users: User[], settings: GameSettings, io: Server, sockets: new (io: Server, players: PlayerId[]) => any) {
+    constructor(id: string, name: string, users: User[], settings: GameSettings, sockets: SocketsManager, logger: Logger) {
         this.id = id;
         this.name = name;
         this.users = users;
@@ -75,8 +75,8 @@ export default class Game {
         this.state = new GameState();
         this.bus = new ActionsBus();
         this.sagaRunner = new SagaRunner(this.state, this.bus, this.randomizer, gameSaga());
-        this.sockets = new sockets(io, users.map(user => user.id));
-        this.logger = new Logger();
+        this.sockets = sockets;
+        this.logger = logger;
 
         this.messageManager = new MessageManager();
 

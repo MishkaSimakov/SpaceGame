@@ -1,4 +1,4 @@
-import {Module, ModuleTypes} from "./Module";
+import {Module, ModuleType} from "./Module";
 
 export default class AttackModule extends Module {
     constructor(left: number, top: number, right: number, bottom: number) {
@@ -10,7 +10,7 @@ export default class AttackModule extends Module {
         });
 
         this.name = 'Абордажный модуль';
-        this.type = ModuleTypes.AttackModule;
+        this.type = ModuleType.AttackModule;
         this.sprite = 'attack-module';
 
         this.health = 3;

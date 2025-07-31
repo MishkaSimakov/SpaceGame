@@ -1,4 +1,4 @@
-import {Module, ModuleTypes} from "./Module";
+import {Module, ModuleType} from "./Module";
 
 export default class NuclearReactor extends Module {
     constructor(left: number, top: number, right: number, bottom: number) {
@@ -10,7 +10,7 @@ export default class NuclearReactor extends Module {
         });
 
         this.name = 'Атомный реактор';
-        this.type = ModuleTypes.NuclearReactor;
+        this.type = ModuleType.NuclearReactor;
         this.sprite = 'nuclear-reactor';
 
         this.energyIncrease = 2;

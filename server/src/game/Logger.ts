@@ -3,14 +3,14 @@ import path from "path";
 import {appendFileSync} from "fs";
 
 export class Logger {
-    logPath: string;
+    logFilepath: string;
 
-    constructor() {
-        this.logPath = path.join(__dirname, '/../../logs/', `game_${Date.now()}.txt`);
+    constructor(logFilepath: string) {
+        this.logFilepath = logFilepath;
     }
 
     handleAction(action: Action) {
         console.log("📝 logger recorded:", action.type);
-        appendFileSync(this.logPath, JSON.stringify(action) + '\n');
+        appendFileSync(this.logFilepath, JSON.stringify(action) + '\n');
     }
 }

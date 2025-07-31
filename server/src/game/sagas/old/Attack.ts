@@ -1,6 +1,6 @@
 import Game from "../../Game";
 import {AttackReason} from "../../../../../common/Types";
-import {ModuleTypes} from "../../../../../common/modules/Module";
+import {ModuleType} from "../../../../../common/modules/Module";
 import {MainModuleType} from "../../../../../common/modules/MainModule";
 
 export const attack = async (game: Game) => {
@@ -18,7 +18,7 @@ export const attack = async (game: Game) => {
         return;
     }
 
-    let energyCost = game.currentPlayer.spaceship.getModulesByType(ModuleTypes.AttackModule)[0].energyCost;
+    let energyCost = game.currentPlayer.spaceship.getModulesByType(ModuleType.AttackModule)[0].energyCost;
     game.currentPlayer.energy -= energyCost;
 
     await game.attackPlayer(attackedPlayer);
@@ -26,7 +26,7 @@ export const attack = async (game: Game) => {
     if (!game.currentPlayer.usedRepairOrAttackModuleSecondTimeOnThisTurn
         && game.currentPlayer.spaceship.getMainModuleType() === MainModuleType.UseModuleSecondTime
         && game.currentPlayer.energy >= energyCost * 2) {
-        let useSecondTime = await game.askForUseModuleSecondTime(game.currentPlayer, ModuleTypes.AttackModule);
+        let useSecondTime = await game.askForUseModuleSecondTime(game.currentPlayer, ModuleType.AttackModule);
 
         if (!useSecondTime)
             return;

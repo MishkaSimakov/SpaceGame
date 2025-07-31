@@ -1,4 +1,4 @@
-import {Module, ModuleTypes} from "./Module";
+import {Module, ModuleType} from "./Module";
 
 export default class DarkMatterGenerator extends Module {
     constructor(left: number, top: number, right: number, bottom: number) {
@@ -10,7 +10,7 @@ export default class DarkMatterGenerator extends Module {
         });
 
         this.name = 'Генератор тёмной материи';
-        this.type = ModuleTypes.DarkMatterGenerator;
+        this.type = ModuleType.DarkMatterGenerator;
         this.sprite = 'dark-matter-generator';
 
         this.energyIncrease = 3;

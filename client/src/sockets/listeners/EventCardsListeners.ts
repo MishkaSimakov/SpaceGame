@@ -13,7 +13,7 @@ import {
     permuteTopThreeEventCardsResponse,
     useEventCardToDealDamageResponse
 } from "@common/actions/Main";
-import Module, {isModule, ModuleTypes} from "@common/modules/Module";
+import Module, {isModule, ModuleType} from "@common/modules/Module";
 import {MoveDamageReason} from "@common/Types";
 import Color from "../../graphics/Color";
 import {COLORS} from "../../graphics/constants";
@@ -197,7 +197,7 @@ export const eventCardsListeners: ListenersContainer = {
     async chooseTwoSolarPanelsToDestroyRequest({}, {game}) {
         const solarPanelsCount = SpaceshipGetters.getModulesByType(
             game.getCurrentPlayer().spaceship,
-            ModuleTypes.SolarPanel
+            ModuleType.SolarPanel
         ).length;
         const count = Math.min(solarPanelsCount, 2);
 
@@ -213,7 +213,7 @@ export const eventCardsListeners: ListenersContainer = {
             if (playerId !== game.currentPlayer.id)
                 return false;
 
-            if (module.type !== ModuleTypes.SolarPanel)
+            if (module.type !== ModuleType.SolarPanel)
                 return false;
 
             return true;
@@ -233,9 +233,9 @@ export const eventCardsListeners: ListenersContainer = {
             }]);
         });
 
-        this.controls().topBarDrawer.removeButtons();
-        this.controls().topBarDrawer.clearStatus();
-        this.game.spaceshipsScene.endChoosingModule();
+        game.controlsScene.topBarDrawer.removeButtons();
+        game.controlsScene.topBarDrawer.clearStatus();
+        game.spaceshipsScene.endChoosingModule();
 
         return chooseTwoSolarPanelsToDestroyResponse(positions);
     },
@@ -273,9 +273,9 @@ export const eventCardsListeners: ListenersContainer = {
             }]);
         });
 
-        this.controls().topBarDrawer.removeButtons();
-        this.controls().topBarDrawer.clearStatus();
-        this.game.spaceshipsScene.endChoosingModule();
+        game.controlsScene.topBarDrawer.removeButtons();
+        game.controlsScene.topBarDrawer.clearStatus();
+        game.spaceshipsScene.endChoosingModule();
 
         return chooseModuleToDestroyResponse(position);
     },
@@ -284,7 +284,7 @@ export const eventCardsListeners: ListenersContainer = {
         game.controlsScene.topBarDrawer.setStatus("переставьте карточки");
 
         const order = await game.controlsScene.permuteCards(cards);
-        this.controls().topBarDrawer.clearStatus();
+        game.controlsScene.topBarDrawer.clearStatus();
 
         return permuteTopThreeEventCardsResponse(order);
     },
@@ -332,9 +332,9 @@ export const eventCardsListeners: ListenersContainer = {
             }]);
         });
 
-        this.controls().topBarDrawer.removeButtons();
-        this.controls().topBarDrawer.clearStatus();
-        this.game.spaceshipsScene.endChoosingModule();
+        game.controlsScene.topBarDrawer.removeButtons();
+        game.controlsScene.topBarDrawer.clearStatus();
+        game.spaceshipsScene.endChoosingModule();
 
         return chooseModuleToDamageByEventCardResponse(position);
     }

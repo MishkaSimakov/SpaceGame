@@ -23,6 +23,9 @@ export class User extends BaseEntity {
     @ManyToMany(() => Game, (game) => game.players)
     games: Game[];
 
+    @Column()
+    isBot: boolean;
+
     static async createHashedPassword(password: string): Promise<string> {
         const saltRounds = 8;
 

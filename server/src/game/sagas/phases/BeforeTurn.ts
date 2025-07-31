@@ -26,7 +26,7 @@ export function* beforeTurn() {
 
     if (attackLaterCardIndex !== -1) {
         const {victim} = yield* request(
-            choosePlayerForAttackRequest(currentPlayer.id, AttackReason.AttackLaterEventCard),
+            choosePlayerForAttackRequest(currentPlayer, AttackReason.AttackLaterEventCard),
             choosePlayerForAttackResponse
         );
 

@@ -1,4 +1,4 @@
-import {Module, ModuleTypes} from "./Module";
+import {Module, ModuleType} from "./Module";
 
 export default class QuantumDestabilizer extends Module {
     constructor(left: number, top: number, right: number, bottom: number) {
@@ -10,7 +10,7 @@ export default class QuantumDestabilizer extends Module {
         });
 
         this.name = 'Квантовый дестабилизатор';
-        this.type = ModuleTypes.QuantumDestabilizer;
+        this.type = ModuleType.QuantumDestabilizer;
         this.sprite = 'quantum-destabilizer';
 
         this.strength = 5;

@@ -46,6 +46,7 @@ export default class DatabaseManager {
 
             user.login = name;
             user.password = await User.createHashedPassword(name);
+            user.isBot = false;
             await user.save();
 
             console.log(`🤥 fake user '${name}' generated`);

@@ -1,5 +1,5 @@
 import {MainModule, MainModuleType} from "../modules/MainModule";
-import Module, {ModuleTypes} from "../modules/Module";
+import Module, {ModuleType} from "../modules/Module";
 import Vector2 from "../Vector2";
 import Spaceship from "../Spaceship";
 
@@ -18,7 +18,7 @@ const opposites: Record<string, string> = {
 }
 
 function getMainModule(ship: Spaceship): MainModule | undefined {
-    let filtered = getModulesByType(ship, ModuleTypes.MainModule);
+    let filtered = getModulesByType(ship, ModuleType.MainModule);
 
     if (!filtered.length)
         return undefined;
@@ -144,12 +144,8 @@ function isAdjacent(ship: Spaceship, first: Module, second: Module) {
     return false;
 }
 
-function getModulesByType(ship: Spaceship, type: ModuleTypes): Module[] {
+function getModulesByType(ship: Spaceship, type: ModuleType): Module[] {
     return ship.modules.filter((m) => m.type === type);
-}
-
-function canAttack(ship: Spaceship): boolean {
-    return getModulesByType(ship, ModuleTypes.AttackModule).length !== 0;
 }
 
 function hasWeapon(ship: Spaceship): boolean {
@@ -162,8 +158,8 @@ function hasWeapon(ship: Spaceship): boolean {
 }
 
 function hasProtectors(ship: Spaceship): boolean {
-    return getModulesByType(ship, ModuleTypes.SmallQuantumProtector).length !== 0
-        || getModulesByType(ship, ModuleTypes.QuantumProtector).length !== 0;
+    return getModulesByType(ship, ModuleType.SmallQuantumProtector).length !== 0
+        || getModulesByType(ship, ModuleType.QuantumProtector).length !== 0;
 }
 
 function hasDamagedModules(ship: Spaceship): boolean {
@@ -197,7 +193,7 @@ function getUnconnectedModules(ship: Spaceship): Module[] {
 }
 
 function hasRepairModule(ship: Spaceship): boolean {
-    return getModulesByType(ship, ModuleTypes.RepairModule).length !== 0;
+    return getModulesByType(ship, ModuleType.RepairModule).length !== 0;
 }
 
 function checkConfiguration(ship: Spaceship): boolean {
@@ -258,7 +254,7 @@ function damageInfoInternal(shipCopy: Spaceship, target: Vector2, damage: number
         damaged.delete(target);
         destroyed.set(target, byNuclearReactor);
 
-        if (targetModule.type === ModuleTypes.NuclearReactor) {
+        if (targetModule.type === ModuleType.NuclearReactor) {
             for (let module of SpaceshipGetters.getModulesConnectedTo(shipCopy, targetModule)) {
                 const position = new Vector2(module.x, module.y);
                 // handle loop made of nuclear reactors (only one damage to all connected modules)
@@ -303,7 +299,6 @@ export const SpaceshipGetters = {
     getModulesConnectedTo,
     isAdjacent,
     getModulesByType,
-    canAttack,
     hasWeapon,
     hasProtectors,
     hasDamagedModules,

@@ -1,6 +1,6 @@
 import {Event} from "../events/Event";
 
-enum ModuleTypes {
+enum ModuleType {
     MainModule,
 
     // weapon
@@ -43,7 +43,7 @@ class Module {
     y: number = 0;
     sprite: string;
     isMain: boolean = false;
-    type: ModuleTypes;
+    type: ModuleType;
     totalHealth: number;
     health: number;
     rotation: number = 0;
@@ -62,6 +62,6 @@ export default Module;
 
 export {
     Module,
-    ModuleTypes,
+    ModuleType,
     isModule
 }

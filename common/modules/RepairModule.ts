@@ -1,4 +1,4 @@
-import {Module, ModuleTypes} from "./Module";
+import {Module, ModuleType} from "./Module";
 
 export default class RepairModule extends Module {
     constructor(left: number, top: number, right: number, bottom: number) {
@@ -10,7 +10,7 @@ export default class RepairModule extends Module {
         });
 
         this.name = 'Ремонтный модуль';
-        this.type = ModuleTypes.RepairModule;
+        this.type = ModuleType.RepairModule;
         this.sprite = 'repair-module';
 
         this.health = 3;

@@ -7,3 +7,7 @@ App.getInstance().init()
     .catch(err => {
         console.error(err);
     });
+
+process.on('SIGUSR2', async () => {
+    await App.getInstance().gracefulShutdown();
+});

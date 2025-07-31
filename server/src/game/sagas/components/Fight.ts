@@ -23,9 +23,7 @@ import {
     chooseWeaponAndTargetResponse,
     RunawayType,
     tryToRunawayRequest,
-    tryToRunawayResponse,
-    useWeaponSecondTimeRequest,
-    useWeaponSecondTimeResponse
+    tryToRunawayResponse, useModuleSecondTimeRequest, useModuleSecondTimeResponse,
 } from "@common/actions/Main";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
 import {damageModule} from "./DamageModule";
@@ -134,8 +132,8 @@ function* damageByWeapon() {
 
         if (SpaceshipGetters.getMainModuleType(attacker.spaceship) === MainModuleType.UseModuleSecondTime && attacker.energy >= weapon.energyCost * 2) {
             let useSecondTime = yield* request(
-                useWeaponSecondTimeRequest(attacker),
-                useWeaponSecondTimeResponse
+                useModuleSecondTimeRequest(attacker, weapon.type),
+                useModuleSecondTimeResponse
             );
 
             if (useSecondTime) {

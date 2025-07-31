@@ -1,5 +1,5 @@
 import Player from "@common/Player";
-import Module, {ModuleTypes} from "@common/modules/Module";
+import Module, {ModuleType} from "@common/modules/Module";
 import Spaceship from "@common/Spaceship";
 import {DamageInfo, SpaceshipGetters} from "@common/getters/Spaceship";
 import {StateGetters} from "@common/getters/State";
@@ -15,7 +15,7 @@ import {put, select} from "../../Effects";
 
 function isDarkMatterGeneratorDestroyed(info: DamageInfo, spaceship: Spaceship): boolean {
     return info.destroyed.some(
-        m => SpaceshipGetters.getModuleByPosition(spaceship, m.position).type === ModuleTypes.DarkMatterGenerator
+        m => SpaceshipGetters.getModuleByPosition(spaceship, m.position).type === ModuleType.DarkMatterGenerator
     );
 }
 
@@ -27,7 +27,7 @@ export function* damageModule(victim: Player, attacker: Player, module: Module, 
     }
 
     for (let damaged of info.damaged) {
-        yield* put(changeModuleHealth(victim, damaged.position, damaged.damage, "damage module"));
+        yield* put(changeModuleHealth(victim, damaged.position, -damaged.damage, "damage module"));
     }
 
     for (let destroyed of info.destroyed) {
@@ -53,7 +53,7 @@ export function* damageModule(victim: Player, attacker: Player, module: Module, 
     }
 
     if (isDarkMatterGeneratorDestroyed(info, victim.spaceship)) {
-        let modulesExceptMain = victim.spaceship.modules.filter(m => m.type !== ModuleTypes.MainModule);
+        let modulesExceptMain = victim.spaceship.modules.filter(m => m.type !== ModuleType.MainModule);
 
         yield* put(removeSpaceshipModules(victim, modulesExceptMain.map(m => new Vector2(m.x, m.y))));
         yield* put(pushCardsToHand(victim, modulesExceptMain));

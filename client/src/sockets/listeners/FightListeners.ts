@@ -6,7 +6,7 @@ import {
     tryToRunawayResponse,
     RunawayType,
 } from "@common/actions/Main";
-import Module, {ModuleTypes} from "@common/modules/Module";
+import Module, {ModuleType} from "@common/modules/Module";
 
 import {COLORS} from "../../graphics/constants";
 import Color from "../../graphics/Color";
@@ -36,7 +36,7 @@ export const fightListeners: ListenersContainer = {
             if (playerId !== game.currentPlayer.id)
                 return false;
 
-            if (module.type !== ModuleTypes.SmallQuantumProtector && module.type !== ModuleTypes.QuantumProtector)
+            if (module.type !== ModuleType.SmallQuantumProtector && module.type !== ModuleType.QuantumProtector)
                 return false;
 
             return true;

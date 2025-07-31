@@ -1,18 +1,34 @@
-import {Entity, PrimaryGeneratedColumn, Column, BaseEntity, OneToMany, ManyToOne, ManyToMany, JoinTable} from "typeorm"
+import {
+    Entity,
+    PrimaryGeneratedColumn,
+    Column,
+    BaseEntity,
+    OneToMany,
+    ManyToOne,
+    ManyToMany,
+    JoinTable,
+    PrimaryColumn
+} from "typeorm"
 import {User} from "./user";
 
 @Entity()
 export class Game extends BaseEntity {
-    @PrimaryGeneratedColumn()
-    id: number
+    @PrimaryColumn({nullable: false})
+    id: string
 
-    @Column()
+    @Column({nullable: false})
     name: string;
 
-    @ManyToOne(type => User)
+    @ManyToOne(type => User, {nullable: true})
     winner: User;
 
-    @ManyToMany(() => User, (user) => user.games)
+    @ManyToMany(() => User, (user) => user.games, {nullable: false})
     @JoinTable()
     players: User[];
+
+    @Column({nullable: false})
+    logFilepath: string;
+
+    @Column({nullable: true, type: "timestamptz"})
+    finishedAt: Date;
 }

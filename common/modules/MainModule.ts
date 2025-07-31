@@ -1,4 +1,4 @@
-import {Module, ModuleTypes} from "./Module";
+import {Module, ModuleType} from "./Module";
 
 enum MainModuleType {
     DrawAnotherEventCard,
@@ -25,7 +25,7 @@ class MainModule extends Module {
 
         this.name = 'Командный модуль ' + indexToRomanian[index - 1];
         this.sprite = 'main-module';
-        this.type = ModuleTypes.MainModule;
+        this.type = ModuleType.MainModule;
         this.isMain = true;
 
         this.energyIncrease = 1;

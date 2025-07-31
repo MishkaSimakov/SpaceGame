@@ -3,10 +3,13 @@ import Player from "../../../common/Player";
 import {User} from "../entity/user";
 import {parse} from "cookie";
 import jwt, {JwtPayload} from "jsonwebtoken";
-import {Game as ArchivedGame} from "../entity/game";
+import {Game as GameDBEntity} from "../entity/game";
 import Game from "./Game";
 import SocketsManager from "./io/SocketsManager";
 import {GameSettings} from "@common/GameSettings";
+import {SocketInitPayload} from "@common/Types";
+import path from "path";
+import {Logger} from "./Logger";
 
 export default class GamesManager {
     io: Server;
@@ -20,16 +23,15 @@ export default class GamesManager {
             let game: Game;
             let player: Readonly<Player>;
 
-            socket.on('gameId', async (gameId: string) => {
+            socket.on('init', async (payload: SocketInitPayload) => {
                 try {
-                    let cookies = parse(socket.request.headers.cookie);
-                    let decodedToken = jwt.verify(cookies.authentication_token, process.env.JWT_SECRET_KEY);
+                    const decodedToken = jwt.verify(payload.token, process.env.JWT_SECRET_KEY);
 
-                    let user = await User.findOneBy({
+                    const user = await User.findOneBy({
                         id: (decodedToken as JwtPayload)._id
                     });
 
-                    game = this.getGameById(gameId);
+                    game = this.getGameById(payload.gameId);
 
                     if (!game) {
                         throw Error("No game found for the given id.")
@@ -68,10 +70,29 @@ export default class GamesManager {
         });
     }
 
-    createGame(name: string, users: User[], settings: GameSettings): Game {
-        let game = new Game(this.createGameId(), name, users, settings, this.io, SocketsManager);
+    async createGame(name: string, users: User[], settings: GameSettings): Promise<Game> {
+        const gameId = this.createGameId();
+        const logFilepath = path.join(__dirname, '/../../logs/', `game_${Date.now()}_${gameId}.txt`);
 
-        console.log("game created!");
+        // create database entity
+        let gameDB = new GameDBEntity();
+
+        gameDB.id = gameId;
+        gameDB.name = name;
+        gameDB.players = users;
+        gameDB.logFilepath = logFilepath
+
+        await gameDB.save();
+
+        // create RAM game entity
+        const game = new Game(
+            gameId,
+            name,
+            users,
+            settings,
+            new SocketsManager(this.io, users.map(u => u.id)),
+            new Logger(logFilepath)
+        );
 
         game.start().then(async () => {
             game.sockets.disconnectEveryone();

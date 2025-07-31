@@ -1,4 +1,4 @@
-import {Module, ModuleTypes} from "./Module";
+import {Module, ModuleType} from "./Module";
 
 export default class SmallBattery extends Module {
     constructor(left: number, top: number, right: number, bottom: number) {
@@ -10,7 +10,7 @@ export default class SmallBattery extends Module {
         });
 
         this.name = 'Малый аккумулятор';
-        this.type = ModuleTypes.SmallBattery;
+        this.type = ModuleType.SmallBattery;
         this.sprite = 'small-battery';
 
         this.health = 3;

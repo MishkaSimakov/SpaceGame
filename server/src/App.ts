@@ -46,4 +46,7 @@ export default class App {
     static getInstance(): App {
         return this.instance ?? (this.instance = new App());
     }
+
+    async gracefulShutdown() {
+    }
 }
