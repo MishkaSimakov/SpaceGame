@@ -9,18 +9,6 @@ import {Game} from "../../entity/game";
 
 const HOME = '/';
 
-export interface UserJWTPayload extends JwtPayload {
-    _id: string,
-    login: string
-}
-
-let generateToken = (user: User): string => {
-    const SECRET_KEY = process.env.JWT_SECRET_KEY;
-    return jwt.sign({_id: user.id?.toString(), login: user.login}, SECRET_KEY, {
-        expiresIn: '1 year',
-    });
-}
-
 export const login = async (req: Request, res: Response) => {
     try {
         let user = await User.findOneBy({
@@ -37,7 +25,7 @@ export const login = async (req: Request, res: Response) => {
             throw new Error('Password is not correct');
         }
 
-        let token = generateToken(user);
+        let token = user.generateToken();
 
         return res.cookie('authentication_token', token, {
             expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365)
@@ -63,10 +51,11 @@ export const register = async (req: Request, res: Response) => {
 
         user.login = req.body.login;
         user.password = await User.createHashedPassword(req.body.password);
+        user.isBot = false;
+
         await user.save();
 
-
-        let token = generateToken(user);
+        const token = user.generateToken();
 
         return res.cookie('authentication_token', token, {
             expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365)

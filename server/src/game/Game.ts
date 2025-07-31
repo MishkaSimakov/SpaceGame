@@ -6,7 +6,7 @@ import Spaceship from "@common/Spaceship";
 import ActionsBus from "@common/actions/ActionsBus";
 import {HAS_PLAYERS_DATA} from "@common/Sockets";
 import {GameSettings} from "@common/GameSettings";
-import {Action} from "@common/actions/Action";
+import {Action, isAction} from "@common/actions/Action";
 import * as Actions from "@common/actions/Main";
 
 import GameState from "./GameState";
@@ -106,7 +106,7 @@ export default class Game {
     }
 
     registerIOListeners() {
-        this.bus.on('*', (action: Action) => {
+        this.bus.on('*', async (action: Action) => {
             // actions that match `*Request` are broadcasted through sockets
             // they must contain payload.player field, the field specify to which player
             // the action is broadcasted.
@@ -117,17 +117,13 @@ export default class Game {
                 assert.ok("player" in action.payload);
                 assert.ok(responseType in Actions);
 
-                this.sockets.emitAndWait(action.payload.player, action.type, true, action.payload)
-                    .then((payload: Action) => {
-                        this.bus.emit(payload);
-                    });
+                const payload = await this.sockets.emitAndWait(action.payload.player, action.type, true, action.payload)
+                if (!isAction(payload)) {
+                    throw new Error("Response must be action");
+                }
+
+                this.bus.emit(payload);
             }
-            // if (action.type in IOListeners) {
-            //     IOListeners[action.type](action.payload, {
-            //         bus: this.bus,
-            //         sockets: this.sockets
-            //     });
-            // }
         });
     }
 

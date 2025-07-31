@@ -43,6 +43,10 @@ function* getCombatants() {
     };
 }
 
+function* isFightEnded() {
+    return (yield* select()).fight === undefined;
+}
+
 function* isVictimLost() {
     const {victim} = yield* getCombatants();
     return SpaceshipGetters.getMainModule(victim.spaceship) === undefined;
@@ -202,6 +206,14 @@ export function* fight() {
 
         yield* makeFightIteration();
 
+        if (yield* isFightEnded()) {
+            break;
+        }
+
         yield* put(shiftFightTurnToNextPlayer());
     }
+
+    // check that all protectors are disabled
+    const state = yield* select();
+    assert.ok(!state.players.some(p => p.spaceship.activatedProtector));
 }

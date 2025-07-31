@@ -63,7 +63,7 @@ all({
 
 ## API
 
-### POST `/api/v1/users/register`
+### POST `/api/v1/register`
 
 **Описание**: Создаёт нового пользователя
 
@@ -72,8 +72,7 @@ all({
 ```json
 {
   "name": "Misha",
-  "password": "abracadabra",
-  "is_bot": false
+  "password": "abracadabra"
 }
 ```
 
@@ -93,7 +92,7 @@ all({
 }
 ```
 
-### POST `/api/v1/users/login`
+### POST `/api/v1/login`
 
 **Описание**: Выполняет вход в аккаунт пользователя. Вход осуществляется за счёт выдачи токена.
 

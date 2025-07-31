@@ -32,9 +32,9 @@ export const create = async (req: Request, res: Response) => {
             fightTimeIncrease = isNaN(fightTimeIncrease) ? 10 : fightTimeIncrease;
 
             gameSettings.timeControlSettings = {
-                START_TIME: 5 * 60 * 1000,
-                DEFAULT_TIME_INCREASE: defaultTimeIncrease * 1000,
-                FIGHT_TIME_INCREASE: fightTimeIncrease * 1000
+                startTime: 5 * 60 * 1000,
+                defaultTimeIncrease: defaultTimeIncrease * 1000,
+                fightTimeIncrease: fightTimeIncrease * 1000
             };
         }
 

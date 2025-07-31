@@ -6,4 +6,8 @@ export interface Action {
     meta?: any;
 }
 
+export function isAction(object: any): object is Action {
+    return "type" in object && typeof object.type === "string";
+}
+
 export type ActionConstructor = (...args: any[]) => Action;

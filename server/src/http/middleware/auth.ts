@@ -1,7 +1,6 @@
 import jwt from 'jsonwebtoken';
 import {Request, Response, NextFunction} from 'express';
-import {User} from "../../entity/user";
-import {UserJWTPayload} from "../controllers/UserController";
+import {User, UserJWTPayload} from "../../entity/user";
 
 export interface AuthenticatedRequest extends Request {
     user: User;

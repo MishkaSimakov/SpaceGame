@@ -1,7 +1,7 @@
 export class TimeControlSettings {
-    START_TIME: number;
-    DEFAULT_TIME_INCREASE: number;
-    FIGHT_TIME_INCREASE: number;
+    startTime: number;
+    defaultTimeIncrease: number;
+    fightTimeIncrease: number;
 }
 
 export class GameSettings {
@@ -10,8 +10,8 @@ export class GameSettings {
     timeControlSettings?: TimeControlSettings;
     loseWhenTimeout: boolean;
     isPublic: boolean;
-    startCardsCount: number;
 
+    startCardsCount: number = 4;
     mainModuleRunawayEnergyCost = 5;
     energyToAttackByCommandModule = 7;
     energyToMoveDamageByCommandModule = 4;

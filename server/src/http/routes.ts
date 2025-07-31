@@ -1,21 +1,47 @@
-import {Express} from "express";
+import express, {Express, Router} from "express";
 import {auth} from "./middleware/auth";
 
 import * as UserController from './controllers/UserController';
 import * as GameController from './controllers/GameController';
 
+import * as ApiUserController from './controllers/api/UserController';
+import * as ApiGameController from './controllers/api/GameController';
+
+function getUserRouter(): Router {
+    const router = Router();
+
+    router.get('/login', UserController.showLoginPage);
+    router.get('/register', UserController.showRegisterPage);
+
+    router.post('/login', UserController.login);
+    router.post('/register', UserController.register);
+    router.get('/', auth, UserController.home);
+
+    router.get('/user/:id', UserController.showUserPage);
+
+    router.get('/game/rules', GameController.showRules);
+    router.get('/game/create', auth, GameController.showCreatePage);
+    router.post('/game/create', auth, GameController.create);
+    router.get('/game/:id', auth, GameController.joinGame);
+
+    return router;
+}
+
+function getApiRouter(): Router {
+    const router = Router();
+
+    router.use(express.json());
+
+    router.post('/login', ApiUserController.login);
+    router.post('/register', ApiUserController.register);
+
+    router.post('/game/create', ApiGameController.create);
+    router.post('/game/:id/logs', ApiGameController.logs);
+
+    return router;
+}
+
 export default function initRoutes(server: Express) {
-    server.get('/login', UserController.showLoginPage);
-    server.get('/register', UserController.showRegisterPage);
-
-    server.post('/login', UserController.login);
-    server.post('/register', UserController.register);
-    server.get('/', auth, UserController.home);
-
-    server.get('/user/:id', UserController.showUserPage);
-
-    server.get('/game/rules', GameController.showRules);
-    server.get('/game/create', auth, GameController.showCreatePage);
-    server.post('/game/create', auth, GameController.create);
-    server.get('/game/:id', auth, GameController.joinGame);
+    server.use(getUserRouter());
+    server.use('/api/v1', getApiRouter());
 }
