@@ -1,3 +1,80 @@
-export function* fixSpaceship() {
+import {ModuleType} from "@common/modules/Module";
+import {MainModuleType} from "@common/modules/MainModule";
+import {SpaceshipGetters} from "@common/getters/Spaceship";
+import {StateGetters} from "@common/getters/State";
+import {
+    changeModuleHealth,
+    changePlayerEnergy,
+    chooseModuleToRepairRequest,
+    chooseModuleToRepairResponse,
+    playerUseModuleSecondTime,
+    useModuleSecondTimeRequest,
+    useModuleSecondTimeResponse
+} from "@common/actions/Main";
 
+import {put, select} from "../../Effects";
+import {request} from "../components/Request";
+
+function* useRepairModule(repairModuleCost: number): Generator<any, boolean, any> {
+    const state = yield* select();
+    const currentPlayer = StateGetters.currentPlayer(state);
+
+    const modulePosition = yield* request(
+        chooseModuleToRepairRequest(currentPlayer),
+        chooseModuleToRepairResponse
+    );
+
+    if (modulePosition === undefined) {
+        return false;
+    }
+
+    yield* put(changeModuleHealth(currentPlayer, modulePosition, 1, "used repair module"));
+    yield* put(changePlayerEnergy(currentPlayer, -repairModuleCost, "used repair module"));
+
+    return true;
+}
+
+function* tryUseModuleSecondTime(repairModuleCost: number) {
+    const state = yield* select();
+    const currentPlayer = StateGetters.currentPlayer(state);
+
+    if (!currentPlayer.usedModuleSecondTimeOnThisTurn
+        && SpaceshipGetters.getMainModuleType(currentPlayer.spaceship) === MainModuleType.UseModuleSecondTime
+        && SpaceshipGetters.hasDamagedModules(currentPlayer.spaceship)
+        && currentPlayer.energy >= repairModuleCost * 2
+    ) {
+        const useSecondTime = yield* request(
+            useModuleSecondTimeRequest(currentPlayer, ModuleType.RepairModule),
+            useModuleSecondTimeResponse
+        );
+
+        if (!useSecondTime) return;
+
+        yield* put(playerUseModuleSecondTime(currentPlayer))
+
+        yield* useRepairModule(repairModuleCost * 2);
+    }
+}
+
+export function* fixSpaceship() {
+    const state = yield* select();
+    const currentPlayer = StateGetters.currentPlayer(state);
+
+    if (!SpaceshipGetters.hasRepairModule(currentPlayer.spaceship)
+        || !SpaceshipGetters.hasDamagedModules(currentPlayer.spaceship)
+    ) {
+        return;
+    }
+
+    const repairModuleCost = SpaceshipGetters.getModulesByType(currentPlayer.spaceship, ModuleType.RepairModule)[0].energyCost;
+
+    if (currentPlayer.energy < repairModuleCost) {
+        return;
+    }
+
+    const usedModule = yield* useRepairModule(repairModuleCost);
+
+    if (usedModule) {
+        yield* tryUseModuleSecondTime(repairModuleCost);
+    }
 }

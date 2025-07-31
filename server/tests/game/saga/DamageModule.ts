@@ -1,6 +1,6 @@
 import {test} from "uvu";
 import * as assert from "node:assert";
-import {attachReducers, attachTerminalLogger, CountingRandomizer, fakeGameState} from "../Utils";
+import {attachReducers, attachTerminalLogger, fakeGameState} from "../Utils";
 import ActionsBus from "@common/actions/ActionsBus";
 import {discardCardsRequest} from "@common/actions/Main";
 import {SagaRunner} from "../../../src/game/SagaRunner";
@@ -17,7 +17,6 @@ test('simple', async () => {
     const victim = state.players[1];
     const expectedHealth = SpaceshipGetters.getMainModule(victim.spaceship).totalHealth - 1;
 
-    const randomizer = new CountingRandomizer();
     const bus = new ActionsBus();
 
     attachReducers(bus, state);
@@ -25,7 +24,6 @@ test('simple', async () => {
     const runner = new SagaRunner(
         state,
         bus,
-        randomizer,
         damageModule(victim, attacker, SpaceshipGetters.getMainModule(victim.spaceship), 1, false)
     );
 

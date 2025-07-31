@@ -31,25 +31,23 @@ import {
     permuteTopThreeEventCardsRequest,
     permuteTopThreeEventCardsResponse,
     playerSkipNextTurn,
-    popCardFromPlayerHand, pushCardsToDiscard,
+    popCardFromPlayerHand,
+    pushCardsToDiscard,
     pushCardsToHand,
     pushCardsToStack,
-    showCardsToPlayersRequest,
-    showCardsToPlayersResponse
 } from "@common/actions/Main";
 import {StateGetters} from "@common/getters/State";
-import {dice, put, select} from "../../Effects";
+import {put, select} from "../../Effects";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
 import Module, {ModuleType} from "@common/modules/Module";
 import {request} from "./Request";
 import Vector2 from "@common/Vector2";
 import {fight} from "./Fight";
-import {AttackReason} from "@common/Types";
+import {AttackReason, MoveDamageReason} from "@common/Types";
 import {damageModule} from "./DamageModule";
 import {popCards, popOneCard} from "./PopCards";
-
-// pop n cards from the stack
-// change player energy
+import {showCards} from "./ShowCards";
+import {dice} from "./Random";
 
 function* putTopThreeCardsInAnyOrder(state: GameState) {
     const topThreeCards = yield* popCards("event", 3);
@@ -73,10 +71,7 @@ function* takeBuildingCards(state: GameState, count: number) {
 
     yield* put(pushCardsToHand(player, cards));
 
-    yield* request(
-        showCardsToPlayersRequest(cards, player, false),
-        showCardsToPlayersResponse
-    );
+    yield* showCards(player, cards, false);
 }
 
 let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) => Generator> = {
@@ -195,10 +190,7 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
 
         const cards = yield* popCards("module", cardsCount);
 
-        yield* request(
-            showCardsToPlayersRequest(cards, StateGetters.currentPlayer(state), false),
-            showCardsToPlayersResponse
-        );
+        yield* showCards(StateGetters.currentPlayer(state), cards, false);
     },
     [EventTypes.TossDiceAndDealDamage]: function* (state: GameState) {
         const currentPlayer = StateGetters.currentPlayer(state);
@@ -310,7 +302,7 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
         }
 
         const moveDamageData = yield* request(
-            chooseModuleToMoveDamageRequest(currentPlayer),
+            chooseModuleToMoveDamageRequest(currentPlayer, MoveDamageReason.EventCard),
             chooseModuleToMoveDamageResponse
         );
 
@@ -346,10 +338,7 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
         const cards = yield* popCards("module", cardsToDiscardIndexes.length);
         yield* put(pushCardsToHand(currentPlayer, cards));
 
-        yield* request(
-            showCardsToPlayersRequest(cards, currentPlayer, false),
-            showCardsToPlayersResponse
-        );
+        yield* showCards(currentPlayer, cards, false);
     }
 };
 

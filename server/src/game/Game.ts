@@ -1,16 +1,14 @@
-import {Server, Socket} from "socket.io";
 import Rand from 'rand-seed';
 
-import Player, {PlayerId} from "@common/Player";
+import Player from "@common/Player";
 import Spaceship from "@common/Spaceship";
 import ActionsBus from "@common/actions/ActionsBus";
-import {HAS_PLAYERS_DATA} from "@common/Sockets";
 import {GameSettings} from "@common/GameSettings";
 import {Action, isAction} from "@common/actions/Action";
 import * as Actions from "@common/actions/Main";
 
 import GameState from "./GameState";
-import {TimeManager, TimeRecordType} from "./TimeManager";
+import {TimeManager} from "./TimeManager";
 import MessageManager from "./MessageManager";
 import {User} from "../entity/user";
 import {getDTO} from "./mappers/GameToGameForPlayerMapper";
@@ -18,26 +16,19 @@ import SocketsManager from "./io/SocketsManager";
 import {gameSaga} from "./sagas/Main";
 import {Logger} from "./Logger";
 import {reducers} from "./reducers/Main";
-import {IRandomizer, SagaRunner} from "./SagaRunner";
-import {IOListeners} from "./io/Listeners";
+import {SagaRunner} from "./SagaRunner";
 import * as assert from "node:assert";
+import {DiceResult, shuffle, shuffleResult, throwDice, throwDiceResult} from '@common/actions/Random';
 
-export enum GameStateLegacy {
-    WAIT_FOR_PLAYERS,
-    STARTED,
-    ENDED,
-    ERROR
-}
-
-export class Randomizer implements IRandomizer {
+class Randomizer {
     rand: Rand;
 
     constructor(seed: string) {
         this.rand = new Rand(seed);
     }
 
-    dice(): number {
-        return (this.rand.next() * 6) % 6;
+    dice(): DiceResult {
+        return ((this.rand.next() * 6) % 6) as DiceResult;
     }
 
     shuffle<T>(array: T[]) {
@@ -61,8 +52,6 @@ export default class Game {
     sockets: SocketsManager;
     logger: Logger;
 
-    // state: GameState = GameState.WAIT_FOR_PLAYERS;
-
     messageManager: MessageManager;
     timeManager: TimeManager;
 
@@ -74,7 +63,7 @@ export default class Game {
         this.randomizer = new Randomizer("abracadabra");
         this.state = new GameState();
         this.bus = new ActionsBus();
-        this.sagaRunner = new SagaRunner(this.state, this.bus, this.randomizer, gameSaga());
+        this.sagaRunner = new SagaRunner(this.state, this.bus, gameSaga());
         this.sockets = sockets;
         this.logger = logger;
 
@@ -82,6 +71,7 @@ export default class Game {
 
         this.registerReduceListeners();
         this.registerLogListeners();
+        this.registerRandomizerListeners();
         this.registerIOListeners();
 
         this.#initGameState(settings);
@@ -105,11 +95,30 @@ export default class Game {
         this.bus.on('*', this.logger.handleAction.bind(this.logger));
     }
 
+    registerRandomizerListeners() {
+        this.bus.on(throwDice, () => {
+            this.bus.emit(throwDiceResult(this.randomizer.dice()));
+        });
+
+        this.bus.on(shuffle, (action: ReturnType<typeof shuffle>) => {
+            const result = new Array(action.payload.length);
+            for (let i = 0; i < action.payload.length; ++i) {
+                result[i] = i;
+            }
+
+            this.randomizer.shuffle(result)
+            this.bus.emit(shuffleResult(result));
+        });
+    }
+
     registerIOListeners() {
         this.bus.on('*', async (action: Action) => {
             // actions that match `*Request` are broadcasted through sockets
             // they must contain payload.player field, the field specify to which player
             // the action is broadcasted.
+
+            // actions that match `*Info` are also broadcasted in the same way,
+            // but without an acknowledgment
 
             if (action.type.endsWith("Request")) {
                 const responseType = action.type.replace("Request", "Response");
@@ -123,6 +132,11 @@ export default class Game {
                 }
 
                 this.bus.emit(payload);
+            }
+
+            if (action.type.endsWith("Info")) {
+                assert.ok("player" in action.payload);
+                await this.sockets.emitAndWait(action.payload.player, action.type, false, action.payload)
             }
         });
     }
@@ -148,28 +162,6 @@ export default class Game {
     async start() {
         await this.sagaRunner.run();
     }
-
-    addPlayersData(message: any[], player: Player) {
-        if (message[0] === HAS_PLAYERS_DATA) {
-            message.splice(0, 2);
-        }
-
-        message.unshift(HAS_PLAYERS_DATA, getDTO(this, player));
-
-        return message;
-    }
-
-    // async emitToPlayerAndWaitAcknowledgment(player: Player, event: string, ...args): Promise<any> {
-    //     args = this.addPlayersData(args, this.currentPlayer);
-    //
-    //     return await this.sockets.emitAndWait(player.id, event, true, ...args);
-    // }
-    //
-    // async emitToCurrentPlayerAndWaitAcknowledgment(event: string, ...args): Promise<any> {
-    //     args = this.addPlayersData(args, this.currentPlayer);
-    //
-    //     return await this.sockets.emitAndWait(this.currentPlayer.id, event, true, ...args);
-    // }
 
     getPlayerById(id: number): Player {
         return this.state.players.filter(p => p.id === id)[0];
@@ -207,44 +199,6 @@ export default class Game {
         this.bus.emit(Actions.initGameState(state));
     }
 
-    playerConnected(player: Player, socketId: string) {
-        // console.log(`Player ${player.name} connected`);
-
-        // player.socketId = socketId;
-        // player.online = true;
-
-        // this.changePlayerData(player);
-
-        this.syncPlayersData();
-    }
-
-    // async start() {
-    //     console.log("Spaceships started");
-    //
-    //     this.state = GameState.STARTED;
-    //
-    //     while (this.state === GameState.STARTED) {
-    //         this.syncPlayersData();
-    //
-    //         await this.makeGameIteration();
-    //
-    //         this.gameData.advanceCurrentPlayer();
-    //     }
-    // }
-
-    // changePlayerData(player: Player) {
-    // TODO: think about it
-    // for (let i = 0; i < this.players.length; ++i) {
-    //     if (this.players[i].id === player.id) {
-    //         this.players[i] = player;
-    //         break;
-    //     }
-    // }
-    //
-    // if (this.currentPlayer.id === player.id)
-    //     this.currentPlayer = player;
-    // }
-
     syncPlayersData() {
         console.log("🔄 syncing player data");
 
@@ -255,109 +209,8 @@ export default class Game {
                 console.log(`🔄 sync with player ${player.id} failed`);
             } else {
                 console.log(`🔄 sync with player ${player.id} successful`);
-                this.sockets.getSocket(player.id).emit('setGameData', getDTO(this, player));
+                socket.emit('setGameData', getDTO(this, player));
             }
         }
-
-        // for (let viewer of this.viewers) {
-        // this.getSocket(viewer).emit('setGameData', getViewerDTO(this));
-        // }
     }
-
-    // setDestroyed(player: Player) {
-    //     player.setLose();
-    //
-    //     this.gameData.discardCards(player.hand);
-    //     player.hand = [];
-    //
-    //     player.spaceship.modules = player.spaceship.modules.filter(m => !m.isMain);
-    //     this.gameData.discardCards(player.spaceship.modules);
-    //     player.spaceship.modules = [];
-    //
-    //     this.changePlayerData(player);
-    //
-    //     console.log(`${player.name} lost`);
-    // }
-
-    // async choosePlayerForAttack(attackReason: AttackReason): Promise<Player | void> {
-    //     const attackedPlayerId: number | undefined = await this.emitToCurrentPlayerAndWaitAcknowledgment('choosePlayerForAttack', attackReason);
-    //     if (attackedPlayerId === undefined) {
-    //         return;
-    //     }
-    //
-    //     return this.getPlayerById(attackedPlayerId);
-    // }
-
-    // async attackPlayer(attackedPlayer: Player) {
-    //     console.log(`   Player ${this.currentPlayer.name} has attacked player ${attackedPlayer.name}`);
-    //
-    //     this.currentFight = new FightManager(this.currentPlayer, attackedPlayer, this);
-    //     let destroyedPlayer = await this.currentFight.fight();
-    //
-    //     this.currentFight = undefined;
-    //
-    //     if (destroyedPlayer !== undefined) {
-    //         console.log(`   Player ${destroyedPlayer.name} was destroyed`);
-    //         this.setDestroyed(destroyedPlayer);
-    //     }
-    //
-    //     // if all players destroyed except one
-    //     if (Object.entries(this.gameData.getPlayers()).filter(([_, player]) => !player.isLose()).length === 1) {
-    //         this.state = GameState.ENDED;
-    //     }
-    // }
-
-    // async showCardsToPlayer(cards: (Module | Event)[], player: PlayerId, showToOther: boolean) {
-    //     if (showToOther) {
-    //         for (let playerToEmit of this.state.players) {
-    //             if (playerToEmit.id === player) {
-    //                 continue;
-    //             }
-    //
-    //             this.sockets.getSocket(playerToEmit.id)?.emit('showCards', player, cards);
-    //         }
-    //     }
-    //
-    //     await this.sockets.emitAndWait(player, 'showCardsAndWait', true, player, cards);
-    // }
-
-    // async askForUseModuleSecondTime(player: Player, module: ModuleTypes): Promise<boolean> {
-    //     return await this.emitToPlayerAndWaitAcknowledgment(player, 'askForUseModuleSecondTime', module);
-    // }
-
-    // async makeGameIteration() {
-    //     console.log(`Turn of player ${this.currentPlayer.name}`);
-    //
-    //     this.timeManager.addRecord(TimeRecordType.DEFAULT_TURN_STARTED, this.currentPlayer.id);
-    //
-    //     this.currentPlayer.usedRepairOrAttackModuleSecondTimeOnThisTurn = false;
-    //
-    //     for (let phase of this.phases) {
-    //         try {
-    //             await phase(this);
-    //         } catch (err) {
-    //             console.error(err);
-    //
-    //             this.state = GameState.ERROR;
-    //         }
-    //
-    //         if (this.timeManager.getPlayersTime()[this.currentPlayer.id] <= 0 && this.settings.loseWhenTimeout) {
-    //             this.currentPlayer.setLose();
-    //         }
-    //
-    //         if (this.currentPlayer.isLose()) {
-    //             break;
-    //         }
-    //
-    //         if (this.state === GameState.ENDED || this.state === GameState.ERROR) {
-    //             break;
-    //         }
-    //
-    //         this.syncPlayersData();
-    //     }
-    //
-    //     this.timeManager.addRecord(TimeRecordType.DEFAULT_TURN_ENDED, this.currentPlayer.id);
-    //
-    //     this.syncPlayersData();
-    // }
 }

@@ -116,8 +116,6 @@ export default class GameState {
     players: Player[] = [];
     currentPlayerIndex: number = 0;
 
-    currentEvent: Event | undefined = undefined;
-
     fight?: FightData = undefined;
 
     settings: GameSettings;

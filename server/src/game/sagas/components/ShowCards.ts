@@ -14,12 +14,12 @@ export function* showCards(player: Player, cards: (Module | Event)[], showToOthe
                 continue;
             }
 
-            yield* put(showCardsInfo(otherPlayer, cards));
+            yield* put(showCardsInfo(otherPlayer, player, cards));
         }
     }
 
     yield* request(
-        showCardsToPlayersRequest(player, cards),
+        showCardsToPlayersRequest(player, player, cards),
         showCardsToPlayersResponse
     );
 }

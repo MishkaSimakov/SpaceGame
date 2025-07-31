@@ -9,25 +9,15 @@ interface EffectProcessingResult {
     new_listeners: any[],
 }
 
-export interface IRandomizer {
-    dice(): number;
-
-    shuffle<T>(array: T[]);
-}
-
 export class SagaRunner {
     stateRef: GameState;
     busRef: ActionsBus;
-    randomizerRef: IRandomizer
-
     saga: SagaGenerator;
 
 
-    constructor(stateRef: GameState, busRef: ActionsBus, randomizerRef: IRandomizer, saga: SagaGenerator) {
+    constructor(stateRef: GameState, busRef: ActionsBus, saga: SagaGenerator) {
         this.stateRef = stateRef;
         this.busRef = busRef;
-        this.randomizerRef = randomizerRef;
-
         this.saga = saga;
     }
 
@@ -115,20 +105,6 @@ export class SagaRunner {
                     emitted_actions: result.emitted_actions,
                     new_listeners: result.new_listeners
                 };
-            }
-            case "dice": {
-                return {
-                    payload: Promise.resolve(this.randomizerRef.dice()),
-                    emitted_actions: [],
-                    new_listeners: []
-                };
-            }
-            case "shuffle": {
-                return {
-                    payload: Promise.resolve(this.randomizerRef.shuffle(effect.array)),
-                    emitted_actions: [],
-                    new_listeners: []
-                }
             }
         }
     }

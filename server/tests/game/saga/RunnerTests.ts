@@ -5,7 +5,6 @@ import {SagaRunner} from "../../../src/game/SagaRunner";
 import ActionsBus from "@common/actions/ActionsBus";
 import {Action} from "@common/actions/Action";
 import GameState from "../../../src/game/GameState";
-import {CountingRandomizer} from "../Utils";
 
 test('select', async () => {
     const state = new GameState();
@@ -19,8 +18,7 @@ test('select', async () => {
         assert.equal(state.currentPlayerIndex, 42);
     }
 
-    const randomizer = new CountingRandomizer();
-    const runner = new SagaRunner(state, bus, randomizer, testSaga());
+    const runner = new SagaRunner(state, bus, testSaga());
 
     await runner.run();
 });
@@ -43,8 +41,7 @@ test('put', async () => {
         receivedAction = true;
     })
 
-    const randomizer = new CountingRandomizer();
-    const runner = new SagaRunner(state, bus, randomizer, testSaga());
+    const runner = new SagaRunner(state, bus, testSaga());
     await runner.run();
 
     assert.ok(receivedAction);
@@ -76,8 +73,7 @@ test('putAndTake', async () => {
         bus.emit(testResponse(73));
     });
 
-    const randomizer = new CountingRandomizer();
-    const runner = new SagaRunner(state, bus, randomizer, testSaga());
+    const runner = new SagaRunner(state, bus, testSaga());
     await runner.run();
 });
 
@@ -111,8 +107,7 @@ test('putAndPut', async () => {
         secondReceived = true;
     });
 
-    const randomizer = new CountingRandomizer();
-    const runner = new SagaRunner(state, bus, randomizer, testSaga());
+    const runner = new SagaRunner(state, bus, testSaga());
     await runner.run();
 
     assert.ok(firstReceived);
@@ -149,8 +144,7 @@ test('multiStepSaga', async () => {
         received = true;
     });
 
-    const randomizer = new CountingRandomizer();
-    const runner = new SagaRunner(state, bus, randomizer, testSaga());
+    const runner = new SagaRunner(state, bus, testSaga());
     await runner.run();
 
     assert.ok(received);

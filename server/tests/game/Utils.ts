@@ -5,7 +5,7 @@ import {GameSettings} from "@common/GameSettings";
 import ActionsBus from "@common/actions/ActionsBus";
 import {Action} from "@common/actions/Action";
 import {reducers} from "game/reducers/Main";
-import {IRandomizer} from "../../src/game/SagaRunner";
+import {shuffle, shuffleResult, throwDice, throwDiceResult} from "@common/actions/Random";
 
 export function fakeGameState(playersCount: number): GameState {
     const state = new GameState();
@@ -52,17 +52,26 @@ export function attachTerminalLogger(busRef: ActionsBus) {
     });
 }
 
-export class CountingRandomizer implements IRandomizer {
-    shuffleCalls = 0;
-    diceCalls = 0;
+export function attachFakeRandomizer(busRef: ActionsBus) {
+    const diceCalls = {value: 0};
+    const shuffleCalls = {value: 0};
 
-    dice(): number {
-        this.diceCalls += 1;
-        return 0;
-    }
+    busRef.on(throwDice, () => {
+        diceCalls.value += 1;
 
-    shuffle<T>(array: T[]): T[] {
-        this.shuffleCalls += 1;
-        return array;
-    }
+        busRef.emit(throwDiceResult(1));
+    });
+
+    busRef.on(shuffle, (action: ReturnType<typeof shuffle>) => {
+        shuffleCalls.value += 1;
+
+        const result = new Array(action.payload.length);
+        for (let i = 0; i < result.length; ++i) {
+            result[i] = i;
+        }
+
+        busRef.emit(shuffleResult(result));
+    });
+
+    return {diceCalls, shuffleCalls};
 }

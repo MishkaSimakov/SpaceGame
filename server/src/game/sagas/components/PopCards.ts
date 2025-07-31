@@ -1,8 +1,8 @@
-import {put, select, shuffle} from "../../Effects";
+import {put, select} from "../../Effects";
 import Module from "@common/modules/Module";
 import {Event} from "@common/events/Event";
 import {popCardFromHeap, returnDiscardsToStack} from "@common/actions/Main";
-import {StateGetters} from "@common/getters/State";
+import {shuffleArray} from "./Random";
 
 type NameToType<T> = T extends "module"
     ? Module
@@ -15,9 +15,9 @@ export function* popOneCard<T extends "module" | "event">(type: T): Generator<an
 
     if (state.stack[type].length === 0) {
         if (type === "module") {
-            yield* shuffle(discards as Module[]);
+            yield* shuffleArray(discards as Module[]);
         } else {
-            yield* shuffle(discards as Event[]);
+            yield* shuffleArray(discards as Event[]);
         }
 
         yield* put(returnDiscardsToStack(type, discards));

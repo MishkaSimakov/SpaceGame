@@ -19,7 +19,11 @@ function isDarkMatterGeneratorDestroyed(info: DamageInfo, spaceship: Spaceship):
     );
 }
 
-export function* damageModule(victim: Player, attacker: Player, module: Module, damage: number, isEvent: boolean) {
+type DamageType =
+    | { type: "EventCard" }
+    | { type: "Player", attacker: Player }
+
+export function* damageModule(victim: Player, module: Module, damage: number, type: DamageType) {
     const info = SpaceshipGetters.damageInfo(victim.spaceship, module, damage);
 
     if (info.shouldDeactivateProtector) {
@@ -35,10 +39,17 @@ export function* damageModule(victim: Player, attacker: Player, module: Module, 
 
         yield* put(removeSpaceshipModules(victim, [destroyed.position]));
 
-        if (isEvent || destroyed.byNuclearReactor) {
+        if (destroyed.byNuclearReactor) {
             yield* put(pushCardsToDiscard("module", [destroyedModule]));
-        } else {
-            yield* put(pushCardsToHand(attacker, [destroyedModule]));
+        }
+
+        switch (type.type) {
+            case "EventCard":
+                yield* put(pushCardsToDiscard("module", [destroyedModule]));
+                break;
+            case "Player":
+                yield* put(pushCardsToHand(type.attacker, [destroyedModule]));
+                break;
         }
     }
 

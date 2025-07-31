@@ -1,4 +1,4 @@
-import {dice, put, select} from "../../Effects";
+import {put, select} from "../../Effects";
 import {PlayerGetters} from "@common/getters/Player";
 import {StateGetters} from "@common/getters/State";
 import {
@@ -27,6 +27,7 @@ import {
 } from "@common/actions/Main";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
 import {damageModule} from "./DamageModule";
+import {dice} from "./Random";
 
 function* getCombatants() {
     const state = yield* select();

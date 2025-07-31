@@ -9,7 +9,7 @@ import {
     beginFight,
     changePlayerEnergy,
     choosePlayerForAttackRequest,
-    choosePlayerForAttackResponse, playerUseRepairOrAttackModuleSecondTimeOnThisTurn,
+    choosePlayerForAttackResponse, playerUseModuleSecondTime,
     useModuleSecondTimeRequest,
     useModuleSecondTimeResponse
 } from "@common/actions/Main";
@@ -43,7 +43,7 @@ export function* attack() {
     state = yield* select();
     currentPlayer = StateGetters.currentPlayer(state);
 
-    if (!currentPlayer.usedRepairOrAttackModuleSecondTimeOnThisTurn
+    if (!currentPlayer.usedModuleSecondTimeOnThisTurn
         && SpaceshipGetters.getMainModuleType(currentPlayer.spaceship) === MainModuleType.UseModuleSecondTime
         && currentPlayer.energy >= energyCost * 2) {
         const useSecondTime = yield* request(
@@ -54,7 +54,7 @@ export function* attack() {
         if (!useSecondTime) return;
 
         yield* put(changePlayerEnergy(currentPlayer, -energyCost * 2, "use attack module second time"));
-        yield* put(playerUseRepairOrAttackModuleSecondTimeOnThisTurn(currentPlayer));
+        yield* put(playerUseModuleSecondTime(currentPlayer));
 
         const {victim} = yield* request(
             choosePlayerForAttackRequest(currentPlayer, AttackReason.UsingAttackModuleSecondTime),

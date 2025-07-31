@@ -1,6 +1,6 @@
 import {test} from "uvu";
 import * as assert from "node:assert";
-import {attachReducers, CountingRandomizer, fakeGameState} from "../Utils";
+import {attachReducers, fakeGameState} from "../Utils";
 import {SagaRunner} from "../../../src/game/SagaRunner";
 import ActionsBus from "@common/actions/ActionsBus";
 import {discardCards} from "../../../src/game/sagas/phases/DiscardCards";
@@ -17,14 +17,13 @@ test('doesntDiscardWhenNotEnoughCards', async () => {
         player.hand.push(state.stack.module.pop());
     }
 
-    const randomizer = new CountingRandomizer();
     const bus = new ActionsBus();
 
     bus.on(discardCardsRequest, () => {
         assert.fail("player must not be asked to discard cards");
     });
 
-    const runner = new SagaRunner(state, bus, randomizer, discardCards());
+    const runner = new SagaRunner(state, bus, discardCards());
 
     await runner.run();
 
@@ -47,7 +46,6 @@ test('discardCardsWhenThereAreTooMany', async () => {
 
     const expectedCards = [player.hand[0], player.hand[5]];
 
-    const randomizer = new CountingRandomizer();
     const bus = new ActionsBus();
 
     attachReducers(bus, state);
@@ -55,7 +53,7 @@ test('discardCardsWhenThereAreTooMany', async () => {
         bus.emit(discardCardsResponse([1, 2, 3, 4]));
     });
 
-    const runner = new SagaRunner(state, bus, randomizer, discardCards());
+    const runner = new SagaRunner(state, bus, discardCards());
 
     await runner.run();
 

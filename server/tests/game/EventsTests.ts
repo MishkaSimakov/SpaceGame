@@ -11,7 +11,6 @@ import {
     choosePlayerForAttackResponse, disposeCardsFromPlayerHand,
 } from "@common/actions/Main";
 import * as assert from "node:assert";
-import {Randomizer} from "../../src/game/Game";
 
 test('attackLaterEventCard', async () => {
     const state = new GameState();
@@ -32,8 +31,7 @@ test('attackLaterEventCard', async () => {
     state.players.push(fakeAttacker, fakeVictim);
     state.currentPlayerIndex = 0;
 
-    const randomizer = new Randomizer("test");
-    const runner = new SagaRunner(state, bus, randomizer, beforeTurn());
+    const runner = new SagaRunner(state, bus, beforeTurn());
 
     enum TestPhase {
         INIT,

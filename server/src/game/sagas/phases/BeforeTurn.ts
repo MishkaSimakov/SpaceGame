@@ -1,22 +1,26 @@
 import {isModule} from "@common/modules/Module";
-import {Event, EventTypes} from "@common/events/Event";
+import {EventTypes} from "@common/events/Event";
 
 import {fight} from "../components/Fight";
-import {all, put, select, take} from "../../Effects";
+import {put, select} from "../../Effects";
 import {
-    beginFight,
+    beginFight, changeModuleHealth,
+    changePlayerEnergy,
+    chooseModuleToMoveDamageRequest, chooseModuleToMoveDamageResponse,
     choosePlayerForAttackRequest,
     choosePlayerForAttackResponse,
     disposeCardsFromPlayerHand,
 } from "@common/actions/Main";
-import {AttackReason} from "@common/Types";
+import {AttackReason, MoveDamageReason} from "@common/Types";
 import {request} from "../components/Request";
+import {SpaceshipGetters} from "@common/getters/Spaceship";
+import {MainModuleType} from "@common/modules/MainModule";
+import {damageModule} from "../components/DamageModule";
 
-export function* beforeTurn() {
+function* tryAttackByEventCard() {
     const state = yield* select();
     const currentPlayer = state.players[state.currentPlayerIndex];
 
-    // attack by event card
     let attackLaterCardIndex: number = currentPlayer.hand
         .findIndex((c) => {
             if (isModule(c)) return false;
@@ -36,57 +40,59 @@ export function* beforeTurn() {
             yield* fight();
         }
     }
+}
 
-    // TODO: uncomment
-    // attack by command module
-    // if (state.getCurrentPlayer().spaceship.getMainModuleType() === MainModuleType.AttackOrRunaway
-    //     && state.getCurrentPlayer().energy >= settings.energyToAttackByCommandModule) {
-    //     let attackedPlayer: Player | void = await game.choosePlayerForAttack(AttackReason.MainModule);
-    //
-    //     if (attackedPlayer) {
-    //         bus.emit('useCommandModuleToAttack', {
-    //
-    //         });
-    //         // game.currentPlayer.energy -= settings.energyToAttackByCommandModule;
-    //
-    //         await fight(state, settings, bus);
-    //     }
-    // }
-    //
-    // // repair module by command module
-    // if (game.currentPlayer.spaceship.getMainModuleType() === MainModuleType.MoveDamage
-    //     && game.currentPlayer.energy >= game.ENERGY_TO_MOVE_DAMAGE_BY_COMMAND_MODULE
-    //     && game.currentPlayer.spaceship.hasDamagedModules()) {
-    //
-    //     type MoveData = {
-    //         from: Vector2,
-    //         to: Vector2
-    //     }
-    //
-    //     let moveDamageData: MoveData | undefined = await game.emitToCurrentPlayerAndWaitAcknowledgment('chooseModulesToMoveDamage', MoveDamageReason.MainModule);
-    //
-    //     if (moveDamageData === undefined) {
-    //         return;
-    //     }
-    //
-    //     let moduleToMoveDamageFrom: Module = game.currentPlayer.spaceship.getModuleByPosition(moveDamageData.from);
-    //     let moduleToMoveDamageTo: Module = game.currentPlayer.spaceship.getModuleByPosition(moveDamageData.to);
-    //
-    //     let newHealth = Math.min(moduleToMoveDamageFrom.totalHealth, moduleToMoveDamageFrom.health + 2);
-    //
-    //     moduleToMoveDamageTo.health -= newHealth - moduleToMoveDamageFrom.health;
-    //     moduleToMoveDamageFrom.health = newHealth;
-    //
-    //     if (moduleToMoveDamageTo.health <= 0) {
-    //         game.currentPlayer.spaceship.removeModule(moduleToMoveDamageTo);
-    //
-    //         let unconnected = game.currentPlayer.spaceship.getUnconnectedModules();
-    //         game.currentPlayer.spaceship.removeModule(unconnected);
-    //
-    //         game.currentPlayer.hand.push(...unconnected);
-    //
-    //         moduleToMoveDamageTo.health = moduleToMoveDamageTo.totalHealth;
-    //         game.gameData.discardCards([moduleToMoveDamageTo]);
-    //     }
-    // }
+function* tryAttackByMainModule() {
+    const state = yield* select();
+    const currentPlayer = state.players[state.currentPlayerIndex];
+
+    if (SpaceshipGetters.getMainModuleType(currentPlayer.spaceship) === MainModuleType.AttackOrRunaway
+        && currentPlayer.energy >= state.settings.energyToAttackByMainModule) {
+        const {victim} = yield* request(
+            choosePlayerForAttackRequest(currentPlayer, AttackReason.MainModule),
+            choosePlayerForAttackResponse
+        );
+
+        if (victim) {
+            yield* put(changePlayerEnergy(currentPlayer, -state.settings.energyToAttackByMainModule, "attack by main module"));
+
+            yield* put(beginFight(currentPlayer.id, victim, "attack by main module"));
+            yield* fight();
+        }
+    }
+}
+
+function* tryMoveDamageByMainModule() {
+    const state = yield* select();
+    const currentPlayer = state.players[state.currentPlayerIndex];
+
+    if (SpaceshipGetters.getMainModuleType(currentPlayer.spaceship) === MainModuleType.MoveDamage
+        && currentPlayer.energy >= state.settings.energyToMoveDamageByMainModule
+        && SpaceshipGetters.hasDamagedModules(currentPlayer.spaceship)) {
+
+        const moveDamageData = yield* request(
+            chooseModuleToMoveDamageRequest(currentPlayer, MoveDamageReason.MainModule),
+            chooseModuleToMoveDamageResponse
+        );
+
+        if (moveDamageData) {
+            const {from, to} = moveDamageData;
+
+            yield* put(changePlayerEnergy(currentPlayer, -state.settings.energyToMoveDamageByMainModule, "move damage by main module"));
+
+            yield* put(changeModuleHealth(currentPlayer, from, state.settings.damageMovedByMainModule, "move damage by main module"));
+            yield* damageModule(
+                currentPlayer,
+                SpaceshipGetters.getModuleByPosition(currentPlayer.spaceship, to),
+                state.settings.damageMovedByMainModule,
+                {type: "EventCard"}
+            );
+        }
+    }
+}
+
+export function* beforeTurn() {
+    yield* tryAttackByEventCard();
+    yield* tryAttackByMainModule();
+    yield* tryMoveDamageByMainModule();
 }
