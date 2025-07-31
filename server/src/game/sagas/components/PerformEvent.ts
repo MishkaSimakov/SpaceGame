@@ -16,8 +16,6 @@ import {
     chooseModuleToDamageByDiceResponse,
     chooseModuleToDestroyRequest,
     chooseModuleToDestroyResponse,
-    chooseModuleToMoveDamageRequest,
-    chooseModuleToMoveDamageResponse,
     chooseModuleToRepairByDiceRequest,
     chooseModuleToRepairByDiceResponse,
     choosePlayerForAttackRequest,
@@ -48,6 +46,7 @@ import {damageModule} from "./DamageModule";
 import {popCards, popOneCard} from "./PopCards";
 import {showCards} from "./ShowCards";
 import {dice} from "./Random";
+import {moveDamage} from "./MoveDamage";
 
 function* putTopThreeCardsInAnyOrder(state: GameState) {
     const topThreeCards = yield* popCards("event", 3);
@@ -194,7 +193,7 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
     },
     [EventTypes.TossDiceAndDealDamage]: function* (state: GameState) {
         const currentPlayer = StateGetters.currentPlayer(state);
-        let damage = (yield* dice()) <= 4 ? 1 : 2;
+        const damage = (yield* dice()) <= 4 ? 1 : 2;
 
         const {victimId, victimModulePosition} = yield* request(
             chooseModuleToDamageByDiceRequest(currentPlayer, damage),
@@ -203,10 +202,8 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
 
         if (victimId === undefined) return;
 
-        let victim = StateGetters.playerById(state, victimId);
-        let victimModule = SpaceshipGetters.getModuleByPosition(victim.spaceship, victimModulePosition);
-
-        yield* damageModule(victim, currentPlayer, victimModule, damage, true);
+        const victim = StateGetters.playerById(state, victimId);
+        yield* damageModule(victim, victimModulePosition, damage, {type: "Player", attacker: currentPlayer});
     },
     [EventTypes.TossDiceAndGetEnergy]: function* (state: GameState) {
         const energyCount = (yield* dice()) <= 4 ? 1 : 2;
@@ -262,6 +259,9 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
         yield* put(pushCardsToHand(currentPlayer, [chosenCard]));
     },
     [EventTypes.DiscardCardAndRepairSpaceship]: function* (state: GameState) {
+        // TODO: choose 1 or 2 cards
+        // Вы можете, скинув до 2 карт с руки, восстановить по 1 урона с модулей вашего корабля за каждую скинутую карту
+
         const currentPlayer = StateGetters.currentPlayer(state);
 
         if (currentPlayer.hand.length === 0 || !SpaceshipGetters.hasDamagedModules(currentPlayer.spaceship)) {
@@ -285,7 +285,6 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
             chooseModulesToRepairByDiscardedCardsResponse
         );
 
-        // TODO: something wrong with the checks
         if (modulesToRepairPositions.length > 2) {
             throw new Error("Too many modules to repair");
         }
@@ -295,29 +294,7 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
         }
     },
     [EventTypes.MoveDamage]: function* (state: GameState) {
-        const currentPlayer = StateGetters.currentPlayer(state);
-
-        if (!SpaceshipGetters.hasDamagedModules(currentPlayer.spaceship)) {
-            return;
-        }
-
-        const moveDamageData = yield* request(
-            chooseModuleToMoveDamageRequest(currentPlayer, MoveDamageReason.EventCard),
-            chooseModuleToMoveDamageResponse
-        );
-
-        if (moveDamageData === undefined) {
-            return;
-        }
-
-        const willBeDestructed = SpaceshipGetters.getModuleByPosition(currentPlayer.spaceship, moveDamageData.to).health === 1;
-
-        yield* put(changeModuleHealth(currentPlayer, moveDamageData.from, 1, "event card (move damage, part 1)"));
-        yield* put(changeModuleHealth(currentPlayer, moveDamageData.to, -1, "event card (move damage, part 2)"));
-
-        if (willBeDestructed) {
-            yield* put(destructSpaceshipModules(currentPlayer, [moveDamageData.to], "discard", "hand"));
-        }
+        yield* moveDamage(MoveDamageReason.EventCard, 0, 1);
     }, [EventTypes.DiscardCardsAndTakeBuildingCards]: function* (state: GameState) {
         const currentPlayer = StateGetters.currentPlayer(state);
         if (currentPlayer.hand.length == 0) {

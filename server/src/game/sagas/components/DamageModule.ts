@@ -23,7 +23,8 @@ type DamageType =
     | { type: "EventCard" }
     | { type: "Player", attacker: Player }
 
-export function* damageModule(victim: Player, module: Module, damage: number, type: DamageType) {
+export function* damageModule(victim: Player, position: Vector2, damage: number, type: DamageType) {
+    const module = SpaceshipGetters.getModuleByPosition(victim.spaceship, position);
     const info = SpaceshipGetters.damageInfo(victim.spaceship, module, damage);
 
     if (info.shouldDeactivateProtector) {

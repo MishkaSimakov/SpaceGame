@@ -4,9 +4,8 @@ import {EventTypes} from "@common/events/Event";
 import {fight} from "../components/Fight";
 import {put, select} from "../../Effects";
 import {
-    beginFight, changeModuleHealth,
+    beginFight,
     changePlayerEnergy,
-    chooseModuleToMoveDamageRequest, chooseModuleToMoveDamageResponse,
     choosePlayerForAttackRequest,
     choosePlayerForAttackResponse,
     disposeCardsFromPlayerHand,
@@ -15,7 +14,7 @@ import {AttackReason, MoveDamageReason} from "@common/Types";
 import {request} from "../components/Request";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
 import {MainModuleType} from "@common/modules/MainModule";
-import {damageModule} from "../components/DamageModule";
+import {moveDamage} from "../components/MoveDamage";
 
 function* tryAttackByEventCard() {
     const state = yield* select();
@@ -69,25 +68,11 @@ function* tryMoveDamageByMainModule() {
     if (SpaceshipGetters.getMainModuleType(currentPlayer.spaceship) === MainModuleType.MoveDamage
         && currentPlayer.energy >= state.settings.energyToMoveDamageByMainModule
         && SpaceshipGetters.hasDamagedModules(currentPlayer.spaceship)) {
-
-        const moveDamageData = yield* request(
-            chooseModuleToMoveDamageRequest(currentPlayer, MoveDamageReason.MainModule),
-            chooseModuleToMoveDamageResponse
+        yield* moveDamage(
+            MoveDamageReason.MainModule,
+            state.settings.energyToMoveDamageByMainModule,
+            state.settings.damageMovedByMainModule
         );
-
-        if (moveDamageData) {
-            const {from, to} = moveDamageData;
-
-            yield* put(changePlayerEnergy(currentPlayer, -state.settings.energyToMoveDamageByMainModule, "move damage by main module"));
-
-            yield* put(changeModuleHealth(currentPlayer, from, state.settings.damageMovedByMainModule, "move damage by main module"));
-            yield* damageModule(
-                currentPlayer,
-                SpaceshipGetters.getModuleByPosition(currentPlayer.spaceship, to),
-                state.settings.damageMovedByMainModule,
-                {type: "EventCard"}
-            );
-        }
     }
 }
 

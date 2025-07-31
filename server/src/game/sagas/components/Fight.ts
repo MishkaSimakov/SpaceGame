@@ -4,17 +4,17 @@ import {StateGetters} from "@common/getters/State";
 import {
     activateProtector,
     changePlayerEnergy, deactivateProtectorIfActive,
-    endFight,
+    endFight, popCardFromPlayerHand,
     shiftFightTurnToNextPlayer
 } from "@common/actions/Reducer";
-import {EventTypes} from "@common/events/Event";
+import {EventTypes, isEvent} from "@common/events/Event";
 import {MainModuleType} from "@common/modules/MainModule";
 import * as assert from "node:assert";
 import Vector2 from "@common/Vector2";
-import {isModule} from "@common/modules/Module";
 import Player from "@common/Player";
 import {request} from "./Request";
 import {
+    chooseModuleToDamageByEventCardRequest, chooseModuleToDamageByEventCardResponse,
     chooseProtectorRequest,
     chooseProtectorResponse,
     chooseTargetRequest,
@@ -23,7 +23,11 @@ import {
     chooseWeaponAndTargetResponse,
     RunawayType,
     tryToRunawayRequest,
-    tryToRunawayResponse, useModuleSecondTimeRequest, useModuleSecondTimeResponse,
+    tryToRunawayResponse,
+    useEventCardToDealDamageRequest,
+    useEventCardToDealDamageResponse,
+    useModuleSecondTimeRequest,
+    useModuleSecondTimeResponse,
 } from "@common/actions/Main";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
 import {damageModule} from "./DamageModule";
@@ -67,8 +71,38 @@ function* chooseProtectors(victim: Player) {
     }
 }
 
-function* damageByEventCard() {
-    // TODO
+function* tryDamageByEventCard() {
+    const {attacker, victim} = yield* getCombatants();
+
+    const damageLaterCardIndex = attacker.hand.findIndex(
+        c => isEvent(c) && c.type === EventTypes.SaveCardAndThenDealDamage
+    );
+
+    if (damageLaterCardIndex === -1) {
+        return;
+    }
+
+    if (victim.spaceship.modules.length === 1) {
+        return;
+    }
+
+    const willUse = yield* request(
+        useEventCardToDealDamageRequest(attacker),
+        useEventCardToDealDamageResponse
+    );
+
+    if (!willUse) {
+        return;
+    }
+
+    const position = yield* request(
+        chooseModuleToDamageByEventCardRequest(attacker, victim),
+        chooseModuleToDamageByEventCardResponse
+    );
+
+    yield* put(popCardFromPlayerHand(attacker, damageLaterCardIndex));
+
+    yield* damageModule(victim, position, 1, {type: "EventCard"})
 }
 
 function* askForRunawayViaDice() {
@@ -119,11 +153,10 @@ function* damageByWeapon() {
         );
 
         let weapon = SpaceshipGetters.getModuleByPosition(attacker.spaceship, weaponPosition);
-        let target = SpaceshipGetters.getModuleByPosition(victim.spaceship, targetPosition);
 
         assert.ok(attacker.energy >= weapon.energyCost);
 
-        yield* damageModule(victim, attacker, target, weapon.strength, false);
+        yield* damageModule(victim, targetPosition, weapon.strength, {type: "Player", attacker});
 
         yield* put(changePlayerEnergy(attacker, -weapon.energyCost, "used weapon in fight"));
 
@@ -146,9 +179,8 @@ function* damageByWeapon() {
                     chooseTargetRequest(attacker, victim),
                     chooseTargetResponse
                 );
-                const target = SpaceshipGetters.getModuleByPosition(victim.spaceship, targetPosition);
 
-                yield* damageModule(victim, attacker, target, weapon.strength, false);
+                yield* damageModule(victim, targetPosition, weapon.strength, {type: "Player", attacker});
 
                 yield* put(changePlayerEnergy(attacker, -weapon.energyCost * 2, "used weapon in fight second time"));
             }
@@ -163,16 +195,7 @@ function* makeFightIteration() {
         yield* chooseProtectors(victim);
     }
 
-    let damageLaterCard: number = attacker.hand
-        .findIndex((c) => {
-            if (isModule(c)) return false;
-
-            return c.type === EventTypes.SaveCardAndThenDealDamage;
-        });
-
-    if (damageLaterCard !== -1) {
-        yield* damageByEventCard();
-    }
+    yield* tryDamageByEventCard();
 
     if (yield* askForRunawayViaDice()) {
         yield* put(endFight());

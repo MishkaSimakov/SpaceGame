@@ -8,6 +8,7 @@ import {discardCards} from "../../../src/game/sagas/phases/DiscardCards";
 import {damageModule} from "../../../src/game/sagas/components/DamageModule";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
 import SolarPanel from "@common/modules/SolarPanel";
+import Vector2 from "@common/Vector2";
 
 
 test('simple', async () => {
@@ -24,7 +25,7 @@ test('simple', async () => {
     const runner = new SagaRunner(
         state,
         bus,
-        damageModule(victim, attacker, SpaceshipGetters.getMainModule(victim.spaceship), 1, false)
+        damageModule(victim, new Vector2(0, 0), 1, {type: "Player", attacker})
     );
 
     await runner.run();
