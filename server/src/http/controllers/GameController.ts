@@ -50,8 +50,8 @@ export const create = async (req: Request, res: Response) => {
 };
 
 export const joinGame = async (req: AuthenticatedRequest, res: Response) => {
-    let gameId = req.url.split('/').pop();
-    let game = await App.getInstance().gamesManager.getGame(gameId);
+    const gameId = req.url.split('/').pop();
+    const game = await App.getInstance().gamesManager.getGame(gameId);
 
     const isPlayerInGame = !!game?.users.find(p => p.id === req.user.id);
     if (!game || !(isPlayerInGame || game.state.settings.isPublic)) {
@@ -62,7 +62,7 @@ export const joinGame = async (req: AuthenticatedRequest, res: Response) => {
 };
 
 export const showCreatePage = async (req: Request, res: Response) => {
-    let users = await User.createQueryBuilder("user")
+    const users = await User.createQueryBuilder("user")
         .select(['id', 'login'])
         .getRawMany();
 

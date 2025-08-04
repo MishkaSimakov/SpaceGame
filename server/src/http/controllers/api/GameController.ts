@@ -2,6 +2,8 @@ import {Request, Response} from "express";
 import {User} from "../../../entity/user";
 import {GameSettings} from "@common/GameSettings";
 import App from "../../../App";
+import {Game as GameDBEntity} from "../../../entity/game";
+import {Logger} from "../../../game/Logger";
 
 
 export const create = async (req: Request, res: Response) => {
@@ -32,7 +34,16 @@ export const create = async (req: Request, res: Response) => {
 };
 
 export const logs = async (req: Request, res: Response) => {
-    return res.json({
-        error: "not implemented"
-    });
+    const parts = req.url.split('/');
+    const gameId = parts[parts.length - 2];
+
+    const gameEntity = await GameDBEntity.findOneBy({id: gameId});
+
+    if (!gameEntity) {
+        return res.status(500).send({error: "Failed to find game with the given id"});
+    }
+
+    return res.status(200).json(
+        new Logger(gameEntity.logFilepath).getPastActions()
+    );
 };
