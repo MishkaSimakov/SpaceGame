@@ -115,10 +115,10 @@ export default class HandDrawer {
             this.group.add(cardShape);
 
             cardShape.on('click', () => {
-                const module = card as Module;
-
-                module.rotation = (module.rotation + 1) % 4;
-                cardShape.rotateCard(module.rotation * (Math.PI / 2));
+                if (isModule(card)) {
+                    card.rotation = (card.rotation + 1) % 4;
+                    cardShape.rotateCard(card.rotation * (Math.PI / 2));
+                }
             });
 
             this.cardShapes.push(cardShape);

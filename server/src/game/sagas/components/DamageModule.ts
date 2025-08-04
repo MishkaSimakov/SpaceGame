@@ -1,7 +1,6 @@
 import Player from "@common/Player";
-import Module, {ModuleType} from "@common/modules/Module";
-import Spaceship from "@common/Spaceship";
-import {DamageInfo, SpaceshipGetters} from "@common/getters/Spaceship";
+import {ModuleType} from "@common/modules/Module";
+import {SpaceshipGetters} from "@common/getters/Spaceship";
 import {StateGetters} from "@common/getters/State";
 import {
     changeModuleHealth, deactivateProtectorIfActive,

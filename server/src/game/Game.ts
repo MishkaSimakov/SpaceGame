@@ -27,10 +27,7 @@ class Randomizer {
     }
 
     dice(): DiceResult {
-        const random = this.rand.next();
-        const result = (Math.floor(random * 6) + 1) as DiceResult;
-        console.log(`dice: ${random} -> ${result}`)
-        return result;
+        return (Math.floor(this.rand.next() * 6) + 1) as DiceResult;
     }
 
     shuffle<T>(array: T[]) {

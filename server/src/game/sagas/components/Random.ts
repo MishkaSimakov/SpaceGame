@@ -10,11 +10,12 @@ export function* dice(): Generator<any, DiceResult, any> {
     return res.payload;
 }
 
-export function* shuffleArray<T>(array: T[]): Generator<any, T[], any> {
+export function* shuffleArray<T>(array: T[]) {
     const {req, res} = yield* all({
         req: put(shuffle(array.length)),
         res: take(shuffleResult)
     });
 
-    return res.payload.map(i => array[i]);
+    const shuffled = res.payload.map(i => array[i]);
+    array.splice(0, array.length, ...shuffled);
 }

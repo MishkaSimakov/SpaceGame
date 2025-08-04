@@ -13,7 +13,6 @@ export function* init() {
     yield* shuffleArray(state.players);
 
     for (const player of state.players) {
-        console.log(player);
         player.hand = state.stack.module.splice(0, state.settings.startCardsCount);
 
         // initialize spaceship
