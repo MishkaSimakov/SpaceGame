@@ -9,7 +9,6 @@ class OtherPlayer {
     id: number;
     name: string;
     energy: number;
-    online: boolean;
     spaceship: Spaceship;
     handSize: number;
 
@@ -32,6 +31,7 @@ class GameForPlayerDTO {
     settings: GameSettings;
     player: Player;
     otherPlayers: OtherPlayer[];
+    onlineMap: Record<PlayerId, boolean>;
 
     timeControl: {
         timeDecreasingPlayerId: number;

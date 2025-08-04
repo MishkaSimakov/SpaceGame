@@ -49,7 +49,13 @@ export default class Controls extends Scene {
         this.handDrawer.setHandData(this.gameManager.currentPlayer.hand);
         this.handDrawer.redraw();
 
-        this.topBarDrawer.setPlayersData(this.gameManager.currentPlayer, this.gameManager.otherPlayers, this.gameManager.playerTime, this.gameManager.messages);
+        this.topBarDrawer.setPlayersData(
+            this.gameManager.currentPlayer,
+            this.gameManager.otherPlayers,
+            this.gameManager.onlineMap,
+            this.gameManager.playerTime,
+            this.gameManager.messages
+        );
     }
 
     rebuildSpaceship(): Promise<void> {

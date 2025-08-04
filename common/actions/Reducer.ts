@@ -3,7 +3,7 @@ import {Event} from "../events/Event";
 import Player, {PlayerId} from "../Player";
 import Vector2 from "../Vector2";
 import Spaceship from "../Spaceship";
-import GameState from "../../server/src/game/GameState";
+import GameState, {TimeRecordType} from "../../server/src/game/GameState";
 
 export const initGameState = (state: GameState) => {
     return {
@@ -153,5 +153,19 @@ export const playerUseModuleSecondTime = (player: Player) => {
     return {
         type: 'playerUseModuleSecondTime',
         payload: {player: player.id}
+    };
+}
+
+export const addTimeRecord = (player: PlayerId, type: TimeRecordType, time: number) => {
+    return {
+        type: 'addTimeRecord',
+        payload: {player, type, time}
+    };
+}
+
+export const changePlayerTime = (player: PlayerId, delta: number) => {
+    return {
+        type: 'changePlayerTime',
+        payload: {player, delta}
     };
 }

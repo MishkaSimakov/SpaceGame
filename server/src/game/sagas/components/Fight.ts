@@ -3,8 +3,10 @@ import {PlayerGetters} from "@common/getters/Player";
 import {StateGetters} from "@common/getters/State";
 import {
     activateProtector,
-    changePlayerEnergy, deactivateProtectorIfActive,
-    endFight, popCardFromPlayerHand,
+    changePlayerEnergy,
+    deactivateProtectorIfActive,
+    endFight,
+    popCardFromPlayerHand,
     shiftFightTurnToNextPlayer
 } from "@common/actions/Reducer";
 import {EventTypes, isEvent} from "@common/events/Event";
@@ -14,7 +16,8 @@ import Vector2 from "@common/Vector2";
 import Player from "@common/Player";
 import {request} from "./Request";
 import {
-    chooseModuleToDamageByEventCardRequest, chooseModuleToDamageByEventCardResponse,
+    chooseModuleToDamageByEventCardRequest,
+    chooseModuleToDamageByEventCardResponse,
     chooseProtectorRequest,
     chooseProtectorResponse,
     chooseTargetRequest,
@@ -32,6 +35,8 @@ import {
 import {SpaceshipGetters} from "@common/getters/Spaceship";
 import {damageModule} from "./DamageModule";
 import {dice} from "./Random";
+import {addTimeRecord} from "./Time";
+import {TimeRecordType} from "../../GameState";
 
 function* getCombatants() {
     const state = yield* select();
@@ -199,8 +204,14 @@ function* makeFightIteration() {
     const {victim, attacker} = yield* getCombatants();
 
     if (PlayerGetters.canProtect(victim)) {
+        yield* addTimeRecord(victim.id, TimeRecordType.FIGHT_TURN_STARTED);
+
         yield* chooseProtectors(victim);
+
+        yield* addTimeRecord(victim.id, TimeRecordType.FIGHT_TURN_STARTED);
     }
+
+    yield* addTimeRecord(attacker.id, TimeRecordType.FIGHT_TURN_STARTED);
 
     yield* tryDamageByEventCard();
     if (yield* isVictimLost()) {
@@ -227,10 +238,14 @@ function* makeFightIteration() {
 
     yield* put(deactivateProtectorIfActive(victim));
 
+    yield* addTimeRecord(victim.id, TimeRecordType.FIGHT_TURN_ENDED);
+
     return true;
 }
 
 export function* fight() {
+    yield* addTimeRecord(StateGetters.currentPlayer(yield* select()).id, TimeRecordType.DEFAULT_TURN_INTERRUPTED);
+
     while (true) {
         const {victim, attacker} = yield* getCombatants();
 
@@ -252,4 +267,6 @@ export function* fight() {
     assert.ok(!state.players.some(p => p.spaceship.activatedProtector));
 
     assert.ok(state.fight === undefined);
+
+    yield* addTimeRecord(StateGetters.currentPlayer(yield* select()).id, TimeRecordType.DEFAULT_TURN_CONTINUED);
 }

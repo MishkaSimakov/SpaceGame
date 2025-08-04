@@ -1,7 +1,6 @@
 import {GameSettings} from "@common/GameSettings";
 import {GameForPlayerDTO, OtherPlayer} from "@common/GameForPlayerDTO";
 import {Message} from "@common/Types";
-import {Event, EventTypes} from "@common/events/Event";
 import {plainToClass} from "@common/PlainToClass";
 import {PlayerGetters} from "@common/getters/Player";
 
@@ -18,6 +17,7 @@ export default class Game {
 
     currentPlayer: Player;
     otherPlayers: OtherPlayer[];
+    onlineMap: Record<PlayerId, boolean> = {};
 
     socketManager: SocketManager;
 
@@ -70,6 +70,9 @@ export default class Game {
     }
 
     setGameData(gameDTO: GameForPlayerDTO) {
+        this.currentTurnPlayerId = gameDTO.currentTurnPlayerId;
+        this.onlineMap = gameDTO.onlineMap;
+
         if (!this.rebuildSpaceshipManager.isRebuildingSpaceship)
             this.currentPlayer = plainToClass(gameDTO.player, Player.getPropertiesMap());
 

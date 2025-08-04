@@ -19,6 +19,7 @@ import {Logger} from "./Logger";
 import {reducers} from "./reducers/Main";
 import {SagaRunner} from "./SagaRunner";
 import Spaceship from "@common/Spaceship";
+import {time, timeResult} from "@common/actions/Time";
 
 class Randomizer {
     rand: Rand;
@@ -76,6 +77,7 @@ export default class Game {
         this.registerLogListeners();
         this.registerRandomizerListeners();
         this.registerIOListeners();
+        this.registerTimeListeners();
     }
 
 
@@ -116,6 +118,10 @@ export default class Game {
         // register fake sockets listeners
         // they don't send anything to users and read responses from the log file
         const actionsReplayListener = (action: Action) => {
+            if (pastActions.length === 0) {
+                return;
+            }
+
             const pastAction = pastActions.shift();
             console.log("⏪ replay: ", action.type, pastAction.type);
 
@@ -225,6 +231,12 @@ export default class Game {
                 }
             }
         });
+    }
+
+    registerTimeListeners() {
+        this.bus.on(time, () => {
+            this.bus.emit(timeResult(Date.now()));
+        })
     }
 
     async start() {

@@ -35,6 +35,10 @@ export default class SocketsManager {
         return this.io.sockets.sockets.get(socketId);
     }
 
+    isOnline(playerId: PlayerId): boolean {
+        return this.players[playerId] && this.players[playerId].online;
+    }
+
     onPlayerConnect(playerId: PlayerId, socketId: string) {
         if (!(playerId in this.players)) {
             console.log(this.players, playerId);

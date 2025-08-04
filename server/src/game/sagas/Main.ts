@@ -9,6 +9,8 @@ import {attack} from "./phases/Attack";
 import {fixSpaceship} from "./phases/FixSpaceship";
 import {init} from "./components/Init";
 import {StateGetters} from "@common/getters/State";
+import {addTimeRecord} from "./components/Time";
+import {TimeRecordType} from "../GameState";
 
 function* isCurrentPlayerLost() {
     return StateGetters.currentPlayer(yield* select()).lose;
@@ -19,6 +21,9 @@ function* isGameEnded() {
 }
 
 function* playerTurn() {
+    const currentPlayer = StateGetters.currentPlayer(yield* select());
+    yield* addTimeRecord(currentPlayer.id, TimeRecordType.DEFAULT_TURN_STARTED);
+
     // after moving damage player can potentially lose
     yield* beforeTurn();
     if (yield* isCurrentPlayerLost()) {
@@ -41,6 +46,8 @@ function* playerTurn() {
     }
 
     yield* discardCards();
+
+    yield* addTimeRecord(currentPlayer.id, TimeRecordType.DEFAULT_TURN_ENDED);
 }
 
 export function* gameSaga() {

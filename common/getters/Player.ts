@@ -11,7 +11,6 @@ export const PlayerGetters = {
         otherPlayer.id = player.id;
         otherPlayer.name = player.name;
         otherPlayer.energy = player.energy;
-        otherPlayer.online = player.online;
         otherPlayer.spaceship = player.spaceship;
         otherPlayer.handSize = player.hand.length;
 

@@ -1,8 +1,9 @@
-import Player from "../../../../common/Player";
+import {OtherPlayer} from "@common/GameForPlayerDTO";
+import Player, {PlayerId} from "@common/Player";
+import {Message} from "@common/Types";
+
 import Controls from "../scenes/controls";
 import {ButtonColors, SIZES} from "../constants";
-import {OtherPlayer} from "../../../../common/GameForPlayerDTO";
-import {Message} from "../../../../common/Types";
 import {Rectangle} from "../engine/shapes/Rectangle";
 import {Text} from "../engine/shapes/Text";
 import {Group} from "../engine/Group";
@@ -43,6 +44,7 @@ export default abstract class TopBarDrawer {
 
     otherPlayers: OtherPlayer[] = [];
     currentPlayer: Player;
+    onlineMap: Record<PlayerId, boolean> = {};
     playerTime: Record<number, number> = {};
 
     sizes = {
@@ -106,9 +108,10 @@ export default abstract class TopBarDrawer {
         this.redraw();
     }
 
-    setPlayersData(currentPlayer: Player, otherPlayers: OtherPlayer[], playerTime: Record<number, number>, messages: Message[]) {
+    setPlayersData(currentPlayer: Player, otherPlayers: OtherPlayer[], onlineMap: Record<PlayerId, boolean>, playerTime: Record<number, number>, messages: Message[]) {
         this.currentPlayer = currentPlayer;
         this.otherPlayers = otherPlayers;
+        this.onlineMap = onlineMap;
         this.playerTime = playerTime;
         this.messages = messages;
 
@@ -222,7 +225,7 @@ export default abstract class TopBarDrawer {
             width: width
         });
 
-        const messages= this.messages.slice(-messagesCount);
+        const messages = this.messages.slice(-messagesCount);
 
         let messagesString = messages.map(message => {
             return (message.playerId ?? 'Игра') + ': ' + message.text;

@@ -9,6 +9,7 @@ import {SpaceshipGetters} from "../../../../common/getters/Spaceship";
 
 export interface PlayerDataLineConfig extends NodeConfig {
     player: OtherPlayer,
+    online: boolean,
     withName: boolean,
     withTimeControl: boolean,
     time: number,
@@ -30,7 +31,7 @@ export class PlayerDataLine extends Group<PlayerDataLineConfig> {
             new Text({
                 x: 0,
                 y: 0,
-                text: (this.withName() ? (player.online ? "🔴 " : "✖️ ") : "") + player.name + ":",
+                text: (this.withName() ? (config.online ? "🔴 " : "✖️ ") : "") + player.name + ":",
                 fontFamily: "Exo2Bold",
                 fontSize: 15,
                 fill: "white",

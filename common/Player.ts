@@ -15,12 +15,13 @@ export default class Player {
     energy: number = 0;
     skipNextTurn: boolean;
 
-    online: boolean;
-
     usedModuleSecondTimeOnThisTurn: boolean = false;
 
     lose: boolean = false;
 
+    time: number;
+
+    // TODO: maybe remove
     static getPropertiesMap(): Options {
         return {
             class: Player,

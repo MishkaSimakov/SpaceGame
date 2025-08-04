@@ -1,11 +1,12 @@
+import {OtherPlayer} from "@common/GameForPlayerDTO";
+import Vector2 from "@common/Vector2";
+import {PlayerGetters} from "@common/getters/Player";
+
 import TopBarDrawer from "./TopBarDrawer";
-import Vector2 from "../../../../common/Vector2";
-import {OtherPlayer} from "../../../../common/GameForPlayerDTO";
 import Color from "../Color";
 import {Text} from "../engine/shapes/Text";
 import {Rectangle} from "../engine/shapes/Rectangle";
 import {PlayerDataLine} from "../shapes/PlayerDataLine";
-import {PlayerGetters} from "../../../../common/getters/Player";
 
 export default class TopBarDefaultDrawer extends TopBarDrawer {
     drawStatus(): void {
@@ -83,6 +84,7 @@ export default class TopBarDefaultDrawer extends TopBarDrawer {
             width: this.sizes.statusWidth - 2 * this.sizes.padding,
 
             player: PlayerGetters.forOtherPlayer(this.currentPlayer),
+            online: this.onlineMap[this.currentPlayer.id],
             withName: false,
             withTimeControl: this.scene.gameManager.settings.withTimeControl,
             time: this.playerTime[this.currentPlayer.id],
@@ -130,6 +132,7 @@ export default class TopBarDefaultDrawer extends TopBarDrawer {
                 width: this.sizes.statusWidth - 2 * this.sizes.padding,
 
                 player: player,
+                online: this.onlineMap[player.id],
                 withName: true,
                 withTimeControl: this.scene.gameManager.settings.withTimeControl,
                 time: this.playerTime[player.id],

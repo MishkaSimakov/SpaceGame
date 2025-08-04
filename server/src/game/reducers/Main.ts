@@ -221,5 +221,22 @@ export const reducers: ReducersType = {
         assert.ok(!player.lose);
 
         player.lose = true;
+    },
+
+    addTimeRecord(state: GameState, payload) {
+        assert.ok(state.settings.withTimeControl);
+
+        state.timeRecords.push({
+            playerId: payload.player,
+            type: payload.type,
+            time: payload.time
+        });
+    },
+
+    changePlayerTime(state: GameState, payload) {
+        assert.ok(state.settings.withTimeControl);
+
+        const player = StateGetters.playerById(state, payload.player);
+        player.time += payload.delta;
     }
 }

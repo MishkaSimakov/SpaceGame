@@ -1,4 +1,4 @@
-import Module, {isModule} from "@common/modules/Module";
+import Module from "@common/modules/Module";
 import {Event, EventTypes, addEvents} from "@common/events/Event";
 import {MainModule, MainModuleType} from "@common/modules/MainModule";
 
@@ -95,6 +95,26 @@ const initialEventsStack = [
         "(кроме командного)", 2),
 ];
 
+export enum TimeRecordType {
+    DEFAULT_TURN_STARTED,
+    DEFAULT_TURN_ENDED, // update time, +45 s
+
+    // before fight start
+    DEFAULT_TURN_INTERRUPTED, // update time
+
+    // after fight end
+    DEFAULT_TURN_CONTINUED,
+
+    FIGHT_TURN_STARTED,
+    FIGHT_TURN_ENDED// update time, +10 s
+}
+
+export type TimeRecord = {
+    type: TimeRecordType,
+    playerId: PlayerId,
+    time: number
+};
+
 export default class GameState {
     stack = {
         module: [] as Module[],
@@ -119,6 +139,8 @@ export default class GameState {
     fight?: FightData = undefined;
 
     settings: GameSettings;
+
+    timeRecords: TimeRecord[] = [];
 
     constructor() {
         for (let module in modules) {
