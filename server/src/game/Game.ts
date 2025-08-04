@@ -1,5 +1,6 @@
 import * as assert from "node:assert";
 import Rand from 'rand-seed';
+import jsonpatch from 'fast-json-patch'
 
 import Player from "@common/Player";
 import ActionsBus from "@common/actions/ActionsBus";
@@ -210,11 +211,13 @@ export default class Game {
                 let copy = structuredClone(this.state);
                 reducers[action.type](copy, action.payload);
 
+                const delta = jsonpatch.compare(this.state, copy);
+
                 // SagaRunner relies on stateRef. Plain assignment would invalidate its reference
                 Object.assign(this.state, copy);
 
                 // for the sake of logging
-                this.bus.emit(Actions.reducerUpdatedState(this.state));
+                this.bus.emit(Actions.reducerUpdatedState(delta));
 
                 if (!this.inReplay) {
                     // notify players about state update

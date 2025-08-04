@@ -64,19 +64,19 @@ export function* damageModule(victim: Player, position: Vector2, damage: number,
     if (info.destroyed.length !== 0) {
         const unconnectedModules = SpaceshipGetters.getUnconnectedModules(victim.spaceship);
 
-        // if (unconnectedModules.length !== 0) {
+        if (unconnectedModules.length !== 0) {
             yield* put(removeSpaceshipModules(victim, unconnectedModules.map(m => new Vector2(m.x, m.y))));
             yield* put(pushCardsToHand(victim, unconnectedModules))
-        // }
+        }
     }
 
     if (isDarkMatterGeneratorDestroyed) {
         const modulesExceptMain = victim.spaceship.modules.filter(m => m.type !== ModuleType.MainModule);
 
-        // if (modulesExceptMain.length !== 0) {
+        if (modulesExceptMain.length !== 0) {
             yield* put(removeSpaceshipModules(victim, modulesExceptMain.map(m => new Vector2(m.x, m.y))));
             yield* put(pushCardsToHand(victim, modulesExceptMain));
-        // }
+        }
     }
 
     // update victim state

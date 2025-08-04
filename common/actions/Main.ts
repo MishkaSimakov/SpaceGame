@@ -3,7 +3,6 @@ import {AttackReason} from "../Types";
 import Spaceship from "../Spaceship";
 import Module, {ModuleType} from "../modules/Module";
 import {Event} from "../events/Event";
-import GameState from "../../server/src/game/GameState";
 import Vector2 from "../Vector2";
 
 export * from "./Reducer";
@@ -97,10 +96,10 @@ export const drawAnotherEventCardResponse = (draw: boolean) => {
     };
 }
 
-export const reducerUpdatedState = (state: GameState) => {
+export const reducerUpdatedState = (delta: any) => {
     return {
         type: 'reducerUpdatedState',
-        payload: {state}
+        payload: {delta}
     };
 }
 
