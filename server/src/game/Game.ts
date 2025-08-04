@@ -1,15 +1,15 @@
+import * as assert from "node:assert";
 import Rand from 'rand-seed';
 
 import Player from "@common/Player";
-import Spaceship from "@common/Spaceship";
 import ActionsBus from "@common/actions/ActionsBus";
 import {GameSettings} from "@common/GameSettings";
 import {Action, isAction} from "@common/actions/Action";
 import * as Actions from "@common/actions/Main";
+import {initGameState} from "@common/actions/Main";
+import {DiceResult, shuffle, shuffleResult, throwDice, throwDiceResult} from '@common/actions/Random';
 
 import GameState from "./GameState";
-import {TimeManager} from "./TimeManager";
-import MessageManager from "./MessageManager";
 import {User} from "../entity/user";
 import {getDTO} from "./mappers/GameToGameForPlayerMapper";
 import SocketsManager from "./io/SocketsManager";
@@ -17,9 +17,7 @@ import {gameSaga} from "./sagas/Main";
 import {Logger} from "./Logger";
 import {reducers} from "./reducers/Main";
 import {SagaRunner} from "./SagaRunner";
-import * as assert from "node:assert";
-import {DiceResult, shuffle, shuffleResult, throwDice, throwDiceResult} from '@common/actions/Random';
-import {initGameState} from "@common/actions/Main";
+import Spaceship from "@common/Spaceship";
 
 class Randomizer {
     rand: Rand;
@@ -29,7 +27,10 @@ class Randomizer {
     }
 
     dice(): DiceResult {
-        return ((this.rand.next() * 6) % 6) as DiceResult;
+        const random = this.rand.next();
+        const result = (Math.floor(random * 6) + 1) as DiceResult;
+        console.log(`dice: ${random} -> ${result}`)
+        return result;
     }
 
     shuffle<T>(array: T[]) {
@@ -50,41 +51,53 @@ export default class Game {
     sockets: SocketsManager;
     logger: Logger;
 
+    inReplay: boolean;
+
     constructor(users: User[], settings: GameSettings, sockets: SocketsManager, logger: Logger) {
         this.users = users;
 
-        this.randomizer = new Randomizer(settings.seed);
         this.state = new GameState();
+        this.state.settings = settings;
+        this.state.players = this.users.map(u => {
+            const player = new Player();
+
+            player.id = u.id;
+            player.name = u.login;
+            player.spaceship = new Spaceship();
+
+            return player;
+        });
+
+        this.randomizer = new Randomizer(settings.seed);
         this.bus = new ActionsBus();
         this.sagaRunner = new SagaRunner(this.state, this.bus, gameSaga());
         this.sockets = sockets;
         this.logger = logger;
+
+        this.registerReduceListeners();
+        this.registerLogListeners();
+        this.registerRandomizerListeners();
+        this.registerIOListeners();
     }
 
 
     static runFromLogs(users: User[], sockets: SocketsManager, logger: Logger) {
         const pastActions = logger.getPastActions();
 
-        const initAction = pastActions.shift();
+        const initAction = pastActions.find(a => a.type === initGameState.name);
 
         if (!initAction) {
             throw new Error("Failed to initialize game from logs");
         }
 
-        const initState = (initAction as ReturnType<typeof initGameState>).payload.state;
+        const settings = (initAction as ReturnType<typeof initGameState>).payload.state.settings;
 
-        const game = new Game(users, initState.settings, sockets, logger);
-
-        game.registerRandomizerListeners();
-        game.registerReduceListeners();
-
-        game.bus.emit(initGameState(initState));
+        const game = new Game(users, settings, sockets, logger);
+        game.inReplay = true;
 
         const returnToNormalExecution = (pendingRequest?: Action) => {
-            game.bus.off('*', fakeIOListener);
-
-            game.registerLogListeners();
-            game.registerIOListeners();
+            game.bus.off('*', actionsReplayListener);
+            game.inReplay = false;
 
             if (pendingRequest) {
                 game.sockets.emitAndWait(
@@ -104,32 +117,30 @@ export default class Game {
 
         // register fake sockets listeners
         // they don't send anything to users and read responses from the log file
-        const fakeIOListener = (action: Action) => {
+        const actionsReplayListener = (action: Action) => {
+            const pastAction = pastActions.shift();
+            console.log("⏪ replay: ", action.type, pastAction.type);
+
+            assert.equal(pastAction.type, action.type);
+
             if (action.type.endsWith("Request")) {
-                const responseType = action.type.replace("Request", "Response");
-
-                while (pastActions.length > 0) {
-                    const action = pastActions.shift();
-
-                    if (action.type !== responseType) {
-                        continue;
-                    }
-
-                    game.bus.emit(action);
-
-                    if (pastActions.length === 0) {
-                        returnToNormalExecution();
-                    }
-
+                if (pastActions.length === 0) {
+                    returnToNormalExecution(action);
                     return;
                 }
 
-                // there are no actions left,
-                returnToNormalExecution(action);
+                const responseType = action.type.replace("Request", "Response");
+
+                const pastResponse = pastActions[0];
+                assert.equal(pastResponse.type, responseType);
+
+                game.bus.emit(pastResponse);
+            } else if (pastActions.length === 0) {
+                returnToNormalExecution();
             }
         };
 
-        game.bus.on('*', fakeIOListener);
+        game.bus.on('*', actionsReplayListener);
 
         const promise = game.sagaRunner.run();
 
@@ -137,7 +148,13 @@ export default class Game {
     }
 
     registerLogListeners() {
-        this.bus.on('*', this.logger.handleAction.bind(this.logger));
+        this.bus.on('*', (action) => {
+            if (this.inReplay) {
+                return;
+            }
+
+            this.logger.handleAction(action);
+        });
     }
 
     registerRandomizerListeners() {
@@ -158,6 +175,10 @@ export default class Game {
 
     registerIOListeners() {
         this.bus.on('*', async (action: Action) => {
+            if (this.inReplay) {
+                return;
+            }
+
             // actions that match `*Request` are broadcasted through sockets
             // they must contain payload.player field, the field specify to which player
             // the action is broadcasted.
@@ -198,57 +219,21 @@ export default class Game {
                 // for the sake of logging
                 this.bus.emit(Actions.reducerUpdatedState(this.state));
 
-                // notify players about state update
-                this.syncPlayersData();
+                if (!this.inReplay) {
+                    // notify players about state update
+                    this.syncPlayersData();
+                }
             }
         });
     }
 
-    async start(settings: GameSettings) {
-        this.registerReduceListeners();
-        this.registerLogListeners();
-        this.registerRandomizerListeners();
-        this.registerIOListeners();
-
-        this.#initGameState(settings);
-
+    async start() {
+        this.inReplay = false;
         await this.sagaRunner.run();
     }
 
     getPlayerById(id: number): Player {
         return this.state.players.filter(p => p.id === id)[0];
-    }
-
-    #initGameState(settings: GameSettings) {
-        const state = new GameState();
-
-        this.randomizer.shuffle(state.stack.module);
-        this.randomizer.shuffle(state.stack.event);
-        this.randomizer.shuffle(state.mainModules)
-
-        state.settings = settings;
-
-        for (const user of this.users) {
-            const player = new Player();
-
-            player.id = user.id;
-            player.name = user.login;
-            player.hand = state.stack.module.splice(0, state.settings.startCardsCount);
-
-            // initialize spaceship
-            const mainModule = state.mainModules.pop();
-            mainModule.x = 0;
-            mainModule.y = 0;
-
-            player.spaceship = new Spaceship();
-            player.spaceship.modules.push(mainModule);
-
-            state.players.push(player)
-        }
-
-        this.randomizer.shuffle(state.players);
-
-        this.bus.emit(Actions.initGameState(state));
     }
 
     syncPlayersData() {

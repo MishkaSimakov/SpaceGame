@@ -8,7 +8,8 @@ import * as Actions from '@common/actions/Main';
 import {StateGetters} from "@common/getters/State";
 import {SpaceshipModifiers} from "@common/modifiers/Spaceship";
 import SmallQuantumProtector from "@common/modules/SmallQuantumProtector";
-import {deactivateProtectorIfActive} from "@common/actions/Main";
+import {deactivateProtectorIfActive, removeSpaceshipModules} from "@common/actions/Main";
+import Vector2 from "@common/Vector2";
 
 type ReducersType = {
     [Key in keyof typeof Actions]?:
@@ -202,5 +203,15 @@ export const reducers: ReducersType = {
         assert.ok(state.fight !== undefined);
 
         state.fight.isFirstPlayerTurn = !state.fight.isFirstPlayerTurn;
+    },
+
+    removeSpaceshipModules(state: GameState, payload) {
+        const player = StateGetters.playerById(state, payload.player);
+
+        for (const position of payload.positions) {
+            assert.ok(SpaceshipGetters.getModuleByPosition(player.spaceship, position));
+
+            SpaceshipModifiers.removeModule(player.spaceship, position.x, position.y);
+        }
     }
 }

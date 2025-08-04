@@ -7,8 +7,11 @@ import {collectEnergy} from "./phases/CollectEnergy";
 import {discardCards} from "./phases/DiscardCards";
 import {attack} from "./phases/Attack";
 import {fixSpaceship} from "./phases/FixSpaceship";
+import {init} from "./components/Init";
 
 export function* gameSaga() {
+    yield* init();
+
     while (true) {
         yield* beforeTurn();
         yield* collectEnergy();
@@ -16,7 +19,6 @@ export function* gameSaga() {
         yield* drawCards();
         yield* fixSpaceship();
         yield* attack();
-
         yield* discardCards();
 
         yield* put(shiftTurnToNextPlayer());

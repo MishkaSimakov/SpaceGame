@@ -38,6 +38,8 @@ export const create = async (req: Request, res: Response) => {
             };
         }
 
+        gameSettings.seed = "abracadabra";
+
         await App.getInstance().gamesManager.createGame(req.body.name, selectedUsers, gameSettings);
 
         return res.redirect('/');

@@ -100,7 +100,7 @@ export default class GamesManager {
             new Logger(logFilepath)
         );
 
-        game.start(settings).then(async () => {
+        game.start().then(async () => {
             game.sockets.disconnectEveryone();
         });
 

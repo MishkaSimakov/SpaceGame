@@ -13,12 +13,6 @@ import Vector2 from "@common/Vector2";
 
 import {put, select} from "../../Effects";
 
-function isDarkMatterGeneratorDestroyed(info: DamageInfo, spaceship: Spaceship): boolean {
-    return info.destroyed.some(
-        m => SpaceshipGetters.getModuleByPosition(spaceship, m.position).type === ModuleType.DarkMatterGenerator
-    );
-}
-
 type DamageType =
     | { type: "EventCard" }
     | { type: "Player", attacker: Player }
@@ -26,6 +20,10 @@ type DamageType =
 export function* damageModule(victim: Player, position: Vector2, damage: number, type: DamageType) {
     const module = SpaceshipGetters.getModuleByPosition(victim.spaceship, position);
     const info = SpaceshipGetters.damageInfo(victim.spaceship, module, damage);
+
+    const isDarkMatterGeneratorDestroyed = info.destroyed.some(
+        m => SpaceshipGetters.getModuleByPosition(victim.spaceship, m.position).type === ModuleType.DarkMatterGenerator
+    );
 
     if (info.shouldDeactivateProtector) {
         yield* put(deactivateProtectorIfActive(victim));
@@ -64,7 +62,7 @@ export function* damageModule(victim: Player, position: Vector2, damage: number,
         yield* put(pushCardsToHand(victim, unconnectedModules))
     }
 
-    if (isDarkMatterGeneratorDestroyed(info, victim.spaceship)) {
+    if (isDarkMatterGeneratorDestroyed) {
         let modulesExceptMain = victim.spaceship.modules.filter(m => m.type !== ModuleType.MainModule);
 
         yield* put(removeSpaceshipModules(victim, modulesExceptMain.map(m => new Vector2(m.x, m.y))));
