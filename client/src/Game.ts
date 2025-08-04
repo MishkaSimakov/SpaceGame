@@ -1,18 +1,21 @@
+import {GameSettings} from "@common/GameSettings";
+import {GameForPlayerDTO, OtherPlayer} from "@common/GameForPlayerDTO";
+import {Message} from "@common/Types";
+import {Event, EventTypes} from "@common/events/Event";
+import {plainToClass} from "@common/PlainToClass";
+import {PlayerGetters} from "@common/getters/Player";
+
 import Spaceships from "./graphics/scenes/spaceships";
 import Controls from "./graphics/scenes/controls";
-import Player from "../../common/Player";
+import Player, {PlayerId} from "../../common/Player";
 import RebuildSpaceshipManager from "./graphics/RebuildSpaceshipManager";
-import {plainToClass} from "../../common/PlainToClass";
 import SocketManager from "./sockets/SocketManager";
-import {Event, EventTypes} from "../../common/events/Event";
-import {GameForPlayerDTO, OtherPlayer} from "../../common/GameForPlayerDTO";
-import {Message} from "../../common/Types";
 import {Graphics} from "./graphics/engine/Graphics";
 import {DD} from "./graphics/engine/Drag";
-import {GameSettings} from "../../common/GameSettings";
-import {PlayerGetters} from "../../common/getters/Player";
 
 export default class Game {
+    currentTurnPlayerId: PlayerId;
+
     currentPlayer: Player;
     otherPlayers: OtherPlayer[];
 
@@ -126,16 +129,8 @@ export default class Game {
         }
     }
 
-    async useEventCard(event: Event): Promise<boolean> {
-        if (event.type === EventTypes.SaveCardAndThenDealDamage) {
-            // if (!this.getCurrentPlayer().isInFight) return false;
-
-            return await this.socketManager.useEventCard(event);
-        }
-    }
-
     updatePageTitle() {
-        if (this.timeDecreasingPlayerId === this.currentPlayer.id) {
+        if (this.currentTurnPlayerId === this.currentPlayer.id) {
             document.title = 'Ваш ход - Космические баталии';
         } else {
             document.title = 'Космические баталии';

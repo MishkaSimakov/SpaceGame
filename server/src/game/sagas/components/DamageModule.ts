@@ -3,7 +3,7 @@ import {ModuleType} from "@common/modules/Module";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
 import {StateGetters} from "@common/getters/State";
 import {
-    changeModuleHealth, deactivateProtectorIfActive,
+    changeModuleHealth, changePlayerEnergy, deactivateProtectorIfActive,
     playerLost,
     pushCardsToDiscard, pushCardsToHand,
     removeSpaceshipModules
@@ -23,8 +23,15 @@ export function* damageModule(victim: Player, position: Vector2, damage: number,
     const isDarkMatterGeneratorDestroyed = info.destroyed.some(
         m => SpaceshipGetters.getModuleByPosition(victim.spaceship, m.position).type === ModuleType.DarkMatterGenerator
     );
+    const isMainModuleDestroyed = info.destroyed.some(
+        m => SpaceshipGetters.getModuleByPosition(victim.spaceship, m.position).type === ModuleType.MainModule
+    );
 
-    if (info.shouldDeactivateProtector) {
+    if (isMainModuleDestroyed) {
+        info.destroyed = info.destroyed.filter(m => SpaceshipGetters.getModuleByPosition(victim.spaceship, m.position).type !== ModuleType.MainModule);
+    }
+
+    if (isMainModuleDestroyed || info.shouldDeactivateProtector) {
         yield* put(deactivateProtectorIfActive(victim));
     }
 
@@ -55,25 +62,35 @@ export function* damageModule(victim: Player, position: Vector2, damage: number,
     victim = StateGetters.playerById(yield* select(), victim.id);
 
     if (info.destroyed.length !== 0) {
-        let unconnectedModules = SpaceshipGetters.getUnconnectedModules(victim.spaceship);
+        const unconnectedModules = SpaceshipGetters.getUnconnectedModules(victim.spaceship);
 
-        yield* put(removeSpaceshipModules(victim, unconnectedModules.map(m => new Vector2(m.x, m.y))));
-        yield* put(pushCardsToHand(victim, unconnectedModules))
+        // if (unconnectedModules.length !== 0) {
+            yield* put(removeSpaceshipModules(victim, unconnectedModules.map(m => new Vector2(m.x, m.y))));
+            yield* put(pushCardsToHand(victim, unconnectedModules))
+        // }
     }
 
     if (isDarkMatterGeneratorDestroyed) {
-        let modulesExceptMain = victim.spaceship.modules.filter(m => m.type !== ModuleType.MainModule);
+        const modulesExceptMain = victim.spaceship.modules.filter(m => m.type !== ModuleType.MainModule);
 
-        yield* put(removeSpaceshipModules(victim, modulesExceptMain.map(m => new Vector2(m.x, m.y))));
-        yield* put(pushCardsToHand(victim, modulesExceptMain));
+        // if (modulesExceptMain.length !== 0) {
+            yield* put(removeSpaceshipModules(victim, modulesExceptMain.map(m => new Vector2(m.x, m.y))));
+            yield* put(pushCardsToHand(victim, modulesExceptMain));
+        // }
     }
 
     // update victim state
     victim = StateGetters.playerById(yield* select(), victim.id);
 
-    // target.energy = Math.min(victim.energy, victim.spaceship.getTotalCapacity());
+    if (victim.energy > SpaceshipGetters.getTotalCapacity(victim.spaceship)) {
+        yield* put(changePlayerEnergy(
+            victim,
+            victim.energy - SpaceshipGetters.getTotalCapacity(victim.spaceship),
+            "battery destroyed"
+        ));
+    }
 
-    if (!SpaceshipGetters.getMainModule(victim.spaceship)) {
+    if (isMainModuleDestroyed) {
         yield* put(playerLost(victim));
     }
 }

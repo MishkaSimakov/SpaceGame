@@ -53,8 +53,7 @@ function* isFightEnded() {
 }
 
 function* isVictimLost() {
-    const {victim} = yield* getCombatants();
-    return SpaceshipGetters.getMainModule(victim.spaceship) === undefined;
+    return (yield* getCombatants()).victim.lose;
 }
 
 function* chooseProtectors(victim: Player) {
@@ -102,7 +101,12 @@ function* tryDamageByEventCard() {
 
     yield* put(popCardFromPlayerHand(attacker, damageLaterCardIndex));
 
-    yield* damageModule(victim, position, 1, {type: "EventCard"})
+    yield* damageModule(victim, position, 1, {type: "EventCard"});
+
+    if (yield* isVictimLost()) {
+        yield* put(endFight());
+        return;
+    }
 }
 
 function* askForRunawayViaDice() {
@@ -164,7 +168,6 @@ function* damageByWeapon() {
         ({attacker, victim} = yield* getCombatants());
 
         if (yield* isVictimLost()) {
-            yield* put(endFight());
             return;
         }
 
@@ -183,6 +186,10 @@ function* damageByWeapon() {
                 yield* damageModule(victim, targetPosition, weapon.strength, {type: "Player", attacker});
 
                 yield* put(changePlayerEnergy(attacker, -weapon.energyCost * 2, "used weapon in fight second time"));
+
+                if (yield* isVictimLost()) {
+                    return;
+                }
             }
         }
     }
@@ -196,27 +203,31 @@ function* makeFightIteration() {
     }
 
     yield* tryDamageByEventCard();
+    if (yield* isVictimLost()) {
+        return false;
+    }
 
     if (yield* askForRunawayViaDice()) {
         yield* put(endFight());
-        return;
+        return false;
     }
 
     if (SpaceshipGetters.getMainModuleType(attacker.spaceship) === MainModuleType.AttackOrRunaway) {
         if (yield* askForRunawayViaMainModule()) {
             yield* put(endFight());
-            return;
+            return false;
         }
     }
 
     yield* damageByWeapon();
+    if (yield* isVictimLost()) {
+        yield* put(endFight());
+        return false;
+    }
 
     yield* put(deactivateProtectorIfActive(victim));
 
-    if (yield* isVictimLost()) {
-        yield* put(endFight());
-        return;
-    }
+    return true;
 }
 
 export function* fight() {
@@ -228,9 +239,8 @@ export function* fight() {
             return;
         }
 
-        yield* makeFightIteration();
-
-        if (yield* isFightEnded()) {
+        const continueFight = yield* makeFightIteration();
+        if (!continueFight) {
             break;
         }
 
@@ -240,4 +250,6 @@ export function* fight() {
     // check that all protectors are disabled
     const state = yield* select();
     assert.ok(!state.players.some(p => p.spaceship.activatedProtector));
+
+    assert.ok(state.fight === undefined);
 }

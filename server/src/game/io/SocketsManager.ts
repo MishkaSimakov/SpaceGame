@@ -27,9 +27,9 @@ export default class SocketsManager {
         }
     }
 
-    getSocket(socketId: string): Socket;
-    getSocket(playerId: PlayerId): Socket;
-    getSocket(value: PlayerId | string): Socket {
+    getSocket(socketId: string): Socket | undefined;
+    getSocket(playerId: PlayerId): Socket | undefined;
+    getSocket(value: PlayerId | string): Socket | undefined {
         const socketId = (typeof value === 'string') ? value : this.players[value].socketId;
 
         return this.io.sockets.sockets.get(socketId);
@@ -125,7 +125,7 @@ export default class SocketsManager {
 
     disconnectEveryone() {
         for (let player_id of Object.keys(this.players)) {
-            this.getSocket(player_id).disconnect(true);
+            this.getSocket(player_id)?.disconnect(true);
         }
     }
 }

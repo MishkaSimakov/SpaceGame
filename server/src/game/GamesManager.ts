@@ -1,7 +1,6 @@
 import {Server, Socket} from "socket.io";
 import Player from "../../../common/Player";
 import {User} from "../entity/user";
-import {parse} from "cookie";
 import jwt, {JwtPayload} from "jsonwebtoken";
 import {Game as GameDBEntity} from "../entity/game";
 import Game from "./Game";
@@ -10,6 +9,7 @@ import {GameSettings} from "@common/GameSettings";
 import {SocketInitPayload} from "@common/Types";
 import path from "path";
 import {Logger} from "./Logger";
+import * as assert from "node:assert";
 
 export default class GamesManager {
     io: Server;
@@ -102,11 +102,26 @@ export default class GamesManager {
 
         game.start().then(async () => {
             game.sockets.disconnectEveryone();
+            await this.storeGameResult(gameId, game);
         });
 
         this.games[gameId] = game;
 
         return gameId;
+    }
+
+    async storeGameResult(gameId: string, game: Game) {
+        const gameEntity = await GameDBEntity.findOneBy({
+            id: gameId
+        });
+
+        const winner = game.state.players.find(p => !p.lose);
+        assert.ok(winner);
+
+        gameEntity.winner = await User.findOneBy({id: winner.id});
+        gameEntity.finishedAt = new Date();
+
+        await gameEntity.save();
     }
 
     async getGame(id: string): Promise<Game | undefined> {
@@ -122,7 +137,8 @@ export default class GamesManager {
                 players: {}
             }
         });
-        if (game) {
+
+        if (game && !game.finishedAt) {
             return await this.#activateGame(game);
         }
 
@@ -138,8 +154,9 @@ export default class GamesManager {
             new Logger(gameEntity.logFilepath)
         );
 
-        promise.then(() => {
+        promise.then(async () => {
             game.sockets.disconnectEveryone();
+            await this.storeGameResult(gameEntity.id, game);
         });
 
         this.games[gameEntity.id] = game;

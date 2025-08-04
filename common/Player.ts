@@ -43,12 +43,4 @@ export default class Player {
             }
         };
     }
-
-    setLose() {
-        this.lose = true;
-    }
-
-    isLose(): boolean {
-        return this.lose;
-    }
 }

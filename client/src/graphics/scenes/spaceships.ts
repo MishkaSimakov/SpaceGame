@@ -1,13 +1,12 @@
-import Vector2 from "../../../../common/Vector2";
-import Module from "../../../../common/modules/Module";
+import Vector2 from "@common/Vector2";
+import Module from "@common/modules/Module";
+
 import Game from "../../Game";
 import Scene from "../engine/Scene";
 import Color from "../Color";
 import {DD} from "../engine/Drag";
 import {Spaceship as SpaceshipShape} from "../shapes/Spaceship";
 import {Card} from "../shapes/Card";
-import {Node} from "../engine/Node";
-import {Shape} from "../engine/Shape";
 
 let spaceshipConfigurations: Vector2[][] = [
     [new Vector2(0, 0)],
@@ -17,11 +16,10 @@ let spaceshipConfigurations: Vector2[][] = [
     [new Vector2(0, 0), new Vector2(0, -1000), new Vector2(1000, 0), new Vector2(1000, -1000), new Vector2(500, 1500)]
 ];
 
+// TODO: selectModule resets on redraw
 export default class Spaceships extends Scene {
     spaceshipShapes: Record<number, SpaceshipShape> = {};
-
     gameManager: Game;
-
     spaceshipsCardSize: number;
 
     constructor(game: Game) {

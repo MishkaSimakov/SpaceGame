@@ -2,10 +2,12 @@ import Game from "../Game";
 import {GameForPlayerDTO} from "@common/GameForPlayerDTO";
 import Player from "@common/Player";
 import {PlayerGetters} from "@common/getters/Player";
+import {StateGetters} from "@common/getters/State";
 
 export const getDTO = (game: Game, forPlayer: Player): GameForPlayerDTO => {
     let dto = new GameForPlayerDTO();
 
+    dto.currentTurnPlayerId = StateGetters.currentPlayer(game.state).id;
     dto.player = game.getPlayerById(forPlayer.id);
 
     dto.otherPlayers = game.state.players

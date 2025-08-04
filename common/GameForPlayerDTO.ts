@@ -1,4 +1,4 @@
-import Player from "./Player";
+import Player, {PlayerId} from "./Player";
 import Spaceship from "./Spaceship";
 import {Options} from "./PlainToClass";
 import Module from "./modules/Module";
@@ -27,6 +27,8 @@ class OtherPlayer {
 }
 
 class GameForPlayerDTO {
+    currentTurnPlayerId: PlayerId;
+
     settings: GameSettings;
     player: Player;
     otherPlayers: OtherPlayer[];

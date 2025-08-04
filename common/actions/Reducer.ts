@@ -128,7 +128,7 @@ export const pushCardsToDiscard = (type: "module" | "event", cards: Module[] | E
 export const playerLost = (player: Player) => {
     return {
         type: 'playerLost',
-        payload: {player}
+        payload: {player: player.id}
     };
 }
 

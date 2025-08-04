@@ -24,9 +24,9 @@ export function* moveDamage(reason: MoveDamageReason, energyCost: number, movedD
         chooseModuleToMoveDamageResponse
     );
 
-    if (moveDamageData) {
-        const {from, to} = moveDamageData;
+    const {from, to} = moveDamageData;
 
+    if (from && to) {
         yield* put(changePlayerEnergy(currentPlayer, -energyCost, reasonDescription[reason]));
 
         yield* put(changeModuleHealth(currentPlayer, from, movedDamage, reasonDescription[reason]));

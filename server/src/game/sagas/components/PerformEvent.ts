@@ -47,6 +47,7 @@ import {popCards, popOneCard} from "./PopCards";
 import {showCards} from "./ShowCards";
 import {dice} from "./Random";
 import {moveDamage} from "./MoveDamage";
+import * as assert from "node:assert";
 
 function* putTopThreeCardsInAnyOrder(state: GameState) {
     const topThreeCards = yield* popCards("event", 3);
@@ -203,7 +204,7 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
         if (victimId === undefined) return;
 
         const victim = StateGetters.playerById(state, victimId);
-        yield* damageModule(victim, victimModulePosition, damage, {type: "Player", attacker: currentPlayer});
+        yield* damageModule(victim, victimModulePosition, damage, {type: "EventCard"});
     },
     [EventTypes.TossDiceAndGetEnergy]: function* (state: GameState) {
         const energyCount = (yield* dice()) <= 4 ? 1 : 2;

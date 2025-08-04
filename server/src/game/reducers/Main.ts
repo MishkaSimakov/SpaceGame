@@ -193,8 +193,8 @@ export const reducers: ReducersType = {
         const protector = SpaceshipGetters.getModuleByPosition(player.spaceship, payload.position);
 
         assert.ok(player.spaceship.activatedProtector === undefined);
-        assert.ok(protector)
-        assert.ok(protector.type in [ModuleType.SmallQuantumProtector, ModuleType.QuantumProtector]);
+        assert.ok(protector);
+        assert.ok(protector.type === ModuleType.SmallQuantumProtector || protector.type === ModuleType.QuantumProtector);
 
         player.spaceship.activatedProtector = protector;
     },
@@ -213,5 +213,13 @@ export const reducers: ReducersType = {
 
             SpaceshipModifiers.removeModule(player.spaceship, position.x, position.y);
         }
+    },
+
+    playerLost(state: GameState, payload) {
+        const player = StateGetters.playerById(state, payload.player);
+
+        assert.ok(!player.lose);
+
+        player.lose = true;
     }
 }

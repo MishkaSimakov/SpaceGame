@@ -568,10 +568,11 @@ export default class Controls extends Scene {
         });
     }
 
-    chooseModulesToMoveDamage(moveDamageReason: MoveDamageReason): Promise<{ from: Vector2, to: Vector2 } | undefined> {
-        let reasonStatus: Record<MoveDamageReason, string> = {
-            [MoveDamageReason.MainModule]: "Используйте командный модуль, чтобы перенести урон",
-            [MoveDamageReason.EventCard]: "Выберите модуль, с которого переместить урон"
+    chooseModulesToMoveDamage(moveDamageReason: MoveDamageReason): Promise<{ from?: Vector2, to?: Vector2 }> {
+        // TODO: maybe add a distinction
+        const reasonStatus: Record<MoveDamageReason, string> = {
+            [MoveDamageReason.MainModule]: "Выберите, откуда переместить урон",
+            [MoveDamageReason.EventCard]: "Выберите, откуда переместить урон"
         }
 
         this.topBarDrawer.setStatus(reasonStatus[moveDamageReason]);
@@ -583,13 +584,8 @@ export default class Controls extends Scene {
             this.gameManager.spaceshipsScene.chooseModule((module?: Module) => {
                 moveDamageFrom = module;
             }, (module?: Module, playerId?: number) => {
-                if (playerId !== this.gameManager.currentPlayer.id)
-                    return false;
-
-                if (module.health !== module.totalHealth)
-                    return false;
-
-                return true;
+                return playerId === this.gameManager.currentPlayer.id
+                    && module.health !== module.totalHealth;
             }, true, Color.fromHex('#a3b18a'));
 
             this.topBarDrawer.addButtons([{
@@ -602,7 +598,7 @@ export default class Controls extends Scene {
                     this.gameManager.spaceshipsScene.endChoosingModule();
                     this.topBarDrawer.removeButtons();
 
-                    this.topBarDrawer.setStatus("выберите модуль, на который переместить урон");
+                    this.topBarDrawer.setStatus("выберите, куда переместить урон");
 
                     this.gameManager.spaceshipsScene.chooseModule((module?: Module) => {
                         moveDamageTo = module;
@@ -631,7 +627,7 @@ export default class Controls extends Scene {
                 text: "Пропустить",
                 color: COLORS.BUTTON.PRIMARY,
                 onClick: () => {
-                    resolve(undefined);
+                    resolve({from: undefined, to: undefined});
                 }
             }]);
         });
