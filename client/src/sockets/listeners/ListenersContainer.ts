@@ -7,9 +7,13 @@ type ReplaceRequestWithResponse<T extends string> =
 
 type Services = { sockets: SocketManager, game: Game };
 
+type ListenerReturnType<T extends keyof typeof Actions> = T extends `${infer _Prefix}Request`
+    ? Promise<ReturnType<typeof Actions[ReplaceRequestWithResponse<T>]>>
+    : Promise<void>;
+
 export type ListenersContainer = {
     [Key in keyof typeof Actions]?:
     typeof Actions[Key] extends (...args: any[]) => { type: string, payload?: infer P }
-        ? (payload: P, services: Services) => Promise<ReturnType<typeof Actions[ReplaceRequestWithResponse<Key>]>>
+        ? (payload: P, services: Services) => ListenerReturnType<Key>
         : never
 };

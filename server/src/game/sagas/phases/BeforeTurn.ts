@@ -15,12 +15,13 @@ import {request} from "../components/Request";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
 import {MainModuleType} from "@common/modules/MainModule";
 import {moveDamage} from "../components/MoveDamage";
+import {StateGetters} from "@common/getters/State";
 
 function* tryAttackByEventCard() {
     const state = yield* select();
-    const currentPlayer = state.players[state.currentPlayerIndex];
+    const currentPlayer = StateGetters.currentPlayer(state);
 
-    let attackLaterCardIndex: number = currentPlayer.hand
+    const attackLaterCardIndex = currentPlayer.hand
         .findIndex((c) => {
             if (isModule(c)) return false;
 
@@ -43,7 +44,7 @@ function* tryAttackByEventCard() {
 
 function* tryAttackByMainModule() {
     const state = yield* select();
-    const currentPlayer = state.players[state.currentPlayerIndex];
+    const currentPlayer = StateGetters.currentPlayer(state);
 
     if (SpaceshipGetters.getMainModuleType(currentPlayer.spaceship) === MainModuleType.AttackOrRunaway
         && currentPlayer.energy >= state.settings.energyToAttackByMainModule) {
@@ -63,7 +64,7 @@ function* tryAttackByMainModule() {
 
 function* tryMoveDamageByMainModule() {
     const state = yield* select();
-    const currentPlayer = state.players[state.currentPlayerIndex];
+    const currentPlayer = StateGetters.currentPlayer(state);
 
     if (SpaceshipGetters.getMainModuleType(currentPlayer.spaceship) === MainModuleType.MoveDamage
         && currentPlayer.energy >= state.settings.energyToMoveDamageByMainModule

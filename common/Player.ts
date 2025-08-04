@@ -17,7 +17,7 @@ export default class Player {
 
     online: boolean;
 
-    usedRepairOrAttackModuleSecondTimeOnThisTurn: boolean = false;
+    usedModuleSecondTimeOnThisTurn: boolean = false;
 
     lose: boolean = false;
 

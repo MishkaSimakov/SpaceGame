@@ -1,19 +1,15 @@
-import {Event} from "@common/events/Event";
-import Spaceship from "@common/Spaceship";
-import {AttackReason} from "@common/Types";
 import Vector2 from "@common/Vector2";
 
-import Game from "../../Game";
 import {COLORS} from "../../graphics/constants";
-import SocketManager from "../SocketManager";
 import Color from "../../graphics/Color";
 import {ListenersContainer} from "./ListenersContainer";
 import {
-    chooseCardTypeResponse, choosePlayerForAttackResponse, discardCardsResponse,
+    chooseCardTypeResponse, chooseModuleToRepairResponse, choosePlayerForAttackResponse, discardCardsResponse,
     drawAdditionalModuleCardResponse,
     drawAnotherEventCardResponse,
-    rebuildSpaceshipResponse
+    rebuildSpaceshipResponse, useModuleSecondTimeResponse
 } from "@common/actions/Main";
+import Module, {ModuleType} from "@common/modules/Module";
 
 
 export const mainListeners: ListenersContainer = {
@@ -78,5 +74,59 @@ export const mainListeners: ListenersContainer = {
 
         const indexes = await game.controlsScene.discardCards(requiredDiscardCount);
         return discardCardsResponse(indexes);
+    },
+
+    async chooseModuleToRepairRequest({}, {game}) {
+        let chosenModule: Module;
+
+        game.spaceshipsScene.chooseModule((module) => {
+            chosenModule = module;
+        }, (module, playerId) => {
+            if (playerId !== game.getCurrentPlayer().id)
+                return false;
+
+            if (module.health === module.totalHealth)
+                return false;
+
+            return true;
+        }, false, Color.fromHex('#e76f51'));
+
+        game.controlsScene.topBarDrawer.setStatus("починка модуля");
+
+        const position = await new Promise<Vector2 | undefined>(resolve => {
+            game.controlsScene.topBarDrawer.addButtons([{
+                text: "Починить",
+                color: COLORS.BUTTON.PRIMARY,
+                onClick: () => {
+                    game.controlsScene.topBarDrawer.removeButtons();
+                    game.controlsScene.topBarDrawer.clearStatus();
+                    game.spaceshipsScene.endChoosingModule();
+
+                    const position = chosenModule
+                        ? new Vector2(chosenModule.x, chosenModule.y)
+                        : undefined;
+
+                    resolve(position);
+                }
+            }]);
+        });
+
+        return chooseModuleToRepairResponse(position);
+    },
+
+    async useModuleSecondTimeRequest({moduleType}, {game}) {
+        let moduleNames: Partial<Record<ModuleType, string>> = {
+            [ModuleType.AttackModule]: "абордажный модуль",
+            [ModuleType.RepairModule]: "ремонтный модуль",
+
+            [ModuleType.SpaceSolver]: "космический порешатель",
+            [ModuleType.IonDestroyer]: "ионный разрушитель",
+            [ModuleType.QuantumDestabilizer]: "квантовый дестабилизатор",
+        };
+
+        game.controlsScene.topBarDrawer.setStatus(`использовать ${moduleNames[moduleType]} второй раз?`);
+
+        const result = await game.controlsScene.askYesOrNo();
+        return useModuleSecondTimeResponse(result);
     }
 }

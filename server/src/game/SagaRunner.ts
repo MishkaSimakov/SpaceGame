@@ -14,7 +14,6 @@ export class SagaRunner {
     busRef: ActionsBus;
     saga: SagaGenerator;
 
-
     constructor(stateRef: GameState, busRef: ActionsBus, saga: SagaGenerator) {
         this.stateRef = stateRef;
         this.busRef = busRef;

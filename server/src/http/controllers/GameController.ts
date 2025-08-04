@@ -49,7 +49,7 @@ export const create = async (req: Request, res: Response) => {
 
 export const joinGame = async (req: AuthenticatedRequest, res: Response) => {
     let gameId = req.url.split('/').pop();
-    let game = App.getInstance().gamesManager.getGameById(gameId);
+    let game = await App.getInstance().gamesManager.getGame(gameId);
 
     const isPlayerInGame = !!game?.users.find(p => p.id === req.user.id);
     if (!game || !(isPlayerInGame || game.state.settings.isPublic)) {

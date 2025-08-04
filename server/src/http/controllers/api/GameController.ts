@@ -23,9 +23,9 @@ export const create = async (req: Request, res: Response) => {
             return res.status(400).json({error: "one of users ids is invalid"});
         }
 
-        const game = await App.getInstance().gamesManager.createGame(name, selectedUsers, settings);
+        const gameId = await App.getInstance().gamesManager.createGame(name, selectedUsers, settings);
 
-        return res.json({gameId: game.id});
+        return res.json({gameId: gameId});
     } catch (error) {
         return res.status(500).send({error});
     }

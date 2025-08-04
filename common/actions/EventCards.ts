@@ -2,6 +2,7 @@ import Player, {PlayerId} from "../Player";
 import {Event} from "../events/Event";
 import Vector2 from "../Vector2";
 import Module from "../modules/Module";
+import {MoveDamageReason} from "../Types";
 
 export const permuteTopThreeEventCardsRequest = (player: Player, cards: Event[]) => {
     return {
@@ -102,10 +103,10 @@ export const chooseCardsToDiscardAndTakeAnotherResponse = (indexes: number[]) =>
     };
 }
 
-export const chooseModuleToMoveDamageRequest = (player: Player) => {
+export const chooseModuleToMoveDamageRequest = (player: Player, reason: MoveDamageReason) => {
     return {
         type: 'chooseModuleToMoveDamageRequest',
-        payload: {player: player.id}
+        payload: {player: player.id, reason}
     };
 }
 

@@ -19,6 +19,7 @@ import {reducers} from "./reducers/Main";
 import {SagaRunner} from "./SagaRunner";
 import * as assert from "node:assert";
 import {DiceResult, shuffle, shuffleResult, throwDice, throwDiceResult} from '@common/actions/Random';
+import {initGameState} from "@common/actions/Main";
 
 class Randomizer {
     rand: Rand;
@@ -40,9 +41,6 @@ class Randomizer {
 }
 
 export default class Game {
-    id: string;
-    name: string;
-
     users: User[];
 
     randomizer: Randomizer;
@@ -52,43 +50,90 @@ export default class Game {
     sockets: SocketsManager;
     logger: Logger;
 
-    messageManager: MessageManager;
-    timeManager: TimeManager;
-
-    constructor(id: string, name: string, users: User[], settings: GameSettings, sockets: SocketsManager, logger: Logger) {
-        this.id = id;
-        this.name = name;
+    constructor(users: User[], settings: GameSettings, sockets: SocketsManager, logger: Logger) {
         this.users = users;
 
-        this.randomizer = new Randomizer("abracadabra");
+        this.randomizer = new Randomizer(settings.seed);
         this.state = new GameState();
         this.bus = new ActionsBus();
         this.sagaRunner = new SagaRunner(this.state, this.bus, gameSaga());
         this.sockets = sockets;
         this.logger = logger;
+    }
 
-        this.messageManager = new MessageManager();
 
-        this.registerReduceListeners();
-        this.registerLogListeners();
-        this.registerRandomizerListeners();
-        this.registerIOListeners();
+    static runFromLogs(users: User[], sockets: SocketsManager, logger: Logger) {
+        const pastActions = logger.getPastActions();
 
-        this.#initGameState(settings);
+        const initAction = pastActions.shift();
 
-        this.syncPlayersData();
+        if (!initAction) {
+            throw new Error("Failed to initialize game from logs");
+        }
 
-        // this.currentPlayer = this.players[0];
+        const initState = (initAction as ReturnType<typeof initGameState>).payload.state;
 
-        // if (!this.settings.timeControlSettings) {
-        //     this.settings.timeControlSettings = {
-        //         START_TIME: 5 * 60 * 1000,
-        //         DEFAULT_TIME_INCREASE: 45 * 1000,
-        //         FIGHT_TIME_INCREASE: 10 * 1000,
-        //     };
-        // }
-        //
-        // this.timeManager = new TimeManager(this.settings.timeControlSettings, users.map(user => user.id));
+        const game = new Game(users, initState.settings, sockets, logger);
+
+        game.registerRandomizerListeners();
+        game.registerReduceListeners();
+
+        game.bus.emit(initGameState(initState));
+
+        const returnToNormalExecution = (pendingRequest?: Action) => {
+            game.bus.off('*', fakeIOListener);
+
+            game.registerLogListeners();
+            game.registerIOListeners();
+
+            if (pendingRequest) {
+                game.sockets.emitAndWait(
+                    pendingRequest.payload.player,
+                    pendingRequest.type,
+                    true,
+                    pendingRequest.payload
+                ).then(payload => {
+                    if (!isAction(payload)) {
+                        throw new Error("Response must be action");
+                    }
+
+                    game.bus.emit(payload);
+                });
+            }
+        };
+
+        // register fake sockets listeners
+        // they don't send anything to users and read responses from the log file
+        const fakeIOListener = (action: Action) => {
+            if (action.type.endsWith("Request")) {
+                const responseType = action.type.replace("Request", "Response");
+
+                while (pastActions.length > 0) {
+                    const action = pastActions.shift();
+
+                    if (action.type !== responseType) {
+                        continue;
+                    }
+
+                    game.bus.emit(action);
+
+                    if (pastActions.length === 0) {
+                        returnToNormalExecution();
+                    }
+
+                    return;
+                }
+
+                // there are no actions left,
+                returnToNormalExecution(action);
+            }
+        };
+
+        game.bus.on('*', fakeIOListener);
+
+        const promise = game.sagaRunner.run();
+
+        return {game, promise};
     }
 
     registerLogListeners() {
@@ -159,7 +204,14 @@ export default class Game {
         });
     }
 
-    async start() {
+    async start(settings: GameSettings) {
+        this.registerReduceListeners();
+        this.registerLogListeners();
+        this.registerRandomizerListeners();
+        this.registerIOListeners();
+
+        this.#initGameState(settings);
+
         await this.sagaRunner.run();
     }
 

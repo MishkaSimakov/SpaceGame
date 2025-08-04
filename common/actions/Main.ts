@@ -51,15 +51,22 @@ export const chooseCardTypeResponse = (chosenType: "event" | "module") => {
     };
 }
 
-export const showCardsToPlayersRequest = (cards: (Module | Event)[], player: Player, showToOthers: boolean) => {
+export const showCardsToPlayersRequest = (player: Player, cardsReceiver: Player, cards: (Module | Event)[]) => {
     return {
         type: 'showCardsToPlayersRequest',
-        payload: {cards, player: player.id, showToOthers}
+        payload: {player: player.id, cardsReceiver: cardsReceiver.id, cards}
     }
 }
 
 export const showCardsToPlayersResponse = () => {
     return {type: 'showCardsToPlayersResponse'};
+}
+
+export const showCardsInfo = (player: Player, cardsReceiver: Player, cards: (Module | Event)[]) => {
+    return {
+        type: 'showCardsInfo',
+        payload: {player: player.id, cardsReceiver: cardsReceiver.id, cards}
+    }
 }
 
 export const drawAdditionalModuleCardRequest = (player: Player) => {
@@ -164,5 +171,19 @@ export const chooseTargetResponse = (position: Vector2) => {
     return {
         type: 'chooseTargetResponse',
         payload: position,
+    };
+}
+
+export const chooseModuleToRepairRequest = (player: Player) => {
+    return {
+        type: 'chooseModuleToRepairRequest',
+        payload: {player: player.id}
+    };
+}
+
+export const chooseModuleToRepairResponse = (position: Vector2 | undefined) => {
+    return {
+        type: 'chooseModuleToRepairResponse',
+        payload: position
     };
 }

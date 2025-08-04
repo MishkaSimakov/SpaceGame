@@ -1,17 +1,27 @@
 import {ListenersContainer} from "./ListenersContainer";
+
 import {showCardsToPlayersResponse} from "@common/actions/Main";
+import {PlayerId} from "@common/Player";
+import Module from "@common/modules/Module";
+import {Event} from "@common/events/Event";
+import Game from "../../Game";
+
+async function showCards(player: PlayerId, cards: (Module | Event)[], game: Game) {
+    const playerName = game.getPlayerById(player)?.name || player;
+
+    await game.controlsScene.showCards(
+        cards,
+        player === game.currentPlayer.id ? "вы вытянули" : (playerName + " вытянул")
+    );
+}
 
 export const infoListeners: ListenersContainer = {
-    async showCardsToPlayersRequest({player, cards}, {game}) {
-        const playerName = game.getPlayerById(player)?.name || player;
-
-        await game.controlsScene.showCards(
-            cards,
-            player === game.currentPlayer.id ? "вы вытянули" : (playerName + " вытянул")
-        );
-
+    async showCardsToPlayersRequest({cardsReceiver, cards}, {game}) {
+        await showCards(cardsReceiver, cards, game);
         return showCardsToPlayersResponse();
-    }
+    },
 
-    // TODO: show without acknowledgment
+    async showCardsInfo({cardsReceiver, cards}, {game}) {
+        await showCards(cardsReceiver, cards, game);
+    }
 }

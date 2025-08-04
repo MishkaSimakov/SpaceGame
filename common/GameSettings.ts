@@ -5,6 +5,8 @@ export class TimeControlSettings {
 }
 
 export class GameSettings {
+    seed: string;
+
     size: number;
     withTimeControl: boolean;
     timeControlSettings?: TimeControlSettings;
@@ -13,8 +15,9 @@ export class GameSettings {
 
     startCardsCount: number = 4;
     mainModuleRunawayEnergyCost = 5;
-    energyToAttackByCommandModule = 7;
-    energyToMoveDamageByCommandModule = 4;
+    energyToAttackByMainModule = 7;
+    energyToMoveDamageByMainModule = 4;
+    damageMovedByMainModule = 2;
     energyToDragAnotherEventCardByMainModule = 4;
     energyToDragAdditionalCardByMainModule = 15;
     maxCardsOnHand = 5;

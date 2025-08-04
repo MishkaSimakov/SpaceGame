@@ -149,9 +149,9 @@ export const shiftFightTurnToNextPlayer = () => {
     return {type: 'shiftFightTurnToNextPlayer'};
 }
 
-export const playerUseRepairOrAttackModuleSecondTimeOnThisTurn = (player: Player) => {
+export const playerUseModuleSecondTime = (player: Player) => {
     return {
-        type: 'playerUseRepairOrAttackModuleSecondTimeOnThisTurn',
+        type: 'playerUseModuleSecondTime',
         payload: {player: player.id}
     };
 }

@@ -15,13 +15,13 @@ export const getDTO = (game: Game, forPlayer: Player): GameForPlayerDTO => {
     dto.settings = game.state.settings;
 
     if (game.state.settings.withTimeControl) {
-        dto.timeControl = {
-            timeDecreasingPlayerId: game.timeManager.getTimeDecreasingPlayerId(),
-            playersTime: game.timeManager.getPlayersTime()
-        };
+        // dto.timeControl = {
+        //     timeDecreasingPlayerId: game.timeManager.getTimeDecreasingPlayerId(),
+        //     playersTime: game.timeManager.getPlayersTime()
+        // };
     }
 
-    dto.messages = game.messageManager.messages;
+    dto.messages = [];
 
     return dto;
 }

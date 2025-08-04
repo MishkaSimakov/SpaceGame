@@ -49,9 +49,8 @@ export const eventCardsListeners: ListenersContainer = {
         return chooseCardsToDiscardAndTakeAnotherResponse(indexes);
     },
 
-    // TODO: move damage reason
-    async chooseModuleToMoveDamageRequest({}, {game}) {
-        const {from, to} = await game.controlsScene.chooseModulesToMoveDamage(MoveDamageReason.EventCard);
+    async chooseModuleToMoveDamageRequest({reason}, {game}) {
+        const {from, to} = await game.controlsScene.chooseModulesToMoveDamage(reason);
         return chooseModuleToMoveDamageResponse(from, to);
     },
 
