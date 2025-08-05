@@ -32,7 +32,7 @@ export function areCardSetsEqual<T>(arr1: Array<T>, arr2: Array<T>) {
 
     for (const idx_1 of arr1.keys())
         for (const idx_2 of arr2.keys())
-            if (deepEqual(arr1[idx_1], arr2[idx_2], ['x', 'y', 'rotation'])) {
+            if (deepEqual(arr1[idx_1], arr2[idx_2], ['x', 'y', 'rotation', 'id'])) {
                 arr2.splice(idx_2, 1);
                 break;
             }

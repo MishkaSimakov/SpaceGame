@@ -149,27 +149,27 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
     [EventTypes.AttackRight]: function* (state: GameState) {
         const victim = StateGetters.getPlayerIndexByOffset(state, 1);
 
-        yield* put(beginFight(StateGetters.currentPlayer(state).id, victim, "event card (attack right)"));
+        yield* put(beginFight(StateGetters.currentPlayer(state).id, state.players[victim].id, "event card (attack right)"));
         yield* fight();
     },
     [EventTypes.AttackLeft]: function* (state: GameState) {
         const victim = StateGetters.getPlayerIndexByOffset(state, -1);
 
-        yield* put(beginFight(StateGetters.currentPlayer(state).id, victim, "event card (attack left)"));
+        yield* put(beginFight(StateGetters.currentPlayer(state).id, state.players[victim].id, "event card (attack left)"));
         yield* fight();
     },
     [EventTypes.AttackNextToRight]: function* (state: GameState) {
         const offset = state.players.length > 2 ? 2 : 1;
         const victim = StateGetters.getPlayerIndexByOffset(state, offset);
 
-        yield* put(beginFight(StateGetters.currentPlayer(state).id, victim, "event card (attack next to right)"));
+        yield* put(beginFight(StateGetters.currentPlayer(state).id, state.players[victim].id, "event card (attack next to right)"));
         yield* fight();
     },
     [EventTypes.AttackNextToLeft]: function* (state: GameState) {
         const offset = state.players.length > 2 ? -2 : -1;
         const victim = StateGetters.getPlayerIndexByOffset(state, offset);
 
-        yield* put(beginFight(StateGetters.currentPlayer(state).id, victim, "event card (attack next to left)"));
+        yield* put(beginFight(StateGetters.currentPlayer(state).id, state.players[victim].id, "event card (attack next to left)"));
         yield* fight();
     },
     [EventTypes.AttackAny]: function* (state: GameState) {
