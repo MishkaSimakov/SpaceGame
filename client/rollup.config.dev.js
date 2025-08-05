@@ -37,7 +37,7 @@ export default {
 
         //  Parse our .ts source files
         resolve({
-            extensions: [ '.ts', '.tsx' ],
+            extensions: ['.ts', '.tsx'],
             browser: true
         }),
 
@@ -60,7 +60,7 @@ export default {
                 './**/*.ts+(|x)',
                 '../common/**/*.ts+(|x)'
             ],
-            cacheRoot: './.rpt2_cache'
+            clean: true
         }),
     ]
 };

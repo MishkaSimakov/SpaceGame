@@ -27,5 +27,4 @@ services:
     volumes:
       - ./:/usr/src/game
       - /usr/src/game/client/node_modules
-      - /usr/src/game/client/.rpt2_cache
     build: client

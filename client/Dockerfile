@@ -12,8 +12,6 @@ COPY ./package.json ./package-lock.json ./
 
 RUN npm ci
 
-RUN mkdir -p .rpt2_cache && chown node:node .rpt2_cache
-
 # Run the application as a non-root user.
 USER node
 

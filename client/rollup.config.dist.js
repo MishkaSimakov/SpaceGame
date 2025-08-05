@@ -61,7 +61,7 @@ export default {
                 './**/*.ts+(|x)',
                 '../common/**/*.ts+(|x)'
             ],
-            cacheRoot: './.rpt2_cache'
+            clean: true
         }),
 
     ]
