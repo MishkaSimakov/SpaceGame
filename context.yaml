@@ -45,3 +45,18 @@ documents:
                 - type: regex
                   patterns:
                     "~\\s*import\\s+(?:[\\w*\\s{},]*\\s+from\\s+)?[\"'][^\"' ]+[\"'];?\\s*~": ""
+
+  - description: 'Server'
+    outputPath: server.md
+    sources:
+      - type: file
+        sourcePaths:
+          - server/src
+        filePattern: [ "*.ts" ]
+        modifiers:
+          - name: sanitizer
+            options:
+              rules:
+                - type: regex
+                  patterns:
+                    "~\\s*import\\s+(?:[\\w*\\s{},]*\\s+from\\s+)?[\"'][^\"' ]+[\"'];?\\s*~": ""
