@@ -15,7 +15,6 @@ services:
   server:
     depends_on:
       - database
-    user: "node"
     volumes:
       - ./:/usr/src/game
       - /usr/src/game/server/node_modules
@@ -23,7 +22,6 @@ services:
     ports:
       - "3000:3000"
   build_client:
-    user: "node"
     volumes:
       - ./:/usr/src/game
       - /usr/src/game/client/node_modules

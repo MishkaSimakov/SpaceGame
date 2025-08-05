@@ -12,8 +12,8 @@ COPY ./package.json ./package-lock.json ./
 
 RUN npm ci
 
-# Run the application as a non-root user.
-USER node
+# TODO: run as non-root user
+#USER node
 
 # Run the application.
 CMD ["npm", "run", "watch"]

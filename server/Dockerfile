@@ -22,9 +22,6 @@ COPY ./package.json ./package-lock.json ./
 
 RUN npm ci
 
-# Run the application as a non-root user.
-USER node
-
 # Expose the port that the application listens on.
 EXPOSE 3000
 
