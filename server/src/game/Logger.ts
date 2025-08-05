@@ -1,24 +1,34 @@
+import path from "path";
+import * as fs from "node:fs";
+
 import {Action} from "@common/actions/Action";
-import {appendFileSync, readFileSync} from "fs";
 
 export class Logger {
     logFilepath: string;
 
     constructor(logFilepath: string) {
         this.logFilepath = logFilepath;
+
+        this.ensureLogDirectoryExists();
     }
 
     handleAction(action: Action) {
         console.log("📝 logger recorded:", action.type);
-        appendFileSync(this.logFilepath, JSON.stringify(action) + '\n');
+        fs.appendFileSync(this.logFilepath, JSON.stringify(action) + '\n');
     }
 
     getPastActions(): Action[] {
-        const content = readFileSync(this.logFilepath).toString().split("\n");
+        const content = fs.readFileSync(this.logFilepath).toString().split("\n");
 
         return content
             .map(line => line.trim())
             .filter(line => line.length > 0)
             .map(line => JSON.parse(line));
+    }
+
+    ensureLogDirectoryExists() {
+        const dir = path.dirname(this.logFilepath);
+
+        fs.mkdirSync(dir, {recursive: true});
     }
 }
