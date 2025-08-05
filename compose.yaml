@@ -19,7 +19,6 @@ services:
     volumes:
       - ./:/usr/src/game
       - /usr/src/game/server/node_modules
-      - /usr/src/game/client/node_modules
     build: server
     ports:
       - "3000:3000"
@@ -27,6 +26,6 @@ services:
     user: "node"
     volumes:
       - ./:/usr/src/game
-      - /usr/src/game/server/node_modules
       - /usr/src/game/client/node_modules
+      - /usr/src/game/client/.rpt2_cache
     build: client
