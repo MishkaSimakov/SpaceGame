@@ -6,7 +6,7 @@ import {
     drawAdditionalModuleCardRequest,
     drawAdditionalModuleCardResponse,
     drawAnotherEventCardRequest,
-    drawAnotherEventCardResponse,
+    drawAnotherEventCardResponse, pushCardsToDiscard,
     pushCardsToHand,
 } from "@common/actions/Main";
 import GameState from "../../GameState";
@@ -19,7 +19,8 @@ import {showCards} from "../components/ShowCards";
 import {Event} from "@common/events/Event";
 import {performEvent} from "../components/PerformEvent";
 
-export function canDrawAnotherEventCard(state: GameState) {
+export function* canDrawAnotherEventCard() {
+    const state = yield* select();
     const player = StateGetters.currentPlayer(state);
 
     return SpaceshipGetters.getMainModuleType(player.spaceship) === MainModuleType.DrawAnotherEventCard
@@ -72,7 +73,7 @@ export function* drawCards() {
 
             yield* showCards(currentPlayer, [card], true);
 
-            if (canDrawAnotherEventCard(state)) {
+            if (yield* canDrawAnotherEventCard()) {
                 drawAnotherCard = yield* request(
                     drawAnotherEventCardRequest(currentPlayer.id),
                     drawAnotherEventCardResponse
@@ -84,6 +85,8 @@ export function* drawCards() {
                         -state.settings.energyToDragAnotherEventCardByMainModule,
                         "draw another event card by main module"
                     ));
+
+                    yield* put(pushCardsToDiscard("event", [card]));
                 }
             }
         } while (drawAnotherCard);

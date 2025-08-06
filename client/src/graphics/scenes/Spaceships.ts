@@ -16,7 +16,6 @@ let spaceshipConfigurations: Vector2[][] = [
     [new Vector2(0, 0), new Vector2(0, -1000), new Vector2(1000, 0), new Vector2(1000, -1000), new Vector2(500, 1500)]
 ];
 
-// TODO: selectModule resets on redraw
 export default class Spaceships extends Scene {
     spaceshipShapes: Record<number, SpaceshipShape> = {};
     gameManager: Game;

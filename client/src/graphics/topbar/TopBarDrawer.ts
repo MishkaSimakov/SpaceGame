@@ -2,19 +2,21 @@ import {OtherPlayer} from "@common/GameForPlayerDTO";
 import Player, {PlayerId} from "@common/Player";
 import {Message} from "@common/Types";
 
-import Controls from "../scenes/controls";
+import Controls from "../scenes/Controls";
 import {ButtonColors, SIZES} from "../constants";
 import {Rectangle} from "../engine/shapes/Rectangle";
 import {Text} from "../engine/shapes/Text";
 import {Group} from "../engine/Group";
 import {Button} from "../shapes/Button";
 import {PlayerDataLine} from "../shapes/PlayerDataLine";
+import TopBarSmallAdaptor from "./TopBarSmallAdaptor";
+import TopBarDefaultAdaptor from "./TopBarDefaultAdaptor";
 
 type ButtonData = {
     text: string, onClick: () => void, color: ButtonColors
 };
 
-export default abstract class TopBarDrawer {
+export default class TopBarDrawer {
     scene: Controls;
 
     group: Group;
@@ -26,10 +28,6 @@ export default abstract class TopBarDrawer {
     currentPlayerData: PlayerDataLine;
 
     status: {
-        context?: string,
-        contextColor?: string,
-        contextShape?: Text,
-
         text?: string,
         backgroundShape?: Rectangle,
         textShape?: Text
@@ -39,8 +37,6 @@ export default abstract class TopBarDrawer {
 
     buttons: ButtonData[] = [];
     buttonsGroup: Group;
-
-    scale: number;
 
     otherPlayers: OtherPlayer[] = [];
     currentPlayer: Player;
@@ -53,7 +49,6 @@ export default abstract class TopBarDrawer {
         padding: 10,
         strokeWidth: SIZES.STROKE_WIDTH,
         cornerRadius: SIZES.CORNER_RADIUS,
-        sceneWidth: undefined,
         statusWidth: 400
     }
 
@@ -74,19 +69,7 @@ export default abstract class TopBarDrawer {
         this.group = new Group();
 
         this.scene.add(this.group);
-
-        this.sizes.sceneWidth = scene.width();
-
-        this.scale = scene.width() / 1440;
     }
-
-    abstract drawStatus(): void;
-
-    abstract drawCurrentPlayerData(): void;
-
-    abstract drawPlayersData(): void;
-
-    abstract drawMessages(): void;
 
     clearStatus() {
         this.status.text = "";
@@ -100,10 +83,8 @@ export default abstract class TopBarDrawer {
         this.redraw();
     }
 
-    setStatus(status: string, context?: string, contextColor?: string) {
+    setStatus(status: string) {
         this.status.text = status;
-        this.status.context = context;
-        this.status.contextColor = contextColor;
 
         this.redraw();
     }
@@ -135,15 +116,20 @@ export default abstract class TopBarDrawer {
 
         this.messagesGroup?.destroy();
 
+        const sceneWidth = this.scene.width();
+        const adaptor = sceneWidth < (400 + 2 * 15)
+            ? new TopBarSmallAdaptor()
+            : new TopBarDefaultAdaptor();
+
         if (this.showPlayersData) {
-            this.drawPlayersData();
+            adaptor.drawPlayersData(this, sceneWidth);
         } else {
-            this.drawCurrentPlayerData();
+            adaptor.drawCurrentPlayerData(this, sceneWidth);
         }
 
-        this.drawStatus();
+        adaptor.drawStatus(this, sceneWidth);
 
-        this.drawMessages();
+        // adaptor.drawMessages(this);
     }
 
     togglePlayerCharacteristics() {

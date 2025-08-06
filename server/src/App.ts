@@ -1,8 +1,8 @@
+import dotenv from 'dotenv';
+
 import DatabaseManager from "./database/DatabaseManager";
 import GamesManager from "./game/GamesManager";
 import ServerManager from "./http/ServerManager";
-
-import dotenv from 'dotenv';
 
 export default class App {
     private static instance: App;

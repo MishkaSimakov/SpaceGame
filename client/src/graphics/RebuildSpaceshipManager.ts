@@ -1,5 +1,5 @@
-import Spaceships from "./scenes/spaceships";
-import Controls from "./scenes/controls";
+import Spaceships from "./scenes/Spaceships";
+import Controls from "./scenes/Controls";
 import Module from "../../../common/modules/Module";
 import Spaceship from "../../../common/Spaceship";
 import {Event} from "../../../common/events/Event";
@@ -66,8 +66,6 @@ export default class RebuildSpaceshipManager {
             });
 
             shape.on('dragend.rebuild', () => {
-                console.log("dragend", this.spaceship);
-
                 let localPosition = this.spaceshipShape.transformToCardPosition(
                     this.spaceshipShape.getRelativePointerPosition()
                 );

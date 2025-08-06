@@ -1,5 +1,4 @@
 import * as assert from "node:assert";
-import Rand from 'rand-seed';
 import jsonpatch from 'fast-json-patch'
 
 import Player from "@common/Player";
@@ -8,7 +7,7 @@ import {GameSettings} from "@common/GameSettings";
 import {Action, isAction} from "@common/actions/Action";
 import * as Actions from "@common/actions/Main";
 import {initGameState} from "@common/actions/Main";
-import {DiceResult, shuffle, shuffleResult, throwDice, throwDiceResult} from '@common/actions/Random';
+import {shuffle, shuffleResult, throwDice, throwDiceResult} from '@common/actions/Random';
 
 import GameState from "./GameState";
 import {User} from "../entity/user";
@@ -20,25 +19,7 @@ import {reducers} from "./reducers/Main";
 import {SagaRunner} from "./SagaRunner";
 import Spaceship from "@common/Spaceship";
 import {time, timeResult} from "@common/actions/Time";
-
-class Randomizer {
-    rand: Rand;
-
-    constructor(seed: string) {
-        this.rand = new Rand(seed);
-    }
-
-    dice(): DiceResult {
-        return (Math.floor(this.rand.next() * 6) + 1) as DiceResult;
-    }
-
-    shuffle<T>(array: T[]) {
-        for (let i = array.length - 1; i > 0; i--) {
-            const j = Math.floor(this.rand.next() * (i + 1));
-            [array[i], array[j]] = [array[j], array[i]];
-        }
-    }
-}
+import {Randomizer} from "./Randomizer";
 
 export default class Game {
     users: User[];

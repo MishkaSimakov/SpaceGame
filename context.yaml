@@ -60,3 +60,10 @@ documents:
                 - type: regex
                   patterns:
                     "~\\s*import\\s+(?:[\\w*\\s{},]*\\s+from\\s+)?[\"'][^\"' ]+[\"'];?\\s*~": ""
+  - description: 'Top Bar'
+    outputPath: topbar.md
+    sources:
+      - type: file
+        sourcePaths:
+          - client/src/graphics/topbar
+        filePattern: [ "*.ts" ]

@@ -33,12 +33,14 @@ export default class SocketManager {
 
         // register socket listeners
         for (const actionType of Object.keys(listeners)) {
-            this.socket.on(actionType, (payload, callback) => {
+            this.socket.on(actionType, (payload, callback?) => {
                 listeners[actionType](payload, {
                     game: this.game,
                     socket: this.socket
                 }).then((action: Action) => {
-                    callback(action);
+                    if (actionType.endsWith('Request')) {
+                        callback(action);
+                    }
                 });
             });
         }

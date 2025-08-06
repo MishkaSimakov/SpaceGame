@@ -30,15 +30,12 @@ export const eventCardsListeners: ListenersContainer = {
             return player ? player.name : id;
         });
 
-        const index = await game.controlsScene.chooseFromList("Выберите игрока", players.map(v => v.toString()))
+        const index = await game.controlsScene.chooseFromList("Выберите игрока для кражи карт", players.map(v => v.toString()))
         return choosePlayerToStealCardResponse(options[index]);
     },
 
     async chooseCardToStealRequest({cards}, {game}) {
-        const index = await game.controlsScene
-            .chooseFromList("Выберите карту", cards.map(c => {
-                return isModule(c) ? c.name : c.description;
-            }));
+        const index = (await game.controlsScene.chooseCards(cards, 1, "Выберите карту для кражи"))[0];
 
         return chooseCardToStealResponse(index);
     },
@@ -159,9 +156,9 @@ export const eventCardsListeners: ListenersContainer = {
         }, false, Color.fromHex('#a3b18a'));
 
         const {playerId, modulePosition} = await new Promise<{
-            playerId: number,
-            modulePosition: Vector2
-        } | undefined>((resolve) => {
+            playerId?: number,
+            modulePosition?: Vector2
+        }>((resolve) => {
             game.controlsScene.topBarDrawer.addButtons([{
                 text: "Атаковать",
                 color: COLORS.BUTTON.DANGER,
@@ -179,7 +176,7 @@ export const eventCardsListeners: ListenersContainer = {
                 text: "Пропустить",
                 color: COLORS.BUTTON.PRIMARY,
                 onClick: () => {
-                    resolve(undefined);
+                    resolve({});
                 }
             }]);
 

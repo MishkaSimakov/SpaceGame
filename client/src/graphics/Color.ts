@@ -30,6 +30,10 @@ export default class Color {
         return new Color(r, g, b, alpha);
     }
 
+    static transparent(): Color {
+        return new Color(0, 0, 0, 0);
+    }
+
     toString(): string {
         return `rgba(${this.r}, ${this.g}, ${this.b}, ${this.a})`;
     }

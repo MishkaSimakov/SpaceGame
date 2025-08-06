@@ -20,6 +20,7 @@ const COLORS = {
         }
     },
     TEXT: 0xFFFFFF,
+    TEXT_DANGER: Color.fromHex('#FF2525'),
     DANGER_STROKE: Color.fromHex('#e76f51'),
     DEFAULT_STROKE: Color.fromHex('#a3b18a'),
 };

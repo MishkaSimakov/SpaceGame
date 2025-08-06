@@ -4,8 +4,8 @@ import {Message} from "@common/Types";
 import {plainToClass} from "@common/PlainToClass";
 import {PlayerGetters} from "@common/getters/Player";
 
-import Spaceships from "./graphics/scenes/spaceships";
-import Controls from "./graphics/scenes/controls";
+import Spaceships from "./graphics/scenes/Spaceships";
+import Controls from "./graphics/scenes/Controls";
 import Player, {PlayerId} from "../../common/Player";
 import RebuildSpaceshipManager from "./graphics/RebuildSpaceshipManager";
 import SocketManager from "./sockets/SocketManager";
@@ -67,6 +67,23 @@ export default class Game {
 
             this.controlsScene.topBarDrawer.updateTime(this.playerTime);
         }, 1000);
+
+        window.addEventListener('resize', () => {
+            // game data is not loaded yet
+            if (!this.settings) return;
+
+            const newSize = {
+                width: window.innerWidth,
+                height: window.innerHeight
+            };
+
+            this.spaceshipsScene.setSize(newSize);
+            this.controlsScene.setSize(newSize);
+
+            this.controlsScene.activitiesQueue[0]?.update();
+
+            this.redraw();
+        });
     }
 
     setGameData(gameDTO: GameForPlayerDTO) {
@@ -96,7 +113,6 @@ export default class Game {
         this.messages = gameDTO.messages;
 
         this.updatePageTitle();
-
         this.redraw();
     }
 
