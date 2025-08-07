@@ -4,12 +4,17 @@ import {COLORS} from "../../graphics/constants";
 import Color from "../../graphics/Color";
 import {ListenersContainer} from "./ListenersContainer";
 import {
-    chooseCardTypeResponse, chooseModuleToRepairResponse, choosePlayerForAttackResponse, discardCardsResponse,
+    chooseCardTypeResponse,
+    chooseModuleToRepairResponse,
+    choosePlayerForAttackResponse,
+    discardCardsResponse,
     drawAdditionalModuleCardResponse,
     drawAnotherEventCardResponse,
-    rebuildSpaceshipResponse, useModuleSecondTimeResponse
+    rebuildSpaceshipResponse,
+    useModuleSecondTimeResponse
 } from "@common/actions/Main";
 import Module, {ModuleType} from "@common/modules/Module";
+import {BoundaryType} from "../../graphics/CountBoundary";
 
 
 export const mainListeners: ListenersContainer = {
@@ -77,22 +82,18 @@ export const mainListeners: ListenersContainer = {
     },
 
     async chooseModuleToRepairRequest({}, {game}) {
-        let chosenModule: Module;
-
-        game.spaceshipsScene.chooseModule((module) => {
-            chosenModule = module;
-        }, (module, playerId) => {
-            if (playerId !== game.getCurrentPlayer().id)
-                return false;
-
-            if (module.health === module.totalHealth)
-                return false;
-
-            return true;
-        }, false, Color.fromHex('#e76f51'));
+        const handle = game.spaceshipsScene.chooseModules(
+            ({module, player}) => player === game.getCurrentPlayer().id && module.health !== module.totalHealth,
+            {
+                type: BoundaryType.NO_MORE_THAN,
+                count: 1
+            },
+            Color.fromHex('#e76f51')
+        );
 
         game.controlsScene.topBarDrawer.setStatus("починка модуля");
 
+        // TODO: count validation
         const position = await new Promise<Vector2 | undefined>(resolve => {
             game.controlsScene.topBarDrawer.addButtons([{
                 text: "Починить",
@@ -102,9 +103,9 @@ export const mainListeners: ListenersContainer = {
                     game.controlsScene.topBarDrawer.clearStatus();
                     game.spaceshipsScene.endChoosingModule();
 
-                    const position = chosenModule
-                        ? new Vector2(chosenModule.x, chosenModule.y)
-                        : undefined;
+                    const position = handle.get().length === 0
+                        ? undefined
+                        : new Vector2(handle.get()[0].module.x, handle.get()[0].module.y);
 
                     resolve(position);
                 }

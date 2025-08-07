@@ -1,9 +1,10 @@
+import {isEvent, Event} from "@common/events/Event";
+import Module, {isModule} from "@common/modules/Module";
+
 import {Group} from "../engine/Group";
 import {ShapeConfig} from "../engine/Shape";
 import {GetSet} from "../engine/types";
 import {Factory} from "../engine/Factory";
-import Module, {isModule} from "../../../../common/modules/Module";
-import {isEvent, Event} from "../../../../common/events/Event";
 import {Rectangle} from "../engine/shapes/Rectangle";
 import {Text} from "../engine/shapes/Text";
 import Color from "../Color";

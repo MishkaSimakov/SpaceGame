@@ -1,7 +1,6 @@
 import {Event} from "@common/events/Event";
-import {isModule, Module} from "@common/modules/Module";
+import Module from "@common/modules/Module";
 
-import Modal from "../Modal";
 import Controls from "../scenes/Controls";
 import {Group} from "../engine/Group";
 import {COLORS} from "../constants";

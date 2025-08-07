@@ -3,14 +3,15 @@ import {
     chooseProtectorResponse,
     chooseTargetResponse,
     chooseWeaponAndTargetResponse,
-    tryToRunawayResponse,
     RunawayType,
+    tryToRunawayResponse,
 } from "@common/actions/Main";
-import Module, {ModuleType} from "@common/modules/Module";
+import Module, {isProtector} from "@common/modules/Module";
 
 import {COLORS} from "../../graphics/constants";
 import Color from "../../graphics/Color";
 import {ListenersContainer} from "./ListenersContainer";
+import {Boundary} from "../../graphics/CountBoundary";
 
 export const fightListeners: ListenersContainer = {
     async tryToRunawayRequest({type}, {game}) {
@@ -26,29 +27,23 @@ export const fightListeners: ListenersContainer = {
     },
 
     async chooseProtectorRequest({}, {game}) {
-        let selectedProtector: Module;
-
         game.controlsScene.topBarDrawer.setStatus("выберите протектор");
 
-        game.spaceshipsScene.chooseModule((module?: Module) => {
-            selectedProtector = module;
-        }, (module?: Module, playerId?: number) => {
-            if (playerId !== game.currentPlayer.id)
-                return false;
+        const protectorHandle = game.spaceshipsScene.chooseModules(
+            ({module, player}) => player === game.getCurrentPlayer().id && isProtector(module),
+            Boundary.noMoreThan(1),
+            Color.fromHex('#a3b18a')
+        );
 
-            if (module.type !== ModuleType.SmallQuantumProtector && module.type !== ModuleType.QuantumProtector)
-                return false;
-
-            return true;
-        }, false, Color.fromHex('#a3b18a'));
-
+        // TODO: count validation
         const position = await new Promise<Vector2 | undefined>(resolve => {
             game.controlsScene.topBarDrawer.addButtons([{
                 text: "Далее",
                 color: COLORS.BUTTON.PRIMARY,
                 onClick: () => {
-                    const position = selectedProtector
-                        ? new Vector2(selectedProtector.x, selectedProtector.y)
+                    const protector = protectorHandle.get()[0];
+                    const position = protector
+                        ? new Vector2(protector.module.x, protector.module.y)
                         : undefined;
 
                     resolve(position);
@@ -64,37 +59,24 @@ export const fightListeners: ListenersContainer = {
     },
 
     async chooseWeaponAndTargetRequest({victim}, {game}) {
-        let selectedWeapon: Module;
-        let selectedTarget: Module;
-
         game.controlsScene.topBarDrawer.setStatus("выберите цель и оружие");
 
-        game.spaceshipsScene.chooseModule((module?: Module) => {
-            selectedWeapon = module;
+        const weaponHandle = game.spaceshipsScene.chooseModules(
+            ({module, player}) =>
+                player === game.getCurrentPlayer().id
+                && module.energyCost <= game.getCurrentPlayer().energy
+                && module.strength > 0,
+            Boundary.equal(1),
+            Color.fromHex('#a3b18a')
+        );
 
-            game.controlsScene.topBarDrawer.setButtonsDisabled(
-                (selectedWeapon === undefined) || (selectedTarget === undefined)
-            );
-        }, (module?: Module, playerId?: number) => {
-            if (playerId !== game.currentPlayer.id)
-                return false;
+        const targetHandle = game.spaceshipsScene.chooseModules(
+            ({player}) => player === victim,
+            Boundary.equal(1),
+            Color.fromHex('#e76f51')
+        );
 
-            if (module.energyCost > game.getCurrentPlayer().energy)
-                return false;
-
-            return module.strength > 0;
-        }, true, Color.fromHex('#a3b18a'));
-
-        game.spaceshipsScene.chooseModule((module?: Module) => {
-            selectedTarget = module;
-
-            game.controlsScene.topBarDrawer.setButtonsDisabled(
-                (selectedWeapon === undefined) || (selectedTarget === undefined)
-            );
-        }, (module?: Module, playerId?: number) => {
-            return playerId === victim;
-        }, true, Color.fromHex('#e76f51'));
-
+        // TODO: add validation
         const {weaponPosition, targetPosition} = await new Promise<{
             weaponPosition: Vector2,
             targetPosition: Vector2
@@ -103,17 +85,15 @@ export const fightListeners: ListenersContainer = {
                 text: "Атаковать",
                 color: COLORS.BUTTON.DANGER,
                 onClick: () => {
-                    if (selectedWeapon === undefined || selectedTarget === undefined)
-                        return;
+                    const weapon = weaponHandle.get()[0].module;
+                    const target = targetHandle.get()[0].module;
 
                     resolve({
-                        weaponPosition: new Vector2(selectedWeapon.x, selectedWeapon.y),
-                        targetPosition: new Vector2(selectedTarget.x, selectedTarget.y)
+                        weaponPosition: new Vector2(weapon.x, weapon.y),
+                        targetPosition: new Vector2(target.x, target.y)
                     });
                 }
             }]);
-
-            game.controlsScene.topBarDrawer.setButtonsDisabled(true);
         });
 
         game.controlsScene.topBarDrawer.removeButtons();
@@ -124,36 +104,31 @@ export const fightListeners: ListenersContainer = {
     },
 
     async chooseTargetRequest({victim}, {game}) {
-        let selectedTarget: Module;
-
         game.controlsScene.topBarDrawer.setStatus("выберите цель");
 
-        game.spaceshipsScene.chooseModule((module?: Module) => {
-            selectedTarget = module;
+        const targetHandle = game.spaceshipsScene.chooseModules(
+            ({player}) => player === victim,
+            Boundary.equal(1),
+            Color.fromHex('#e76f51')
+        );
 
-            game.controlsScene.topBarDrawer.setButtonsDisabled(selectedTarget === undefined);
-        }, (module?: Module, playerLink?: number) => {
-            return playerLink === victim;
-        }, true, Color.fromHex('#e76f51'));
-
+        // TODO: count validation
         const target = await new Promise<Vector2>(resolve => {
             game.controlsScene.topBarDrawer.addButtons([{
                 text: "Атаковать",
                 color: COLORS.BUTTON.DANGER,
                 onClick: () => {
-                    if (selectedTarget === undefined)
-                        return;
-
-                    resolve(new Vector2(selectedTarget.x, selectedTarget.y));
-
-                    game.controlsScene.topBarDrawer.removeButtons();
-                    game.controlsScene.topBarDrawer.clearStatus();
-                    game.spaceshipsScene.endChoosingModule();
+                    const target = targetHandle.get()[0].module;
+                    resolve(new Vector2(target.x, target.y));
                 }
             }]);
 
             game.controlsScene.topBarDrawer.setButtonsDisabled(true);
         });
+
+        game.controlsScene.topBarDrawer.removeButtons();
+        game.controlsScene.topBarDrawer.clearStatus();
+        game.spaceshipsScene.endChoosingModule();
 
         return chooseTargetResponse(target);
     }

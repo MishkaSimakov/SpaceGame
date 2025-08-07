@@ -18,7 +18,8 @@ import {ShowCardsActivity} from "../activities/ShowCards";
 import {Activity} from "../activities/Activity";
 import {PermuteCardsActivity} from "../activities/PermuteCards";
 import {ChooseFromListActivity} from "../activities/ChooseFromList";
-import {ChooseCardsActivity, Comparison} from "../activities/ChooseCards";
+import {ChooseCardsActivity} from "../activities/ChooseCards";
+import {Boundary, BoundaryType} from "../CountBoundary";
 
 export default class Controls extends Scene {
     handDrawer: HandDrawer;
@@ -93,14 +94,14 @@ export default class Controls extends Scene {
 
     async discardCards(requiredDiscardCount: number): Promise<number[]> {
         return await this.enqueueActivity(new ChooseCardsActivity(this, "Скиньте лишние карты", {
-            type: Comparison.AT_LEAST,
+            type: BoundaryType.AT_LEAST,
             count: requiredDiscardCount
         }, this.gameManager.getCurrentPlayer().hand));
     }
 
     async chooseCards(cards: (Module | Event)[], count: number, title: string): Promise<number[]> {
         return await this.enqueueActivity(new ChooseCardsActivity(this, title, {
-            type: Comparison.EQUAL,
+            type: BoundaryType.EQUAL,
             count
         }, cards));
     }
@@ -163,47 +164,45 @@ export default class Controls extends Scene {
         this.topBarDrawer.setStatus(reasonStatus[moveDamageReason]);
 
         return new Promise((resolve) => {
-            let moveDamageFrom: Module;
-            let moveDamageTo: Module;
+            const fromHandle = this.gameManager.spaceshipsScene.chooseModules(
+                ({
+                     module,
+                     player
+                 }) => player === this.gameManager.getCurrentPlayer().id && module.health !== module.totalHealth,
+                Boundary.equal(1),
+                Color.fromHex('#a3b18a')
+            );
 
-            this.gameManager.spaceshipsScene.chooseModule((module?: Module) => {
-                moveDamageFrom = module;
-            }, (module?: Module, playerId?: number) => {
-                return playerId === this.gameManager.currentPlayer.id
-                    && module.health !== module.totalHealth;
-            }, true, Color.fromHex('#a3b18a'));
-
+            // TODO: count validation
             this.topBarDrawer.addButtons([{
                 text: "Далее",
                 color: COLORS.BUTTON.PRIMARY,
                 onClick: () => {
-                    if (moveDamageFrom === undefined)
-                        return;
-
                     this.gameManager.spaceshipsScene.endChoosingModule();
                     this.topBarDrawer.removeButtons();
 
                     this.topBarDrawer.setStatus("выберите, куда переместить урон");
 
-                    this.gameManager.spaceshipsScene.chooseModule((module?: Module) => {
-                        moveDamageTo = module;
-                    }, (module?: Module, playerId?: number) => {
-                        return playerId === this.gameManager.currentPlayer.id;
-                    }, true, Color.fromHex('a3b18a'));
+                    const toHandle = this.gameManager.spaceshipsScene.chooseModules(
+                        ({player}) => player === this.gameManager.getCurrentPlayer().id,
+                        Boundary.equal(1),
+                        Color.fromHex('a3b18a')
+                    );
 
+                    // TODO: count validation
                     this.topBarDrawer.addButtons([{
                         text: "Далее",
                         color: COLORS.BUTTON.PRIMARY,
                         onClick: () => {
-                            if (moveDamageTo === undefined)
-                                return;
-
                             this.gameManager.spaceshipsScene.endChoosingModule();
                             this.topBarDrawer.removeButtons();
 
+                            const from = fromHandle.get()[0].module;
+                            const to = toHandle.get()[0].module;
+
                             resolve({
-                                from: new Vector2(moveDamageFrom.x, moveDamageFrom.y),
-                                to: new Vector2(moveDamageTo.x, moveDamageTo.y)
+                                from: new Vector2(from.x, from.y),
+                                to: new Vector2(to.x, to.y)
                             });
                         }
                     }]);

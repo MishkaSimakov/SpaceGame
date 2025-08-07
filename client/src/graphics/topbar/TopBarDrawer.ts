@@ -12,7 +12,7 @@ import {PlayerDataLine} from "../shapes/PlayerDataLine";
 import TopBarSmallAdaptor from "./TopBarSmallAdaptor";
 import TopBarDefaultAdaptor from "./TopBarDefaultAdaptor";
 
-type ButtonData = {
+export type ButtonData = {
     text: string, onClick: () => void, color: ButtonColors
 };
 

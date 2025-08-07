@@ -7,6 +7,9 @@ import Color from "../Color";
 import {DD} from "../engine/Drag";
 import {Spaceship as SpaceshipShape} from "../shapes/Spaceship";
 import {Card} from "../shapes/Card";
+import {PlayerId} from "@common/Player";
+import {CountBoundary} from "../CountBoundary";
+import {ChooseModuleManager} from "../ChooseModuleManager";
 
 let spaceshipConfigurations: Vector2[][] = [
     [new Vector2(0, 0)],
@@ -20,6 +23,8 @@ export default class Spaceships extends Scene {
     spaceshipShapes: Record<number, SpaceshipShape> = {};
     gameManager: Game;
     spaceshipsCardSize: number;
+
+    activeChooseModule: ChooseModuleManager[] = [];
 
     constructor(game: Game) {
         super({
@@ -164,79 +169,16 @@ export default class Spaceships extends Scene {
         });
     }
 
-    chooseModule(onSelected: (module?: Module, playerId?: number) => void, check: (module: Module, playerId: number) => boolean, required: boolean, outlineColor: Color): void {
-        let selected: Card;
+    chooseModules(check: (info: {
+        module: Module,
+        player: PlayerId
+    }) => boolean, count: CountBoundary, outlineColor: Color) {
+        const manager = new ChooseModuleManager(this, check, count, outlineColor);
+        manager.activate();
 
-        for (let key in this.spaceshipShapes) {
-            let playerId = parseInt(key);
+        this.activeChooseModule.push(manager);
 
-            for (let shape of this.spaceshipShapes[playerId].children) {
-                const card = shape as Card;
-                const module = card.card() as Module;
-
-                if (!check(module, playerId)) {
-                    card.setState('DISABLED');
-
-                    continue;
-                }
-
-                card.setState('ENABLED');
-
-                shape.on('click.choosemodule', () => {
-                    if (selected !== undefined)
-                        selected._background.strokeWidth(0);
-
-                    if (!required && shape === selected) {
-                        selected = undefined;
-                        onSelected();
-
-                        return;
-                    }
-
-                    selected = card;
-
-                    card.moveToTop();
-                    selected.strokeWidth(5).stroke(outlineColor.toString());
-
-                    onSelected(module, playerId);
-                });
-            }
-        }
-    }
-
-    chooseModules(onSelected: (modules: Module[]) => void, check: (module: Module, playerId: number) => boolean, count: number, outlineColor: Color): void {
-        let selected: Card[] = [];
-
-        for (let key in this.spaceshipShapes) {
-            let playerId = parseInt(key);
-            for (let shape of this.spaceshipShapes[playerId].children) {
-                const card = shape as Card;
-                const module = card.card() as Module;
-
-                if (!check(module, playerId)) {
-                    card.setState('DISABLED');
-                    continue;
-                }
-
-                card.setState('ENABLED');
-
-                shape.on('click.choosemodule', () => {
-                    if (selected.includes(card))
-                        return;
-
-                    if (selected.length === count) {
-                        selected[selected.length - 1]._background.strokeWidth(0);
-                        selected.splice(selected.length - 1, 1);
-                    }
-
-                    selected.push(card);
-                    card.moveToTop();
-                    card.strokeWidth(5).stroke(outlineColor.toString());
-
-                    onSelected(selected.map(s => s.card() as Module));
-                });
-            }
-        }
+        return manager.getHandle();
     }
 
     updateData() {
@@ -263,9 +205,13 @@ export default class Spaceships extends Scene {
                 this.spaceshipShapes[player.id].setSpaceship(player.spaceship);
             }
         }
+
+        this.activeChooseModule.forEach(manager => manager.activate());
     }
 
     endChoosingModule() {
+        this.activeChooseModule = [];
+
         for (let key in this.spaceshipShapes) {
             for (let shape of this.spaceshipShapes[key].children) {
                 (shape as Card).strokeWidth(0);

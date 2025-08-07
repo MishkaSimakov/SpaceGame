@@ -1,5 +1,5 @@
 import {Event} from "@common/events/Event";
-import {isModule, Module} from "@common/modules/Module";
+import Module, {isModule} from "@common/modules/Module";
 
 import Modal from "../Modal";
 import Controls from "../scenes/Controls";

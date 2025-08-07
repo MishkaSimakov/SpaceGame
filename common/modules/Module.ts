@@ -1,6 +1,6 @@
 import {Event} from "../events/Event";
 
-enum ModuleType {
+export enum ModuleType {
     MainModule,
 
     // weapon
@@ -29,7 +29,7 @@ enum ModuleType {
 
 export let moduleIdCounter = 0;
 
-class Module {
+export default class Module {
     id: number = moduleIdCounter++;
 
     name: string;
@@ -54,14 +54,10 @@ class Module {
     }
 }
 
-function isModule(card: Module | Event): card is Module {
+export function isModule(card: Module | Event): card is Module {
     return (card as Module).name !== undefined;
 }
 
-export default Module;
-
-export {
-    Module,
-    ModuleType,
-    isModule
+export function isProtector(card: Module | Event) {
+    return isModule(card) && (card.type === ModuleType.SmallQuantumProtector || card.type === ModuleType.QuantumProtector);
 }

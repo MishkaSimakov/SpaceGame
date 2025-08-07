@@ -20,10 +20,11 @@ const opposites: Record<string, string> = {
 function getMainModule(ship: Spaceship): MainModule | undefined {
     let filtered = getModulesByType(ship, ModuleType.MainModule);
 
-    if (!filtered.length)
+    if (filtered.length === 0) {
         return undefined;
+    }
 
-    return filtered[0] as MainModule;
+    return filtered[0] as unknown as MainModule;
 }
 
 function getMainModuleType(ship: Spaceship): MainModuleType {

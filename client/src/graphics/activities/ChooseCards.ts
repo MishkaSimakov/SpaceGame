@@ -1,6 +1,6 @@
 import {Event} from "@common/events/Event";
 import Vector2 from "@common/Vector2";
-import {Module} from "@common/modules/Module";
+import Module from "@common/modules/Module";
 
 import {Group} from "../engine/Group";
 import {Rectangle} from "../engine/shapes/Rectangle";
@@ -10,19 +10,7 @@ import {Card} from "../shapes/Card";
 import Controls from "../scenes/Controls";
 import {Activity} from "./Activity";
 import {COLORS} from "../constants";
-
-export enum Comparison {
-    EQUAL,
-    AT_LEAST,
-    NO_MORE_THAN
-}
-
-export type CountMode = {
-    type: Comparison,
-    count: number
-}
-
-type CountValidationResult = { verdict: "error", error: string } | { verdict: "correct" };
+import {BoundaryType, CountBoundary, CountBoundaryValidationResult} from "../CountBoundary";
 
 export class ChooseCardsActivity extends Activity {
     private modalGroup?: Group = undefined;
@@ -31,7 +19,7 @@ export class ChooseCardsActivity extends Activity {
 
     private selected: number[] = [];
 
-    constructor(private scene: Controls, private title: string, private count: CountMode, private cards: (Event | Module)[]) {
+    constructor(private scene: Controls, private title: string, private count: CountBoundary, private cards: (Event | Module)[]) {
         super();
     }
 
@@ -170,16 +158,16 @@ export class ChooseCardsActivity extends Activity {
         this.modalGroup = undefined;
     }
 
-    private validateCount(count: number): CountValidationResult {
+    private validateCount(count: number): CountBoundaryValidationResult {
         switch (this.count.type) {
-            case Comparison.AT_LEAST: {
+            case BoundaryType.AT_LEAST: {
                 if (count >= this.count.count) {
                     return {verdict: "correct"};
                 } else {
                     return {verdict: "error", error: `Выбрано недостаточно карт (${count} < ${this.count.count})`};
                 }
             }
-            case Comparison.EQUAL: {
+            case BoundaryType.EQUAL: {
                 if (count == this.count.count) {
                     return {verdict: "correct"};
                 } else {
@@ -189,7 +177,7 @@ export class ChooseCardsActivity extends Activity {
                     };
                 }
             }
-            case Comparison.NO_MORE_THAN: {
+            case BoundaryType.NO_MORE_THAN: {
                 if (count <= this.count.count) {
                     return {verdict: "correct"};
                 } else {

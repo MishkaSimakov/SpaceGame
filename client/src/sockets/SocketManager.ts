@@ -23,7 +23,6 @@ const listeners: ListenersContainer = {
 
 export default class SocketManager {
     game: Game;
-
     socket: Socket;
 
     constructor(game: Game) {
