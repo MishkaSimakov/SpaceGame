@@ -4,7 +4,7 @@ import {GetSet, Vector2} from "../engine/types";
 import {Factory} from "../engine/Factory";
 import SpaceshipData from "../../../../common/Spaceship";
 import {Card} from "./Card";
-import Module from "../../../../common/modules/Module";
+import Module, {isMainModule} from "../../../../common/modules/Module";
 
 export interface SpaceshipConfig extends NodeConfig {
     cardSize: number,
@@ -33,7 +33,7 @@ export class Spaceship extends Group<SpaceshipConfig> {
 
             this.add(shape);
 
-            if (module.isMain) {
+            if (isMainModule(module)) {
                 shape.draggable(true).dragDistance(5);
 
                 shape.on('dragstart', () => {
@@ -69,11 +69,10 @@ export class Spaceship extends Group<SpaceshipConfig> {
     }
 
     setModulesDraggable(draggable: boolean) {
-        this.children?.forEach(c => {
-            let card = (c as Card).card();
-
-            if (!(card as Module).isMain)
-                c.draggable(draggable);
+        this.getModules().forEach(card => {
+            if (!isMainModule(card.card())) {
+                card.draggable(draggable);
+            }
         });
     }
 

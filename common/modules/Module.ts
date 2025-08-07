@@ -1,4 +1,8 @@
 import {Event} from "../events/Event";
+import SmallQuantumProtector from "./SmallQuantumProtector";
+import QuantumProtector from "./QuantumProtector";
+import {MainModule} from "./MainModule";
+import Vector2 from "../Vector2";
 
 export enum ModuleType {
     MainModule,
@@ -39,15 +43,12 @@ export default class Module {
     capacity: number = 0;
     energyCost: number = 0;
     energyIncrease: number = 0;
-    x: number = 0;
-    y: number = 0;
-    sprite: string;
-    isMain: boolean = false;
     type: ModuleType;
     totalHealth: number;
     health: number;
+
+    position: Vector2;
     rotation: number = 0;
-    isActivated: boolean = false;
 
     constructor(connectors: { top: number, right: number, bottom: number, left: number }) {
         this.connectors = connectors;
@@ -58,6 +59,10 @@ export function isModule(card: Module | Event): card is Module {
     return (card as Module).name !== undefined;
 }
 
-export function isProtector(card: Module | Event) {
+export function isProtector(card: Module | Event): card is (SmallQuantumProtector | QuantumProtector) {
     return isModule(card) && (card.type === ModuleType.SmallQuantumProtector || card.type === ModuleType.QuantumProtector);
+}
+
+export function isMainModule(card: Module | Event): card is MainModule {
+    return isModule(card) && card.type === ModuleType.MainModule;
 }

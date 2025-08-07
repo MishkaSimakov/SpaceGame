@@ -1,5 +1,5 @@
 import {MainModule, MainModuleType} from "../modules/MainModule";
-import Module, {ModuleType} from "../modules/Module";
+import Module, {isMainModule, ModuleType} from "../modules/Module";
 import Vector2 from "../Vector2";
 import Spaceship from "../Spaceship";
 
@@ -43,8 +43,8 @@ function canConnectModule(ship: Spaceship, module: Module, x: number, y: number)
 function canConnectModule(ship: Spaceship, module: Module): boolean;
 function canConnectModule(ship: Spaceship, module: Module, x?: number, y?: number): boolean {
     if (ship.modules.indexOf(module) !== -1 && x === undefined && y === undefined) {
-        x = module.x;
-        y = module.y;
+        x = module.position.x;
+        y = module.position.y;
     } else if (getModuleByPosition(ship, x, y))
         return false;
 
@@ -63,7 +63,7 @@ function canConnectModule(ship: Spaceship, module: Module, x?: number, y?: numbe
             hasConnection = true;
     }
 
-    return hasConnection || module.isMain;
+    return hasConnection || isMainModule(module);
 }
 
 function getConnectorInDirection(module: Module, direction: string): number {

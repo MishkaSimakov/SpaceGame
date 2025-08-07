@@ -1,4 +1,4 @@
-import {Module, ModuleType} from "./Module";
+import Module, {ModuleType} from "./Module";
 
 enum MainModuleType {
     DrawAnotherEventCard,
@@ -24,9 +24,7 @@ class MainModule extends Module {
         let indexToRomanian: string[] = ['I', 'II', 'III', 'IV', 'V'];
 
         this.name = 'Командный модуль ' + indexToRomanian[index - 1];
-        this.sprite = 'main-module';
         this.type = ModuleType.MainModule;
-        this.isMain = true;
 
         this.energyIncrease = 1;
         this.capacity = 5;

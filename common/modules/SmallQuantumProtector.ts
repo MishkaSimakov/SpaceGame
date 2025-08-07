@@ -1,4 +1,4 @@
-import {Module, ModuleType} from "./Module";
+import Module, {ModuleType} from "./Module";
 
 export default class SmallQuantumProtector extends Module {
     constructor(left: number, top: number, right: number, bottom: number) {
@@ -11,7 +11,6 @@ export default class SmallQuantumProtector extends Module {
 
         this.name = 'Малый квантовый протектор';
         this.type = ModuleType.SmallQuantumProtector;
-        this.sprite = 'small-quantum-protector';
 
         this.health = 3;
         this.totalHealth = 3;

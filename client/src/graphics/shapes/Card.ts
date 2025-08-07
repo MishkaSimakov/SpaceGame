@@ -1,5 +1,5 @@
 import {isEvent, Event} from "@common/events/Event";
-import Module, {isModule} from "@common/modules/Module";
+import Module, {isMainModule, isModule} from "@common/modules/Module";
 
 import {Group} from "../engine/Group";
 import {ShapeConfig} from "../engine/Shape";
@@ -37,8 +37,8 @@ export class Card extends Group<CardConfig> {
             card = this.card(),
             scale = this.size() / 256,
             title = isModule(card)
-                ? (card as Module).name.replaceAll(' ', '\n')
-                : (card as Event).description,
+                ? card.name.replaceAll(' ', '\n')
+                : card.description,
             baseConnectorWidth = 150,
             baseConnectorHeight = 18;
 
@@ -48,10 +48,8 @@ export class Card extends Group<CardConfig> {
         let color: Color;
 
         if (isModule(card)) {
-            if ((card as Module).isMain) {
+            if (isMainModule(card)) {
                 color = Color.fromHex('#155745');
-            } else if ((card as Module).isActivated) {
-                color = Color.fromHex('#30332E');
             } else {
                 color = Color.fromHex('#95AFBA');
             }

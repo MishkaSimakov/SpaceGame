@@ -14,7 +14,7 @@ import {
     permuteTopThreeEventCardsResponse,
     useEventCardToDealDamageResponse
 } from "@common/actions/Main";
-import Module, {ModuleType} from "@common/modules/Module";
+import Module, {isMainModule, ModuleType} from "@common/modules/Module";
 import Color from "../../graphics/Color";
 import {COLORS} from "../../graphics/constants";
 import Vector2 from "@common/Vector2";
@@ -128,7 +128,7 @@ export const eventCardsListeners: ListenersContainer = {
         //         }
 
         const handle = game.spaceshipsScene.chooseModules(
-            ({module, player}) => player !== game.getCurrentPlayer().id && !module.isMain,
+            ({module, player}) => player !== game.getCurrentPlayer().id && !isMainModule(module),
             Boundary.noMoreThan(1),
             Color.fromHex('#a3b18a')
         );
@@ -204,7 +204,7 @@ export const eventCardsListeners: ListenersContainer = {
         game.controlsScene.topBarDrawer.setStatus(`уничтожьте модуль`);
 
         const handle = game.spaceshipsScene.chooseModules(
-            ({module, player}) => player === game.currentPlayer.id && !module.isMain,
+            ({module, player}) => player === game.currentPlayer.id && !isMainModule(module),
             Boundary.equal(1),
             Color.fromHex('#a3b18a')
         );
@@ -251,7 +251,7 @@ export const eventCardsListeners: ListenersContainer = {
 
 
         const handle = game.spaceshipsScene.chooseModules(
-            ({module, player}) => player === victim && !module.isMain,
+            ({module, player}) => player === victim && !isMainModule(module),
             Boundary.equal(1),
             COLORS.DANGER_STROKE
         );

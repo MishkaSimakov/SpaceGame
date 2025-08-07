@@ -1,6 +1,6 @@
 import Spaceships from "./scenes/Spaceships";
 import Controls from "./scenes/Controls";
-import Module from "../../../common/modules/Module";
+import Module, {isMainModule} from "../../../common/modules/Module";
 import Spaceship from "../../../common/Spaceship";
 import {Event} from "../../../common/events/Event";
 import Game from "../Game";
@@ -36,7 +36,7 @@ export default class RebuildSpaceshipManager {
         for (let shape of this.spaceshipShape.getModules()) {
             const module = shape.card() as Module;
 
-            if (module.isMain)
+            if (isMainModule(module))
                 continue;
 
             shape.on('pointerdown.rebuild', () => {

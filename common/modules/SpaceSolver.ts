@@ -1,6 +1,6 @@
 // да, я понимаю, что порешатель и solver имеют разное значение, это такая шутка
 
-import {Module, ModuleType} from "./Module";
+import Module, {ModuleType} from "./Module";
 
 export default class SpaceSolver extends Module {
     constructor(left: number, top: number, right: number, bottom: number) {
@@ -13,7 +13,6 @@ export default class SpaceSolver extends Module {
 
         this.name = 'Космический порешатель';
         this.type = ModuleType.SpaceSolver;
-        this.sprite = 'space-solver';
 
         this.strength = 1;
         this.health = 1;
