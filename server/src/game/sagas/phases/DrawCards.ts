@@ -62,6 +62,8 @@ export function* drawCards() {
                         "draw additional module card by main module"
                     ));
                 }
+            } else {
+                drawAdditionalCard = false;
             }
         } while (drawAdditionalCard);
     } else {
@@ -88,6 +90,8 @@ export function* drawCards() {
 
                     yield* put(pushCardsToDiscard("event", [card]));
                 }
+            } else {
+                drawAnotherCard = false;
             }
         } while (drawAnotherCard);
 
