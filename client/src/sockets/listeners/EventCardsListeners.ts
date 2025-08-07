@@ -1,4 +1,3 @@
-import {ListenersContainer} from "./ListenersContainer";
 import {
     chooseCardsForRepairSpaceshipResponse,
     chooseCardsToDiscardAndTakeAnotherResponse,
@@ -14,12 +13,14 @@ import {
     permuteTopThreeEventCardsResponse,
     useEventCardToDealDamageResponse
 } from "@common/actions/Main";
-import Module, {isMainModule, ModuleType} from "@common/modules/Module";
+import {isMainModule, ModuleType} from "@common/modules/Module";
+import {SpaceshipGetters} from "@common/getters/Spaceship";
+import Vector2 from "@common/Vector2";
+
+import {ListenersContainer} from "./ListenersContainer";
 import Color from "../../graphics/Color";
 import {COLORS} from "../../graphics/constants";
-import Vector2 from "@common/Vector2";
 import {Button} from "../../graphics/shapes/Button";
-import {SpaceshipGetters} from "@common/getters/Spaceship";
 import {Boundary} from "../../graphics/CountBoundary";
 
 export const eventCardsListeners: ListenersContainer = {
@@ -58,74 +59,25 @@ export const eventCardsListeners: ListenersContainer = {
     },
 
     async chooseModulesToRepairByDiscardedCardsRequest({count}, {game}) {
-        game.controlsScene.topBarDrawer.setStatus("выберите модули для починки (" + count + ")");
-
-        const handle = game.spaceshipsScene.chooseModules(
-            ({module, player}) => player === game.getCurrentPlayer().id && module.health !== module.totalHealth,
-            Boundary.equal(count),
-            Color.fromHex('#a3b18a')
+        const positions = await game.controlsScene.chooseModulesToRepair(
+            `выберите ${count} модулей для починки`,
+            count
         );
-
-        const positions = await new Promise<Vector2[]>((resolve) => {
-            game.controlsScene.topBarDrawer.addButtons([{
-                text: "Починить",
-                color: COLORS.BUTTON.PRIMARY,
-                onClick: () => {
-                    resolve(handle.get().map(m => new Vector2(m.module.x, m.module.y)));
-                }
-            }]);
-        });
-
-        game.controlsScene.topBarDrawer.removeButtons();
-        game.controlsScene.topBarDrawer.clearStatus();
-        game.spaceshipsScene.endChoosingModule();
 
         return chooseModulesToRepairByDiscardedCardsResponse(positions);
     },
 
     async chooseModuleToRepairByDiceRequest({amount}, {game}) {
-        game.controlsScene.topBarDrawer.setStatus(`выберите модуль для починки (${amount})`);
-
-        const handle = game.spaceshipsScene.chooseModules(
-            ({module, player}) => player === game.getCurrentPlayer().id && module.health !== module.totalHealth,
-            Boundary.noMoreThan(1),
-            Color.fromHex('#a3b18a')
+        const positions = await game.controlsScene.chooseModulesToRepair(
+            `выберите модуль для починки на ${amount}`,
+            1
         );
 
-        // TODO: count validation
-        const position = await new Promise<Vector2 | undefined>((resolve) => {
-            game.controlsScene.topBarDrawer.addButtons([{
-                text: "Починить",
-                color: COLORS.BUTTON.PRIMARY,
-                onClick: () => {
-                    const module = handle.get()[0]?.module;
-                    resolve(module ? new Vector2(module.x, module.y) : undefined);
-                }
-            }, {
-                text: "Пропустить",
-                color: COLORS.BUTTON.PRIMARY,
-                onClick: () => {
-                    resolve(undefined);
-                }
-            }]);
-        });
-
-        game.controlsScene.topBarDrawer.removeButtons();
-        game.controlsScene.topBarDrawer.clearStatus();
-        game.spaceshipsScene.endChoosingModule();
-
-        return chooseModuleToRepairByDiceResponse(position);
+        return chooseModuleToRepairByDiceResponse(positions[0]);
     },
 
     async chooseModuleToDamageByDiceRequest({damage}, {game}) {
         game.controlsScene.topBarDrawer.setStatus(`выберите модуль, чтобы нанести урон (${damage})`);
-
-        //(chosen: Module, playerId: number) => {
-        //             module = chosen;
-        //             id = playerId;
-        //
-        //             (game.controlsScene.topBarDrawer.buttonsGroup.children[0] as Button).disabled(module === undefined);
-        //         }
 
         const handle = game.spaceshipsScene.chooseModules(
             ({module, player}) => player !== game.getCurrentPlayer().id && !isMainModule(module),
@@ -133,7 +85,14 @@ export const eventCardsListeners: ListenersContainer = {
             Color.fromHex('#a3b18a')
         );
 
-        // TODO: validate count
+        const validate = () => {
+            (game.controlsScene.topBarDrawer.buttonsGroup.children[0] as Button).disabled(
+                handle.get().length === 0
+            );
+        };
+
+        handle.onSet(validate);
+
         const {playerId, modulePosition} = await new Promise<{
             playerId?: number,
             modulePosition?: Vector2
@@ -142,11 +101,9 @@ export const eventCardsListeners: ListenersContainer = {
                 text: "Атаковать",
                 color: COLORS.BUTTON.DANGER,
                 onClick: () => {
-                    const info = handle.get()[0];
-
                     resolve({
-                        playerId: info?.player,
-                        modulePosition: info ? new Vector2(info.module.x, info.module.y) : undefined
+                        playerId: handle.get()[0].player,
+                        modulePosition: Vector2.modulePosition(handle.get()[0].module)
                     });
                 }
             }, {
@@ -157,7 +114,7 @@ export const eventCardsListeners: ListenersContainer = {
                 }
             }]);
 
-            (game.controlsScene.topBarDrawer.buttonsGroup.children[0] as Button).disabled(true);
+            validate();
         });
 
         game.controlsScene.topBarDrawer.removeButtons();
@@ -182,15 +139,24 @@ export const eventCardsListeners: ListenersContainer = {
             Color.fromHex('#a3b18a')
         );
 
-        // TODO: count validation
+        const validate = () => {
+            game.controlsScene.topBarDrawer.setButtonsDisabled(
+                handle.get().length !== count
+            );
+        };
+
+        handle.onSet(validate);
+
         const positions = await new Promise<Vector2[]>((resolve) => {
             game.controlsScene.topBarDrawer.addButtons([{
                 text: "Уничтожить",
                 color: COLORS.BUTTON.DANGER,
                 onClick: () => {
-                    resolve(handle.get().map(i => new Vector2(i.module.x, i.module.y)));
+                    resolve(handle.get().map(i => Vector2.modulePosition(i.module)));
                 }
             }]);
+
+            validate();
         });
 
         game.controlsScene.topBarDrawer.removeButtons();
@@ -209,15 +175,24 @@ export const eventCardsListeners: ListenersContainer = {
             Color.fromHex('#a3b18a')
         );
 
-        // TODO: count validation
+        const validate = () => {
+            game.controlsScene.topBarDrawer.setButtonsDisabled(
+                handle.get().length !== 1
+            );
+        };
+
+        handle.onSet(validate);
+
         const position = await new Promise<Vector2>((resolve) => {
             game.controlsScene.topBarDrawer.addButtons([{
                 text: "Уничтожить",
                 color: COLORS.BUTTON.DANGER,
                 onClick: () => {
-                    resolve(new Vector2(handle.get()[0].module.x, handle.get()[0].module.y));
+                    resolve(Vector2.modulePosition(handle.get()[0].module));
                 }
             }]);
+
+            validate();
         });
 
         game.controlsScene.topBarDrawer.removeButtons();
@@ -249,22 +224,30 @@ export const eventCardsListeners: ListenersContainer = {
 
         game.controlsScene.topBarDrawer.setStatus(`выберите модуль, чтобы нанести 1 урон`);
 
-
         const handle = game.spaceshipsScene.chooseModules(
             ({module, player}) => player === victim && !isMainModule(module),
             Boundary.equal(1),
             COLORS.DANGER_STROKE
         );
 
-        // TODO: count validation
+        const validate = () => {
+            game.controlsScene.topBarDrawer.setButtonsDisabled(
+                handle.get().length !== 1
+            );
+        };
+
+        handle.onSet(validate);
+
         const position = await new Promise<Vector2>((resolve) => {
             game.controlsScene.topBarDrawer.addButtons([{
                 text: "Атаковать",
                 color: COLORS.BUTTON.DANGER,
                 onClick: () => {
-                    resolve(new Vector2(handle.get()[0].module.x, handle.get()[0].module.y));
+                    resolve(Vector2.modulePosition(handle.get()[0].module));
                 }
             }]);
+
+            validate();
         });
 
         game.controlsScene.topBarDrawer.removeButtons();

@@ -10,7 +10,6 @@ import {COLORS} from "../constants";
 import TopBarDrawer from "../topbar/TopBarDrawer";
 import Scene from "../engine/Scene";
 import {Group} from "../engine/Group";
-import Color from "../Color";
 import {Card} from "../shapes/Card";
 
 import {ChoosePlayerForAttackActivity} from "../activities/ChoosePlayerForAttack";
@@ -20,6 +19,10 @@ import {PermuteCardsActivity} from "../activities/PermuteCards";
 import {ChooseFromListActivity} from "../activities/ChooseFromList";
 import {ChooseCardsActivity} from "../activities/ChooseCards";
 import {Boundary, BoundaryType} from "../CountBoundary";
+import {ChooseModulesToMoveDamage} from "../activities/ChooseModulesToMoveDamage";
+import Color from "../Color";
+import {chooseModulesToRepairByDiscardedCardsResponse} from "@common/actions/EventCards";
+import {Button} from "../shapes/Button";
 
 export default class Controls extends Scene {
     handDrawer: HandDrawer;
@@ -106,6 +109,53 @@ export default class Controls extends Scene {
         }, cards));
     }
 
+    async chooseModulesToRepair(title: string, maxCount: number): Promise<Vector2[]> {
+        const boundary = Boundary.noMoreThan(maxCount);
+
+        this.topBarDrawer.setStatus(title);
+
+        const handle = this.gameManager.spaceshipsScene.chooseModules(
+            ({
+                 module,
+                 player
+             }) => player === this.gameManager.getCurrentPlayer().id && module.health !== module.totalHealth,
+            boundary,
+            Color.fromHex('#a3b18a')
+        );
+
+        const validate = () => {
+            (this.topBarDrawer.buttonsGroup.children[0] as Button).disabled(
+                handle.get().length === 0 || handle.get().length > maxCount
+            );
+        };
+
+        handle.onSet(validate);
+
+        const positions = await new Promise<Vector2[]>((resolve) => {
+            this.topBarDrawer.addButtons([{
+                text: "Починить",
+                color: COLORS.BUTTON.PRIMARY,
+                onClick: () => {
+                    resolve(handle.get().map(i => Vector2.modulePosition(i.module)));
+                }
+            }, {
+                text: "Пропустить",
+                color: COLORS.BUTTON.PRIMARY,
+                onClick: () => {
+                    resolve([]);
+                }
+            }]);
+
+            validate();
+        });
+
+        this.topBarDrawer.removeButtons();
+        this.topBarDrawer.clearStatus();
+        this.gameManager.spaceshipsScene.endChoosingModule();
+
+        return positions;
+    }
+
     drawCardsOnScreen(cards: (Module | Event)[]): Group {
         let sceneWidth = this.width();
         let sceneHeight = this.height();
@@ -154,67 +204,8 @@ export default class Controls extends Scene {
         return await this.enqueueActivity(new PermuteCardsActivity(this, cards));
     }
 
-    chooseModulesToMoveDamage(moveDamageReason: MoveDamageReason): Promise<{ from?: Vector2, to?: Vector2 }> {
-        // TODO: maybe add a distinction
-        const reasonStatus: Record<MoveDamageReason, string> = {
-            [MoveDamageReason.MainModule]: "Выберите, откуда переместить урон",
-            [MoveDamageReason.EventCard]: "Выберите, откуда переместить урон"
-        }
-
-        this.topBarDrawer.setStatus(reasonStatus[moveDamageReason]);
-
-        return new Promise((resolve) => {
-            const fromHandle = this.gameManager.spaceshipsScene.chooseModules(
-                ({
-                     module,
-                     player
-                 }) => player === this.gameManager.getCurrentPlayer().id && module.health !== module.totalHealth,
-                Boundary.equal(1),
-                Color.fromHex('#a3b18a')
-            );
-
-            // TODO: count validation
-            this.topBarDrawer.addButtons([{
-                text: "Далее",
-                color: COLORS.BUTTON.PRIMARY,
-                onClick: () => {
-                    this.gameManager.spaceshipsScene.endChoosingModule();
-                    this.topBarDrawer.removeButtons();
-
-                    this.topBarDrawer.setStatus("выберите, куда переместить урон");
-
-                    const toHandle = this.gameManager.spaceshipsScene.chooseModules(
-                        ({player}) => player === this.gameManager.getCurrentPlayer().id,
-                        Boundary.equal(1),
-                        Color.fromHex('a3b18a')
-                    );
-
-                    // TODO: count validation
-                    this.topBarDrawer.addButtons([{
-                        text: "Далее",
-                        color: COLORS.BUTTON.PRIMARY,
-                        onClick: () => {
-                            this.gameManager.spaceshipsScene.endChoosingModule();
-                            this.topBarDrawer.removeButtons();
-
-                            const from = fromHandle.get()[0].module;
-                            const to = toHandle.get()[0].module;
-
-                            resolve({
-                                from: new Vector2(from.x, from.y),
-                                to: new Vector2(to.x, to.y)
-                            });
-                        }
-                    }]);
-                }
-            }, {
-                text: "Пропустить",
-                color: COLORS.BUTTON.PRIMARY,
-                onClick: () => {
-                    resolve({from: undefined, to: undefined});
-                }
-            }]);
-        });
+    chooseModulesToMoveDamage(moveDamageReason: MoveDamageReason): Promise<Partial<{ from: Vector2, to: Vector2 }>> {
+        return this.enqueueActivity(new ChooseModulesToMoveDamage(this, this.gameManager.spaceshipsScene, moveDamageReason));
     }
 
     askYesOrNo(): Promise<boolean> {

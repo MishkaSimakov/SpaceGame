@@ -25,6 +25,7 @@ export interface CardConfig extends ShapeConfig {
 export class Card extends Group<CardConfig> {
     _rotationGroup: Group;
     _background: Rectangle;
+    _strokeRect: Rectangle;
     _title: Text;
     _values: Text;
     _connectors: Rectangle[] = [];

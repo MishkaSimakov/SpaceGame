@@ -6,12 +6,13 @@ import {
     RunawayType,
     tryToRunawayResponse,
 } from "@common/actions/Main";
-import Module, {isProtector} from "@common/modules/Module";
+import {isProtector} from "@common/modules/Module";
 
 import {COLORS} from "../../graphics/constants";
 import Color from "../../graphics/Color";
 import {ListenersContainer} from "./ListenersContainer";
 import {Boundary} from "../../graphics/CountBoundary";
+import {Button} from "../../graphics/shapes/Button";
 
 export const fightListeners: ListenersContainer = {
     async tryToRunawayRequest({type}, {game}) {
@@ -35,20 +36,33 @@ export const fightListeners: ListenersContainer = {
             Color.fromHex('#a3b18a')
         );
 
-        // TODO: count validation
-        const position = await new Promise<Vector2 | undefined>(resolve => {
-            game.controlsScene.topBarDrawer.addButtons([{
-                text: "Далее",
-                color: COLORS.BUTTON.PRIMARY,
-                onClick: () => {
-                    const protector = protectorHandle.get()[0];
-                    const position = protector
-                        ? new Vector2(protector.module.x, protector.module.y)
-                        : undefined;
+        const validate = () => {
+            (game.controlsScene.topBarDrawer.buttonsGroup.children[0] as Button).disabled(
+                protectorHandle.get().length !== 1
+            );
+        };
 
-                    resolve(position);
+        protectorHandle.onSet(validate);
+
+        const position = await new Promise<Vector2 | undefined>(resolve => {
+            game.controlsScene.topBarDrawer.addButtons([
+                {
+                    text: "Активировать",
+                    color: COLORS.BUTTON.PRIMARY,
+                    onClick: () => {
+                        resolve(Vector2.modulePosition(protectorHandle.get()[0].module));
+                    }
+                },
+                {
+                    text: "Пропустить",
+                    color: COLORS.BUTTON.PRIMARY,
+                    onClick: () => {
+                        resolve(undefined);
+                    }
                 }
-            }]);
+            ]);
+
+            validate();
         });
 
         game.controlsScene.topBarDrawer.removeButtons();
@@ -76,7 +90,15 @@ export const fightListeners: ListenersContainer = {
             Color.fromHex('#e76f51')
         );
 
-        // TODO: add validation
+        const validate = () => {
+            game.controlsScene.topBarDrawer.setButtonsDisabled(
+                weaponHandle.get().length !== 1 || targetHandle.get().length !== 1
+            );
+        };
+
+        weaponHandle.onSet(validate);
+        targetHandle.onSet(validate);
+
         const {weaponPosition, targetPosition} = await new Promise<{
             weaponPosition: Vector2,
             targetPosition: Vector2
@@ -85,15 +107,14 @@ export const fightListeners: ListenersContainer = {
                 text: "Атаковать",
                 color: COLORS.BUTTON.DANGER,
                 onClick: () => {
-                    const weapon = weaponHandle.get()[0].module;
-                    const target = targetHandle.get()[0].module;
-
                     resolve({
-                        weaponPosition: new Vector2(weapon.x, weapon.y),
-                        targetPosition: new Vector2(target.x, target.y)
+                        weaponPosition: Vector2.modulePosition(weaponHandle.get()[0].module),
+                        targetPosition: Vector2.modulePosition(targetHandle.get()[0].module)
                     });
                 }
             }]);
+
+            validate();
         });
 
         game.controlsScene.topBarDrawer.removeButtons();
@@ -112,18 +133,24 @@ export const fightListeners: ListenersContainer = {
             Color.fromHex('#e76f51')
         );
 
-        // TODO: count validation
+        const validate = () => {
+            game.controlsScene.topBarDrawer.setButtonsDisabled(
+                targetHandle.get().length !== 1
+            );
+        };
+
+        targetHandle.onSet(validate);
+
         const target = await new Promise<Vector2>(resolve => {
             game.controlsScene.topBarDrawer.addButtons([{
                 text: "Атаковать",
                 color: COLORS.BUTTON.DANGER,
                 onClick: () => {
-                    const target = targetHandle.get()[0].module;
-                    resolve(new Vector2(target.x, target.y));
+                    resolve(Vector2.modulePosition(targetHandle.get()[0].module));
                 }
             }]);
 
-            game.controlsScene.topBarDrawer.setButtonsDisabled(true);
+            validate();
         });
 
         game.controlsScene.topBarDrawer.removeButtons();

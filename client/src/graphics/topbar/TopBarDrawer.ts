@@ -196,7 +196,8 @@ export default class TopBarDrawer {
                 text: button.text,
                 fill: button.color.DEFAULT.toString(),
                 hoverFill: button.color.HOVER.toString(),
-                activeFill: button.color.ACTIVE.toString()
+                activeFill: button.color.ACTIVE.toString(),
+                disabledFill: button.color.DISABLED.toString()
             })
                 .on('click', button.onClick);
 

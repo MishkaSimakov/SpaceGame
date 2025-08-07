@@ -31,16 +31,12 @@ export class ChooseCardsActivity extends Activity {
                 text: "Выбрать",
                 color: COLORS.BUTTON.PRIMARY,
                 onClick: () => {
-                    this.scene.topBarDrawer.setButtonsDisabled(true);
-
                     this.showModal().then(selected => {
                         if (selected !== undefined) {
                             this.scene.topBarDrawer.removeButtons();
                             this.scene.topBarDrawer.clearStatus();
 
                             resolve(selected);
-                        } else {
-                            this.scene.topBarDrawer.setButtonsDisabled(false);
                         }
                     });
                 }

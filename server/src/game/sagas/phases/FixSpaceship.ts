@@ -50,7 +50,7 @@ function* tryUseModuleSecondTime(repairModuleCost: number) {
 
         if (!useSecondTime) return;
 
-        yield* put(playerUseModuleSecondTime(currentPlayer))
+        yield* put(playerUseModuleSecondTime(currentPlayer));
 
         yield* useRepairModule(repairModuleCost * 2);
     }

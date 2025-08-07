@@ -47,7 +47,8 @@ export default class Module {
     totalHealth: number;
     health: number;
 
-    position: Vector2;
+    x: number = 0;
+    y: number = 0;
     rotation: number = 0;
 
     constructor(connectors: { top: number, right: number, bottom: number, left: number }) {

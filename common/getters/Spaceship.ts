@@ -43,8 +43,8 @@ function canConnectModule(ship: Spaceship, module: Module, x: number, y: number)
 function canConnectModule(ship: Spaceship, module: Module): boolean;
 function canConnectModule(ship: Spaceship, module: Module, x?: number, y?: number): boolean {
     if (ship.modules.indexOf(module) !== -1 && x === undefined && y === undefined) {
-        x = module.position.x;
-        y = module.position.y;
+        x = module.x;
+        y = module.y;
     } else if (getModuleByPosition(ship, x, y))
         return false;
 

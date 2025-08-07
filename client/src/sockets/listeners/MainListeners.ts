@@ -82,37 +82,13 @@ export const mainListeners: ListenersContainer = {
     },
 
     async chooseModuleToRepairRequest({}, {game}) {
-        const handle = game.spaceshipsScene.chooseModules(
-            ({module, player}) => player === game.getCurrentPlayer().id && module.health !== module.totalHealth,
-            {
-                type: BoundaryType.NO_MORE_THAN,
-                count: 1
-            },
-            Color.fromHex('#e76f51')
+        const positions = await game.controlsScene.chooseModulesToRepair(
+            `починить с помощью ремонтного модуля`,
+            1
         );
 
-        game.controlsScene.topBarDrawer.setStatus("починка модуля");
 
-        // TODO: count validation
-        const position = await new Promise<Vector2 | undefined>(resolve => {
-            game.controlsScene.topBarDrawer.addButtons([{
-                text: "Починить",
-                color: COLORS.BUTTON.PRIMARY,
-                onClick: () => {
-                    game.controlsScene.topBarDrawer.removeButtons();
-                    game.controlsScene.topBarDrawer.clearStatus();
-                    game.spaceshipsScene.endChoosingModule();
-
-                    const position = handle.get().length === 0
-                        ? undefined
-                        : new Vector2(handle.get()[0].module.x, handle.get()[0].module.y);
-
-                    resolve(position);
-                }
-            }]);
-        });
-
-        return chooseModuleToRepairResponse(position);
+        return chooseModuleToRepairResponse(positions[0]);
     },
 
     async useModuleSecondTimeRequest({moduleType}, {game}) {

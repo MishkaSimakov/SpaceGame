@@ -4,24 +4,27 @@ import {GetSet} from "../engine/types";
 import {Factory} from "../engine/Factory";
 import {Rectangle} from "../engine/shapes/Rectangle";
 import {Text} from "../engine/shapes/Text";
+import Color from "../Color";
+import {COLORS} from "../constants";
 
 export interface ButtonConfig extends ShapeConfig {
     text?: string;
     fontSize?: number;
     fontFamily?: string;
-    disabled?: boolean;
 
     fill?: string;
     hoverFill?: string;
     activeFill?: string;
+    disabledFill?: string;
 }
 
 export class Button extends Group<ButtonConfig> {
     _background: Rectangle;
     _text: Text;
+    _disabledRect?: Rectangle = undefined;
     _hitRect: Rectangle;
 
-    _state: 'DEFAULT' | 'HOVER' | 'ACTIVE' = 'DEFAULT';
+    _state: 'DEFAULT' | 'HOVER' | 'ACTIVE' | 'DISABLED' = 'DEFAULT';
 
     constructor(config?: ButtonConfig) {
         super(config);
@@ -110,26 +113,58 @@ export class Button extends Group<ButtonConfig> {
             'ACTIVE': ['pointer', this.activeFill()],
         }
 
-        // TODO: decide whether make or not cursor pointer
-        // document.body.style.cursor = stateDesign[this._state][0];
-        this._background.fill(stateDesign[this._state][1]);
+        if (this._state !== "DISABLED") {
+            document.body.style.cursor = stateDesign[this._state][0];
+            this._background.fill(stateDesign[this._state][1]);
+        }
+    }
+
+    disabled(value: boolean) {
+        if (value === (this._state === 'DISABLED')) {
+            return;
+        }
+
+        if (value) {
+            this._hitRect.interactive(false);
+            this._state = 'DISABLED';
+
+            this._disabledRect = new Rectangle({
+                x: 0,
+                y: 0,
+                fill: Color.fromRGBA(0, 0, 0, 0.5).toString(),
+                width: this.width(),
+                height: this.height(),
+                visible: true,
+                interactive: true
+            });
+
+            this.add(this._disabledRect);
+        } else {
+            this._hitRect.interactive(true);
+            this._state = this.isPointerInside() ? 'HOVER' : 'DEFAULT';
+
+            this._disabledRect.destroy();
+            this._disabledRect = undefined;
+        }
+
+        this._updateFill();
     }
 
     fill: GetSet<string, this>;
     hoverFill: GetSet<string, this>;
     activeFill: GetSet<string, this>;
+    disabledFill: GetSet<string, this>;
 
     text: GetSet<string, this>;
     fontSize: GetSet<number, this>;
     fontFamily: GetSet<string, this>;
-    disabled: GetSet<boolean, this>;
 }
 
 Factory.addGetterSetter(Button, 'fill', '');
 Factory.addGetterSetter(Button, 'hoverFill', '');
 Factory.addGetterSetter(Button, 'activeFill', '');
+Factory.addGetterSetter(Button, 'disabledFill', '');
 
 Factory.addGetterSetter(Button, 'text', '');
 Factory.addGetterSetter(Button, 'fontSize', 12);
 Factory.addGetterSetter(Button, 'fontFamily', 'Exo2Bold');
-Factory.addGetterSetter(Button, 'disabled', false);
