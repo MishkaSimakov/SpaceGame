@@ -1,14 +1,32 @@
-import {Action, ActionConstructor} from "./Action";
+import {Action, ActionConstructor, ActionStub} from "./Action";
 
-type ActionListener = (action: Action) => void;
+export type ActionListener = (action: Action) => void;
+
+export abstract class Middleware {
+    abstract apply(action: Action): Action | undefined;
+}
 
 export default class ActionsBus {
     private listeners = new Map<string, ActionListener[]>();
     private listenersQueue: (() => void)[] = [];
     private isProcessingQueue: boolean = false;
 
+    private middlewares: Middleware[] = [];
 
-    emit(action: Action) {
+    emit(actionStub: ActionStub) {
+        const action: Action = {
+            uuid: uuid()
+            ...actionStub
+        }
+
+        for (const middleware of this.middlewares) {
+            action = middleware.apply(action);
+
+            if (action === undefined) {
+                return;
+            }
+        }
+
         const listeners = Array.from(this.listeners.get(action.type) ?? []);
 
         const wildcardListeners = Array.from(this.listeners.get('*') ?? []);
@@ -44,6 +62,10 @@ export default class ActionsBus {
         };
 
         this.on(actionDescriptor, onceListener);
+    }
+
+    registerMiddleware<T extends Middleware>(middleware: T) {
+        this.middlewares.push(middleware);
     }
 
     #tryProcessQueue() {

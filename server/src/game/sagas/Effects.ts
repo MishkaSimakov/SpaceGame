@@ -66,4 +66,4 @@ export function* all<T extends AllInput>(effects: T): AllGenerator<T> {
     };
 }
 
-export type SagaGenerator = Generator;
+export type SagaGenerator = Generator<any, any, any>;

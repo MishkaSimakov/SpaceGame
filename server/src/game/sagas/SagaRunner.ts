@@ -1,6 +1,9 @@
-import {Effect, SagaGenerator} from "./Effects";
+import * as assert from "node:assert";
+
 import {Action} from "@common/actions/Action";
 import ActionsBus from "@common/actions/ActionsBus";
+
+import {Effect, SagaGenerator, SelectEffect, TakeEffect} from "./Effects";
 import GameState from "./GameState";
 
 interface EffectProcessingResult {
@@ -10,21 +13,29 @@ interface EffectProcessingResult {
 }
 
 export class SagaRunner {
-    stateRef: GameState;
-    busRef: ActionsBus;
-    saga: SagaGenerator;
+    private readonly stateRef: GameState;
+    private readonly busRef: ActionsBus;
 
-    constructor(stateRef: GameState, busRef: ActionsBus, saga: SagaGenerator) {
+    private stack: {
+        generator: SagaGenerator,
+        name: string
+    }[] = [];
+
+    constructor(stateRef: GameState, busRef: ActionsBus, saga: (...args: any[]) => SagaGenerator, ...args: any[]) {
         this.stateRef = stateRef;
         this.busRef = busRef;
-        this.saga = saga;
+
+        this.stack.push({
+            generator: saga(...args),
+            name: saga.name
+        });
     }
 
     async run() {
         let call_args: any = {}
 
-        while (true) {
-            const result = this.saga.next(call_args);
+        while (this.stack.length !== 0) {
+            const result = this.stack[this.stack.length - 1].generator.next(call_args);
 
             if (result.done) {
                 return result.value;
@@ -44,7 +55,7 @@ export class SagaRunner {
         }
     }
 
-    process_effect(effect: Effect): EffectProcessingResult {
+    process_effect(effect: Effect) {
         switch (effect.type) {
             case "select": {
                 return {
@@ -108,7 +119,13 @@ export class SagaRunner {
         }
     }
 
-    abort() {
-        this.saga.return({});
+    cancel(taskName: string) {
+        let currentTask: { name: string, generator: Generator };
+        do {
+            assert.ok(this.stack.length !== 0, "trying to cancel a non-existing task");
+            currentTask = this.stack.pop();
+
+            currentTask.generator.return({});
+        } while (currentTask.name !== taskName);
     }
 }
