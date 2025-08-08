@@ -1,7 +1,7 @@
 import {Action} from "@common/actions/Action";
-import GameState from "./GameState";
+import GameState from "../GameState";
 
-type EmptyObject = Record<string, never>;
+export type EmptyObject = Record<string, never>;
 
 export type SelectEffect = {
     type: "select";
@@ -22,11 +22,17 @@ export type AllEffect = {
     effects: AllInput
 }
 
-export type Effect = SelectEffect | PutEffect | TakeEffect | AllEffect;
+export type NewTaskEffect = {
+    type: "newTask",
+    task: () => SagaGenerator
+}
+
+export type Effect = SelectEffect | PutEffect | TakeEffect | AllEffect | NewTaskEffect;
 
 type SelectGenerator = Generator<SelectEffect, GameState, GameState>;
 type PutGenerator = Generator<PutEffect, EmptyObject, EmptyObject>;
 type TakeGenerator = Generator<TakeEffect, Action, Action>;
+type NewTaskGenerator = Generator<NewTaskEffect, EmptyObject, EmptyObject>;
 
 export function* select(): SelectGenerator {
     return yield {
@@ -47,6 +53,14 @@ export function* take(action: (...args: any[]) => Action): TakeGenerator {
         name: action.name
     };
 }
+
+export function* newTask(task: () => SagaGenerator): NewTaskGenerator {
+    return yield {
+        type: "newTask",
+        task: task
+    };
+}
+
 
 type GeneratorReturnType<T extends Generator> = T extends Generator<any, infer R, any> ? R : never
 type AllOutput<T extends AllInput> = {

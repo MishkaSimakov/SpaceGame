@@ -1,4 +1,5 @@
-import {Action, ActionConstructor, ActionStub} from "./Action";
+import {v4 as uuidv4} from 'uuid';
+import {Action, ActionConstructor, ActionStub} from "@common/actions/Action";
 
 export type ActionListener = (action: Action) => void;
 
@@ -14,10 +15,11 @@ export default class ActionsBus {
     private middlewares: Middleware[] = [];
 
     emit(actionStub: ActionStub) {
-        const action: Action = {
-            uuid: uuid()
+        let action: Action = {
+            uuid: uuidv4(),
+            time: Date.now(),
             ...actionStub
-        }
+        };
 
         for (const middleware of this.middlewares) {
             action = middleware.apply(action);

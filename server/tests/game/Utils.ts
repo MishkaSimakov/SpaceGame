@@ -2,7 +2,7 @@ import GameState from "../../src/game/GameState";
 import Player from "@common/Player";
 import Spaceship from "@common/Spaceship";
 import {GameSettings} from "@common/GameSettings";
-import ActionsBus from "@common/actions/ActionsBus";
+import ActionsBus from "../../src/game/ActionsBus";
 import {Action} from "@common/actions/Action";
 import {reducers} from "game/reducers/Main";
 import {shuffle, shuffleResult, throwDice, throwDiceResult} from "@common/actions/Random";

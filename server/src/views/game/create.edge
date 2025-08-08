@@ -84,12 +84,17 @@
 
                         <div class="row g-3 mb-3">
                             <div class="col-md-6">
-                                <label class="form-label" for="default-time-increase">Прибавка времени за ход</label>
+                                <label class="form-label" for="start-time">Стартовое время (сек.)</label>
+
+                                <input type="number" min="0" id="start-time" name="start-time" class="form-control" value="300">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="default-time-increase">Прибавка времени за ход (сек.)</label>
 
                                 <input type="number" min="0" id="default-time-increase" name="default-time-increase" class="form-control" value="45">
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label" for="fight-time-increase">Прибавка времени в бою</label>
+                                <label class="form-label" for="fight-time-increase">Прибавка времени в бою (сек.)</label>
 
                                 <input type="number" min="0" id="fight-time-increase" name="fight-time-increase" class="form-control" value="10">
                             </div>

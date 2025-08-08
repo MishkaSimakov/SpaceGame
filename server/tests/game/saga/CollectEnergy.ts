@@ -1,11 +1,11 @@
 import {test} from 'uvu';
 import {fakeGameState, attachReducers} from '../Utils';
-import ActionsBus from '@common/actions/ActionsBus';
+import ActionsBus from '../../../src/game/ActionsBus';
 import SolarPanel from '@common/modules/SolarPanel';
 import DarkMatterGenerator from '@common/modules/DarkMatterGenerator';
 
 import GameState from '../../../src/game/GameState';
-import {SagaRunner} from '../../../src/game/SagaRunner';
+import {SagaRunner} from '../../../src/game/sagas/SagaRunner';
 import {collectEnergy} from '../../../src/game/sagas/phases/CollectEnergy';
 import * as assert from "node:assert";
 
@@ -26,7 +26,7 @@ test('collectEnergyWithIncomeLessThanCapacity', async () => {
     attachReducers(bus, state);
 
     // Run the collectEnergy saga
-    const runner = new SagaRunner(state, bus, collectEnergy());
+    const runner = new SagaRunner(state, bus, collectEnergy);
     await runner.run();
 
     // test
@@ -58,7 +58,7 @@ test('collectEnergyWithIncomeGreaterThanCapacity', async () => {
     attachReducers(bus, state);
 
     // Run the collectEnergy saga
-    const runner = new SagaRunner(state, bus, collectEnergy());
+    const runner = new SagaRunner(state, bus, collectEnergy);
     await runner.run();
 
     // test
@@ -85,7 +85,7 @@ test('collectEnergyWithSumGreaterThanCapacity', async () => {
     attachReducers(bus, state);
 
     // Run the collectEnergy saga
-    const runner = new SagaRunner(state, bus, collectEnergy());
+    const runner = new SagaRunner(state, bus, collectEnergy);
     await runner.run();
 
     // test

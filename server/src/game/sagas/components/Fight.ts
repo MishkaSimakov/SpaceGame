@@ -1,4 +1,4 @@
-import {put, select} from "../../Effects";
+import {put, select} from "../Effects";
 import {PlayerGetters} from "@common/getters/Player";
 import {StateGetters} from "@common/getters/State";
 import {
@@ -53,10 +53,6 @@ function* getCombatants() {
     };
 }
 
-function* isFightEnded() {
-    return (yield* select()).fight === undefined;
-}
-
 function* isVictimLost() {
     return (yield* getCombatants()).victim.lose;
 }
@@ -107,11 +103,6 @@ function* tryDamageByEventCard() {
     yield* put(popCardFromPlayerHand(attacker, damageLaterCardIndex));
 
     yield* damageModule(victim, position, 1, {type: "EventCard"});
-
-    if (yield* isVictimLost()) {
-        yield* put(endFight());
-        return;
-    }
 }
 
 function* askForRunawayViaDice() {
@@ -172,10 +163,6 @@ function* damageByWeapon() {
         // update state
         ({attacker, victim} = yield* getCombatants());
 
-        if (yield* isVictimLost()) {
-            return;
-        }
-
         if (SpaceshipGetters.getMainModuleType(attacker.spaceship) === MainModuleType.UseModuleSecondTime && attacker.energy >= weapon.energyCost * 2) {
             let useSecondTime = yield* request(
                 useModuleSecondTimeRequest(attacker, weapon.type),
@@ -191,10 +178,6 @@ function* damageByWeapon() {
                 yield* damageModule(victim, targetPosition, weapon.strength, {type: "Player", attacker});
 
                 yield* put(changePlayerEnergy(attacker, -weapon.energyCost * 2, "used weapon in fight second time"));
-
-                if (yield* isVictimLost()) {
-                    return;
-                }
             }
         }
     }
@@ -214,9 +197,6 @@ function* makeFightIteration() {
     yield* addTimeRecord(attacker.id, TimeRecordType.FIGHT_TURN_STARTED);
 
     yield* tryDamageByEventCard();
-    if (yield* isVictimLost()) {
-        return false;
-    }
 
     if (yield* askForRunawayViaDice()) {
         yield* put(endFight());
@@ -231,42 +211,40 @@ function* makeFightIteration() {
     }
 
     yield* damageByWeapon();
-    if (yield* isVictimLost()) {
-        yield* put(endFight());
-        return false;
-    }
-
     yield* put(deactivateProtectorIfActive(victim));
-
     yield* addTimeRecord(victim.id, TimeRecordType.FIGHT_TURN_ENDED);
 
     return true;
 }
 
 export function* fight() {
-    yield* addTimeRecord(StateGetters.currentPlayer(yield* select()).id, TimeRecordType.DEFAULT_TURN_INTERRUPTED);
+    try {
+        yield* addTimeRecord(StateGetters.currentPlayer(yield* select()).id, TimeRecordType.DEFAULT_TURN_INTERRUPTED);
 
-    while (true) {
+        while (true) {
+            const {victim, attacker} = yield* getCombatants();
+
+            if (!PlayerGetters.canDamage(victim) && !PlayerGetters.canDamage(attacker)) {
+                yield* put(endFight());
+                return;
+            }
+
+            const continueFight = yield* makeFightIteration();
+            if (!continueFight) {
+                break;
+            }
+
+            yield* put(shiftFightTurnToNextPlayer());
+        }
+
+        // check that all protectors are disabled
+        yield* addTimeRecord(StateGetters.currentPlayer(yield* select()).id, TimeRecordType.DEFAULT_TURN_CONTINUED);
+    } finally {
         const {victim, attacker} = yield* getCombatants();
 
-        if (!PlayerGetters.canDamage(victim) && !PlayerGetters.canDamage(attacker)) {
-            yield* put(endFight());
-            return;
-        }
+        yield* put(endFight());
 
-        const continueFight = yield* makeFightIteration();
-        if (!continueFight) {
-            break;
-        }
-
-        yield* put(shiftFightTurnToNextPlayer());
+        yield* put(deactivateProtectorIfActive(victim));
+        yield* put(deactivateProtectorIfActive(attacker));
     }
-
-    // check that all protectors are disabled
-    const state = yield* select();
-    assert.ok(!state.players.some(p => p.spaceship.activatedProtector));
-
-    assert.ok(state.fight === undefined);
-
-    yield* addTimeRecord(StateGetters.currentPlayer(yield* select()).id, TimeRecordType.DEFAULT_TURN_CONTINUED);
 }

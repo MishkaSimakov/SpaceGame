@@ -35,7 +35,7 @@ import {
     pushCardsToStack,
 } from "@common/actions/Main";
 import {StateGetters} from "@common/getters/State";
-import {put, select} from "../../Effects";
+import {put, select} from "../Effects";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
 import Module, {ModuleType} from "@common/modules/Module";
 import {request} from "./Request";

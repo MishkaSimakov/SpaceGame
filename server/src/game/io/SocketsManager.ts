@@ -6,8 +6,6 @@ export type SocketPlayerInfo = {
     socketId: string;
 };
 
-type AnyListener = (player: PlayerId, payload: any) => void;
-
 export default class SocketsManager {
     io: Server;
 

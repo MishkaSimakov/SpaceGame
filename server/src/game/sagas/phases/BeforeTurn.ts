@@ -2,7 +2,7 @@ import {isModule} from "@common/modules/Module";
 import {EventTypes} from "@common/events/Event";
 
 import {fight} from "../components/Fight";
-import {put, select} from "../../Effects";
+import {put, select} from "../Effects";
 import {
     beginFight,
     changePlayerEnergy,

@@ -6,7 +6,7 @@ import {
 } from "@common/actions/Reducer";
 
 import GameState, {TimeRecord, TimeRecordType} from "../../GameState";
-import {all, put, select, take} from "../../Effects";
+import {all, put, select, take} from "../Effects";
 import * as assert from "node:assert";
 
 function* getTime() {

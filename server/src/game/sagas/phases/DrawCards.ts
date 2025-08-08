@@ -1,4 +1,4 @@
-import {put, select} from "../../Effects";
+import {put, select} from "../Effects";
 import {
     changePlayerEnergy,
     chooseCardTypeRequest,

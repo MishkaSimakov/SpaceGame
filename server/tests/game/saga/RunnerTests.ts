@@ -1,8 +1,8 @@
 import {test} from "uvu";
 import * as assert from "uvu/assert";
-import {all, put, SagaGenerator, select, take} from "../../../src/game/Effects";
-import {SagaRunner} from "../../../src/game/SagaRunner";
-import ActionsBus from "@common/actions/ActionsBus";
+import {all, newTask, put, SagaGenerator, select, take} from "../../../src/game/sagas/Effects";
+import {SagaRunner} from "../../../src/game/sagas/SagaRunner";
+import ActionsBus from "../../../src/game/ActionsBus";
 import {Action} from "@common/actions/Action";
 import GameState from "../../../src/game/GameState";
 
@@ -18,7 +18,7 @@ test('select', async () => {
         assert.equal(state.currentPlayerIndex, 42);
     }
 
-    const runner = new SagaRunner(state, bus, testSaga());
+    const runner = new SagaRunner(state, bus, testSaga);
 
     await runner.run();
 });
@@ -41,7 +41,7 @@ test('put', async () => {
         receivedAction = true;
     })
 
-    const runner = new SagaRunner(state, bus, testSaga());
+    const runner = new SagaRunner(state, bus, testSaga);
     await runner.run();
 
     assert.ok(receivedAction);
@@ -73,7 +73,7 @@ test('putAndTake', async () => {
         bus.emit(testResponse(73));
     });
 
-    const runner = new SagaRunner(state, bus, testSaga());
+    const runner = new SagaRunner(state, bus, testSaga);
     await runner.run();
 });
 
@@ -107,7 +107,7 @@ test('putAndPut', async () => {
         secondReceived = true;
     });
 
-    const runner = new SagaRunner(state, bus, testSaga());
+    const runner = new SagaRunner(state, bus, testSaga);
     await runner.run();
 
     assert.ok(firstReceived);
@@ -144,10 +144,43 @@ test('multiStepSaga', async () => {
         received = true;
     });
 
-    const runner = new SagaRunner(state, bus, testSaga());
+    const runner = new SagaRunner(state, bus, testSaga);
     await runner.run();
 
     assert.ok(received);
+});
+
+test('cancelledTask', async () => {
+    const state = new GameState();
+    const bus = new ActionsBus();
+
+    const cancelAction = (): Action => {
+        return {type: 'cancelAction'};
+    };
+
+    let continuedExecution = false;
+
+    function* parentSaga() {
+        yield* newTask(childSaga);
+
+        continuedExecution = true;
+    }
+
+    function* childSaga() {
+        yield* put(cancelAction());
+
+        assert.unreachable("childSaga should have been cancelled");
+    }
+
+    const runner = new SagaRunner(state, bus, parentSaga);
+
+    bus.on(cancelAction, (action) => {
+        runner.cancel("childSaga");
+    });
+
+    await runner.run();
+
+    assert.ok(continuedExecution);
 });
 
 

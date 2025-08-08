@@ -1,6 +1,6 @@
 import {test} from "uvu";
-import ActionsBus from "@common/actions/ActionsBus";
-import {SagaRunner} from "../../../src/game/SagaRunner";
+import ActionsBus from "../../../src/game/ActionsBus";
+import {SagaRunner} from "../../../src/game/sagas/SagaRunner";
 import {attachFakeRandomizer, attachReducers, fakeGameState} from "../Utils";
 import * as assert from "node:assert";
 import {popOneCard} from "../../../src/game/sagas/components/PopCards";
@@ -16,7 +16,7 @@ test('drawOneCard', async () => {
         const expectedCard = state.stack[type][modulesCount - 1];
 
         const {diceCalls, shuffleCalls} = attachFakeRandomizer(bus);
-        const runner = new SagaRunner(state, bus, popOneCard(type as ("module" | "event")));
+        const runner = new SagaRunner(state, bus, popOneCard, type as ("module" | "event"));
         const actualCard = await runner.run();
 
         assert.deepEqual(actualCard, expectedCard);
@@ -45,7 +45,7 @@ test('drawOneCardWithDiscards', async () => {
 
         const {diceCalls, shuffleCalls} = attachFakeRandomizer(bus);
 
-        const runner = new SagaRunner(state, bus, popOneCard(type as ("module" | "event")));
+        const runner = new SagaRunner(state, bus, popOneCard, type as ("module" | "event"));
         const actualCard = await runner.run();
 
         assert.deepEqual(actualCard, expectedCard);

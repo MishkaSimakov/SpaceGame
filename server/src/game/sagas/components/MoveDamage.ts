@@ -1,5 +1,5 @@
 import {MoveDamageReason} from "@common/Types";
-import {put, select} from "../../Effects";
+import {put, select} from "../Effects";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
 import {request} from "./Request";
 import {chooseModuleToMoveDamageRequest, chooseModuleToMoveDamageResponse} from "@common/actions/EventCards";

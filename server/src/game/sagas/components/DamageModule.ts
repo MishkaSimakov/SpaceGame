@@ -10,7 +10,7 @@ import {
 } from "@common/actions/Reducer";
 import Vector2 from "@common/Vector2";
 
-import {put, select} from "../../Effects";
+import {put, select} from "../Effects";
 
 type DamageType =
     | { type: "EventCard" }

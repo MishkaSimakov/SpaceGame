@@ -12,7 +12,7 @@ import {
     useModuleSecondTimeResponse
 } from "@common/actions/Main";
 
-import {put, select} from "../../Effects";
+import {put, select} from "../Effects";
 import {request} from "../components/Request";
 
 function* useRepairModule(repairModuleCost: number): Generator<any, boolean, any> {

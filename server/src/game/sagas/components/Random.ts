@@ -1,5 +1,5 @@
 import {DiceResult, shuffle, shuffleResult, throwDice, throwDiceResult} from "@common/actions/Random";
-import {all, put, take} from "../../Effects";
+import {all, put, take} from "../Effects";
 
 export function* dice(): Generator<any, DiceResult, any> {
     const {req, res} = yield* all({

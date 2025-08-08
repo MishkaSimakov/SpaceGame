@@ -1,8 +1,8 @@
 import {test} from "uvu";
 import * as assert from "node:assert";
 import {attachReducers, fakeGameState} from "../Utils";
-import {SagaRunner} from "../../../src/game/SagaRunner";
-import ActionsBus from "@common/actions/ActionsBus";
+import {SagaRunner} from "../../../src/game/sagas/SagaRunner";
+import ActionsBus from "../../../src/game/ActionsBus";
 import {discardCards} from "../../../src/game/sagas/phases/DiscardCards";
 import {discardCardsRequest, discardCardsResponse} from "@common/actions/Main";
 
@@ -23,7 +23,7 @@ test('doesntDiscardWhenNotEnoughCards', async () => {
         assert.fail("player must not be asked to discard cards");
     });
 
-    const runner = new SagaRunner(state, bus, discardCards());
+    const runner = new SagaRunner(state, bus, discardCards);
 
     await runner.run();
 
@@ -53,7 +53,7 @@ test('discardCardsWhenThereAreTooMany', async () => {
         bus.emit(discardCardsResponse([1, 2, 3, 4]));
     });
 
-    const runner = new SagaRunner(state, bus, discardCards());
+    const runner = new SagaRunner(state, bus, discardCards);
 
     await runner.run();
 

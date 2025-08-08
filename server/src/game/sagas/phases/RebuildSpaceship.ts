@@ -1,4 +1,4 @@
-import {all, put, select, take} from "../../Effects";
+import {all, put, select, take} from "../Effects";
 import {
     rebuildSpaceshipRequest,
     rebuildSpaceshipResponse,

@@ -1,9 +1,9 @@
 import {test} from "uvu";
 import * as assert from "node:assert";
 import {attachReducers, attachTerminalLogger, fakeGameState} from "../Utils";
-import ActionsBus from "@common/actions/ActionsBus";
+import ActionsBus from "../../../src/game/ActionsBus";
 import {discardCardsRequest} from "@common/actions/Main";
-import {SagaRunner} from "../../../src/game/SagaRunner";
+import {SagaRunner} from "../../../src/game/sagas/SagaRunner";
 import {discardCards} from "../../../src/game/sagas/phases/DiscardCards";
 import {damageModule} from "../../../src/game/sagas/components/DamageModule";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
@@ -27,7 +27,7 @@ test('simple', async () => {
     const runner = new SagaRunner(
         state,
         bus,
-        damageModule(victim, new Vector2(0, 0), 1, {type: "Player", attacker})
+        damageModule, victim, new Vector2(0, 0), 1, {type: "Player", attacker}
     );
 
     await runner.run();
@@ -64,7 +64,7 @@ test('damageModuleReducesEnergyWhenCapacityDecreases', async () => {
     const runner = new SagaRunner(
         state,
         bus,
-        damageModule(victim, new Vector2(1, 0), battery.health, {type: 'Player', attacker})
+        damageModule, victim, new Vector2(1, 0), battery.health, {type: 'Player', attacker}
     );
     await runner.run();
 
@@ -107,7 +107,7 @@ test('damageModuleNoEnergyAdjustmentWhenWithinCapacity', async () => {
     const runner = new SagaRunner(
         state,
         bus,
-        damageModule(victim, new Vector2(1, 0), battery.health, {type: 'Player', attacker})
+        damageModule, victim, new Vector2(1, 0), battery.health, {type: 'Player', attacker}
     );
     await runner.run();
 
@@ -150,7 +150,7 @@ test('damageModuleNoDestructionNoEnergyAdjustment', async () => {
     const runner = new SagaRunner(
         state,
         bus,
-        damageModule(victim, new Vector2(1, 0), 1, {type: 'Player', attacker})
+        damageModule, victim, new Vector2(1, 0), 1, {type: 'Player', attacker}
     );
     await runner.run();
 

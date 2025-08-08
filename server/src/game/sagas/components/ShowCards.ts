@@ -2,8 +2,9 @@ import Module from "@common/modules/Module";
 import {Event} from "@common/events/Event";
 import Player from "@common/Player";
 import {request} from "./Request";
-import {showCardsInfo, showCardsToPlayersRequest, showCardsToPlayersResponse} from "@common/actions/Main";
-import {put, select} from "../../Effects";
+import {showCardsToPlayersRequest, showCardsToPlayersResponse} from "@common/actions/Main";
+import {put, select} from "../Effects";
+import {showCardsInfo} from "@common/actions/Info";
 
 export function* showCards(player: Player, cards: (Module | Event)[], showToOthers: boolean) {
     const state = yield* select();

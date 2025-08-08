@@ -1,7 +1,7 @@
 import {test} from "uvu";
 import GameState from "../../src/game/GameState";
-import ActionsBus from "@common/actions/ActionsBus";
-import {SagaRunner} from "../../src/game/SagaRunner";
+import ActionsBus from "../../src/game/ActionsBus";
+import {SagaRunner} from "../../src/game/sagas/SagaRunner";
 import {beforeTurn} from "../../src/game/sagas/phases/BeforeTurn";
 import Player from "@common/Player";
 import {EventTypes} from "@common/events/Event";
@@ -31,7 +31,7 @@ test('attackLaterEventCard', async () => {
     state.players.push(fakeAttacker, fakeVictim);
     state.currentPlayerIndex = 0;
 
-    const runner = new SagaRunner(state, bus, beforeTurn());
+    const runner = new SagaRunner(state, bus, beforeTurn);
 
     enum TestPhase {
         INIT,
@@ -64,7 +64,7 @@ test('attackLaterEventCard', async () => {
         assert.equal(action.payload.attacker, 0);
         assert.equal(action.payload.victim, 1);
 
-        runner.abort();
+        runner.cancel("beforeTurn");
     });
 
     await runner.run();

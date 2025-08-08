@@ -1,4 +1,4 @@
-import {put, select} from "../../Effects";
+import {put, select} from "../Effects";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
 import {changePlayerEnergy} from "@common/actions/Main";
 import {StateGetters} from "@common/getters/State";

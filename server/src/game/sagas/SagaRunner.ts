@@ -1,16 +1,11 @@
 import * as assert from "node:assert";
 
-import {Action} from "@common/actions/Action";
-import ActionsBus from "@common/actions/ActionsBus";
+import ActionsBus from "../ActionsBus";
 
-import {Effect, SagaGenerator, SelectEffect, TakeEffect} from "./Effects";
-import GameState from "./GameState";
-
-interface EffectProcessingResult {
-    payload: Promise<any>;
-    emitted_actions: Action[];
-    new_listeners: any[],
-}
+import {Effect, SagaGenerator} from "./Effects";
+import GameState from "../GameState";
+import {ActionsBusProxy} from "./ActionsBusProxy";
+import {effectPerformers} from "./EffectsPerformers";
 
 export class SagaRunner {
     private readonly stateRef: GameState;
@@ -38,85 +33,32 @@ export class SagaRunner {
             const result = this.stack[this.stack.length - 1].generator.next(call_args);
 
             if (result.done) {
-                return result.value;
+                call_args = result.value;
+                this.stack.pop();
+            } else {
+                call_args = await this.performEffect(result.value as Effect);
             }
-
-            const effect = this.process_effect(result.value as Effect);
-
-            for (const listener of effect.new_listeners) {
-                this.busRef.once(listener.name, listener.listener);
-            }
-
-            for (const action of effect.emitted_actions) {
-                this.busRef.emit(action);
-            }
-
-            call_args = await effect.payload;
         }
+
+        return call_args;
     }
 
-    process_effect(effect: Effect) {
-        switch (effect.type) {
-            case "select": {
-                return {
-                    payload: Promise.resolve(structuredClone(this.stateRef)),
-                    emitted_actions: [],
-                    new_listeners: [],
-                }
-            }
-            case "take": {
-                let resolve, reject;
-                const promise = new Promise<object>((res, rej) => {
-                    resolve = res;
-                    reject = rej;
-                });
+    performEffect<T extends Effect>(effect: T) {
+        return new Promise<any>(resolve => {
+            const busProxy = new ActionsBusProxy(this.busRef);
 
-                return {
-                    payload: promise,
-                    emitted_actions: [],
-                    new_listeners: [
-                        {
-                            name: effect.name,
-                            listener: resolve
-                        }
-                    ]
-                };
-            }
-            case "put": {
-                return {
-                    payload: Promise.resolve({}),
-                    emitted_actions: [effect.action],
-                    new_listeners: []
-                }
-            }
-            case "all": {
-                const result = {
-                    promises: {} as Record<string, Promise<any>>,
-                    emitted_actions: [] as Action[],
-                    new_listeners: [] as any[]
-                };
+            const cb = (result: any) => {
+                resolve(result);
+            };
 
-                for (const key in effect.effects) {
-                    const child_effect = effect.effects[key].next().value as Effect;
+            effectPerformers[effect.type](effect, cb, {
+                state: this.stateRef,
+                bus: busProxy,
+                pushTask: this.pushTask.bind(this)
+            });
 
-                    // payload slot passed as reference
-                    const child_result = this.process_effect(child_effect);
-
-                    result.promises[key] = child_result.payload;
-                    result.emitted_actions.push(...child_result.emitted_actions);
-                    result.new_listeners.push(...child_result.new_listeners);
-                }
-
-                return {
-                    payload: Promise.all(
-                        Object.entries(result.promises)
-                            .map(async ([k, v]) => [k, await v])
-                    ).then(Object.fromEntries),
-                    emitted_actions: result.emitted_actions,
-                    new_listeners: result.new_listeners
-                };
-            }
-        }
+            busProxy.perform();
+        });
     }
 
     cancel(taskName: string) {
@@ -127,5 +69,12 @@ export class SagaRunner {
 
             currentTask.generator.return({});
         } while (currentTask.name !== taskName);
+    }
+
+    private pushTask(task: () => SagaGenerator) {
+        this.stack.push({
+            name: task.name,
+            generator: task()
+        });
     }
 }

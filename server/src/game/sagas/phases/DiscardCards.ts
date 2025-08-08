@@ -1,5 +1,5 @@
 import {StateGetters} from "@common/getters/State";
-import {put, select} from "../../Effects";
+import {put, select} from "../Effects";
 import {request} from "../components/Request";
 import {discardCardsRequest, discardCardsResponse, disposeCardsFromPlayerHand} from "@common/actions/Main";
 

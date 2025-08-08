@@ -25,6 +25,9 @@ export const create = async (req: Request, res: Response) => {
         gameSettings.isPublic = req.body['is-public'] === 'on';
 
         if (withTimeControl) {
+            let startTime = parseInt(req.body['start-time']);
+            startTime = isNaN(startTime) ? 300 : startTime;
+
             let defaultTimeIncrease = parseInt(req.body['default-time-increase']);
             defaultTimeIncrease = isNaN(defaultTimeIncrease) ? 45 : defaultTimeIncrease;
 
@@ -32,13 +35,13 @@ export const create = async (req: Request, res: Response) => {
             fightTimeIncrease = isNaN(fightTimeIncrease) ? 10 : fightTimeIncrease;
 
             gameSettings.timeControlSettings = {
-                startTime: 5 * 60 * 1000,
+                startTime: startTime * 1000,
                 defaultTimeIncrease: defaultTimeIncrease * 1000,
                 fightTimeIncrease: fightTimeIncrease * 1000
             };
         }
 
-        gameSettings.seed = "abracadabra";
+        gameSettings.seed = String(Math.random());
 
         await App.getInstance().gamesManager.createGame(req.body.name, selectedUsers, gameSettings);
 

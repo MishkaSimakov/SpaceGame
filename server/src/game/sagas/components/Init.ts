@@ -1,5 +1,5 @@
 import {shuffleArray} from "./Random";
-import {put, select} from "../../Effects";
+import {put, select} from "../Effects";
 import {initGameState} from "@common/actions/Reducer";
 
 export function* init() {

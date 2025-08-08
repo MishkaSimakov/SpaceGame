@@ -2,11 +2,11 @@ import * as assert from "node:assert";
 import jsonpatch from 'fast-json-patch'
 
 import Player from "@common/Player";
-import ActionsBus from "@common/actions/ActionsBus";
+import ActionsBus from "./ActionsBus";
 import {GameSettings} from "@common/GameSettings";
-import {Action, isAction} from "@common/actions/Action";
+import {Action, isActionStub} from "@common/actions/Action";
 import * as Actions from "@common/actions/Main";
-import {initGameState} from "@common/actions/Main";
+import {initGameState, playerLost, sendPlayerLostInfo} from "@common/actions/Main";
 import {shuffle, shuffleResult, throwDice, throwDiceResult} from '@common/actions/Random';
 
 import GameState from "./GameState";
@@ -16,10 +16,11 @@ import SocketsManager from "./io/SocketsManager";
 import {gameSaga} from "./sagas/Main";
 import {Logger} from "./Logger";
 import {reducers} from "./reducers/Main";
-import {SagaRunner} from "./SagaRunner";
+import {SagaRunner} from "./sagas/SagaRunner";
 import Spaceship from "@common/Spaceship";
 import {time, timeResult} from "@common/actions/Time";
 import {Randomizer} from "./Randomizer";
+import {LossMiddleware} from "./LossMiddleware";
 
 export default class Game {
     users: User[];
@@ -50,7 +51,7 @@ export default class Game {
 
         this.randomizer = new Randomizer(settings.seed);
         this.bus = new ActionsBus();
-        this.sagaRunner = new SagaRunner(this.state, this.bus, gameSaga());
+        this.sagaRunner = new SagaRunner(this.state, this.bus, gameSaga);
         this.sockets = sockets;
         this.logger = logger;
 
@@ -59,6 +60,12 @@ export default class Game {
         this.registerRandomizerListeners();
         this.registerIOListeners();
         this.registerTimeListeners();
+
+        this.registerLossMiddleware();
+
+        this.bus.on(playerLost, (action: ReturnType<typeof playerLost>) => {
+            this.bus.emit(sendPlayerLostInfo(action.payload.player));
+        });
     }
 
 
@@ -87,7 +94,7 @@ export default class Game {
                     true,
                     pendingRequest.payload
                 ).then(payload => {
-                    if (!isAction(payload)) {
+                    if (!isActionStub(payload)) {
                         throw new Error("Response must be action");
                     }
 
@@ -130,6 +137,11 @@ export default class Game {
         const promise = game.sagaRunner.run();
 
         return {game, promise};
+    }
+
+    registerLossMiddleware() {
+        const loss = new LossMiddleware(this.state, this.sagaRunner);
+        this.bus.registerMiddleware(loss);
     }
 
     registerLogListeners() {
@@ -178,7 +190,7 @@ export default class Game {
                 assert.ok(responseType in Actions);
 
                 const payload = await this.sockets.emitAndWait(action.payload.player, action.type, true, action.payload)
-                if (!isAction(payload)) {
+                if (!isActionStub(payload)) {
                     throw new Error("Response must be action");
                 }
 
@@ -216,8 +228,12 @@ export default class Game {
 
     registerTimeListeners() {
         this.bus.on(time, () => {
+            if (this.inReplay) {
+                return;
+            }
+
             this.bus.emit(timeResult(Date.now()));
-        })
+        });
     }
 
     async start() {

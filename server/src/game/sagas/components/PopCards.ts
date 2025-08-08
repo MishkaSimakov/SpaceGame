@@ -1,4 +1,4 @@
-import {put, select} from "../../Effects";
+import {put, select} from "../Effects";
 import Module from "@common/modules/Module";
 import {Event} from "@common/events/Event";
 import {popCardFromHeap, returnDiscardsToStack} from "@common/actions/Main";
