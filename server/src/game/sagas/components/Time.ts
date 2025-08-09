@@ -1,5 +1,5 @@
-import Player, {PlayerId} from "@common/Player";
-import {time as timeAction, timeResult, timeResult as timeResultAction} from "@common/actions/Time";
+import {PlayerId} from "@common/Player";
+import {time as timeAction, timeResult as timeResultAction} from "@common/actions/Time";
 import {
     addTimeRecord as addTimeRecordAction,
     changePlayerTime as changePlayerTimeAction
@@ -8,6 +8,7 @@ import {
 import GameState, {TimeRecord, TimeRecordType} from "../../GameState";
 import {all, put, select, take} from "../Effects";
 import * as assert from "node:assert";
+import {StateGetters} from "@common/getters/State";
 
 function* getTime() {
     const {res} = yield* all({
@@ -48,6 +49,23 @@ export function getTimeDecreasingPlayerId(state: GameState): PlayerId | undefine
     }
 }
 
+export function getPlayerTime(state: GameState, playerId: PlayerId, currentTime: number) {
+    const playerRecords = state.timeRecords.filter(r => r.playerId === playerId);
+
+    if (playerRecords.length === 0) {
+        return state.settings.timeControlSettings.startTime;
+    }
+
+    const lastRecord = playerRecords[playerRecords.length - 1];
+    const recordedTime = StateGetters.playerById(state, playerId).time;
+
+    if (lastRecord.type === TimeRecordType.DEFAULT_TURN_STARTED || lastRecord.type === TimeRecordType.DEFAULT_TURN_CONTINUED || lastRecord.type === TimeRecordType.FIGHT_TURN_STARTED) {
+        return recordedTime + (currentTime - lastRecord.time);
+    } else {
+        return recordedTime;
+    }
+}
+
 export function* addTimeRecord(playerId: PlayerId, type: TimeRecordType) {
     const state = yield* select();
 
@@ -80,7 +98,7 @@ export function* addTimeRecord(playerId: PlayerId, type: TimeRecordType) {
         ]);
         assert.ok(prevRecord);
 
-        yield* put(changePlayerTimeAction(playerId, state.settings.timeControlSettings.fightTimeIncrease));
+        yield* put(changePlayerTimeAction(playerId, state.settings.timeControlSettings.defaultTimeIncrease));
         yield* put(changePlayerTimeAction(playerId, prevRecord.time - currentTime));
     }
 }

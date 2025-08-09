@@ -3,7 +3,6 @@ import * as assert from "uvu/assert";
 import {all, newTask, put, SagaGenerator, select, take} from "../../../src/game/sagas/Effects";
 import {SagaRunner} from "../../../src/game/sagas/SagaRunner";
 import ActionsBus from "../../../src/game/ActionsBus";
-import {Action} from "@common/actions/Action";
 import GameState from "../../../src/game/GameState";
 
 test('select', async () => {
@@ -27,7 +26,7 @@ test('put', async () => {
     const state = new GameState();
     const bus = new ActionsBus();
 
-    const testAction = (value: number): Action => {
+    const testAction = (value: number) => {
         return {type: 'testAction', payload: {value}};
     }
 
@@ -51,11 +50,11 @@ test('putAndTake', async () => {
     const state = new GameState();
     const bus = new ActionsBus();
 
-    const testRequest = (): Action => {
+    const testRequest = () => {
         return {type: 'testRequest'};
     };
 
-    const testResponse = (value: number): Action => {
+    const testResponse = (value: number) => {
         return {type: 'testResponse', payload: {value}};
     };
 
@@ -81,11 +80,11 @@ test('putAndPut', async () => {
     const state = new GameState();
     const bus = new ActionsBus();
 
-    const firstTestAction = (): Action => {
+    const firstTestAction = () => {
         return {type: 'firstTestAction'};
     };
 
-    const secondTestAction = (): Action => {
+    const secondTestAction = () => {
         return {type: 'secondTestAction'};
     };
 
@@ -118,11 +117,11 @@ test('multiStepSaga', async () => {
     const state = new GameState();
     const bus = new ActionsBus();
 
-    const setStateAction = (value: number): Action => {
+    const setStateAction = (value: number) => {
         return {type: 'setStateAction', payload: {value}};
     };
 
-    const testAction = (): Action => {
+    const testAction = () => {
         return {type: 'testAction'};
     };
 
@@ -154,7 +153,7 @@ test('cancelledTask', async () => {
     const state = new GameState();
     const bus = new ActionsBus();
 
-    const cancelAction = (): Action => {
+    const cancelAction = () => {
         return {type: 'cancelAction'};
     };
 

@@ -3,7 +3,7 @@ import Player from "@common/Player";
 import Spaceship from "@common/Spaceship";
 import {GameSettings} from "@common/GameSettings";
 import ActionsBus from "../../src/game/ActionsBus";
-import {Action} from "@common/actions/Action";
+import {Action, ActionOf} from "@common/actions/Action";
 import {reducers} from "game/reducers/Main";
 import {shuffle, shuffleResult, throwDice, throwDiceResult} from "@common/actions/Random";
 
@@ -62,7 +62,7 @@ export function attachFakeRandomizer(busRef: ActionsBus) {
         busRef.emit(throwDiceResult(1));
     });
 
-    busRef.on(shuffle, (action: ReturnType<typeof shuffle>) => {
+    busRef.on(shuffle, (action: ActionOf<typeof shuffle>) => {
         shuffleCalls.value += 1;
 
         const result = new Array(action.payload.length);

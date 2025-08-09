@@ -23,5 +23,9 @@ export const infoListeners: ListenersContainer = {
 
     async showCardsInfo({cardsReceiver, cards}, {game}) {
         await showCards(cardsReceiver, cards, game);
+    },
+
+    async sendPlayerLostInfo({}, {game}) {
+        await game.controlsScene.showLostScreen();
     }
 }

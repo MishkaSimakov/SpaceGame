@@ -4,7 +4,7 @@ import {Action, ActionConstructor, ActionStub} from "@common/actions/Action";
 export type ActionListener = (action: Action) => void;
 
 export abstract class Middleware {
-    abstract apply(action: Action): Action | undefined;
+    abstract apply(action: Action): Action | ActionStub | undefined;
 }
 
 export default class ActionsBus {
@@ -15,17 +15,17 @@ export default class ActionsBus {
     private middlewares: Middleware[] = [];
 
     emit(actionStub: ActionStub) {
-        let action: Action = {
-            uuid: uuidv4(),
-            time: Date.now(),
-            ...actionStub
-        };
+        let action = this.stubToAction(actionStub);
 
         for (const middleware of this.middlewares) {
-            action = middleware.apply(action);
+            const result = middleware.apply(action);
 
             if (action === undefined) {
                 return;
+            }
+
+            if (action !== result) {
+                action = this.stubToAction(result);
             }
         }
 
@@ -92,5 +92,13 @@ export default class ActionsBus {
         }
 
         return actionDescriptor.name;
+    }
+
+    private stubToAction(stub: ActionStub): Action {
+        return {
+            uuid: uuidv4(),
+            time: Date.now(),
+            ...stub
+        };
     }
 }

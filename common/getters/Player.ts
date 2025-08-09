@@ -13,6 +13,7 @@ export const PlayerGetters = {
         otherPlayer.energy = player.energy;
         otherPlayer.spaceship = player.spaceship;
         otherPlayer.handSize = player.hand.length;
+        otherPlayer.lose = player.lose;
 
         return otherPlayer;
     },

@@ -1,14 +1,14 @@
-import {Action, ActionConstructor} from "@common/actions/Action";
+import {Action, ActionConstructor, ActionStub} from "@common/actions/Action";
 import ActionsBus, {ActionListener} from "../ActionsBus";
 
 export class ActionsBusProxy {
-    private emitStorage: Action[] = [];
+    private emitStorage: ActionStub[] = [];
     private onceStorage: { actionDescriptor: ActionConstructor | '*' | string, listener: ActionListener }[] = [];
 
     constructor(private busRef: ActionsBus) {
     }
 
-    emit(action: Action) {
+    emit(action: ActionStub) {
         this.emitStorage.push(action);
     }
 

@@ -11,6 +11,7 @@ class OtherPlayer {
     energy: number;
     spaceship: Spaceship;
     handSize: number;
+    lose: boolean;
 
     static getPropertiesMap(): Options {
         return {

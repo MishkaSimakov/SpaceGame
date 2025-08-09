@@ -1,11 +1,12 @@
+import {OtherPlayer} from "@common/GameForPlayerDTO";
+import {SpaceshipGetters} from "@common/getters/Spaceship";
+
 import {NodeConfig} from "../engine/Node";
-import {OtherPlayer} from "../../../../common/GameForPlayerDTO";
 import {Group} from "../engine/Group";
 import {Text} from "../engine/shapes/Text";
 import {GetSet} from "../engine/types";
 import {Factory} from "../engine/Factory";
 import {Rectangle} from "../engine/shapes/Rectangle";
-import {SpaceshipGetters} from "../../../../common/getters/Spaceship";
 
 export interface PlayerDataLineConfig extends NodeConfig {
     player: OtherPlayer,
@@ -44,43 +45,45 @@ export class PlayerDataLine extends Group<PlayerDataLineConfig> {
         let elementsCount = this.withTimeControl() ? 3 : 2;
         let spacePerElement = availableSpace / elementsCount;
 
-        this.add(
-            new Text({
-                x: startX,
-                y: 0,
-                text: `${player.energy}/${SpaceshipGetters.getTotalCapacity(player.spaceship)} ⚡️`,
-                fontFamily: "Exo2Bold",
-                fontSize: 15,
-                fill: "white",
-            })
-        );
-
-        this.add(
-            new Text({
-                x: startX + spacePerElement,
-                y: 0,
-                text: `${player.handSize} 🤚`,
-                fontFamily: "Exo2Bold",
-                fontSize: 15,
-                fill: "white",
-            })
-        );
-
-        if (this.withTimeControl()) {
+        if (!player.lose) {
             this.add(
                 new Text({
-                    x: startX + spacePerElement * 3,
+                    x: startX,
                     y: 0,
-                    text: `${this.timeToString(this.time())} ` + (this.time() >= 0 ? '⏰' : '🤡'),
+                    text: `${player.energy}/${SpaceshipGetters.getTotalCapacity(player.spaceship)} (+${SpaceshipGetters.getTotalEnergyIncrease(player.spaceship)}) ⚡️`,
                     fontFamily: "Exo2Bold",
                     fontSize: 15,
                     fill: "white",
-                    name: "time",
-
-                    originX: 1,
-                    align: 'right'
                 })
             );
+
+            this.add(
+                new Text({
+                    x: startX + spacePerElement,
+                    y: 0,
+                    text: `${player.handSize} 🤚`,
+                    fontFamily: "Exo2Bold",
+                    fontSize: 15,
+                    fill: "white",
+                })
+            );
+
+            if (this.withTimeControl()) {
+                this.add(
+                    new Text({
+                        x: startX + spacePerElement * 3,
+                        y: 0,
+                        text: `${this.timeToString(this.time())} ` + (this.time() >= 0 ? '⏰' : '🤡'),
+                        fontFamily: "Exo2Bold",
+                        fontSize: 15,
+                        fill: "white",
+                        name: "time",
+
+                        originX: 1,
+                        align: 'right'
+                    })
+                );
+            }
         }
 
         let hitOffset = 5;
@@ -112,14 +115,14 @@ export class PlayerDataLine extends Group<PlayerDataLineConfig> {
         return this;
     }
 
-    onClick(callback): PlayerDataLine {
+    onClick(callback: () => void): PlayerDataLine {
         this._hitRect.on('click', callback);
 
         return this;
     }
 
     private timeToString(time: number): string {
-        function padWithLeadingZeros(num, totalLength) {
+        function padWithLeadingZeros(num: number, totalLength: number) {
             return String(num).padStart(totalLength, '0');
         }
 

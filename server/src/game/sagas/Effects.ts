@@ -1,4 +1,4 @@
-import {Action} from "@common/actions/Action";
+import {Action, ActionStub} from "@common/actions/Action";
 import GameState from "../GameState";
 
 export type EmptyObject = Record<string, never>;
@@ -9,7 +9,7 @@ export type SelectEffect = {
 
 export type PutEffect = {
     type: "put";
-    action: Action;
+    action: ActionStub;
 }
 
 export type TakeEffect = {
@@ -40,14 +40,14 @@ export function* select(): SelectGenerator {
     };
 }
 
-export function* put(action: Action): PutGenerator {
+export function* put(action: ActionStub): PutGenerator {
     return yield {
         type: "put",
         action: action
     };
 }
 
-export function* take(action: (...args: any[]) => Action): TakeGenerator {
+export function* take(action: (...args: any[]) => ActionStub): TakeGenerator {
     return yield {
         type: "take",
         name: action.name

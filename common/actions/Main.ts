@@ -6,6 +6,7 @@ import {Event} from "../events/Event";
 import Vector2 from "../Vector2";
 
 export * from "./Reducer";
+export * from "./Info";
 export * from "./EventCards";
 
 export const choosePlayerForAttackRequest = (player: Player, reason: AttackReason) => {
@@ -59,13 +60,6 @@ export const showCardsToPlayersRequest = (player: Player, cardsReceiver: Player,
 
 export const showCardsToPlayersResponse = () => {
     return {type: 'showCardsToPlayersResponse'};
-}
-
-export const showCardsInfo = (player: Player, cardsReceiver: Player, cards: (Module | Event)[]) => {
-    return {
-        type: 'showCardsInfo',
-        payload: {player: player.id, cardsReceiver: cardsReceiver.id, cards}
-    }
 }
 
 export const drawAdditionalModuleCardRequest = (player: Player) => {

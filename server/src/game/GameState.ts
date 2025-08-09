@@ -97,16 +97,16 @@ const initialEventsStack = [
 
 export enum TimeRecordType {
     DEFAULT_TURN_STARTED,
-    DEFAULT_TURN_ENDED, // update time, +45 s
+    DEFAULT_TURN_ENDED,
 
     // before fight start
-    DEFAULT_TURN_INTERRUPTED, // update time
+    DEFAULT_TURN_INTERRUPTED,
 
     // after fight end
     DEFAULT_TURN_CONTINUED,
 
     FIGHT_TURN_STARTED,
-    FIGHT_TURN_ENDED// update time, +10 s
+    FIGHT_TURN_ENDED
 }
 
 export type TimeRecord = {

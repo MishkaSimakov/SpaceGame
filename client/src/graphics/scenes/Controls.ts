@@ -23,6 +23,7 @@ import {ChooseModulesToMoveDamage} from "../activities/ChooseModulesToMoveDamage
 import Color from "../Color";
 import {chooseModulesToRepairByDiscardedCardsResponse} from "@common/actions/EventCards";
 import {Button} from "../shapes/Button";
+import {ShowLostScreenActivity} from "../activities/ShowLostScreen";
 
 export default class Controls extends Scene {
     handDrawer: HandDrawer;
@@ -89,6 +90,10 @@ export default class Controls extends Scene {
 
     async showCards(cards: (Module | Event)[], title?: string): Promise<void> {
         return await this.enqueueActivity(new ShowCardsActivity(this, cards, title));
+    }
+
+    async showLostScreen(): Promise<void> {
+        return await this.enqueueActivity(new ShowLostScreenActivity(this));
     }
 
     async chooseFromList(title: string, values: string[]): Promise<number> {

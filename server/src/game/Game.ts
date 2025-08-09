@@ -4,7 +4,7 @@ import jsonpatch from 'fast-json-patch'
 import Player from "@common/Player";
 import ActionsBus from "./ActionsBus";
 import {GameSettings} from "@common/GameSettings";
-import {Action, isActionStub} from "@common/actions/Action";
+import {Action, ActionOf, isActionStub} from "@common/actions/Action";
 import * as Actions from "@common/actions/Main";
 import {initGameState, playerLost, sendPlayerLostInfo} from "@common/actions/Main";
 import {shuffle, shuffleResult, throwDice, throwDiceResult} from '@common/actions/Random';
@@ -63,7 +63,7 @@ export default class Game {
 
         this.registerLossMiddleware();
 
-        this.bus.on(playerLost, (action: ReturnType<typeof playerLost>) => {
+        this.bus.on(playerLost, (action: ActionOf<typeof playerLost>) => {
             this.bus.emit(sendPlayerLostInfo(action.payload.player));
         });
     }
@@ -78,7 +78,7 @@ export default class Game {
             throw new Error("Failed to initialize game from logs");
         }
 
-        const settings = (initAction as ReturnType<typeof initGameState>).payload.state.settings;
+        const settings = (initAction as ActionOf<typeof initGameState>).payload.state.settings;
 
         const game = new Game(users, settings, sockets, logger);
         game.inReplay = true;
@@ -111,7 +111,7 @@ export default class Game {
             }
 
             const pastAction = pastActions.shift();
-            console.log("⏪ replay: ", action.type, pastAction.type);
+            console.log("⏪ replay: ", action.uuid, action.type, pastAction.type);
 
             assert.equal(pastAction.type, action.type);
 
@@ -159,7 +159,7 @@ export default class Game {
             this.bus.emit(throwDiceResult(this.randomizer.dice()));
         });
 
-        this.bus.on(shuffle, (action: ReturnType<typeof shuffle>) => {
+        this.bus.on(shuffle, (action: ActionOf<typeof shuffle>) => {
             const result = new Array(action.payload.length);
             for (let i = 0; i < action.payload.length; ++i) {
                 result[i] = i;
@@ -227,12 +227,12 @@ export default class Game {
     }
 
     registerTimeListeners() {
-        this.bus.on(time, () => {
+        this.bus.on(time, (action: ActionOf<typeof time>) => {
             if (this.inReplay) {
                 return;
             }
 
-            this.bus.emit(timeResult(Date.now()));
+            this.bus.emit(timeResult(action.time));
         });
     }
 
