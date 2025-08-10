@@ -218,9 +218,14 @@ export type DamageInfo = {
     shouldDeactivateProtector: boolean
 };
 
-function damageInfoInternal(shipCopy: Spaceship, target: Vector2, damage: number, byNuclearReactor: boolean): DamageInfo {
-    const damaged = new Map<Vector2, number>();
-    const destroyed = new Map<Vector2, boolean>();
+function damageInfoInternal(
+    shipCopy: Spaceship,
+    target: Vector2,
+    damage: number,
+    byNuclearReactor: boolean,
+    damaged: Map<string, number>,
+    destroyed: Map<string, boolean>
+): DamageInfo {
     let shouldDeactivateProtector = false;
 
     const targetModule = SpaceshipGetters.getModuleByPosition(shipCopy, target);
@@ -240,30 +245,32 @@ function damageInfoInternal(shipCopy: Spaceship, target: Vector2, damage: number
         } else {
             damage -= shipCopy.activatedProtector.health;
 
-            destroyed.set(new Vector2(shipCopy.activatedProtector.x, shipCopy.activatedProtector.y), byNuclearReactor);
+            destroyed.set(`${shipCopy.activatedProtector.x},${shipCopy.activatedProtector.y}`, byNuclearReactor);
 
             shipCopy.activatedProtector = undefined;
             shouldDeactivateProtector = true;
         }
     }
 
-    const targetDamage = damaged.get(target) ?? 0;
-    damaged.set(target, targetDamage + damage);
+    const targetKey = `${target.x},${target.y}`;
+    const targetDamage = damaged.get(targetKey) ?? 0;
+    damaged.set(targetKey, targetDamage + damage);
     targetModule.health -= damage;
 
+    console.log(damaged, destroyed);
+
     if (targetModule.health <= 0) {
-        damaged.delete(target);
-        destroyed.set(target, byNuclearReactor);
+        damaged.delete(targetKey);
+        destroyed.set(targetKey, byNuclearReactor);
 
         if (targetModule.type === ModuleType.NuclearReactor) {
             for (let module of SpaceshipGetters.getModulesConnectedTo(shipCopy, targetModule)) {
                 const position = new Vector2(module.x, module.y);
                 // handle loop made of nuclear reactors (only one damage to all connected modules)
-                if (destroyed.has(position))
+                if (destroyed.has(`${position.x},${position.y}`))
                     continue;
 
-                const info = damageInfoInternal(shipCopy, position, 1, true);
-
+                const info = damageInfoInternal(shipCopy, position, 1, true, damaged, destroyed);
                 shouldDeactivateProtector = shouldDeactivateProtector || info.shouldDeactivateProtector;
             }
         }
@@ -271,11 +278,13 @@ function damageInfoInternal(shipCopy: Spaceship, target: Vector2, damage: number
 
     return {
         destroyed: Array.from(destroyed).map(([p, b]) => {
-            return {position: p, byNuclearReactor: b};
+            const [x, y] = p.split(',').map(Number);
+            return {position: new Vector2(x, y), byNuclearReactor: b};
         }),
 
         damaged: Array.from(damaged).map(([p, d]) => {
-            return {position: p, damage: d};
+            const [x, y] = p.split(',').map(Number);
+            return {position: new Vector2(x, y), damage: d};
         }),
 
         shouldDeactivateProtector
@@ -284,7 +293,14 @@ function damageInfoInternal(shipCopy: Spaceship, target: Vector2, damage: number
 
 function damageInfo(ship: Spaceship, target: Module, damage: number) {
     const shipCopy = structuredClone(ship);
-    return damageInfoInternal(shipCopy, new Vector2(target.x, target.y), damage, false);
+    return damageInfoInternal(
+        shipCopy,
+        new Vector2(target.x, target.y),
+        damage,
+        false,
+        new Map<string, number>(),
+        new Map<string, boolean>()
+    );
 }
 
 export const SpaceshipGetters = {

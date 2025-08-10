@@ -19,7 +19,6 @@ test('basicTest', async () => {
     state.stack.event = state.stack.event.filter(c => c !== event);
 
     const topThreeCards = state.stack.event.slice(-3);
-    console.log(topThreeCards.map(c => c.type));
 
     bus.on('permuteTopThreeEventCardsRequest', (action) => {
         assert.deepEqual(action.payload.cards[0], topThreeCards[2]);
@@ -33,8 +32,6 @@ test('basicTest', async () => {
     await runner.run();
 
     const newTopThreeCards = state.stack.event.slice(-3);
-
-    console.log(newTopThreeCards.map(c => c.type));
 
     assert.deepEqual(newTopThreeCards[0], topThreeCards[1]);
     assert.deepEqual(newTopThreeCards[1], topThreeCards[2]);

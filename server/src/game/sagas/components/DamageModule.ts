@@ -46,17 +46,10 @@ export function* damageModule(victim: Player, position: Vector2, damage: number,
 
         yield* put(removeSpaceshipModules(victim, [destroyed.position]));
 
-        if (destroyed.byNuclearReactor) {
+        if (destroyed.byNuclearReactor || type.type === "EventCard") {
             yield* put(pushCardsToDiscard("module", [destroyedModule]));
-        }
-
-        switch (type.type) {
-            case "EventCard":
-                yield* put(pushCardsToDiscard("module", [destroyedModule]));
-                break;
-            case "Player":
-                yield* put(pushCardsToHand(type.attacker, [destroyedModule]));
-                break;
+        } else {
+            yield* put(pushCardsToHand(type.attacker, [destroyedModule]));
         }
     }
 

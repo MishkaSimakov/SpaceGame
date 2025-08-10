@@ -10,6 +10,9 @@ import {attachReducers, fakeGameState} from "../Utils";
 import ActionsBus from "../../../src/game/ActionsBus";
 import {SagaRunner} from "../../../src/game/sagas/SagaRunner";
 import {damageModule} from "../../../src/game/sagas/components/DamageModule";
+import NuclearReactor from "@common/modules/NuclearReactor";
+import SolarPanel from "@common/modules/SolarPanel";
+import QuantumProtector from "@common/modules/QuantumProtector";
 
 
 test('simple', async () => {
@@ -163,5 +166,133 @@ test('damageModuleNoDestructionNoEnergyAdjustment', async () => {
     assert.equal(victim.hand.length, 0);
     assert.equal(SpaceshipGetters.getModuleByPosition(victim.spaceship, new Vector2(1, 0)).health, 1);
 });
+
+test('damageFromNuclearReactor', async () => {
+    // Setup
+    const state = fakeGameState(2);
+
+    let attacker = state.players[0];
+    let victim = state.players[1];
+    const bus = new ActionsBus();
+
+    const mainModule = SpaceshipGetters.getMainModule(victim.spaceship);
+    mainModule.connectors = {top: 1, right: 1, bottom: 1, left: 1};
+
+    const reactor = new NuclearReactor(1, 1, 1, 1);
+    reactor.x = 1;
+    reactor.y = 0;
+    victim.spaceship.modules.push(reactor);
+
+    attachReducers(bus, state);
+
+    // Run
+    const runner = new SagaRunner(
+        state,
+        bus,
+        damageModule, victim, new Vector2(1, 0), reactor.health, {type: 'Player', attacker}
+    );
+    await runner.run();
+
+    // Test
+    attacker = state.players[0];
+    victim = state.players[1];
+
+    assert.equal(victim.spaceship.modules.length, 1);
+    assert.equal(victim.spaceship.modules[0].health, victim.spaceship.modules[0].totalHealth - 1);
+});
+
+
+test('damageFromNuclearReactorChain', async () => {
+    // Setup
+    const state = fakeGameState(2);
+
+    let attacker = state.players[0];
+    let victim = state.players[1];
+    const bus = new ActionsBus();
+
+    const mainModule = SpaceshipGetters.getMainModule(victim.spaceship);
+    mainModule.connectors = {top: 1, right: 1, bottom: 1, left: 1};
+
+    const firstReactor = new NuclearReactor(1, 1, 1, 1);
+    firstReactor.x = 1;
+    firstReactor.y = 0;
+    firstReactor.health = 1;
+    victim.spaceship.modules.push(firstReactor);
+
+    const secondReactor = new NuclearReactor(1, 1, 1, 1);
+    secondReactor.x = 2;
+    secondReactor.y = 0;
+    secondReactor.health = 1;
+    victim.spaceship.modules.push(secondReactor);
+
+    const thirdReactor = new NuclearReactor(1, 1, 1, 1);
+    thirdReactor.x = 3;
+    thirdReactor.y = 0;
+    thirdReactor.health = 1;
+    victim.spaceship.modules.push(thirdReactor);
+
+    attachReducers(bus, state);
+
+    // Run
+    const runner = new SagaRunner(
+        state,
+        bus,
+        damageModule, victim, new Vector2(3, 0), 1, {type: 'Player', attacker}
+    );
+    await runner.run();
+
+    // Test
+    attacker = state.players[0];
+    victim = state.players[1];
+
+    assert.equal(victim.spaceship.modules.length, 1);
+    assert.equal(victim.spaceship.modules[0].health, victim.spaceship.modules[0].totalHealth - 1);
+
+    // 1 nuclear reactor in attacker's hand + 2 in discards
+    assert.equal(state.discards.module.length, 2);
+    assert.equal(attacker.hand.length, 1);
+});
+
+
+test('healthIsRestoredWhenGoesToDiscards', async () => {
+    // Setup
+    const state = fakeGameState(2);
+
+    let attacker = state.players[0];
+    let victim = state.players[1];
+    const bus = new ActionsBus();
+
+    const mainModule = SpaceshipGetters.getMainModule(victim.spaceship);
+    mainModule.connectors = {top: 1, right: 1, bottom: 1, left: 1};
+
+    const protector = new QuantumProtector(1, 1, 1, 1);
+    protector.x = 1;
+    protector.y = 0;
+    protector.health = 1;
+    victim.spaceship.modules.push(protector);
+
+    attachReducers(bus, state);
+
+    // Run
+    const runner = new SagaRunner(
+        state,
+        bus,
+        damageModule, victim, new Vector2(1, 0), 1, {type: 'EventCard'}
+    );
+    await runner.run();
+
+    // Test
+    attacker = state.players[0];
+    victim = state.players[1];
+
+    assert.equal(victim.spaceship.modules.length, 1);
+
+    assert.equal(state.discards.module.length, 1);
+    const discarded = state.discards.module[0];
+
+    assert.equal(discarded.id, protector.id);
+    assert.equal(discarded.health, discarded.totalHealth);
+});
+
 
 test.run();

@@ -160,6 +160,7 @@ export const reducers: ReducersType = {
 
     pushCardsToDiscard(state: GameState, {type, cards}) {
         if (type === "module") {
+            (cards as Module[]).forEach(card => card.health = card.totalHealth);
             state.discards.module.push(...cards as Module[]);
         } else {
             state.discards.event.push(...cards as Event[])
