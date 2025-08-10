@@ -1,3 +1,6 @@
+import Module from "./modules/Module";
+import {Event} from "./events/Event";
+
 export enum AttackReason {
     MainModule,
     AttackModule,
@@ -36,3 +39,5 @@ export type SocketInitPayload = {
     gameId: string,
     token: string
 }
+
+export type CardTypeFromName<T extends ("module" | "event")> = T extends "module" ? Module : Event;

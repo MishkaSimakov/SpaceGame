@@ -1,13 +1,14 @@
-export interface Action {
-    type: string;
-    payload?: any;
+export interface Action<T extends string, P, M = unknown> {
+    uuid: string;
+    time: number;
+
+    type: T;
+    payload?: P;
 
     //* Организация Meta, а также ее продукты Instagram и Facebook, признаны экстремистскими и запрещены на территории РФ.
-    meta?: any;
+    meta?: M;
 }
 
-export function isAction(object: any): object is Action {
+export function isAction(object: any): object is Action<string, any, any> {
     return "type" in object && typeof object.type === "string";
 }
-
-export type ActionConstructor = (...args: any[]) => Action;

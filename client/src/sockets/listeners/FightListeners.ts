@@ -1,11 +1,5 @@
 import Vector2 from "@common/Vector2";
-import {
-    chooseProtectorResponse,
-    chooseTargetResponse,
-    chooseWeaponAndTargetResponse,
-    RunawayType,
-    tryToRunawayResponse,
-} from "@common/actions/Main";
+import Actions from "@common/actions/Main";
 import {isProtector} from "@common/modules/Module";
 
 import {COLORS} from "../../graphics/constants";
@@ -13,6 +7,14 @@ import Color from "../../graphics/Color";
 import {ListenersContainer} from "./ListenersContainer";
 import {Boundary} from "../../graphics/CountBoundary";
 import {Button} from "../../graphics/shapes/Button";
+import {RunawayType} from "@common/actions/EventCards";
+
+const {
+    chooseProtectorResponse,
+    chooseTargetResponse,
+    chooseWeaponAndTargetResponse,
+    tryToRunawayResponse,
+} = Actions;
 
 export const fightListeners: ListenersContainer = {
     async tryToRunawayRequest({type}, {game}) {

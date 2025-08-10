@@ -4,168 +4,157 @@ import Player, {PlayerId} from "../Player";
 import Vector2 from "../Vector2";
 import Spaceship from "../Spaceship";
 import GameState, {TimeRecordType} from "../../server/src/game/GameState";
+import {action} from "./ActionConstructors";
+import {CardTypeFromName} from "../Types";
 
-export const initGameState = (state: GameState) => {
-    return {
-        type: 'initGameState',
-        payload: {state}
-    };
-}
+export default {
+    ...action('initGameState', (state: GameState) => {
+        return {
+            payload: {state}
+        };
+    }),
 
-export const playerRebuiltSpaceship = (player: PlayerId, newSpaceship: Spaceship, newHand: (Module | Event)[]) => {
-    return {
-        type: 'playerRebuiltSpaceship',
-        payload: {player, newSpaceship, newHand}
-    };
-}
+    ...action('playerRebuiltSpaceship', (player: Player, newSpaceship: Spaceship, newHand: (Module | Event)[]) => {
+        return {
+            payload: {player: player.id, newSpaceship, newHand}
+        };
+    }),
 
-export const disposeCardsFromPlayerHand = (player: Player, indices: number[], reason: string) => {
-    return {
-        type: 'disposeCardsFromPlayerHand',
-        payload: {player: player.id, indices},
-        meta: {reason}
-    };
-}
+    ...action('disposeCardsFromPlayerHand', (player: Player, indices: number[], reason: string) => {
+        return {
+            payload: {player: player.id, indices},
+            meta: {reason}
+        };
+    }),
 
-export const beginFight = (attacker: PlayerId, victim: PlayerId, reason: string) => {
-    return {
-        type: 'beginFight',
-        payload: {attacker, victim},
-        meta: {reason}
-    }
-}
+    ...action('beginFight', (attacker: PlayerId, victim: PlayerId, reason: string) => {
+        return {
+            payload: {attacker, victim},
+            meta: {reason}
+        }
+    }),
 
-export const popCardFromHeap = (type: "module" | "event") => {
-    return {
-        type: 'popCardFromHeap',
-        payload: {type}
-    };
-}
+    ...action('popCardFromHeap', (type: "module" | "event") => {
+        return {
+            payload: {type}
+        };
+    }),
 
-export const shiftTurnToNextPlayer = () => {
-    return {type: 'shiftTurnToNextPlayer'};
-}
+    ...action('shiftTurnToNextPlayer', () => {
+        return {};
+    }),
 
-export const changePlayerEnergy = (player: Player, delta: number, reason: string) => {
-    return {
-        type: 'changePlayerEnergy',
-        payload: {player: player.id, delta},
-        meta: {reason}
-    }
-}
+    ...action('changePlayerEnergy', (player: Player, delta: number, reason: string) => {
+        return {
+            type: 'changePlayerEnergy',
+            payload: {player: player.id, delta},
+            meta: {reason}
+        }
+    }),
 
-export const returnDiscardsToStack = (type: "module" | "event", discards: (Module | Event)[]) => {
-    return {
-        type: 'returnDiscardsToStack',
-        payload: {type, discards}
-    };
-}
+    ...action('returnDiscardsToStack', (type: "module" | "event", discards: (Module | Event)[]) => {
+        return {
+            type: 'returnDiscardsToStack',
+            payload: {type, discards}
+        };
+    }),
 
-export const playerSkipNextTurn = (player: PlayerId) => {
-    return {
-        type: 'playerSkipNextTurn',
-        payload: {player}
-    };
-}
+    ...action('playerSkipNextTurn', (player: PlayerId) => {
+        return {
+            type: 'playerSkipNextTurn',
+            payload: {player}
+        };
+    }),
 
-export const destructSpaceshipModules = (player: Player, positions: Vector2[], destructedCardsDestiny: "discard" | "hand", detachedCardsDestiny: "discard" | "hand") => {
-    return {
-        type: 'destructSpaceshipModules',
-        payload: {player: player.id, positions, destructedCardsDestiny, detachedCardsDestiny}
-    };
-}
+    ...action('destructSpaceshipModules', (player: Player, positions: Vector2[], destructedCardsDestiny: "discard" | "hand", detachedCardsDestiny: "discard" | "hand") => {
+        return {
+            type: 'destructSpaceshipModules',
+            payload: {player: player.id, positions, destructedCardsDestiny, detachedCardsDestiny}
+        };
+    }),
 
-export const pushCardsToStack = (type: "module" | "event", cards: Module[] | Event[]) => {
-    return {
-        type: 'pushCardsToStack',
-        payload: {type, cards}
-    };
-};
+    ...action('pushCardsToStack', (type: "module" | "event", cards: Module[] | Event[]) => {
+        return {
+            type: 'pushCardsToStack',
+            payload: {type, cards}
+        };
+    }),
 
-export const pushCardsToHand = (player: Player, cards: (Module | Event)[]) => {
-    return {
-        type: 'pushCardsToHand',
-        payload: {player: player.id, cards}
-    };
-}
+    ...action('pushCardsToHand', (player: Player, cards: (Module | Event)[]) => {
+        return {
+            payload: {player: player.id, cards}
+        };
+    }),
 
-export const changeModuleHealth = (player: Player, position: Vector2, delta: number, reason: string) => {
-    return {
-        type: 'changeModuleHealth',
-        payload: {player: player.id, position, delta},
-        meta: {reason}
-    };
-}
+    ...action('changeModuleHealth', (player: Player, position: Vector2, delta: number, reason: string) => {
+        return {
+            payload: {player: player.id, position, delta},
+            meta: {reason}
+        };
+    }),
 
-export const popCardFromPlayerHand = (player: Player, index: number) => {
-    return {
-        type: 'popCardFromPlayerHand',
-        payload: {player: player.id, index},
-    };
-}
+    ...action('popCardFromPlayerHand', (player: Player, index: number) => {
+        return {
+            payload: {player: player.id, index},
+        };
+    }),
 
-export const deactivateProtectorIfActive = (player: Player) => {
-    return {
-        type: 'deactivateProtectorIfActive',
-        payload: {player: player.id}
-    };
-}
+    ...action('deactivateProtectorIfActive', (player: Player) => {
+        return {
+            type: 'deactivateProtectorIfActive',
+            payload: {player: player.id}
+        };
+    }),
 
-export const removeSpaceshipModules = (player: Player, positions: Vector2[]) => {
-    return {
-        type: 'removeSpaceshipModules',
-        payload: {player: player.id, positions}
-    };
-}
+    ...action('removeSpaceshipModules', (player: Player, positions: Vector2[]) => {
+        return {
+            payload: {player: player.id, positions}
+        };
+    }),
 
-export const pushCardsToDiscard = (type: "module" | "event", cards: Module[] | Event[]) => {
-    return {
-        type: 'pushCardsToDiscard',
-        payload: {type, cards}
-    };
-}
+    ...action('pushCardsToDiscard', <T extends "module" | "event">(type: T, cards: CardTypeFromName<T>[]) => {
+        return {
+            payload: {type, cards}
+        };
+    }),
 
-export const playerLost = (player: Player) => {
-    return {
-        type: 'playerLost',
-        payload: {player: player.id}
-    };
-}
+    ...action('playerLost', (player: Player) => {
+        return {
+            payload: {player: player.id}
+        };
+    }),
 
-export const endFight = () => {
-    return {
-        type: 'endFight'
-    };
-}
+    ...action('endFight', () => {
+        return {};
+    }),
 
-export const activateProtector = (player: Player, position: Vector2) => {
-    return {
-        type: 'activateProtector',
-        payload: {player: player.id, position}
-    };
-}
+    ...action('activateProtector', (player: Player, position: Vector2) => {
+        return {
+            payload: {player: player.id, position}
+        };
+    }),
 
-export const shiftFightTurnToNextPlayer = () => {
-    return {type: 'shiftFightTurnToNextPlayer'};
-}
+    ...action('shiftFightTurnToNextPlayer', () => {
+        return {};
+    }),
 
-export const playerUseModuleSecondTime = (player: Player) => {
-    return {
-        type: 'playerUseModuleSecondTime',
-        payload: {player: player.id}
-    };
-}
+    ...action('playerUseModuleSecondTime', (player: Player) => {
+        return {
+            payload: {player: player.id}
+        };
+    }),
 
-export const addTimeRecord = (player: PlayerId, type: TimeRecordType, time: number) => {
-    return {
-        type: 'addTimeRecord',
-        payload: {player, type, time}
-    };
-}
+    ...action('addTimeRecord', (player: PlayerId, type: TimeRecordType, time: number) => {
+        return {
+            payload: {player, type, time}
+        };
+    }),
 
-export const changePlayerTime = (player: PlayerId, delta: number) => {
-    return {
-        type: 'changePlayerTime',
-        payload: {player, delta}
-    };
+    ...action('changePlayerTime', (player: PlayerId, delta: number) => {
+        return {
+            payload: {player, delta}
+        };
+    }),
+
+    ...action('insertPause', (from: number, to: number) => ({payload: {from, to}}))
 }

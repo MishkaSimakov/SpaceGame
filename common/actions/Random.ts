@@ -1,26 +1,11 @@
+import {action} from "./ActionConstructors";
+
 export type DiceResult = 1 | 2 | 3 | 4 | 5 | 6;
 
-export const throwDice = () => {
-    return {type: 'throwDice'};
-}
+export default {
+    ...action('throwDice'),
+    ...action('throwDiceResult', (result: DiceResult) => ({payload: result})),
 
-export const throwDiceResult = (result: DiceResult) => {
-    return {
-        type: 'throwDiceResult',
-        payload: result
-    };
-}
-
-export const shuffle = (length: number) => {
-    return {
-        type: 'shuffle',
-        payload: {length}
-    };
-}
-
-export const shuffleResult = (order: number[]) => {
-    return {
-        type: 'shuffleResult',
-        payload: order
-    };
-}
+    ...action('shuffle', (length: number) => ({payload: {length}})),
+    ...action('shuffleResult', (order: number[]) => ({payload: order}))
+};

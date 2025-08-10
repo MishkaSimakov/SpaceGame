@@ -7,16 +7,16 @@ import GameState from "../GameState";
 import {ActionsBusProxy} from "./ActionsBusProxy";
 import {effectPerformers} from "./EffectsPerformers";
 
-export class SagaRunner {
+export class SagaRunner<R> {
     private readonly stateRef: GameState;
     private readonly busRef: ActionsBus;
 
     private stack: {
-        generator: SagaGenerator,
+        generator: SagaGenerator<any>,
         name: string
     }[] = [];
 
-    constructor(stateRef: GameState, busRef: ActionsBus, saga: (...args: any[]) => SagaGenerator, ...args: any[]) {
+    constructor(stateRef: GameState, busRef: ActionsBus, saga: (...args: any[]) => SagaGenerator<R>, ...args: any[]) {
         this.stateRef = stateRef;
         this.busRef = busRef;
 
@@ -26,7 +26,7 @@ export class SagaRunner {
         });
     }
 
-    async run() {
+    async run(): Promise<R> {
         let call_args: any = {}
 
         while (this.stack.length !== 0) {
@@ -36,14 +36,14 @@ export class SagaRunner {
                 call_args = result.value;
                 this.stack.pop();
             } else {
-                call_args = await this.performEffect(result.value as Effect);
+                call_args = await this.performEffect(result.value);
             }
         }
 
-        return call_args;
+        return call_args as R;
     }
 
-    performEffect<T extends Effect>(effect: T) {
+    performEffect<T extends Effect["input"]>(effect: T) {
         return new Promise<any>(resolve => {
             const busProxy = new ActionsBusProxy(this.busRef);
 
@@ -51,6 +51,8 @@ export class SagaRunner {
                 resolve(result);
             };
 
+            // TODO: check later
+            // @ts-ignore
             effectPerformers[effect.type](effect, cb, {
                 state: this.stateRef,
                 bus: busProxy,
@@ -71,7 +73,7 @@ export class SagaRunner {
         } while (currentTask.name !== taskName);
     }
 
-    private pushTask(task: () => SagaGenerator) {
+    private pushTask(task: () => SagaGenerator<any>) {
         this.stack.push({
             name: task.name,
             generator: task()

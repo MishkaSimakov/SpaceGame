@@ -4,10 +4,9 @@ import jsonpatch from 'fast-json-patch'
 import Player from "@common/Player";
 import ActionsBus from "./ActionsBus";
 import {GameSettings} from "@common/GameSettings";
-import {Action, ActionOf, isActionStub} from "@common/actions/Action";
-import * as Actions from "@common/actions/Main";
-import {initGameState, playerLost, sendPlayerLostInfo} from "@common/actions/Main";
-import {shuffle, shuffleResult, throwDice, throwDiceResult} from '@common/actions/Random';
+import {Action, isAction} from "@common/actions/Action";
+import Spaceship from "@common/Spaceship";
+import Actions from "@common/actions/Main"
 
 import GameState from "./GameState";
 import {User} from "../entity/user";
@@ -17,10 +16,9 @@ import {gameSaga} from "./sagas/Main";
 import {Logger} from "./Logger";
 import {reducers} from "./reducers/Main";
 import {SagaRunner} from "./sagas/SagaRunner";
-import Spaceship from "@common/Spaceship";
-import {time, timeResult} from "@common/actions/Time";
 import {Randomizer} from "./Randomizer";
 import {LossMiddleware} from "./LossMiddleware";
+import {ActionOf} from "@common/actions/ActionConstructors";
 
 export default class Game {
     users: User[];
@@ -28,7 +26,7 @@ export default class Game {
     randomizer: Randomizer;
     state: GameState;
     bus: ActionsBus;
-    sagaRunner: SagaRunner;
+    sagaRunner: SagaRunner<void>;
     sockets: SocketsManager;
     logger: Logger;
 
@@ -63,8 +61,8 @@ export default class Game {
 
         this.registerLossMiddleware();
 
-        this.bus.on(playerLost, (action: ActionOf<typeof playerLost>) => {
-            this.bus.emit(sendPlayerLostInfo(action.payload.player));
+        this.bus.on('playerLost', (action) => {
+            this.bus.emit(Actions.sendPlayerLostInfo(action.payload.player));
         });
     }
 
@@ -72,61 +70,52 @@ export default class Game {
     static runFromLogs(users: User[], sockets: SocketsManager, logger: Logger) {
         const pastActions = logger.getPastActions();
 
-        const initAction = pastActions.find(a => a.type === initGameState.name);
+        const initAction = pastActions.find(a => a.type === 'initGameState');
 
         if (!initAction) {
             throw new Error("Failed to initialize game from logs");
         }
 
-        const settings = (initAction as ActionOf<typeof initGameState>).payload.state.settings;
+        const settings = (initAction as ActionOf<typeof Actions.initGameState>).payload.state.settings;
 
         const game = new Game(users, settings, sockets, logger);
         game.inReplay = true;
 
-        const returnToNormalExecution = (pendingRequest?: Action) => {
+        const returnToNormalExecution = (pendingAction?: Action<string, any, any>) => {
             game.bus.off('*', actionsReplayListener);
             game.inReplay = false;
 
-            if (pendingRequest) {
-                game.sockets.emitAndWait(
-                    pendingRequest.payload.player,
-                    pendingRequest.type,
-                    true,
-                    pendingRequest.payload
-                ).then(payload => {
-                    if (!isActionStub(payload)) {
-                        throw new Error("Response must be action");
-                    }
+            // game.bus.emit(Actions.insertPause());
 
-                    game.bus.emit(payload);
-                });
+            if (pendingAction) {
+                // if (pendingAction.type === "time") {
+                //     game.
+                // } else {
+                    // type is *Request
+                    game.sendSocketRequest(pendingAction);
+                // }
             }
         };
 
         // register fake sockets listeners
         // they don't send anything to users and read responses from the log file
-        const actionsReplayListener = (action: Action) => {
+        const actionsReplayListener = (action: Action<string, any, any>) => {
             if (pastActions.length === 0) {
                 return;
             }
 
             const pastAction = pastActions.shift();
-            console.log("⏪ replay: ", action.uuid, action.type, pastAction.type);
+            console.log("⏪ replay: ", pastAction.uuid, action.type, pastAction.type);
 
             assert.equal(pastAction.type, action.type);
 
-            if (action.type.endsWith("Request")) {
+            if (action.type.endsWith("Request") || action.type === "time") {
                 if (pastActions.length === 0) {
                     returnToNormalExecution(action);
                     return;
                 }
 
-                const responseType = action.type.replace("Request", "Response");
-
-                const pastResponse = pastActions[0];
-                assert.equal(pastResponse.type, responseType);
-
-                game.bus.emit(pastResponse);
+                game.bus.emit(pastAction[0]);
             } else if (pastActions.length === 0) {
                 returnToNormalExecution();
             }
@@ -155,23 +144,23 @@ export default class Game {
     }
 
     registerRandomizerListeners() {
-        this.bus.on(throwDice, () => {
-            this.bus.emit(throwDiceResult(this.randomizer.dice()));
+        this.bus.on('throwDice', () => {
+            this.bus.emit(Actions.throwDiceResult(this.randomizer.dice()));
         });
 
-        this.bus.on(shuffle, (action: ActionOf<typeof shuffle>) => {
+        this.bus.on('shuffle', (action) => {
             const result = new Array(action.payload.length);
             for (let i = 0; i < action.payload.length; ++i) {
                 result[i] = i;
             }
 
             this.randomizer.shuffle(result)
-            this.bus.emit(shuffleResult(result));
+            this.bus.emit(Actions.shuffleResult(result));
         });
     }
 
     registerIOListeners() {
-        this.bus.on('*', async (action: Action) => {
+        this.bus.on('*', async (action) => {
             if (this.inReplay) {
                 return;
             }
@@ -184,28 +173,18 @@ export default class Game {
             // but without an acknowledgment
 
             if (action.type.endsWith("Request")) {
-                const responseType = action.type.replace("Request", "Response");
-
-                assert.ok("player" in action.payload);
-                assert.ok(responseType in Actions);
-
-                const payload = await this.sockets.emitAndWait(action.payload.player, action.type, true, action.payload)
-                if (!isActionStub(payload)) {
-                    throw new Error("Response must be action");
-                }
-
-                this.bus.emit(payload);
+                this.sendSocketRequest(action);
             }
 
             if (action.type.endsWith("Info")) {
                 assert.ok("player" in action.payload);
-                await this.sockets.emitAndWait(action.payload.player, action.type, false, action.payload)
+                this.sockets.emitAndWait(action.payload.player, action.type, false, action.payload)
             }
         });
     }
 
     registerReduceListeners() {
-        this.bus.on('*', (action: Action) => {
+        this.bus.on('*', (action) => {
             if (action.type in reducers) {
                 let copy = structuredClone(this.state);
                 reducers[action.type](copy, action.payload);
@@ -227,12 +206,12 @@ export default class Game {
     }
 
     registerTimeListeners() {
-        this.bus.on(time, (action: ActionOf<typeof time>) => {
+        this.bus.on('time', (action) => {
             if (this.inReplay) {
                 return;
             }
 
-            this.bus.emit(timeResult(action.time));
+            this.bus.emit(Actions.timeResult(action.time));
         });
     }
 
@@ -258,5 +237,21 @@ export default class Game {
                 socket.emit('setGameData', getDTO(this, player));
             }
         }
+    }
+
+    private sendSocketRequest(action: Action<string, any, any>) {
+        const responseType = action.type.replace("Request", "Response");
+
+        assert.ok("player" in action.payload);
+        assert.ok(responseType in Actions);
+
+        this.sockets.emitAndWait(action.payload.player, action.type, true, action.payload)
+            .then((payload: any) => {
+                if (!isAction(payload)) {
+                    throw new Error("Response must be action");
+                }
+
+                this.bus.emit(payload);
+            });
     }
 }

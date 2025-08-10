@@ -106,7 +106,10 @@ export enum TimeRecordType {
     DEFAULT_TURN_CONTINUED,
 
     FIGHT_TURN_STARTED,
-    FIGHT_TURN_ENDED
+    FIGHT_TURN_ENDED,
+
+    PAUSE_STARTED,
+    PAUSE_ENDED
 }
 
 export type TimeRecord = {

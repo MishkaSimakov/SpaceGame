@@ -1,5 +1,7 @@
-/dist/index.js
-/dist/index.js.map
+/dist/*.js
+/dist/*.css
+/dist/*.js.map
+/dist/*.css.map
 
 # Build
 /npm-debug.log

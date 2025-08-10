@@ -1,7 +1,8 @@
 import {StateGetters} from "@common/getters/State";
+import Actions from "@common/actions/Main";
+
 import {put, select} from "../Effects";
 import {request} from "../components/Request";
-import {discardCardsRequest, discardCardsResponse, disposeCardsFromPlayerHand} from "@common/actions/Main";
 
 export function* discardCards() {
     const state = yield* select();
@@ -12,13 +13,13 @@ export function* discardCards() {
     }
 
     const discardedCardsIndexes = yield* request(
-        discardCardsRequest(currentPlayer),
-        discardCardsResponse
+        Actions.discardCardsRequest(currentPlayer),
+        'discardCardsResponse'
     );
 
     if (currentPlayer.hand.length - discardedCardsIndexes.length > state.settings.maxCardsOnHand) {
         throw Error("player discarded not enough cards");
     }
 
-    yield* put(disposeCardsFromPlayerHand(currentPlayer, discardedCardsIndexes, "discard cards phase"));
+    yield* put(Actions.disposeCardsFromPlayerHand(currentPlayer, discardedCardsIndexes, "discard cards phase"));
 }

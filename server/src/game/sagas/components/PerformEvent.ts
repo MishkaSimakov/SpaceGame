@@ -1,6 +1,22 @@
 import {Event, EventTypes} from "@common/events/Event";
+import Actions from "@common/actions/Main";
+import {StateGetters} from "@common/getters/State";
+import {SpaceshipGetters} from "@common/getters/Spaceship";
+import Module, {ModuleType} from "@common/modules/Module";
+import Vector2 from "@common/Vector2";
+import {AttackReason, MoveDamageReason} from "@common/Types";
+
+import {put, select} from "../Effects";
 import GameState from "../../GameState";
-import {
+import {request} from "./Request";
+import {fight} from "./Fight";
+import {damageModule} from "./DamageModule";
+import {popCards, popOneCard} from "./PopCards";
+import {showCards} from "./ShowCards";
+import {dice} from "./Random";
+import {moveDamage} from "./MoveDamage";
+
+const {
     beginFight,
     changeModuleHealth,
     changePlayerEnergy,
@@ -33,28 +49,14 @@ import {
     pushCardsToDiscard,
     pushCardsToHand,
     pushCardsToStack,
-} from "@common/actions/Main";
-import {StateGetters} from "@common/getters/State";
-import {put, select} from "../Effects";
-import {SpaceshipGetters} from "@common/getters/Spaceship";
-import Module, {ModuleType} from "@common/modules/Module";
-import {request} from "./Request";
-import Vector2 from "@common/Vector2";
-import {fight} from "./Fight";
-import {AttackReason, MoveDamageReason} from "@common/Types";
-import {damageModule} from "./DamageModule";
-import {popCards, popOneCard} from "./PopCards";
-import {showCards} from "./ShowCards";
-import {dice} from "./Random";
-import {moveDamage} from "./MoveDamage";
-import * as assert from "node:assert";
+} = Actions;
 
 function* putTopThreeCardsInAnyOrder(state: GameState) {
     const topThreeCards = yield* popCards("event", 3);
 
     const order = yield* request(
         permuteTopThreeEventCardsRequest(StateGetters.currentPlayer(state), topThreeCards),
-        permuteTopThreeEventCardsResponse
+        'permuteTopThreeEventCardsResponse'
     );
 
     let newOrderedCards: Event[] = [];
@@ -117,7 +119,7 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
 
         const position = yield* request(
             chooseModuleToDestroyRequest(currentPlayer),
-            chooseModuleToDestroyResponse
+            'chooseModuleToDestroyResponse'
         );
 
         yield* put(destructSpaceshipModules(currentPlayer, [position], "discard", "hand"));
@@ -131,7 +133,7 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
 
         const positions: Vector2[] = yield* request(
             chooseTwoSolarPanelsToDestroyRequest(player),
-            chooseTwoSolarPanelsToDestroyResponse
+            'chooseTwoSolarPanelsToDestroyResponse'
         );
 
         if (positions.length !== 1 && positions.length !== 2) {
@@ -175,7 +177,7 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
     [EventTypes.AttackAny]: function* (state: GameState) {
         const {victim} = yield* request(
             choosePlayerForAttackRequest(StateGetters.currentPlayer(state), AttackReason.AttackAnyEventCard),
-            choosePlayerForAttackResponse
+            'choosePlayerForAttackResponse'
         );
 
         if (!victim) {
@@ -198,7 +200,7 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
 
         const {victimId, victimModulePosition} = yield* request(
             chooseModuleToDamageByDiceRequest(currentPlayer, damage),
-            chooseModuleToDamageByDiceResponse
+            'chooseModuleToDamageByDiceResponse'
         );
 
         if (victimId === undefined) return;
@@ -222,7 +224,7 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
 
         const moduleToRepairPosition = yield* request(
             chooseModuleToRepairByDiceRequest(currentPlayer, diceResult),
-            chooseModuleToRepairByDiceResponse
+            'chooseModuleToRepairByDiceResponse'
         );
 
         if (moduleToRepairPosition === undefined) {
@@ -245,14 +247,14 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
 
         const chosenPlayerId = yield* request(
             choosePlayerToStealCardRequest(currentPlayer, playersWithCards.map(p => p.id)),
-            choosePlayerToStealCardResponse
+            'choosePlayerToStealCardResponse'
         );
 
         const chosenPlayer = StateGetters.playerById(state, chosenPlayerId);
 
         const chosenCardIndex = yield* request(
             chooseCardToStealRequest(currentPlayer, chosenPlayer.hand),
-            chooseCardToStealResponse
+            'chooseCardToStealResponse'
         );
 
         const chosenCard = chosenPlayer.hand[chosenCardIndex];
@@ -271,7 +273,7 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
 
         const discardedCardsIndexes = yield* request(
             chooseCardsForRepairSpaceshipRequest(currentPlayer),
-            chooseCardsForRepairSpaceshipResponse
+            'chooseCardsForRepairSpaceshipResponse'
         );
 
         if (discardedCardsIndexes.length > 2)
@@ -283,7 +285,7 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
 
         const modulesToRepairPositions = yield* request(
             chooseModulesToRepairByDiscardedCardsRequest(currentPlayer, discardedCardsIndexes.length),
-            chooseModulesToRepairByDiscardedCardsResponse
+            'chooseModulesToRepairByDiscardedCardsResponse'
         );
 
         if (modulesToRepairPositions.length > 2) {
@@ -304,7 +306,7 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
 
         const cardsToDiscardIndexes = yield* request(
             chooseCardsToDiscardAndTakeAnotherRequest(currentPlayer),
-            chooseCardsToDiscardAndTakeAnotherResponse
+            'chooseCardsToDiscardAndTakeAnotherResponse'
         );
 
         if (cardsToDiscardIndexes.length > 2) {

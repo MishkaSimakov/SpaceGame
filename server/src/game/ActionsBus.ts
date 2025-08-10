@@ -1,31 +1,27 @@
-import {v4 as uuidv4} from 'uuid';
-import {Action, ActionConstructor, ActionStub} from "@common/actions/Action";
+import {Action} from "@common/actions/Action";
+import Actions from "@common/actions/Main"
 
-export type ActionListener = (action: Action) => void;
+export type ActionDescriptor = (keyof typeof Actions) | "*";
+
+export type ActionListener<T extends ActionDescriptor> = (action: T extends keyof typeof Actions ? ReturnType<(typeof Actions)[T]> : Action<string, any, any>) => void;
 
 export abstract class Middleware {
-    abstract apply(action: Action): Action | ActionStub | undefined;
+    abstract apply(action: Action<string, any, any>): Action<string, any, any> | undefined;
 }
 
 export default class ActionsBus {
-    private listeners = new Map<string, ActionListener[]>();
+    private listeners = new Map<string, ActionListener<any>[]>();
     private listenersQueue: (() => void)[] = [];
     private isProcessingQueue: boolean = false;
 
     private middlewares: Middleware[] = [];
 
-    emit(actionStub: ActionStub) {
-        let action = this.stubToAction(actionStub);
-
+    emit<A extends Action<string, any, any>>(action: A) {
         for (const middleware of this.middlewares) {
-            const result = middleware.apply(action);
+            action = middleware.apply(action) as A;
 
             if (action === undefined) {
                 return;
-            }
-
-            if (action !== result) {
-                action = this.stubToAction(result);
             }
         }
 
@@ -39,26 +35,24 @@ export default class ActionsBus {
         this.#tryProcessQueue();
     }
 
-    on(actionDescriptor: ActionConstructor | '*' | string, listener: ActionListener) {
-        const name = this.#getActionName(actionDescriptor);
-
-        if (this.listeners.has(name)) {
-            this.listeners.get(name)!.push(listener);
+    on<T extends ActionDescriptor>(actionDescriptor: T, listener: ActionListener<T>) {
+        if (this.listeners.has(actionDescriptor)) {
+            this.listeners.get(actionDescriptor)!.push(listener);
         } else {
-            this.listeners.set(name, [listener]);
+            this.listeners.set(actionDescriptor, [listener]);
         }
     }
 
-    off(actionDescriptor: ActionConstructor | '*' | string, listener: ActionListener) {
-        const listeners = this.listeners.get(this.#getActionName(actionDescriptor));
+    off<T extends ActionDescriptor>(actionDescriptor: T, listener: ActionListener<T>) {
+        const listeners = this.listeners.get(actionDescriptor);
 
         if (listeners && listeners.indexOf(listener) != -1) {
             listeners.splice(listeners.indexOf(listener), 1);
         }
     }
 
-    once(actionDescriptor: ActionConstructor | '*' | string, listener: ActionListener) {
-        const onceListener = (payload: any) => {
+    once<T extends ActionDescriptor>(actionDescriptor: T, listener: ActionListener<T>) {
+        const onceListener: ActionListener<T> = (payload) => {
             listener(payload);
             this.off(actionDescriptor, onceListener);
         };
@@ -79,26 +73,10 @@ export default class ActionsBus {
 
         let listener: () => void;
 
-        while (listener = this.listenersQueue.shift()) {
+        while ((listener = this.listenersQueue.shift()!)) {
             listener();
         }
 
         this.isProcessingQueue = false;
-    }
-
-    #getActionName(actionDescriptor: ActionConstructor | '*' | string) {
-        if (typeof actionDescriptor === 'string') {
-            return actionDescriptor;
-        }
-
-        return actionDescriptor.name;
-    }
-
-    private stubToAction(stub: ActionStub): Action {
-        return {
-            uuid: uuidv4(),
-            time: Date.now(),
-            ...stub
-        };
     }
 }

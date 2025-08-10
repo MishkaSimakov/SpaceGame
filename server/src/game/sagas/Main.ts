@@ -1,16 +1,20 @@
+import Actions from "@common/actions/Main";
+import {StateGetters} from "@common/getters/State";
+
 import {newTask, put, select} from "./Effects";
 import {beforeTurn} from "./phases/BeforeTurn";
 import {drawCards} from "./phases/DrawCards";
 import {rebuildSpaceship} from "./phases/RebuildSpaceship";
-import {shiftTurnToNextPlayer} from "@common/actions/Main";
 import {collectEnergy} from "./phases/CollectEnergy";
 import {discardCards} from "./phases/DiscardCards";
 import {attack} from "./phases/Attack";
 import {fixSpaceship} from "./phases/FixSpaceship";
 import {init} from "./components/Init";
-import {StateGetters} from "@common/getters/State";
 import {addTimeRecord} from "./components/Time";
+
 import {TimeRecordType} from "../GameState";
+
+const {shiftTurnToNextPlayer} = Actions;
 
 function* isGameEnded() {
     return (yield* select()).players.filter(p => !p.lose).length === 1;

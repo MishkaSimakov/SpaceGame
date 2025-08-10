@@ -1,19 +1,16 @@
 import Module, {isModule, ModuleType} from "@common/modules/Module";
 import {Event} from "@common/events/Event";
-import GameState from "../GameState";
+import GameState, {TimeRecordType} from "../GameState";
 import * as assert from "node:assert";
 import {areCardSetsEqual} from "@common/Utils";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
-import * as Actions from '@common/actions/Main';
+import ReducerActions from '@common/actions/Reducer';
 import {StateGetters} from "@common/getters/State";
 import {SpaceshipModifiers} from "@common/modifiers/Spaceship";
-import SmallQuantumProtector from "@common/modules/SmallQuantumProtector";
-import {deactivateProtectorIfActive, removeSpaceshipModules} from "@common/actions/Main";
-import Vector2 from "@common/Vector2";
 
 type ReducersType = {
-    [Key in keyof typeof Actions]?:
-    typeof Actions[Key] extends (...args: any[]) => { type: string, payload?: infer P }
+    [Key in keyof typeof ReducerActions]:
+    typeof ReducerActions[Key] extends (...args: any[]) => { type: string, payload?: infer P }
         ? (state: GameState, payload: P) => void
         : never
 };
@@ -161,6 +158,14 @@ export const reducers: ReducersType = {
         player.hand.push(...payload.cards);
     },
 
+    pushCardsToDiscard(state: GameState, {type, cards}) {
+        if (type === "module") {
+            state.discards.module.push(...cards as Module[]);
+        } else {
+            state.discards.event.push(...cards as Event[])
+        }
+    },
+
     changeModuleHealth(state: GameState, payload) {
         const player = StateGetters.playerById(state, payload.player);
         const module = SpaceshipGetters.getModuleByPosition(player.spaceship, payload.position);
@@ -238,5 +243,22 @@ export const reducers: ReducersType = {
 
         const player = StateGetters.playerById(state, payload.player);
         player.time += payload.delta;
+    },
+
+    playerUseModuleSecondTime(state: GameState, payload) {
+        const player = StateGetters.playerById(state, payload.player);
+
+        assert.ok(!player.usedModuleSecondTimeOnThisTurn);
+
+        player.usedModuleSecondTimeOnThisTurn = true;
+    },
+
+    insertPause(state: GameState, {from, to}) {
+        const currentPlayer = StateGetters.currentPlayer(state);
+
+        state.timeRecords.push(
+            {type: TimeRecordType.PAUSE_STARTED, playerId: currentPlayer.id, time: from},
+            {type: TimeRecordType.PAUSE_ENDED, playerId: currentPlayer.id, time: to},
+        );
     }
 }

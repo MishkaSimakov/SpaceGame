@@ -1,4 +1,15 @@
-import {
+import Actions from "@common/actions/Main";
+import {isMainModule, ModuleType} from "@common/modules/Module";
+import {SpaceshipGetters} from "@common/getters/Spaceship";
+import Vector2 from "@common/Vector2";
+
+import {ListenersContainer} from "./ListenersContainer";
+import Color from "../../graphics/Color";
+import {COLORS} from "../../graphics/constants";
+import {Button} from "../../graphics/shapes/Button";
+import {Boundary} from "../../graphics/CountBoundary";
+
+const {
     chooseCardsForRepairSpaceshipResponse,
     chooseCardsToDiscardAndTakeAnotherResponse,
     chooseCardToStealResponse,
@@ -12,16 +23,7 @@ import {
     chooseTwoSolarPanelsToDestroyResponse,
     permuteTopThreeEventCardsResponse,
     useEventCardToDealDamageResponse
-} from "@common/actions/Main";
-import {isMainModule, ModuleType} from "@common/modules/Module";
-import {SpaceshipGetters} from "@common/getters/Spaceship";
-import Vector2 from "@common/Vector2";
-
-import {ListenersContainer} from "./ListenersContainer";
-import Color from "../../graphics/Color";
-import {COLORS} from "../../graphics/constants";
-import {Button} from "../../graphics/shapes/Button";
-import {Boundary} from "../../graphics/CountBoundary";
+} = Actions;
 
 export const eventCardsListeners: ListenersContainer = {
     async choosePlayerToStealCardRequest({options}, {game}) {

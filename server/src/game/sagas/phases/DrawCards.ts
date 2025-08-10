@@ -1,14 +1,5 @@
 import {put, select} from "../Effects";
-import {
-    changePlayerEnergy,
-    chooseCardTypeRequest,
-    chooseCardTypeResponse,
-    drawAdditionalModuleCardRequest,
-    drawAdditionalModuleCardResponse,
-    drawAnotherEventCardRequest,
-    drawAnotherEventCardResponse, pushCardsToDiscard,
-    pushCardsToHand,
-} from "@common/actions/Main";
+import Actions from "@common/actions/Main";
 import GameState from "../../GameState";
 import {StateGetters} from "@common/getters/State";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
@@ -18,6 +9,15 @@ import {popOneCard} from "../components/PopCards";
 import {showCards} from "../components/ShowCards";
 import {Event} from "@common/events/Event";
 import {performEvent} from "../components/PerformEvent";
+
+const {
+    changePlayerEnergy,
+    chooseCardTypeRequest,
+    drawAdditionalModuleCardRequest,
+    drawAnotherEventCardRequest,
+    pushCardsToDiscard,
+    pushCardsToHand,
+} = Actions;
 
 export function* canDrawAnotherEventCard() {
     const state = yield* select();
@@ -38,7 +38,7 @@ export function* drawCards() {
     const state = yield* select();
     const currentPlayer = StateGetters.currentPlayer(state);
 
-    const {chosenType} = yield* request(chooseCardTypeRequest(currentPlayer.id), chooseCardTypeResponse);
+    const {chosenType} = yield* request(chooseCardTypeRequest(currentPlayer.id), 'chooseCardTypeResponse');
 
     if (chosenType === "module") {
         let drawAdditionalCard = false;
@@ -52,7 +52,7 @@ export function* drawCards() {
             if (canDrawAdditionalModuleCard(state)) {
                 drawAdditionalCard = yield* request(
                     drawAdditionalModuleCardRequest(currentPlayer),
-                    drawAdditionalModuleCardResponse
+                    'drawAdditionalModuleCardResponse'
                 );
 
                 if (drawAdditionalCard) {
@@ -78,7 +78,7 @@ export function* drawCards() {
             if (yield* canDrawAnotherEventCard()) {
                 drawAnotherCard = yield* request(
                     drawAnotherEventCardRequest(currentPlayer.id),
-                    drawAnotherEventCardResponse
+                    'drawAnotherEventCardResponse'
                 );
 
                 if (drawAnotherCard) {

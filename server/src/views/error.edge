@@ -1,24 +1,9 @@
-<!doctype html>
-<html lang="ru">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Космические баталии</title>
+@include('partials/header')
 
-    <link href="/css/bootstrap.css" rel="stylesheet">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-<body style="height: 100vh;">
+<div class="my-auto fw-bolder">
+    <h1>Тук-тук! Кто там? Ошибка {{ code }}!</h1>
 
-<div class="text-center h-100 d-flex flex-column">
-    @include('partials/header')
-
-    <div class="my-auto fw-bolder">
-        <h1>Тук-тук! Кто там? Ошибка {{ code }}!</h1>
-
-        <p class="text-secondary">шутки кончились, что-то пошло не так</p>
-    </div>
+    <p class="text-secondary">шутки кончились, что-то пошло не так</p>
 </div>
 
-</body>
-</html>
+@include('partials/footer')

@@ -2,15 +2,17 @@ import Player from "@common/Player";
 import {ModuleType} from "@common/modules/Module";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
 import {StateGetters} from "@common/getters/State";
-import {
+import Actions from "@common/actions/Reducer";
+import Vector2 from "@common/Vector2";
+
+import {put, select} from "../Effects";
+
+const {
     changeModuleHealth, changePlayerEnergy, deactivateProtectorIfActive,
     playerLost,
     pushCardsToDiscard, pushCardsToHand,
     removeSpaceshipModules
-} from "@common/actions/Reducer";
-import Vector2 from "@common/Vector2";
-
-import {put, select} from "../Effects";
+} = Actions;
 
 type DamageType =
     | { type: "EventCard" }

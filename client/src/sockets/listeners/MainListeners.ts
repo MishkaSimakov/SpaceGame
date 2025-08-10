@@ -1,6 +1,10 @@
+import Actions from "@common/actions/Main";
+import {ModuleType} from "@common/modules/Module";
+
 import {COLORS} from "../../graphics/constants";
 import {ListenersContainer} from "./ListenersContainer";
-import {
+
+const {
     chooseCardTypeResponse,
     chooseModuleToRepairResponse,
     choosePlayerForAttackResponse,
@@ -9,9 +13,7 @@ import {
     drawAnotherEventCardResponse,
     rebuildSpaceshipResponse,
     useModuleSecondTimeResponse
-} from "@common/actions/Main";
-import {ModuleType} from "@common/modules/Module";
-
+} = Actions;
 
 export const mainListeners: ListenersContainer = {
     async rebuildSpaceshipRequest({}, {game}) {

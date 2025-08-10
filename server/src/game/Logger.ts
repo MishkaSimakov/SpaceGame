@@ -12,12 +12,12 @@ export class Logger {
         this.ensureLogDirectoryExists();
     }
 
-    handleAction(action: Action) {
+    handleAction(action: Action<string, any, any>) {
         console.log("📝 logger recorded:", action.type);
         fs.appendFileSync(this.logFilepath, JSON.stringify(action) + '\n');
     }
 
-    getPastActions(): Action[] {
+    getPastActions(): Action<string, any, any>[] {
         const content = fs.readFileSync(this.logFilepath).toString().split("\n");
 
         return content

@@ -1,6 +1,6 @@
 import {shuffleArray} from "./Random";
 import {put, select} from "../Effects";
-import {initGameState} from "@common/actions/Reducer";
+import Actions from "@common/actions/Reducer";
 
 export function* init() {
     const state = yield* select();
@@ -25,5 +25,5 @@ export function* init() {
         player.spaceship.modules.push(mainModule);
     }
 
-    yield* put(initGameState(state));
+    yield* put(Actions.initGameState(state));
 }

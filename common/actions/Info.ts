@@ -1,17 +1,13 @@
 import Player, {PlayerId} from "../Player";
 import Module from "../modules/Module";
 import {Event} from "../events/Event";
+import {action} from "./ActionConstructors";
 
-export const showCardsInfo = (player: Player, cardsReceiver: Player, cards: (Module | Event)[]) => {
-    return {
-        type: 'showCardsInfo',
-        payload: {player: player.id, cardsReceiver: cardsReceiver.id, cards}
-    }
-}
-
-export const sendPlayerLostInfo = (playerId: PlayerId) => {
-    return {
-        type: 'sendPlayerLostInfo',
-        payload: {player: playerId}
-    };
-}
+export default {
+    ...action('showCardsInfo', (player: Player, cardsReceiver: Player, cards: (Module | Event)[]) => {
+        return {payload: {player: player.id, cardsReceiver: cardsReceiver.id, cards}}
+    }),
+    ...action('sendPlayerLostInfo', (playerId: PlayerId) => {
+        return {payload: {player: playerId}};
+    })
+};

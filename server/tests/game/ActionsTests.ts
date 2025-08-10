@@ -1,16 +1,16 @@
 import {test} from "uvu";
+import * as assert from "node:assert";
+
+import Player from "@common/Player";
+import {EventTypes} from "@common/events/Event";
+import Actions from "@common/actions/Main";
+
 import GameState from "../../src/game/GameState";
 import ActionsBus from "../../src/game/ActionsBus";
 import {SagaRunner} from "../../src/game/sagas/SagaRunner";
 import {beforeTurn} from "../../src/game/sagas/phases/BeforeTurn";
-import Player from "@common/Player";
-import {EventTypes} from "@common/events/Event";
-import {
-    beginFight,
-    choosePlayerForAttackRequest,
-    choosePlayerForAttackResponse, disposeCardsFromPlayerHand,
-} from "@common/actions/Main";
-import * as assert from "node:assert";
+
+const {choosePlayerForAttackResponse} = Actions;
 
 test('attackLaterEventCard', async () => {
     const state = new GameState();
@@ -42,14 +42,14 @@ test('attackLaterEventCard', async () => {
 
     let testPhase = TestPhase.INIT;
 
-    bus.on(choosePlayerForAttackRequest, () => {
+    bus.on("choosePlayerForAttackRequest", () => {
         assert.equal(testPhase, TestPhase.INIT);
         testPhase = TestPhase.CHOOSE_VICTIM_REQUESTED;
 
         bus.emit(choosePlayerForAttackResponse(1));
     });
 
-    bus.on(disposeCardsFromPlayerHand, (action) => {
+    bus.on("disposeCardsFromPlayerHand", (action) => {
         assert.equal(testPhase, TestPhase.CHOOSE_VICTIM_REQUESTED);
         testPhase = TestPhase.CARD_DISPOSED;
 
@@ -57,7 +57,7 @@ test('attackLaterEventCard', async () => {
         assert.deepEqual(action.payload.indices, [0]);
     });
 
-    bus.on(beginFight, (action) => {
+    bus.on("beginFight", (action) => {
         assert.equal(testPhase, TestPhase.CARD_DISPOSED);
         testPhase = TestPhase.FIGHT_STARTED;
 

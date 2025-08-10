@@ -3,7 +3,7 @@ import {ActionsBusProxy} from "./ActionsBusProxy";
 import {
     AllEffect,
     Effect,
-    EmptyObject,
+    EmptyObject, FindEffectByType,
     NewTaskEffect,
     PutEffect,
     SagaGenerator,
@@ -11,7 +11,6 @@ import {
     TakeEffect
 } from "./Effects";
 import {Action} from "@common/actions/Action";
-import * as console from "node:console";
 
 type Callback<R> = {
     (result: R): void,
@@ -19,21 +18,21 @@ type Callback<R> = {
 };
 
 type EffectsPerformers = {
-    [key in Effect["type"]]: {
-        (effect: any, callback: Callback<any>, services: {
+    [Key in Effect["input"]["type"]]: {
+        (effect: FindEffectByType<Key>["input"], callback: Callback<FindEffectByType<Key>["output"]>, services: {
             state: GameState,
             bus: ActionsBusProxy,
-            pushTask: (saga: () => SagaGenerator) => void
+            pushTask: (saga: () => SagaGenerator<any>) => void
         }): void,
         cancel?: () => void;
     };
 };
 
 export const effectPerformers: EffectsPerformers = {
-    select(effect: SelectEffect, cb: Callback<GameState>, {state}) {
+    select(effect, cb, {state}) {
         cb(structuredClone(state));
     },
-    take(effect: TakeEffect, cb: Callback<Action>, {bus}) {
+    take(effect, cb, {bus}) {
         let cancelled = false;
 
         bus.once(effect.name, (payload: any) => {
@@ -46,16 +45,18 @@ export const effectPerformers: EffectsPerformers = {
             cancelled = true;
         };
     },
-    put(effect: PutEffect, cb: Callback<EmptyObject>, {bus}) {
+    put(effect, cb, {bus}) {
         bus.emit(effect.action);
         cb({});
     },
-    all(effect: AllEffect, cb: Callback<any>, services) {
+    all(effect, cb, services) {
         const result = {};
 
         for (const key of Object.keys(effect.effects)) {
-            const child = effect.effects[key].next().value as Effect;
+            const child = effect.effects[key].next().value as Effect["input"];
 
+            // TODO: check later
+            // @ts-ignore
             effectPerformers[child.type](child, (childPayload: any) => {
                 // capture `key` variable
                 const keyCopy = key;
@@ -71,7 +72,7 @@ export const effectPerformers: EffectsPerformers = {
             // TODO
         };
     },
-    newTask(effect: NewTaskEffect, cb: Callback<EmptyObject>, {pushTask}) {
+    newTask(effect, cb, {pushTask}) {
         pushTask(effect.task);
         cb({});
     }

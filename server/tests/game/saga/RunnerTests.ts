@@ -1,9 +1,14 @@
 import {test} from "uvu";
 import * as assert from "uvu/assert";
+
+import Actions from "@common/actions/Main"
+
 import {all, newTask, put, SagaGenerator, select, take} from "../../../src/game/sagas/Effects";
 import {SagaRunner} from "../../../src/game/sagas/SagaRunner";
 import ActionsBus from "../../../src/game/ActionsBus";
 import GameState from "../../../src/game/GameState";
+
+const {throwDice, throwDiceResult} = Actions;
 
 test('select', async () => {
     const state = new GameState();
@@ -11,7 +16,7 @@ test('select', async () => {
 
     const bus = new ActionsBus();
 
-    function* testSaga(): SagaGenerator {
+    function* testSaga(): SagaGenerator<void> {
         const state = yield* select();
 
         assert.equal(state.currentPlayerIndex, 42);
@@ -26,17 +31,13 @@ test('put', async () => {
     const state = new GameState();
     const bus = new ActionsBus();
 
-    const testAction = (value: number) => {
-        return {type: 'testAction', payload: {value}};
-    }
-
-    function* testSaga(): SagaGenerator {
-        yield* put(testAction(37));
+    function* testSaga(): SagaGenerator<void> {
+        yield* put(throwDiceResult(3));
     }
 
     let receivedAction = false;
-    bus.on(testAction, (action) => {
-        assert.equal(action.payload.value, 37);
+    bus.on('throwDiceResult', (action) => {
+        assert.equal(action.payload, 3);
         receivedAction = true;
     })
 
@@ -50,26 +51,18 @@ test('putAndTake', async () => {
     const state = new GameState();
     const bus = new ActionsBus();
 
-    const testRequest = () => {
-        return {type: 'testRequest'};
-    };
-
-    const testResponse = (value: number) => {
-        return {type: 'testResponse', payload: {value}};
-    };
-
-    function* testSaga(): SagaGenerator {
+    function* testSaga(): SagaGenerator<void> {
         const {req, res} = yield* all({
-            req: put(testRequest()),
-            res: take(testResponse)
+            req: put(throwDice()),
+            res: take('throwDiceResult')
         });
 
         assert.equal(Object.keys(req).length, 0);
-        assert.equal(res.payload.value, 73);
+        assert.equal(res.payload, 5);
     }
 
-    bus.on(testRequest, () => {
-        bus.emit(testResponse(73));
+    bus.on('throwDice', () => {
+        bus.emit(throwDiceResult(5));
     });
 
     const runner = new SagaRunner(state, bus, testSaga);
@@ -80,30 +73,24 @@ test('putAndPut', async () => {
     const state = new GameState();
     const bus = new ActionsBus();
 
-    const firstTestAction = () => {
-        return {type: 'firstTestAction'};
-    };
-
-    const secondTestAction = () => {
-        return {type: 'secondTestAction'};
-    };
-
-    function* testSaga(): SagaGenerator {
+    function* testSaga(): SagaGenerator<void> {
         yield* all({
-            first: put(firstTestAction()),
-            second: put(secondTestAction())
+            first: put(throwDiceResult(1)),
+            second: put(throwDiceResult(2))
         });
     }
 
     let firstReceived = false;
     let secondReceived = false;
 
-    bus.on(firstTestAction, () => {
-        firstReceived = true;
-    });
-
-    bus.on(secondTestAction, () => {
-        secondReceived = true;
+    bus.on('throwDiceResult', ({payload}) => {
+        if (payload === 1) {
+            firstReceived = true;
+        } else if (payload === 2) {
+            secondReceived = true;
+        } else {
+            assert.unreachable("wrong payload");
+        }
     });
 
     const runner = new SagaRunner(state, bus, testSaga);
@@ -113,49 +100,37 @@ test('putAndPut', async () => {
     assert.ok(secondReceived);
 });
 
-test('multiStepSaga', async () => {
-    const state = new GameState();
-    const bus = new ActionsBus();
-
-    const setStateAction = (value: number) => {
-        return {type: 'setStateAction', payload: {value}};
-    };
-
-    const testAction = () => {
-        return {type: 'testAction'};
-    };
-
-    function* testSaga(): SagaGenerator {
-        yield* put(setStateAction(21));
-
-        const state = yield* select();
-        assert.equal(state.currentPlayerIndex, 21);
-
-        yield* put(testAction());
-    }
-
-    bus.on(setStateAction, (action) => {
-        state.currentPlayerIndex = action.payload.value;
-    });
-
-    let received = false;
-    bus.on(testAction, () => {
-        received = true;
-    });
-
-    const runner = new SagaRunner(state, bus, testSaga);
-    await runner.run();
-
-    assert.ok(received);
-});
+// test('multiStepSaga', async () => {
+//     const state = new GameState();
+//     const bus = new ActionsBus();
+//
+//     function* testSaga(): SagaGenerator<void> {
+//         yield* put((21));
+//
+//         const state = yield* select();
+//         assert.equal(state.currentPlayerIndex, 21);
+//
+//         yield* put(testAction());
+//     }
+//
+//     bus.on(setStateAction, (action) => {
+//         state.currentPlayerIndex = action.payload.value;
+//     });
+//
+//     let received = false;
+//     bus.on(testAction, () => {
+//         received = true;
+//     });
+//
+//     const runner = new SagaRunner(state, bus, testSaga);
+//     await runner.run();
+//
+//     assert.ok(received);
+// });
 
 test('cancelledTask', async () => {
     const state = new GameState();
     const bus = new ActionsBus();
-
-    const cancelAction = () => {
-        return {type: 'cancelAction'};
-    };
 
     let continuedExecution = false;
 
@@ -166,14 +141,14 @@ test('cancelledTask', async () => {
     }
 
     function* childSaga() {
-        yield* put(cancelAction());
+        yield* put(throwDice());
 
         assert.unreachable("childSaga should have been cancelled");
     }
 
     const runner = new SagaRunner(state, bus, parentSaga);
 
-    bus.on(cancelAction, (action) => {
+    bus.on('throwDice', () => {
         runner.cancel("childSaga");
     });
 

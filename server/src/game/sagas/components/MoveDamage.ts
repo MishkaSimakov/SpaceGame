@@ -2,9 +2,10 @@ import {MoveDamageReason} from "@common/Types";
 import {put, select} from "../Effects";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
 import {request} from "./Request";
-import {chooseModuleToMoveDamageRequest, chooseModuleToMoveDamageResponse} from "@common/actions/EventCards";
-import {changeModuleHealth, changePlayerEnergy} from "@common/actions/Reducer";
+import Actions from "@common/actions/Main"
 import {damageModule} from "./DamageModule";
+
+const {chooseModuleToMoveDamageRequest, changePlayerEnergy, changeModuleHealth} = Actions;
 
 const reasonDescription = {
     [MoveDamageReason.MainModule]: "move damage by main module",
@@ -21,7 +22,7 @@ export function* moveDamage(reason: MoveDamageReason, energyCost: number, movedD
 
     const moveDamageData = yield* request(
         chooseModuleToMoveDamageRequest(currentPlayer, reason),
-        chooseModuleToMoveDamageResponse
+        'chooseModuleToMoveDamageResponse'
     );
 
     const {from, to} = moveDamageData;

@@ -1,11 +1,14 @@
-import GameState from "../../src/game/GameState";
-import Player from "@common/Player";
+import {Action} from "@common/actions/Action";
 import Spaceship from "@common/Spaceship";
+import Player from "@common/Player";
 import {GameSettings} from "@common/GameSettings";
+import Actions from "@common/actions/Main"
+
+import GameState from "../../src/game/GameState";
 import ActionsBus from "../../src/game/ActionsBus";
-import {Action, ActionOf} from "@common/actions/Action";
-import {reducers} from "game/reducers/Main";
-import {shuffle, shuffleResult, throwDice, throwDiceResult} from "@common/actions/Random";
+import {reducers} from "../../src/game/reducers/Main";
+
+const {throwDiceResult, shuffleResult} = Actions;
 
 export function fakeGameState(playersCount: number): GameState {
     const state = new GameState();
@@ -36,7 +39,7 @@ export function fakeGameState(playersCount: number): GameState {
 }
 
 export function attachReducers(busRef: ActionsBus, stateRef: GameState) {
-    busRef.on('*', (action: Action) => {
+    busRef.on('*', (action: Action<string, any, any>) => {
         if (action.type in reducers) {
             let copy = structuredClone(stateRef);
             reducers[action.type](copy, action.payload);
@@ -47,7 +50,7 @@ export function attachReducers(busRef: ActionsBus, stateRef: GameState) {
 }
 
 export function attachTerminalLogger(busRef: ActionsBus) {
-    busRef.on('*', (action: Action) => {
+    busRef.on('*', (action: Action<string, any, any>) => {
         console.log("📢", action.type, action);
     });
 }
@@ -56,13 +59,13 @@ export function attachFakeRandomizer(busRef: ActionsBus) {
     const diceCalls = {value: 0};
     const shuffleCalls = {value: 0};
 
-    busRef.on(throwDice, () => {
+    busRef.on('throwDice', () => {
         diceCalls.value += 1;
 
         busRef.emit(throwDiceResult(1));
     });
 
-    busRef.on(shuffle, (action: ActionOf<typeof shuffle>) => {
+    busRef.on('shuffle', (action) => {
         shuffleCalls.value += 1;
 
         const result = new Array(action.payload.length);

@@ -1,11 +1,15 @@
-import {Action, ActionConstructor, ActionOf, ActionStub} from "@common/actions/Action";
-import {all, put, take} from "../Effects";
+import {Action} from "@common/actions/Action";
+import Actions from "@common/actions/Main"
 
-export function* request<Req extends ActionStub, Res extends ActionConstructor>(request: Req, response: Res) {
+import {all, Effect, put, take} from "../Effects";
+
+type ActionPayload<T extends keyof typeof Actions> = ReturnType<(typeof Actions)[T]>["payload"];
+
+export function* request<Req extends Action<string, any, any>, Res extends keyof typeof Actions>(request: Req, response: Res): Generator<Effect["input"], ActionPayload<Res>, any> {
     const {req, res} = yield* all({
         req: put(request),
         res: take(response)
     });
 
-    return (res as ActionOf<Res>).payload;
+    return res.payload;
 }

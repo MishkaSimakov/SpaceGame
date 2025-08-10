@@ -4,9 +4,10 @@ import {GameSettings} from "@common/GameSettings";
 import App from "../../../App";
 import {Game as GameDBEntity} from "../../../entity/game";
 import {Logger} from "../../../game/Logger";
+import {AuthenticatedRequest} from "../../middleware/auth";
 
 
-export const create = async (req: Request, res: Response) => {
+export const create = async (req: AuthenticatedRequest, res: Response) => {
     try {
         const usersIds = req.body.users;
         const settings = req.body.settings as GameSettings;
@@ -25,7 +26,7 @@ export const create = async (req: Request, res: Response) => {
             return res.status(400).json({error: "one of users ids is invalid"});
         }
 
-        const gameId = await App.getInstance().gamesManager.createGame(name, selectedUsers, settings);
+        const gameId = await App.getInstance().gamesManager.createGame(name, req.user, selectedUsers, settings);
 
         return res.json({gameId: gameId});
     } catch (error) {

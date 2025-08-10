@@ -4,7 +4,7 @@ import {attachReducers, fakeGameState} from "../Utils";
 import {SagaRunner} from "../../../src/game/sagas/SagaRunner";
 import ActionsBus from "../../../src/game/ActionsBus";
 import {discardCards} from "../../../src/game/sagas/phases/DiscardCards";
-import {discardCardsRequest, discardCardsResponse} from "@common/actions/Main";
+import Actions from "@common/actions/Main";
 
 
 test('doesntDiscardWhenNotEnoughCards', async () => {
@@ -19,7 +19,7 @@ test('doesntDiscardWhenNotEnoughCards', async () => {
 
     const bus = new ActionsBus();
 
-    bus.on(discardCardsRequest, () => {
+    bus.on('discardCardsRequest', () => {
         assert.fail("player must not be asked to discard cards");
     });
 
@@ -49,8 +49,8 @@ test('discardCardsWhenThereAreTooMany', async () => {
     const bus = new ActionsBus();
 
     attachReducers(bus, state);
-    bus.on(discardCardsRequest, () => {
-        bus.emit(discardCardsResponse([1, 2, 3, 4]));
+    bus.on('discardCardsRequest', () => {
+        bus.emit(Actions.discardCardsResponse([1, 2, 3, 4]));
     });
 
     const runner = new SagaRunner(state, bus, discardCards);

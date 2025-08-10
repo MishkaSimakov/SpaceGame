@@ -19,6 +19,9 @@ export class Game extends BaseEntity {
     @Column({nullable: false})
     name: string;
 
+    @ManyToOne(type => User, {nullable: false})
+    owner: User;
+
     @ManyToOne(type => User, {nullable: true})
     winner: User;
 
@@ -31,4 +34,8 @@ export class Game extends BaseEntity {
 
     @Column({nullable: true, type: "timestamptz"})
     finishedAt: Date;
+
+    isFinished(): boolean {
+        return !!this.finishedAt;
+    }
 }

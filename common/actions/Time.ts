@@ -1,10 +1,6 @@
-export const time = () => {
-    return {type: 'time'};
-}
+import {action} from "./ActionConstructors";
 
-export const timeResult = (result: number) => {
-    return {
-        type: 'timeResult',
-        payload: result
-    };
-}
+export default {
+    ...action('time'),
+    ...action('timeResult', (result: number) => ({payload: result}))
+};

@@ -1,6 +1,6 @@
 import {put, select} from "../Effects";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
-import {changePlayerEnergy} from "@common/actions/Main";
+import Actions from "@common/actions/Main";
 import {StateGetters} from "@common/getters/State";
 
 export function* collectEnergy() {
@@ -13,6 +13,6 @@ export function* collectEnergy() {
     );
 
     yield* put(
-        changePlayerEnergy(currentPlayer, newEnergy - currentPlayer.energy, "before turn")
+        Actions.changePlayerEnergy(currentPlayer, newEnergy - currentPlayer.energy, "before turn")
     );
 }

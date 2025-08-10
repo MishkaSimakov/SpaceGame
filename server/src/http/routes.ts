@@ -6,6 +6,7 @@ import * as GameController from './controllers/GameController';
 
 import * as ApiUserController from './controllers/api/UserController';
 import * as ApiGameController from './controllers/api/GameController';
+import {gameOwner} from "./middleware/GameOwner";
 
 function getUserRouter(): Router {
     const router = Router();
@@ -17,12 +18,13 @@ function getUserRouter(): Router {
     router.post('/register', UserController.register);
     router.get('/', auth, UserController.home);
 
-    router.get('/user/:id', UserController.showUserPage);
+    router.get('/user/:userId', UserController.showUserPage);
 
     router.get('/game/rules', GameController.showRules);
     router.get('/game/create', auth, GameController.showCreatePage);
     router.post('/game/create', auth, GameController.create);
-    router.get('/game/:id', auth, GameController.joinGame);
+    router.get('/game/:gameId', auth, GameController.joinGame);
+    router.get('/game/:gameId/status', auth, gameOwner, GameController.showStatusPage);
 
     return router;
 }

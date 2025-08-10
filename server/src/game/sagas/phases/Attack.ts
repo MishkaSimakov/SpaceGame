@@ -1,20 +1,22 @@
 import {AttackReason} from "@common/Types";
 import {ModuleType} from "@common/modules/Module";
 import {MainModuleType} from "@common/modules/MainModule";
-import {put, select} from "../Effects";
 import {StateGetters} from "@common/getters/State";
 import {PlayerGetters} from "@common/getters/Player";
+import Actions from "@common/actions/Main";
+import {SpaceshipGetters} from "@common/getters/Spaceship";
+
+import {put, select} from "../Effects";
 import {request} from "../components/Request";
-import {
+import {fight} from "../components/Fight";
+
+const {
     beginFight,
     changePlayerEnergy,
     choosePlayerForAttackRequest,
-    choosePlayerForAttackResponse, playerUseModuleSecondTime,
+    playerUseModuleSecondTime,
     useModuleSecondTimeRequest,
-    useModuleSecondTimeResponse
-} from "@common/actions/Main";
-import {SpaceshipGetters} from "@common/getters/Spaceship";
-import {fight} from "../components/Fight";
+} = Actions;
 
 export function* attack() {
     let state = yield* select();
@@ -26,7 +28,7 @@ export function* attack() {
 
     const {victim} = yield* request(
         choosePlayerForAttackRequest(currentPlayer, AttackReason.AttackModule),
-        choosePlayerForAttackResponse
+        'choosePlayerForAttackResponse'
     );
 
     if (!victim) {
@@ -48,7 +50,7 @@ export function* attack() {
         && currentPlayer.energy >= energyCost * 2) {
         const useSecondTime = yield* request(
             useModuleSecondTimeRequest(currentPlayer, ModuleType.AttackModule),
-            useModuleSecondTimeResponse
+            'useModuleSecondTimeResponse'
         );
 
         if (!useSecondTime) return;
@@ -58,7 +60,7 @@ export function* attack() {
 
         const {victim} = yield* request(
             choosePlayerForAttackRequest(currentPlayer, AttackReason.UsingAttackModuleSecondTime),
-            choosePlayerForAttackResponse
+            'choosePlayerForAttackResponse'
         );
 
         if (!victim) {

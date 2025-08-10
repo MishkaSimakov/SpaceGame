@@ -3,7 +3,7 @@ import initRoutes from "./routes";
 import express from 'express';
 import http, {Server as HTTPServer} from 'http';
 
-import {Server as SocketServer, Socket} from "socket.io";
+import {Server as SocketServer} from "socket.io";
 
 import cors from "cors";
 import path from "path";
@@ -11,6 +11,10 @@ import serveStatic from "serve-static";
 import edge from "express-edge";
 import cookieParser from 'cookie-parser';
 import {Express} from "express";
+import session from "express-session";
+import flash from "express-flash";
+
+import * as process from "node:process";
 
 export default class ServerManager {
     server: Express;
@@ -26,6 +30,13 @@ export default class ServerManager {
         this.staticBasePath = path.join(__dirname, '../../../client/dist');
 
         this.server = express();
+
+        this.server.use(session({
+            secret: process.env.SESSION_SECRET_KEY,
+            resave: false,
+            saveUninitialized: true
+        }));
+        this.server.use(flash());
 
         this.server.use(cookieParser());
         this.server.use(edge);

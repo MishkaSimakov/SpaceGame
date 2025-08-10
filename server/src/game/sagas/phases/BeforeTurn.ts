@@ -1,21 +1,22 @@
 import {isModule} from "@common/modules/Module";
 import {EventTypes} from "@common/events/Event";
+import Actions from "@common/actions/Main";
 
 import {fight} from "../components/Fight";
 import {put, select} from "../Effects";
-import {
-    beginFight,
-    changePlayerEnergy,
-    choosePlayerForAttackRequest,
-    choosePlayerForAttackResponse,
-    disposeCardsFromPlayerHand,
-} from "@common/actions/Main";
 import {AttackReason, MoveDamageReason} from "@common/Types";
 import {request} from "../components/Request";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
 import {MainModuleType} from "@common/modules/MainModule";
 import {moveDamage} from "../components/MoveDamage";
 import {StateGetters} from "@common/getters/State";
+
+const {
+    beginFight,
+    changePlayerEnergy,
+    choosePlayerForAttackRequest,
+    disposeCardsFromPlayerHand,
+} = Actions;
 
 function* tryAttackByEventCard() {
     const state = yield* select();
@@ -31,7 +32,7 @@ function* tryAttackByEventCard() {
     if (attackLaterCardIndex !== -1) {
         const {victim} = yield* request(
             choosePlayerForAttackRequest(currentPlayer, AttackReason.AttackLaterEventCard),
-            choosePlayerForAttackResponse
+            'choosePlayerForAttackResponse'
         );
 
         if (victim) {
@@ -50,7 +51,7 @@ function* tryAttackByMainModule() {
         && currentPlayer.energy >= state.settings.energyToAttackByMainModule) {
         const {victim} = yield* request(
             choosePlayerForAttackRequest(currentPlayer, AttackReason.MainModule),
-            choosePlayerForAttackResponse
+            'choosePlayerForAttackResponse'
         );
 
         if (victim) {

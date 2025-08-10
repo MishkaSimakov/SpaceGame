@@ -1,10 +1,12 @@
 import {ListenersContainer} from "./ListenersContainer";
 
-import {showCardsToPlayersResponse} from "@common/actions/Main";
+import Actions from "@common/actions/Main";
 import {PlayerId} from "@common/Player";
 import Module from "@common/modules/Module";
 import {Event} from "@common/events/Event";
 import Game from "../../Game";
+
+const {showCardsToPlayersResponse} = Actions;
 
 async function showCards(player: PlayerId, cards: (Module | Event)[], game: Game) {
     const playerName = game.getPlayerById(player)?.name || player;

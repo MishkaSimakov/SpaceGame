@@ -79,6 +79,7 @@ export const home = async (req: AuthenticatedRequest, res: Response) => {
             games: {
                 winner: true,
                 players: true,
+                owner: true,
             }
         }
     });
@@ -98,7 +99,11 @@ export const home = async (req: AuthenticatedRequest, res: Response) => {
                 return {
                     id: game.id,
                     name: game.name,
-                    players: game.players.map(p => p.login),
+                    players: game.players.map(p => ({id: p.id, login: p.login})),
+                    owner: {
+                        id: game.owner.id,
+                        login: game.owner.login
+                    }
                 };
             }),
         archivedGames: user.games
@@ -118,7 +123,8 @@ export const home = async (req: AuthenticatedRequest, res: Response) => {
                         };
                     })
                 };
-            })
+            }),
+        error: req.flash('error')
     });
 };
 
@@ -155,21 +161,23 @@ export const showUserPage = async (req: Request, res: Response) => {
             id: user.id,
             login: user.login
         },
-        archivedGames: user.games?.map(game => {
-            return {
-                id: game.id,
-                name: game.name,
-                winner: {
-                    id: game.winner.id,
-                    login: game.winner.login
-                },
-                players: game.players.map(p => {
-                    return {
-                        id: p.id,
-                        login: p.login
-                    };
-                })
-            };
-        }) || []
+        archivedGames: user.games
+            ?.filter(game => game.isFinished())
+            .map(game => {
+                return {
+                    id: game.id,
+                    name: game.name,
+                    winner: {
+                        id: game.winner.id,
+                        login: game.winner.login
+                    },
+                    players: game.players.map(p => {
+                        return {
+                            id: p.id,
+                            login: p.login
+                        };
+                    })
+                };
+            }) || []
     });
 }

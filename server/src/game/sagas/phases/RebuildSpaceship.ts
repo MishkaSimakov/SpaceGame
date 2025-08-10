@@ -1,18 +1,21 @@
-import {all, put, select, take} from "../Effects";
-import {
+import Actions from "@common/actions/Main";
+
+import {put, select} from "../Effects";
+import {StateGetters} from "@common/getters/State";
+import {request} from "../components/Request";
+
+const {
     rebuildSpaceshipRequest,
-    rebuildSpaceshipResponse,
     playerRebuiltSpaceship
-} from "@common/actions/Main";
+} = Actions;
 
 export function* rebuildSpaceship() {
-    const state = yield* select();
-    const currentPlayerId = state.players[state.currentPlayerIndex].id;
+    const currentPlayer = StateGetters.currentPlayer(yield* select());
 
-    const {req, res} = yield* all({
-        req: put(rebuildSpaceshipRequest(currentPlayerId)),
-        res: take(rebuildSpaceshipResponse)
-    });
+    const {newSpaceship, newHand} = yield* request(
+        rebuildSpaceshipRequest(currentPlayer),
+        'rebuildSpaceshipResponse'
+    );
 
-    yield* put(playerRebuiltSpaceship(currentPlayerId, res.payload.newSpaceship, res.payload.newHand));
+    yield* put(playerRebuiltSpaceship(currentPlayer, newSpaceship, newHand));
 }

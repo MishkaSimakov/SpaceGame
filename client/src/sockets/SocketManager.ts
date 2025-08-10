@@ -36,7 +36,7 @@ export default class SocketManager {
                 listeners[actionType](payload, {
                     game: this.game,
                     socket: this.socket
-                }).then((action: Action) => {
+                }).then((action: Action<string, any, any>) => {
                     if (actionType.endsWith('Request')) {
                         callback(action);
                     }

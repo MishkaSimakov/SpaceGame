@@ -1,16 +1,15 @@
 import {test} from "uvu";
 import * as assert from "node:assert";
-import {attachReducers, attachTerminalLogger, fakeGameState} from "../Utils";
-import ActionsBus from "../../../src/game/ActionsBus";
-import {discardCardsRequest} from "@common/actions/Main";
-import {SagaRunner} from "../../../src/game/sagas/SagaRunner";
-import {discardCards} from "../../../src/game/sagas/phases/DiscardCards";
-import {damageModule} from "../../../src/game/sagas/components/DamageModule";
+
 import {SpaceshipGetters} from "@common/getters/Spaceship";
-import SolarPanel from "@common/modules/SolarPanel";
 import Vector2 from "@common/Vector2";
 import Battery from "@common/modules/Battery";
 import {ModuleType} from "@common/modules/Module";
+
+import {attachReducers, fakeGameState} from "../Utils";
+import ActionsBus from "../../../src/game/ActionsBus";
+import {SagaRunner} from "../../../src/game/sagas/SagaRunner";
+import {damageModule} from "../../../src/game/sagas/components/DamageModule";
 
 
 test('simple', async () => {

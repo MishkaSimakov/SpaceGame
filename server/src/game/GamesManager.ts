@@ -78,7 +78,7 @@ export default class GamesManager {
         return {player, game};
     }
 
-    async createGame(name: string, users: User[], settings: GameSettings): Promise<string> {
+    async createGame(name: string, owner: User, users: User[], settings: GameSettings): Promise<string> {
         const gameId = await this.#createGameId();
         const logFilepath = path.join(__dirname, '/../../logs/', `game_${Date.now()}_${gameId}.txt`);
 
@@ -88,7 +88,8 @@ export default class GamesManager {
         gameDB.id = gameId;
         gameDB.name = name;
         gameDB.players = users;
-        gameDB.logFilepath = logFilepath
+        gameDB.logFilepath = logFilepath;
+        gameDB.owner = owner;
 
         await gameDB.save();
 

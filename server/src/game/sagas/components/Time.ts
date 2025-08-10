@@ -1,19 +1,21 @@
 import {PlayerId} from "@common/Player";
-import {time as timeAction, timeResult as timeResultAction} from "@common/actions/Time";
-import {
-    addTimeRecord as addTimeRecordAction,
-    changePlayerTime as changePlayerTimeAction
-} from "@common/actions/Reducer";
+import Actions from "@common/actions/Main"
 
 import GameState, {TimeRecord, TimeRecordType} from "../../GameState";
 import {all, put, select, take} from "../Effects";
 import * as assert from "node:assert";
 import {StateGetters} from "@common/getters/State";
 
+const {
+    time: timeAction,
+    addTimeRecord: addTimeRecordAction,
+    changePlayerTime: changePlayerTimeAction
+} = Actions;
+
 function* getTime() {
     const {res} = yield* all({
         req: put(timeAction()),
-        res: take(timeResultAction)
+        res: take('timeResult')
     });
 
     return res.payload as number;

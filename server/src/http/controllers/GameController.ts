@@ -3,8 +3,10 @@ import App from "../../App";
 import {User} from "../../entity/user";
 import {AuthenticatedRequest} from "../middleware/auth";
 import {GameSettings} from "@common/GameSettings";
+import {AuthenticatedGameRequest} from "../middleware/GameOwner";
+import {Game as GameDBEntity} from "../../entity/game";
 
-export const create = async (req: Request, res: Response) => {
+export const create = async (req: AuthenticatedRequest, res: Response) => {
     try {
         let users = await User.find();
 
@@ -43,7 +45,7 @@ export const create = async (req: Request, res: Response) => {
 
         gameSettings.seed = String(Math.random());
 
-        await App.getInstance().gamesManager.createGame(req.body.name, selectedUsers, gameSettings);
+        await App.getInstance().gamesManager.createGame(req.body.name, req.user, selectedUsers, gameSettings);
 
         return res.redirect('/');
     } catch (err) {
@@ -52,9 +54,8 @@ export const create = async (req: Request, res: Response) => {
     }
 };
 
-export const joinGame = async (req: AuthenticatedRequest, res: Response) => {
-    const gameId = req.url.split('/').pop();
-    const game = await App.getInstance().gamesManager.getGame(gameId);
+export const joinGame = async (req: AuthenticatedGameRequest, res: Response) => {
+    const game = await App.getInstance().gamesManager.getGame(req.params.gameId);
 
     const isPlayerInGame = !!game?.users.find(p => p.id === req.user.id);
     if (!game || !(isPlayerInGame || game.state.settings.isPublic)) {
@@ -64,7 +65,7 @@ export const joinGame = async (req: AuthenticatedRequest, res: Response) => {
     res.render('game/game');
 };
 
-export const showCreatePage = async (req: Request, res: Response) => {
+export const showCreatePage = async (req: AuthenticatedRequest, res: Response) => {
     const users = await User.createQueryBuilder("user")
         .select(['id', 'login'])
         .getRawMany();
@@ -76,4 +77,27 @@ export const showCreatePage = async (req: Request, res: Response) => {
 
 export const showRules = async (req: Request, res: Response) => {
     return res.render('game/rules');
+}
+
+export const showStatusPage = async (req: AuthenticatedGameRequest, res: Response) => {
+    const gameDBEntity = await GameDBEntity.findOne({
+        where: {
+            id: req.params.gameId,
+        },
+        relations: {
+            owner: true,
+            players: true,
+            winner: true
+        }
+    });
+
+    const gameInRAM = await App.getInstance().gamesManager.getGame(req.params.gameId);
+
+    return res.render('game/status', {
+        game: {
+            ...gameDBEntity,
+            settings: gameInRAM.state.settings,
+            actions: gameInRAM.logger.getPastActions()
+        }
+    });
 }

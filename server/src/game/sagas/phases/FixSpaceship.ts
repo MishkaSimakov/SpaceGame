@@ -2,18 +2,18 @@ import {ModuleType} from "@common/modules/Module";
 import {MainModuleType} from "@common/modules/MainModule";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
 import {StateGetters} from "@common/getters/State";
-import {
-    changeModuleHealth,
-    changePlayerEnergy,
-    chooseModuleToRepairRequest,
-    chooseModuleToRepairResponse,
-    playerUseModuleSecondTime,
-    useModuleSecondTimeRequest,
-    useModuleSecondTimeResponse
-} from "@common/actions/Main";
+import Actions from "@common/actions/Main";
 
 import {put, select} from "../Effects";
 import {request} from "../components/Request";
+
+const {
+    changeModuleHealth,
+    changePlayerEnergy,
+    chooseModuleToRepairRequest,
+    playerUseModuleSecondTime,
+    useModuleSecondTimeRequest,
+} = Actions;
 
 function* useRepairModule(repairModuleCost: number): Generator<any, boolean, any> {
     const state = yield* select();
@@ -21,7 +21,7 @@ function* useRepairModule(repairModuleCost: number): Generator<any, boolean, any
 
     const modulePosition = yield* request(
         chooseModuleToRepairRequest(currentPlayer),
-        chooseModuleToRepairResponse
+        'chooseModuleToRepairResponse'
     );
 
     if (modulePosition === undefined) {
@@ -45,7 +45,7 @@ function* tryUseModuleSecondTime(repairModuleCost: number) {
     ) {
         const useSecondTime = yield* request(
             useModuleSecondTimeRequest(currentPlayer, ModuleType.RepairModule),
-            useModuleSecondTimeResponse
+            'useModuleSecondTimeResponse'
         );
 
         if (!useSecondTime) return;

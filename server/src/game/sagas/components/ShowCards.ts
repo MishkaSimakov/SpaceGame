@@ -1,10 +1,12 @@
 import Module from "@common/modules/Module";
 import {Event} from "@common/events/Event";
 import Player from "@common/Player";
+import Actions from "@common/actions/Main";
+
 import {request} from "./Request";
-import {showCardsToPlayersRequest, showCardsToPlayersResponse} from "@common/actions/Main";
 import {put, select} from "../Effects";
-import {showCardsInfo} from "@common/actions/Info";
+
+const {showCardsToPlayersRequest, showCardsInfo} = Actions;
 
 export function* showCards(player: Player, cards: (Module | Event)[], showToOthers: boolean) {
     const state = yield* select();
@@ -21,6 +23,6 @@ export function* showCards(player: Player, cards: (Module | Event)[], showToOthe
 
     yield* request(
         showCardsToPlayersRequest(player, player, cards),
-        showCardsToPlayersResponse
+        'showCardsToPlayersResponse'
     );
 }

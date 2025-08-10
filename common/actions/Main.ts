@@ -5,178 +5,96 @@ import Module, {ModuleType} from "../modules/Module";
 import {Event} from "../events/Event";
 import Vector2 from "../Vector2";
 
-export * from "./Reducer";
-export * from "./Info";
-export * from "./EventCards";
+import {action, request} from "./ActionConstructors";
 
-export const choosePlayerForAttackRequest = (player: Player, reason: AttackReason) => {
-    return {
-        type: 'choosePlayerForAttackRequest',
-        payload: {player: player.id, reason}
-    };
-}
+import ReducerActions from "./Reducer";
+import InfoActions from "./Info";
+import EventCardsActions from "./EventCards";
+import RandomActions from "./Random";
+import TimeActions from "./Time";
 
-export const choosePlayerForAttackResponse = (victim: PlayerId) => {
-    return {
-        type: 'choosePlayerForAttackResponse',
-        payload: {victim}
-    };
-}
+export default {
+    ...ReducerActions,
+    ...InfoActions,
+    ...EventCardsActions,
+    ...RandomActions,
+    ...TimeActions,
 
-export const rebuildSpaceshipRequest = (player: PlayerId) => {
-    return {
-        type: 'rebuildSpaceshipRequest',
-        payload: {player}
-    };
-}
+    ...request(
+        'choosePlayerForAttack',
+        (player: Player, reason: AttackReason) => ({payload: {player: player.id, reason}}),
+        (victim: PlayerId) => ({payload: {victim}})
+    ),
 
-export const rebuildSpaceshipResponse = (newSpaceship: Spaceship, newHand: (Module | Event)[]) => {
-    return {
-        type: 'rebuildSpaceshipResponse',
-        payload: {newSpaceship, newHand}
-    };
-}
+    ...request(
+        'rebuildSpaceship',
+        (player: Player) => ({payload: {player: player.id}}),
+        (newSpaceship: Spaceship, newHand: (Module | Event)[]) => ({payload: {newSpaceship, newHand}})
+    ),
 
-export const chooseCardTypeRequest = (player: PlayerId) => {
-    return {
-        type: 'chooseCardTypeRequest',
-        payload: {player}
-    };
-}
+    ...request(
+        'chooseCardType',
+        (player: PlayerId) => ({payload: {player}}),
+        (chosenType: "event" | "module") => ({payload: {chosenType}})
+    ),
 
-export const chooseCardTypeResponse = (chosenType: "event" | "module") => {
-    return {
-        type: 'chooseCardTypeResponse',
-        payload: {chosenType}
-    };
-}
+    ...request(
+        'showCardsToPlayers',
+        (player: Player, cardsReceiver: Player, cards: (Module | Event)[]) =>
+            ({payload: {player: player.id, cardsReceiver: cardsReceiver.id, cards}}),
+        () => ({})
+    ),
 
-export const showCardsToPlayersRequest = (player: Player, cardsReceiver: Player, cards: (Module | Event)[]) => {
-    return {
-        type: 'showCardsToPlayersRequest',
-        payload: {player: player.id, cardsReceiver: cardsReceiver.id, cards}
-    }
-}
+    ...request(
+        'drawAdditionalModuleCard',
+        (player: Player) => ({payload: {player: player.id}}),
+        (draw: boolean) => ({payload: draw})
+    ),
 
-export const showCardsToPlayersResponse = () => {
-    return {type: 'showCardsToPlayersResponse'};
-}
+    ...request(
+        'drawAnotherEventCard',
+        (player: PlayerId) => ({payload: {player}}),
+        (draw: boolean) => ({payload: draw})
+    ),
 
-export const drawAdditionalModuleCardRequest = (player: Player) => {
-    return {
-        type: 'drawAdditionalModuleCardRequest',
-        payload: {player: player.id}
-    };
-}
+    ...request(
+        'discardCards',
+        (player: Player) => ({payload: {player: player.id}}),
+        (indexes: number[]) => ({payload: indexes})
+    ),
 
-export const drawAdditionalModuleCardResponse = (draw: boolean) => {
-    return {
-        type: 'drawAdditionalModuleCardResponse',
-        payload: draw,
-    };
-}
+    ...request(
+        'chooseProtector',
+        (player: Player) => ({payload: {player: player.id}}),
+        (position: Vector2 | undefined) => ({payload: position})
+    ),
 
-export const drawAnotherEventCardRequest = (player: PlayerId) => {
-    return {
-        type: 'drawAnotherEventCardRequest',
-        payload: {player}
-    };
-}
+    ...request(
+        'chooseWeaponAndTarget',
+        (player: Player, victim: Player) => ({payload: {player: player.id, victim: victim.id}}),
+        (targetPosition: Vector2, weaponPosition: Vector2) => ({payload: {targetPosition, weaponPosition}})
+    ),
 
-export const drawAnotherEventCardResponse = (draw: boolean) => {
-    return {
-        type: 'drawAnotherEventCardResponse',
-        payload: draw,
-    };
-}
+    ...request(
+        'useModuleSecondTime',
+        (player: Player, moduleType: ModuleType) => ({payload: {player: player.id, moduleType}}),
+        (use: boolean) => ({payload: use})
+    ),
 
-export const reducerUpdatedState = (delta: any) => {
-    return {
-        type: 'reducerUpdatedState',
-        payload: {delta}
-    };
-}
+    ...request(
+        'chooseTarget',
+        (player: Player, victim: Player) => ({payload: {player: player.id, victim: victim.id}}),
+        (position: Vector2) => ({payload: position})
+    ),
 
-export const discardCardsRequest = (player: Player) => {
-    return {
-        type: 'discardCardsRequest',
-        payload: {player: player.id}
-    };
-}
+    ...request(
+        'chooseModuleToRepair',
+        (player: Player) => ({payload: {player: player.id}}),
+        (position: Vector2 | undefined) => ({payload: position})
+    ),
 
-export const discardCardsResponse = (indexes: number[]) => {
-    return {
-        type: 'discardCardsResponse',
-        payload: indexes,
-    };
-}
-
-export const chooseProtectorRequest = (player: Player) => {
-    return {
-        type: 'chooseProtectorRequest',
-        payload: {player: player.id}
-    };
-}
-
-export const chooseProtectorResponse = (position: Vector2 | undefined) => {
-    return {
-        type: 'chooseProtectorResponse',
-        payload: position,
-    };
-}
-
-export const chooseWeaponAndTargetRequest = (player: Player, victim: Player) => {
-    return {
-        type: 'chooseWeaponAndTargetRequest',
-        payload: {player: player.id, victim: victim.id}
-    };
-}
-
-export const chooseWeaponAndTargetResponse = (targetPosition: Vector2, weaponPosition: Vector2) => {
-    return {
-        type: 'chooseWeaponAndTargetResponse',
-        payload: {targetPosition, weaponPosition},
-    };
-}
-
-export const useModuleSecondTimeRequest = (player: Player, moduleType: ModuleType) => {
-    return {
-        type: 'useModuleSecondTimeRequest',
-        payload: {player: player.id, moduleType}
-    };
-}
-
-export const useModuleSecondTimeResponse = (use: boolean) => {
-    return {
-        type: 'useModuleSecondTimeResponse',
-        payload: use,
-    };
-}
-
-export const chooseTargetRequest = (player: Player, victim: Player) => {
-    return {
-        type: 'chooseTargetRequest',
-        payload: {player: player.id, victim: victim.id}
-    };
-}
-
-export const chooseTargetResponse = (position: Vector2) => {
-    return {
-        type: 'chooseTargetResponse',
-        payload: position,
-    };
-}
-
-export const chooseModuleToRepairRequest = (player: Player) => {
-    return {
-        type: 'chooseModuleToRepairRequest',
-        payload: {player: player.id}
-    };
-}
-
-export const chooseModuleToRepairResponse = (position: Vector2 | undefined) => {
-    return {
-        type: 'chooseModuleToRepairResponse',
-        payload: position
-    };
-}
+    ...action(
+        'reducerUpdatedState',
+        (delta: any) => ({payload: {delta}})
+    )
+};

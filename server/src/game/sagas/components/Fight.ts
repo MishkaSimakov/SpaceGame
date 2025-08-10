@@ -1,42 +1,36 @@
-import {put, select} from "../Effects";
 import {PlayerGetters} from "@common/getters/Player";
 import {StateGetters} from "@common/getters/State";
-import {
-    activateProtector,
-    changePlayerEnergy,
-    deactivateProtectorIfActive,
-    endFight,
-    popCardFromPlayerHand,
-    shiftFightTurnToNextPlayer
-} from "@common/actions/Reducer";
 import {EventTypes, isEvent} from "@common/events/Event";
 import {MainModuleType} from "@common/modules/MainModule";
 import * as assert from "node:assert";
 import Vector2 from "@common/Vector2";
 import Player from "@common/Player";
 import {request} from "./Request";
-import {
-    chooseModuleToDamageByEventCardRequest,
-    chooseModuleToDamageByEventCardResponse,
-    chooseProtectorRequest,
-    chooseProtectorResponse,
-    chooseTargetRequest,
-    chooseTargetResponse,
-    chooseWeaponAndTargetRequest,
-    chooseWeaponAndTargetResponse,
-    RunawayType,
-    tryToRunawayRequest,
-    tryToRunawayResponse,
-    useEventCardToDealDamageRequest,
-    useEventCardToDealDamageResponse,
-    useModuleSecondTimeRequest,
-    useModuleSecondTimeResponse,
-} from "@common/actions/Main";
+import Actions from "@common/actions/Main";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
+import {RunawayType} from "@common/actions/EventCards";
+
+import {put, select} from "../Effects";
 import {damageModule} from "./DamageModule";
 import {dice} from "./Random";
 import {addTimeRecord} from "./Time";
 import {TimeRecordType} from "../../GameState";
+
+const {
+    chooseModuleToDamageByEventCardRequest,
+    chooseProtectorRequest,
+    chooseTargetRequest,
+    chooseWeaponAndTargetRequest,
+    tryToRunawayRequest,
+    useEventCardToDealDamageRequest,
+    useModuleSecondTimeRequest,
+    activateProtector,
+    changePlayerEnergy,
+    deactivateProtectorIfActive,
+    endFight,
+    popCardFromPlayerHand,
+    shiftFightTurnToNextPlayer
+} = Actions;
 
 function* getCombatants() {
     const state = yield* select();
@@ -53,14 +47,10 @@ function* getCombatants() {
     };
 }
 
-function* isVictimLost() {
-    return (yield* getCombatants()).victim.lose;
-}
-
 function* chooseProtectors(victim: Player) {
     const protectorPosition: Vector2 | undefined = yield* request(
         chooseProtectorRequest(victim),
-        chooseProtectorResponse
+        'chooseProtectorResponse'
     );
 
     if (protectorPosition) {
@@ -88,7 +78,7 @@ function* tryDamageByEventCard() {
 
     const willUse = yield* request(
         useEventCardToDealDamageRequest(attacker),
-        useEventCardToDealDamageResponse
+        'useEventCardToDealDamageResponse'
     );
 
     if (!willUse) {
@@ -97,7 +87,7 @@ function* tryDamageByEventCard() {
 
     const position = yield* request(
         chooseModuleToDamageByEventCardRequest(attacker, victim),
-        chooseModuleToDamageByEventCardResponse
+        'chooseModuleToDamageByEventCardResponse'
     );
 
     yield* put(popCardFromPlayerHand(attacker, damageLaterCardIndex));
@@ -111,7 +101,7 @@ function* askForRunawayViaDice() {
 
     const isTryingToRunaway = yield* request(
         tryToRunawayRequest(attacker, RunawayType.DICE),
-        tryToRunawayResponse
+        'tryToRunawayResponse'
     );
 
     if (!isTryingToRunaway) {
@@ -131,7 +121,7 @@ function* askForRunawayViaMainModule() {
 
     const isTryingToRunaway = yield* request(
         tryToRunawayRequest(attacker, RunawayType.MAIN_MODULE),
-        tryToRunawayResponse
+        'tryToRunawayResponse'
     );
 
     if (!isTryingToRunaway) {
@@ -149,7 +139,7 @@ function* damageByWeapon() {
     if (PlayerGetters.canDamage(attacker)) {
         const {weaponPosition, targetPosition} = yield* request(
             chooseWeaponAndTargetRequest(attacker, victim),
-            chooseWeaponAndTargetResponse
+            'chooseWeaponAndTargetResponse'
         );
 
         let weapon = SpaceshipGetters.getModuleByPosition(attacker.spaceship, weaponPosition);
@@ -166,13 +156,13 @@ function* damageByWeapon() {
         if (SpaceshipGetters.getMainModuleType(attacker.spaceship) === MainModuleType.UseModuleSecondTime && attacker.energy >= weapon.energyCost * 2) {
             let useSecondTime = yield* request(
                 useModuleSecondTimeRequest(attacker, weapon.type),
-                useModuleSecondTimeResponse
+                'useModuleSecondTimeResponse'
             );
 
             if (useSecondTime) {
                 const targetPosition = yield* request(
                     chooseTargetRequest(attacker, victim),
-                    chooseTargetResponse
+                    'chooseTargetResponse'
                 );
 
                 yield* damageModule(victim, targetPosition, weapon.strength, {type: "Player", attacker});

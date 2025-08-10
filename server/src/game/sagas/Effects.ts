@@ -1,83 +1,103 @@
-import {Action, ActionStub} from "@common/actions/Action";
+import {Action} from "@common/actions/Action";
 import GameState from "../GameState";
+
+import Actions from "@common/actions/Main";
 
 export type EmptyObject = Record<string, never>;
 
 export type SelectEffect = {
-    type: "select";
-}
+    input: {
+        type: "select";
+    },
+    output: GameState
+};
 
 export type PutEffect = {
-    type: "put";
-    action: ActionStub;
-}
+    input: {
+        type: "put";
+        action: Action<string, any, any>;
+    },
+    output: EmptyObject
+};
 
-export type TakeEffect = {
-    type: "take";
-    name: string;
-}
+export type TakeEffect<T extends keyof typeof Actions> = {
+    input: {
+        type: "take";
+        name: T;
+    },
+    output: ReturnType<(typeof Actions)[T]>
+};
 
-export type AllEffect = {
-    type: "all",
-    effects: AllInput
-}
+export type NewTaskEffect<R> = {
+    input: {
+        type: "newTask",
+        task: () => SagaGenerator<R>
+    },
+    output: R
+};
 
-export type NewTaskEffect = {
-    type: "newTask",
-    task: () => SagaGenerator
-}
+// all effect
+type EffectUnion =
+    | SelectEffect
+    | PutEffect
+    | TakeEffect<keyof typeof Actions>
+    | NewTaskEffect<any>;
 
-export type Effect = SelectEffect | PutEffect | TakeEffect | AllEffect | NewTaskEffect;
+type GeneratorReturnValue<T> = T extends Generator<any, infer R, any> ? R : never;
 
-type SelectGenerator = Generator<SelectEffect, GameState, GameState>;
-type PutGenerator = Generator<PutEffect, EmptyObject, EmptyObject>;
-type TakeGenerator = Generator<TakeEffect, Action, Action>;
-type NewTaskGenerator = Generator<NewTaskEffect, EmptyObject, EmptyObject>;
+export type AllEffect<T extends Record<string, GeneratorForEffect<EffectUnion>>> = {
+    input: {
+        type: "all",
+        effects: T
+    },
+    output: {
+        [Key in keyof T]: GeneratorReturnValue<T[Key]>
+    }
+};
 
-export function* select(): SelectGenerator {
+export type Effect = EffectUnion | AllEffect<any>;
+
+export type FindEffectByType<T> =
+    Effect extends infer E
+        ? E extends { input: { type: T } }
+            ? E
+            : never
+        : never;
+
+type GeneratorForEffect<E extends Effect> = Generator<E["input"], E["output"], E["output"]>;
+
+export function* select(): GeneratorForEffect<SelectEffect> {
     return yield {
         type: "select"
     };
 }
 
-export function* put(action: ActionStub): PutGenerator {
+export function* put(action: Action<string, any, any>): GeneratorForEffect<PutEffect> {
     return yield {
         type: "put",
         action: action
     };
 }
 
-export function* take(action: (...args: any[]) => ActionStub): TakeGenerator {
+export function* take<T extends keyof typeof Actions>(actionDescriptor: T): GeneratorForEffect<TakeEffect<T>> {
     return yield {
         type: "take",
-        name: action.name
+        name: actionDescriptor
     };
 }
 
-export function* newTask(task: () => SagaGenerator): NewTaskGenerator {
+export function* newTask<R>(task: () => SagaGenerator<R>): GeneratorForEffect<NewTaskEffect<R>> {
     return yield {
         type: "newTask",
         task: task
     };
 }
 
-
-type GeneratorReturnType<T extends Generator> = T extends Generator<any, infer R, any> ? R : never
-type AllOutput<T extends AllInput> = {
-    [Key in keyof T]: GeneratorReturnType<T[Key]>
-};
-
-type AllInput = {
-    [key: string]: SelectGenerator | PutGenerator | TakeGenerator
-};
-
-type AllGenerator<T extends AllInput> = Generator<AllEffect, AllOutput<T>, AllOutput<T>>
-
-export function* all<T extends AllInput>(effects: T): AllGenerator<T> {
+export function* all<T extends Record<string, GeneratorForEffect<EffectUnion>>>(effects: T): GeneratorForEffect<AllEffect<T>> {
     return yield {
         type: "all",
         effects: effects
     };
 }
 
-export type SagaGenerator = Generator<any, any, any>;
+export type SagaGenerator<R> = Generator<any, R, any>;
