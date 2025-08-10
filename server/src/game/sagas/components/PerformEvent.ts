@@ -21,29 +21,18 @@ const {
     changeModuleHealth,
     changePlayerEnergy,
     chooseCardsForRepairSpaceshipRequest,
-    chooseCardsForRepairSpaceshipResponse,
     chooseCardsToDiscardAndTakeAnotherRequest,
-    chooseCardsToDiscardAndTakeAnotherResponse,
     chooseCardToStealRequest,
-    chooseCardToStealResponse,
     chooseModulesToRepairByDiscardedCardsRequest,
-    chooseModulesToRepairByDiscardedCardsResponse,
     chooseModuleToDamageByDiceRequest,
-    chooseModuleToDamageByDiceResponse,
     chooseModuleToDestroyRequest,
-    chooseModuleToDestroyResponse,
     chooseModuleToRepairByDiceRequest,
-    chooseModuleToRepairByDiceResponse,
     choosePlayerForAttackRequest,
-    choosePlayerForAttackResponse,
     choosePlayerToStealCardRequest,
-    choosePlayerToStealCardResponse,
     chooseTwoSolarPanelsToDestroyRequest,
-    chooseTwoSolarPanelsToDestroyResponse,
     destructSpaceshipModules,
     disposeCardsFromPlayerHand,
     permuteTopThreeEventCardsRequest,
-    permuteTopThreeEventCardsResponse,
     playerSkipNextTurn,
     popCardFromPlayerHand,
     pushCardsToDiscard,
@@ -64,7 +53,7 @@ function* putTopThreeCardsInAnyOrder(state: GameState) {
         newOrderedCards.push(topThreeCards[order[i]]);
     }
 
-    yield* put(pushCardsToStack("event", newOrderedCards));
+    yield* put(pushCardsToStack("event", newOrderedCards.reverse()));
 }
 
 function* takeBuildingCards(state: GameState, count: number) {

@@ -67,7 +67,7 @@ export class PlayerDataLine extends Group<PlayerDataLineConfig> {
                 new Text({
                     x: startX,
                     y: 0,
-                    text: `${player.energy}/${SpaceshipGetters.getTotalCapacity(player.spaceship)} ⚡️`,
+                    text: `${player.energy}/${SpaceshipGetters.getTotalCapacity(player.spaceship)}(+${SpaceshipGetters.getTotalEnergyIncrease(player.spaceship)}) ⚡️`,
                     fontFamily: "Exo2Bold",
                     fontSize: 15,
                     fill: "white",

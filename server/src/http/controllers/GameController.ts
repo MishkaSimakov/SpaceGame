@@ -5,6 +5,8 @@ import {AuthenticatedRequest} from "../middleware/auth";
 import {GameSettings} from "@common/GameSettings";
 import {AuthenticatedGameRequest} from "../middleware/GameOwner";
 import {Game as GameDBEntity} from "../../entity/game";
+import {Logger} from "../../game/Logger";
+import {Action} from "@common/actions/Action";
 
 export const create = async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -55,14 +57,29 @@ export const create = async (req: AuthenticatedRequest, res: Response) => {
 };
 
 export const joinGame = async (req: AuthenticatedGameRequest, res: Response) => {
-    const game = await App.getInstance().gamesManager.getGame(req.params.gameId);
+    const game = await GameDBEntity.findOne({
+        where: {
+            id: req.params.gameId,
+        },
+        relations: {
+            players: true,
+        }
+    });
 
-    const isPlayerInGame = !!game?.users.find(p => p.id === req.user.id);
-    if (!game || !(isPlayerInGame || game.state.settings.isPublic)) {
+    if (!game) {
+        req.flash('error', 'Вы не можете присоединиться к данной игре.');
         return res.redirect('/');
     }
 
-    res.render('game/game');
+    if (
+        game.players.find(p => p.id === req.user.id) === undefined
+        && !game.settings.isPublic
+    ) {
+        req.flash('error', 'Вы не можете присоединиться к данной игре.');
+        return res.redirect('/');
+    }
+
+    return res.render('game/game');
 };
 
 export const showCreatePage = async (req: AuthenticatedRequest, res: Response) => {
@@ -80,7 +97,7 @@ export const showRules = async (req: Request, res: Response) => {
 }
 
 export const showStatusPage = async (req: AuthenticatedGameRequest, res: Response) => {
-    const gameDBEntity = await GameDBEntity.findOne({
+    const game = await GameDBEntity.findOne({
         where: {
             id: req.params.gameId,
         },
@@ -91,13 +108,39 @@ export const showStatusPage = async (req: AuthenticatedGameRequest, res: Respons
         }
     });
 
-    const gameInRAM = await App.getInstance().gamesManager.getGame(req.params.gameId);
+    let pastActions: Action<string, any, any>[];
+    let error: string = "";
+    try {
+        pastActions = new Logger(game.logFilepath).getPastActions()
+    } catch (err) {
+        console.error(err);
+
+        pastActions = [];
+        error = "Не удалось загрузить файл с логами.";
+    }
 
     return res.render('game/status', {
         game: {
-            ...gameDBEntity,
-            settings: gameInRAM.state.settings,
-            actions: gameInRAM.logger.getPastActions()
-        }
+            ...game,
+            settings: game.settings,
+            actions: pastActions,
+            isActive: App.getInstance().gamesManager.isActive(game.id)
+        },
+        error: error.length !== 0 ? [error] : []
     });
+}
+
+export const deleteGame = async (req: AuthenticatedGameRequest, res: Response) => {
+    App.getInstance().gamesManager.deactivateGame(req.params.gameId);
+
+    await GameDBEntity.delete({
+        id: req.params.gameId
+    });
+
+    return res.redirect('/');
+}
+
+export const deactivateGame = async (req: AuthenticatedGameRequest, res: Response) => {
+    App.getInstance().gamesManager.deactivateGame(req.params.gameId);
+    return res.redirect('/');
 }

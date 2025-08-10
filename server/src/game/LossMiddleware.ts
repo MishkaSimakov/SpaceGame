@@ -30,9 +30,6 @@ export class LossMiddleware extends Middleware {
         if (this.stateRef.settings.withTimeControl && this.stateRef.settings.loseWhenTimeout) {
             const time = getPlayerTime(this.stateRef, currentPlayer.id, action.time);
 
-            console.log("current player time:", time)
-            console.log(action);
-
             if (time < 0) {
                 this.sagaRunnerRef.cancel("playerTurn");
                 return Actions.playerLost(currentPlayer);

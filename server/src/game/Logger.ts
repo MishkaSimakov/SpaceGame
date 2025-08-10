@@ -9,7 +9,7 @@ export class Logger {
     constructor(logFilepath: string) {
         this.logFilepath = logFilepath;
 
-        this.ensureLogDirectoryExists();
+        this.ensureLogFileExists();
     }
 
     handleAction(action: Action<string, any, any>) {
@@ -26,9 +26,13 @@ export class Logger {
             .map(line => JSON.parse(line));
     }
 
-    ensureLogDirectoryExists() {
+    private ensureLogFileExists() {
+        // create directory
         const dir = path.dirname(this.logFilepath);
 
         fs.mkdirSync(dir, {recursive: true});
+
+        // create file
+        fs.appendFileSync(this.logFilepath, "");
     }
 }

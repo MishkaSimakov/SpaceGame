@@ -18,7 +18,6 @@ import {reducers} from "./reducers/Main";
 import {SagaRunner} from "./sagas/SagaRunner";
 import {Randomizer} from "./Randomizer";
 import {LossMiddleware} from "./LossMiddleware";
-import {ActionOf} from "@common/actions/ActionConstructors";
 
 export default class Game {
     users: User[];
@@ -30,7 +29,7 @@ export default class Game {
     sockets: SocketsManager;
     logger: Logger;
 
-    inReplay: boolean;
+    inReplay: boolean = false;
 
     constructor(users: User[], settings: GameSettings, sockets: SocketsManager, logger: Logger) {
         this.users = users;
@@ -66,24 +65,26 @@ export default class Game {
         });
     }
 
+    async activate() {
+        await this.replay(this.logger.getPastActions());
 
-    static runFromLogs(users: User[], sockets: SocketsManager, logger: Logger) {
-        const pastActions = logger.getPastActions();
+        await this.sagaRunner.run();
+    }
 
-        const initAction = pastActions.find(a => a.type === 'initGameState');
-
-        if (!initAction) {
-            throw new Error("Failed to initialize game from logs");
+    private async replay(actions: Action<string, any, any>[]) {
+        if (actions.length === 0) {
+            return;
         }
 
-        const settings = (initAction as ActionOf<typeof Actions.initGameState>).payload.state.settings;
-
-        const game = new Game(users, settings, sockets, logger);
-        game.inReplay = true;
+        this.inReplay = true;
 
         const returnToNormalExecution = (pendingAction?: Action<string, any, any>) => {
-            game.bus.off('*', actionsReplayListener);
-            game.inReplay = false;
+            console.log("⏪ replay finished, returning to normal execution");
+
+            this.bus.off('*', actionsReplayListener);
+            this.inReplay = false;
+
+            this.syncPlayersData();
 
             // game.bus.emit(Actions.insertPause());
 
@@ -91,8 +92,8 @@ export default class Game {
                 // if (pendingAction.type === "time") {
                 //     game.
                 // } else {
-                    // type is *Request
-                    game.sendSocketRequest(pendingAction);
+                // type is *Request
+                this.sendSocketRequest(pendingAction);
                 // }
             }
         };
@@ -100,32 +101,28 @@ export default class Game {
         // register fake sockets listeners
         // they don't send anything to users and read responses from the log file
         const actionsReplayListener = (action: Action<string, any, any>) => {
-            if (pastActions.length === 0) {
+            if (actions.length === 0) {
                 return;
             }
 
-            const pastAction = pastActions.shift();
-            console.log("⏪ replay: ", pastAction.uuid, action.type, pastAction.type);
+            const pastAction = actions.shift();
+            console.log("⏪ replay: ", pastAction.uuid, action.type, pastAction.type, "remaining: ", actions.length);
 
             assert.equal(pastAction.type, action.type);
 
             if (action.type.endsWith("Request") || action.type === "time") {
-                if (pastActions.length === 0) {
+                if (actions.length === 0) {
                     returnToNormalExecution(action);
                     return;
                 }
 
-                game.bus.emit(pastAction[0]);
-            } else if (pastActions.length === 0) {
+                this.bus.emit(actions[0]);
+            } else if (actions.length === 0) {
                 returnToNormalExecution();
             }
         };
 
-        game.bus.on('*', actionsReplayListener);
-
-        const promise = game.sagaRunner.run();
-
-        return {game, promise};
+        this.bus.on('*', actionsReplayListener);
     }
 
     registerLossMiddleware() {
@@ -213,11 +210,6 @@ export default class Game {
 
             this.bus.emit(Actions.timeResult(action.time));
         });
-    }
-
-    async start() {
-        this.inReplay = false;
-        await this.sagaRunner.run();
     }
 
     getPlayerById(id: number): Player {

@@ -19,57 +19,92 @@ type Callback<R> = {
 
 type EffectsPerformers = {
     [Key in Effect["input"]["type"]]: {
-        (effect: FindEffectByType<Key>["input"], callback: Callback<FindEffectByType<Key>["output"]>, services: {
+        (effect: FindEffectByType<Key>["input"], callback: Callback<FindEffectByType<Key>["output"] | "cancel">, services: {
             state: GameState,
-            bus: ActionsBusProxy,
+            busProxy: ActionsBusProxy,
             pushTask: (saga: () => SagaGenerator<any>) => void
         }): void,
         cancel?: () => void;
     };
 };
 
+function getChildCallbacksForAll(effects: Effect[], cb: any) {
+    const result = {};
+
+    const childCallbacks: Record<string, {
+        callback: {
+            (result: any): void,
+            cancel: () => void
+        },
+        wasSetup: boolean
+    }> = {};
+
+    for (const key of Object.keys(effects)) {
+        const callback = (childPayload: any) => {
+            // capture `key` variable
+            const keyCopy = key;
+            result[keyCopy] = childPayload;
+
+            if (Object.keys(result).length === Object.keys(effects).length) {
+                cb(result);
+            }
+        };
+
+        callback.cancel = () => {
+        };
+
+        childCallbacks[key] = {
+            callback,
+            wasSetup: false
+        }
+    }
+
+    return childCallbacks;
+}
+
 export const effectPerformers: EffectsPerformers = {
     select(effect, cb, {state}) {
         cb(structuredClone(state));
     },
-    take(effect, cb, {bus}) {
+    take(effect, cb, {busProxy}) {
         let cancelled = false;
 
-        bus.once(effect.name, (payload: any) => {
+        cb.cancel = () => {
+            cancelled = true;
+            cb("cancel");
+        };
+
+        busProxy.once(effect.name, (payload: any) => {
             if (!cancelled) {
                 cb(payload);
             }
         });
-
-        cb.cancel = () => {
-            cancelled = true;
-        };
     },
-    put(effect, cb, {bus}) {
-        bus.emit(effect.action);
+    put(effect, cb, {busProxy}) {
+        cb.cancel = () => {
+        };
+
+        busProxy.emit(effect.action);
         cb({});
     },
     all(effect, cb, services) {
-        const result = {};
+        const childCallbacks = getChildCallbacksForAll(effect.effects, cb);
 
         for (const key of Object.keys(effect.effects)) {
             const child = effect.effects[key].next().value as Effect["input"];
 
             // TODO: check later
             // @ts-ignore
-            effectPerformers[child.type](child, (childPayload: any) => {
-                // capture `key` variable
-                const keyCopy = key;
-                result[keyCopy] = childPayload;
-
-                if (Object.keys(result).length === Object.keys(effect.effects).length) {
-                    cb(result);
-                }
-            }, services);
+            effectPerformers[child.type](child, childCallbacks[key].callback, services);
+            childCallbacks[key].wasSetup = true;
         }
 
         cb.cancel = () => {
-            // TODO
+            for (const cb of Object.values(childCallbacks)) {
+                if (cb.wasSetup) {
+                    cb.callback.cancel();
+                }
+            }
         };
     },
     newTask(effect, cb, {pushTask}) {

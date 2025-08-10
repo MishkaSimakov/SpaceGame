@@ -144,8 +144,6 @@ export default class RebuildSpaceshipManager {
             });
 
             shape.on('dragend.rebuild', () => {
-                console.log("dragend", this.spaceship);
-
                 let localPosition = this.spaceshipShape.transformToCardPosition(
                     this.spaceshipShape.getRelativePointerPosition()
                 );

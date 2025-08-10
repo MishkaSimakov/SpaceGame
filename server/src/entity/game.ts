@@ -10,6 +10,13 @@ import {
     PrimaryColumn
 } from "typeorm"
 import {User} from "./user";
+import {GameSettings} from "@common/GameSettings";
+
+export enum GameStatus {
+    ACTIVE = "active",
+    ERROR = "error",
+    FINISHED = "finished"
+}
 
 @Entity()
 export class Game extends BaseEntity {
@@ -32,8 +39,18 @@ export class Game extends BaseEntity {
     @Column({nullable: false})
     logFilepath: string;
 
+    @Column("simple-json")
+    settings: GameSettings;
+
+    @Column({type: "enum", enum: GameStatus, nullable: false})
+    status: GameStatus;
+
+    @Column({nullable: false, type: "timestamptz"})
+    createdAt: Date;
+
     @Column({nullable: true, type: "timestamptz"})
     finishedAt: Date;
+
 
     isFinished(): boolean {
         return !!this.finishedAt;

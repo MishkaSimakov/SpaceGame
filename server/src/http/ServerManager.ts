@@ -45,6 +45,12 @@ export default class ServerManager {
         this.server.use(serveStatic(this.staticBasePath));
         this.server.use(express.urlencoded({extended: false}));
 
+        // error handler
+        this.server.use((err: unknown, req, res, next) => {
+            console.error(err);
+            res.status(500).json({message: "Internal server error"});
+        });
+
         initRoutes(this.server);
 
         this.server.get('*', (req, res) => {

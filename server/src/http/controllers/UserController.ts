@@ -1,13 +1,9 @@
 import {Request, Response} from "express";
 import {User} from "../../entity/user";
 import bcrypt from "bcrypt";
-import jwt, {JwtPayload} from "jsonwebtoken";
 import path from "path";
 import App from "../../App";
 import {AuthenticatedRequest} from "../middleware/auth";
-import {Game} from "../../entity/game";
-
-const HOME = '/';
 
 export const login = async (req: Request, res: Response) => {
     try {
@@ -29,7 +25,7 @@ export const login = async (req: Request, res: Response) => {
 
         return res.cookie('authentication_token', token, {
             expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365)
-        }).redirect(HOME);
+        }).redirect('/');
     } catch (error) {
         console.error(error);
 
@@ -59,7 +55,7 @@ export const register = async (req: Request, res: Response) => {
 
         return res.cookie('authentication_token', token, {
             expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365)
-        }).redirect(HOME);
+        }).redirect('/');
     } catch (error) {
         return res.status(500).send('Something went wrong.');
     }

@@ -157,5 +157,37 @@ test('cancelledTask', async () => {
     assert.ok(continuedExecution);
 });
 
+test('cancelledTaskWithAllEffectAwaiting', async () => {
+    const state = new GameState();
+    const bus = new ActionsBus();
+
+    let continuedExecution = false;
+
+    function* parentSaga() {
+        yield* newTask(childSaga);
+
+        continuedExecution = true;
+    }
+
+    function* childSaga() {
+        yield* all({
+            req: put(throwDice()),
+            res: take("throwDiceResult")
+        });
+
+        assert.unreachable("childSaga should have been cancelled");
+    }
+
+    const runner = new SagaRunner(state, bus, parentSaga);
+
+    bus.on('throwDice', () => {
+        runner.cancel("childSaga");
+    });
+
+    await runner.run();
+
+    assert.ok(continuedExecution);
+});
+
 
 test.run();

@@ -189,13 +189,11 @@ function* makeFightIteration() {
     yield* tryDamageByEventCard();
 
     if (yield* askForRunawayViaDice()) {
-        yield* put(endFight());
         return false;
     }
 
     if (SpaceshipGetters.getMainModuleType(attacker.spaceship) === MainModuleType.AttackOrRunaway) {
         if (yield* askForRunawayViaMainModule()) {
-            yield* put(endFight());
             return false;
         }
     }
@@ -215,8 +213,7 @@ export function* fight() {
             const {victim, attacker} = yield* getCombatants();
 
             if (!PlayerGetters.canDamage(victim) && !PlayerGetters.canDamage(attacker)) {
-                yield* put(endFight());
-                return;
+                break;
             }
 
             const continueFight = yield* makeFightIteration();

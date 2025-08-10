@@ -1,11 +1,19 @@
 @include('partials/header')
 
 <div class="container mt-4">
-    <div class="d-flex align-items-center mb-3">
+    @include('partials/flash')
+
+    <div class="d-flex align-items-center mb-1">
         <h1 class="me-3 mb-0">{{ game.name }}</h1>
-        <!--        <span class="badge bg-{{ game.status == 'active' ? 'success' : game.status == 'finished' ? 'secondary' : 'danger' }}">-->
-        <!--            {{ game.status }}-->
-        <!--        </span>-->
+    </div>
+
+    <div class="mb-3">
+    <span class="badge bg-{{ game.status == 'active' ? 'success' : game.status == 'finished' ? 'secondary' : 'danger' }}">
+        {{ game.status }}
+    </span>
+    <span class="ms-1 badge bg-{{ game.isActive ? 'success' : 'secondary' }}">
+        {{ game.isActive ? "загружена в память" : "выгружена из памяти" }}
+    </span>
     </div>
 
     <div class="card mb-3">
@@ -34,22 +42,24 @@
             <button type="submit" class="btn btn-outline-danger">Удалить игру</button>
         </form>
 
+        @if(game.isActive)
         <button id="reloadGame" class="btn btn-outline-primary ms-3"
-                title="Перезагрузить игру с диска">
-            Перезагрузить
+                title="Выгрузить игру из оперативной памяти сервера">
+            Деактивировать
         </button>
+        @endif
     </div>
 </div>
 
 <script>
     document.getElementById('reloadGame')?.addEventListener('click', () => {
-        fetch(`/game/{{ game.id }}/reload`, {method: 'POST'})
+        fetch(`/game/{{ game.id }}/deactivate`, {method: 'POST'})
             .then(r => {
                 if (r.ok) {
-                    alert('Игра успешно перезагружена!');
+                    alert('Игра успешно деактивирована!');
                     location.reload();
                 } else {
-                    alert('Ошибка при перезагрузке игры');
+                    alert('Ошибка при деактивации игры');
                 }
             });
     });

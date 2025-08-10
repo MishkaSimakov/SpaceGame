@@ -16,6 +16,11 @@ export class SagaRunner<R> {
         name: string
     }[] = [];
 
+    private currentEffectCallback?: {
+        (result: any): void,
+        cancel: () => void
+    } = undefined;
+
     constructor(stateRef: GameState, busRef: ActionsBus, saga: (...args: any[]) => SagaGenerator<R>, ...args: any[]) {
         this.stateRef = stateRef;
         this.busRef = busRef;
@@ -55,9 +60,14 @@ export class SagaRunner<R> {
             // @ts-ignore
             effectPerformers[effect.type](effect, cb, {
                 state: this.stateRef,
-                bus: busProxy,
+                busProxy: busProxy,
                 pushTask: this.pushTask.bind(this)
             });
+
+            this.currentEffectCallback = cb as {
+                (result: any): void,
+                cancel: () => void
+            };
 
             busProxy.perform();
         });
@@ -69,9 +79,9 @@ export class SagaRunner<R> {
             assert.ok(this.stack.length !== 0, "trying to cancel a non-existing task");
             currentTask = this.stack.pop();
 
-            console.log(currentTask, taskName);
-
+            assert.ok(this.currentEffectCallback, "assumingly you are trying to call `cancel` from inside a saga. This is not implemented, don't do that, please.");
             currentTask.generator.return({});
+            this.currentEffectCallback.cancel();
         } while (currentTask.name !== taskName);
     }
 

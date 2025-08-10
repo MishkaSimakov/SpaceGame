@@ -26,6 +26,9 @@ function getUserRouter(): Router {
     router.get('/game/:gameId', auth, GameController.joinGame);
     router.get('/game/:gameId/status', auth, gameOwner, GameController.showStatusPage);
 
+    router.post('/game/:gameId/delete', auth, gameOwner, GameController.deleteGame);
+    router.post('/game/:gameId/deactivate', auth, gameOwner, GameController.deactivateGame);
+
     return router;
 }
 
