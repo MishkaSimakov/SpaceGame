@@ -62,7 +62,7 @@ export function getPlayerTime(state: GameState, playerId: PlayerId, currentTime:
     const recordedTime = StateGetters.playerById(state, playerId).time;
 
     if (lastRecord.type === TimeRecordType.DEFAULT_TURN_STARTED || lastRecord.type === TimeRecordType.DEFAULT_TURN_CONTINUED || lastRecord.type === TimeRecordType.FIGHT_TURN_STARTED) {
-        return recordedTime + (currentTime - lastRecord.time);
+        return recordedTime - (currentTime - lastRecord.time);
     } else {
         return recordedTime;
     }

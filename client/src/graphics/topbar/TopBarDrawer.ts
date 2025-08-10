@@ -9,7 +9,7 @@ import {Text} from "../engine/shapes/Text";
 import {Group} from "../engine/Group";
 import {Button} from "../shapes/Button";
 import {PlayerDataLine} from "../shapes/PlayerDataLine";
-import TopBarSmallAdaptor from "./TopBarSmallAdaptor";
+// import TopBarSmallAdaptor from "./TopBarSmallAdaptor";
 import TopBarDefaultAdaptor from "./TopBarDefaultAdaptor";
 
 export type ButtonData = {
@@ -117,9 +117,10 @@ export default class TopBarDrawer {
         this.messagesGroup?.destroy();
 
         const sceneWidth = this.scene.width();
-        const adaptor = sceneWidth < (400 + 2 * 15)
-            ? new TopBarSmallAdaptor()
-            : new TopBarDefaultAdaptor();
+        const adaptor = new TopBarDefaultAdaptor();
+        // const adaptor = sceneWidth < (400 + 2 * 15)
+        //     ? new TopBarSmallAdaptor()
+        //     : new TopBarDefaultAdaptor();
 
         if (this.showPlayersData) {
             adaptor.drawPlayersData(this, sceneWidth);

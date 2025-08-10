@@ -76,8 +76,11 @@ export default class TopBarDefaultAdaptor extends TopBarAdaptor {
             width: drawer.sizes.statusWidth - 2 * drawer.sizes.padding,
 
             player: PlayerGetters.forOtherPlayer(drawer.currentPlayer),
-            online: drawer.onlineMap[drawer.currentPlayer.id],
-            withName: false,
+            status: {
+                online: drawer.onlineMap[drawer.currentPlayer.id],
+                lost: drawer.currentPlayer.lose,
+                isHisTurn: drawer.scene.gameManager.currentTurnPlayerId === drawer.currentPlayer.id
+            },
             withTimeControl: drawer.scene.gameManager.settings.withTimeControl,
             time: drawer.playerTime[drawer.currentPlayer.id],
         })
@@ -104,27 +107,31 @@ export default class TopBarDefaultAdaptor extends TopBarAdaptor {
     }
 
     drawPlayersData(drawer: TopBarDrawer, sceneWidth: number) {
-        let lineOffset = 25;
-
-        let textStart = new Vector2(
+        const textStart = new Vector2(
             sceneWidth - drawer.sizes.statusWidth - drawer.sizes.margin + drawer.sizes.padding,
             drawer.sizes.margin + drawer.sizes.padding
         );
 
-        let players: OtherPlayer[] = [];
+        const players: OtherPlayer[] = [];
         players.push(...drawer.otherPlayers);
         players.push(PlayerGetters.forOtherPlayer(drawer.currentPlayer));
 
         let topY = Infinity, bottomY = 0;
 
-        for (let [index, player] of players.entries()) {
-            let playersDataLine = new PlayerDataLine({
+        let currentY = textStart.y;
+
+        for (const player of players.values()) {
+            const playersDataLine = new PlayerDataLine({
                 x: textStart.x,
-                y: textStart.y + lineOffset * index,
+                y: currentY,
                 width: drawer.sizes.statusWidth - 2 * drawer.sizes.padding,
 
                 player: player,
-                online: drawer.onlineMap[player.id],
+                status: {
+                    online: drawer.onlineMap[player.id],
+                    lost: player.lose,
+                    isHisTurn: drawer.scene.gameManager.currentTurnPlayerId === player.id
+                },
                 withName: true,
                 withTimeControl: drawer.scene.gameManager.settings.withTimeControl,
                 time: drawer.playerTime[player.id],
@@ -135,20 +142,19 @@ export default class TopBarDefaultAdaptor extends TopBarAdaptor {
 
             drawer.playersDataText.set(player.id, playersDataLine);
 
-            let lineBB = playersDataLine.getClientRect();
+            const lineBB = playersDataLine.getClientRect();
 
+            currentY += lineBB.height + drawer.sizes.padding;
             topY = Math.min(topY, lineBB.top);
-            bottomY = Math.max(bottomY, lineBB.bottom);
         }
 
         drawer.playersDataCloseText = new Text({
             x: textStart.x,
-            y: bottomY + lineOffset,
+            y: currentY,
             text: "Закрыть",
             fontFamily: "Exo2Bold",
             fontSize: 15,
             fill: "white",
-            originY: 1
         })
             .on('click', () => {
                 drawer.togglePlayerCharacteristics();

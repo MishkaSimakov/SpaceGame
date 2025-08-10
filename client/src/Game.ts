@@ -11,6 +11,7 @@ import RebuildSpaceshipManager from "./graphics/RebuildSpaceshipManager";
 import SocketManager from "./sockets/SocketManager";
 import {Graphics} from "./graphics/engine/Graphics";
 import {DD} from "./graphics/engine/Drag";
+import PopupsScene from "./graphics/scenes/Popups";
 
 export default class Game {
     currentTurnPlayerId: PlayerId;
@@ -23,6 +24,8 @@ export default class Game {
 
     spaceshipsScene: Spaceships;
     controlsScene: Controls;
+    popupsScene: PopupsScene;
+
     rebuildSpaceshipManager: RebuildSpaceshipManager;
 
     settings: GameSettings;
@@ -45,9 +48,11 @@ export default class Game {
 
         this.spaceshipsScene = new Spaceships(this);
         this.controlsScene = new Controls(this);
+        this.popupsScene = new PopupsScene(this);
 
         graphics.add(this.spaceshipsScene);
         graphics.add(this.controlsScene);
+        graphics.add(this.popupsScene);
 
         this.rebuildSpaceshipManager = new RebuildSpaceshipManager(this);
 
@@ -79,8 +84,10 @@ export default class Game {
 
             this.spaceshipsScene.setSize(newSize);
             this.controlsScene.setSize(newSize);
+            this.popupsScene.setSize(newSize);
 
             this.controlsScene.activitiesQueue[0]?.update();
+            this.popupsScene.update();
 
             this.redraw();
         });

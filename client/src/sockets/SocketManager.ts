@@ -13,6 +13,8 @@ import {infoListeners} from "./listeners/InfoListeners";
 import {eventCardsListeners} from "./listeners/EventCardsListeners";
 import {fightListeners} from "./listeners/FightListeners";
 import {SocketInitPayload} from "@common/Types";
+import Color from "../graphics/Color";
+import {COLORS} from "../graphics/constants";
 
 const listeners: ListenersContainer = {
     ...mainListeners,
@@ -24,6 +26,8 @@ const listeners: ListenersContainer = {
 export default class SocketManager {
     game: Game;
     socket: Socket;
+
+    wasDisconnected: boolean = false;
 
     constructor(game: Game) {
         this.game = game;
@@ -46,6 +50,17 @@ export default class SocketManager {
 
         this.socket.onAny((...args) => {
             console.log("⚡", ...args);
+        });
+
+        this.socket.on('disconnect', () => {
+            this.wasDisconnected = true;
+            this.game.popupsScene.addPopup("Соединение с сервером потеряно", COLORS.BUTTON.DANGER.ACTIVE);
+        });
+
+        this.socket.on('connect', () => {
+            if (this.wasDisconnected) {
+                this.game.popupsScene.addPopup("Соединение с сервером восстановлено", COLORS.BUTTON.PRIMARY.ACTIVE);
+            }
         });
     }
 

@@ -69,8 +69,14 @@ export class SagaRunner<R> {
             assert.ok(this.stack.length !== 0, "trying to cancel a non-existing task");
             currentTask = this.stack.pop();
 
+            console.log(currentTask, taskName);
+
             currentTask.generator.return({});
         } while (currentTask.name !== taskName);
+    }
+
+    currentTask(): string {
+        return this.stack[this.stack.length - 1].name;
     }
 
     private pushTask(task: () => SagaGenerator<any>) {

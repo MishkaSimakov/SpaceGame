@@ -39,7 +39,7 @@ export default class RebuildSpaceshipManager {
             if (isMainModule(module))
                 continue;
 
-            shape.on('pointerdown.rebuild', () => {
+            shape.on('click.rebuild', () => {
                 const initRotation = module.rotation;
                 SpaceshipModifiers.removeModule(this.spaceship, module);
 

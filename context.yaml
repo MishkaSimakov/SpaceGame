@@ -29,7 +29,7 @@ documents:
               rules:
                 - type: regex
                   patterns:
-                      "~\\s*import\\s+(?:[\\w*\\s{},]*\\s+from\\s+)?[\"'][^\"' ]+[\"'];?\\s*~": ""
+                    "~\\s*import\\s+(?:[\\w*\\s{},]*\\s+from\\s+)?[\"'][^\"' ]+[\"'];?\\s*~": ""
 
   - description: 'Tests'
     outputPath: tests.md
@@ -66,4 +66,12 @@ documents:
       - type: file
         sourcePaths:
           - client/src/graphics/topbar
+        filePattern: [ "*.ts" ]
+
+  - description: 'Graphics'
+    outputPath: graphics.md
+    sources:
+      - type: file
+        sourcePaths:
+          - client/src/graphics
         filePattern: [ "*.ts" ]
