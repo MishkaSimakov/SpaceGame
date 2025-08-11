@@ -20,17 +20,17 @@ export function* moveDamage(reason: MoveDamageReason, energyCost: number, movedD
         return;
     }
 
-    const moveDamageData = yield* request(
+    const move = yield* request(
         chooseModuleToMoveDamageRequest(currentPlayer, reason),
         'chooseModuleToMoveDamageResponse'
     );
 
-    const {from, to} = moveDamageData;
-
-    if (from && to) {
-        yield* put(changePlayerEnergy(currentPlayer, -energyCost, reasonDescription[reason]));
-
-        yield* put(changeModuleHealth(currentPlayer, from, movedDamage, reasonDescription[reason]));
-        yield* damageModule(currentPlayer, to, movedDamage, {type: "EventCard"});
+    if (!move) {
+        return;
     }
+
+    yield* put(changePlayerEnergy(currentPlayer, -energyCost, reasonDescription[reason]));
+
+    yield* put(changeModuleHealth(currentPlayer, move.from, movedDamage, reasonDescription[reason]));
+    yield* damageModule(currentPlayer, move.to, movedDamage, {type: "EventCard"});
 }

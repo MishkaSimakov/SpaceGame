@@ -3,6 +3,9 @@ import SmallQuantumProtector from "./SmallQuantumProtector";
 import QuantumProtector from "./QuantumProtector";
 import {MainModule} from "./MainModule";
 import Vector2 from "../Vector2";
+import SpaceSolver from "./SpaceSolver";
+import IonDestroyer from "./IonDestroyer";
+import QuantumDestabilizer from "./QuantumDestabilizer";
 
 export enum ModuleType {
     MainModule,
@@ -77,4 +80,12 @@ export function isProtector(card: Module | Event): card is (SmallQuantumProtecto
 
 export function isMainModule(card: Module | Event): card is MainModule {
     return isModule(card) && card.type === ModuleType.MainModule;
+}
+
+export function isWeapon(card: Module | Event): card is (SpaceSolver | IonDestroyer | QuantumDestabilizer) {
+    return isModule(card) && (
+        card.type === ModuleType.SpaceSolver
+        || card.type === ModuleType.IonDestroyer
+        || card.type === ModuleType.QuantumDestabilizer
+    );
 }

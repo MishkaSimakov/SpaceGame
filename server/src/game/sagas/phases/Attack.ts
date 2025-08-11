@@ -27,7 +27,7 @@ export function* attack() {
     }
 
     const {victim} = yield* request(
-        choosePlayerForAttackRequest(currentPlayer, AttackReason.AttackModule),
+        choosePlayerForAttackRequest(currentPlayer, AttackReason.AttackModule, false),
         'choosePlayerForAttackResponse'
     );
 
@@ -59,15 +59,11 @@ export function* attack() {
         yield* put(playerUseModuleSecondTime(currentPlayer));
 
         const {victim} = yield* request(
-            choosePlayerForAttackRequest(currentPlayer, AttackReason.UsingAttackModuleSecondTime),
+            choosePlayerForAttackRequest(currentPlayer, AttackReason.UsingAttackModuleSecondTime, true),
             'choosePlayerForAttackResponse'
         );
 
-        if (!victim) {
-            throw new Error('Attacked player is undefined in UsingAttackModuleSecondTime');
-        }
-
-        yield* put(beginFight(currentPlayer.id, victim, "use attack module second time"));
+        yield* put(beginFight(currentPlayer.id, victim!, "use attack module second time"));
         yield* fight();
     }
 }

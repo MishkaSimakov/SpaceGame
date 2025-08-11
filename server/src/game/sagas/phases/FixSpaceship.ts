@@ -24,7 +24,7 @@ function* useRepairModule(repairModuleCost: number): Generator<any, boolean, any
         'chooseModuleToRepairResponse'
     );
 
-    if (modulePosition === undefined) {
+    if (!modulePosition) {
         return false;
     }
 

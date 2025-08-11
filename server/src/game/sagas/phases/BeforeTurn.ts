@@ -31,7 +31,7 @@ function* tryAttackByEventCard() {
 
     if (attackLaterCardIndex !== -1) {
         const {victim} = yield* request(
-            choosePlayerForAttackRequest(currentPlayer, AttackReason.AttackLaterEventCard),
+            choosePlayerForAttackRequest(currentPlayer, AttackReason.AttackLaterEventCard, false),
             'choosePlayerForAttackResponse'
         );
 
@@ -50,13 +50,12 @@ function* tryAttackByMainModule() {
     if (SpaceshipGetters.getMainModuleType(currentPlayer.spaceship) === MainModuleType.AttackOrRunaway
         && currentPlayer.energy >= state.settings.energyToAttackByMainModule) {
         const {victim} = yield* request(
-            choosePlayerForAttackRequest(currentPlayer, AttackReason.MainModule),
+            choosePlayerForAttackRequest(currentPlayer, AttackReason.MainModule, false),
             'choosePlayerForAttackResponse'
         );
 
         if (victim) {
             yield* put(changePlayerEnergy(currentPlayer, -state.settings.energyToAttackByMainModule, "attack by main module"));
-
             yield* put(beginFight(currentPlayer.id, victim, "attack by main module"));
             yield* fight();
         }

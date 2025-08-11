@@ -3,6 +3,7 @@ import {ModuleType} from "@common/modules/Module";
 
 import {COLORS} from "../../graphics/constants";
 import {ListenersContainer} from "./ListenersContainer";
+import {ChoosePlayerForAttackActivity} from "../../graphics/activities/ChoosePlayerForAttack";
 
 const {
     chooseCardTypeResponse,
@@ -67,8 +68,10 @@ export const mainListeners: ListenersContainer = {
         return drawAdditionalModuleCardResponse(response);
     },
 
-    async choosePlayerForAttackRequest({reason}, {game}) {
-        const chosen = await game.controlsScene.choosePlayerForAttack(game.otherPlayers, reason);
+    async choosePlayerForAttackRequest({reason, required}, {game}) {
+        const chosen = await game.controlsScene.enqueueActivity(
+            new ChoosePlayerForAttackActivity(game.controlsScene, game.otherPlayers, reason, required)
+        );
         return choosePlayerForAttackResponse(chosen);
     },
 

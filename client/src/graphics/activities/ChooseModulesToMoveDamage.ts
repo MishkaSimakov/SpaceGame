@@ -9,7 +9,7 @@ import {Boundary} from "../CountBoundary";
 import Color from "../Color";
 import {COLORS} from "../constants";
 
-type MoveDamageResult = Partial<{ from: Vector2, to: Vector2 }>;
+type MoveDamageResult = { from: Vector2, to: Vector2 } | undefined;
 
 const reasonStatus: Record<MoveDamageReason, string> = {
     [MoveDamageReason.MainModule]: "выберите, откуда переместить урон",
@@ -50,6 +50,7 @@ export class ChooseModulesToMoveDamage extends Activity {
 
                     this.spaceshipsScene.endChoosingModule();
                     this.controlsScene.topBarDrawer.removeButtons();
+                    this.controlsScene.topBarDrawer.clearStatus();
 
                     this.chooseDestination().then(to => {
                         resolve({from, to});
@@ -59,7 +60,7 @@ export class ChooseModulesToMoveDamage extends Activity {
                 text: "Пропустить",
                 color: COLORS.BUTTON.PRIMARY,
                 onClick: () => {
-                    resolve({from: undefined, to: undefined});
+                    resolve(undefined);
                 }
             }]);
 

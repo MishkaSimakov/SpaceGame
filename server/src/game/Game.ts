@@ -18,6 +18,8 @@ import {isReducerName, reducers} from "./reducers/Main";
 import {SagaRunner} from "./sagas/SagaRunner";
 import {Randomizer} from "./Randomizer";
 import {LossMiddleware} from "./LossMiddleware";
+import {validators} from "./validation/ResponseValidators";
+import {ZodSafeParseResult, ZodType} from "zod";
 
 export default class Game {
     users: User[];
@@ -223,19 +225,41 @@ export default class Game {
         }
     }
 
-    private sendSocketRequest(action: Action<string, any, any>) {
-        const responseType = action.type.replace("Request", "Response");
+    private sendSocketRequest(request: Action<string, any, any>) {
+        const responseType = request.type.replace("Request", "Response");
 
-        assert.ok("player" in action.payload);
+        assert.ok("player" in request.payload);
         assert.ok(responseType in Actions);
 
-        this.sockets.emitAndWait(action.payload.player, action.type, true, action.payload)
-            .then((payload: any) => {
-                if (!isAction(payload)) {
-                    throw new Error("Response must be action");
-                }
+        let currentAttempt = 0;
+        const requestAttempt = (errors: string[]) => {
+            ++currentAttempt;
 
-                this.bus.emit(payload);
-            });
+            this.sockets.emitAndWait(request.payload.player, request.type, true, {
+                ...request.payload,
+                errors
+            })
+                .then((response: any) => {
+                    if (!isAction(response)) {
+                        return requestAttempt(["Ответ должен быть в формате действия."]);
+                    }
+
+                    try {
+                        const validator = validators[responseType as keyof typeof validators] as (state: GameState, request: unknown) => ZodType;
+                        const validationResult = validator(structuredClone(this.state), request).safeParse(response.payload);
+
+                        if (validationResult.error) {
+                            return requestAttempt(validationResult.error.issues.map(issue => issue.message));
+                        }
+
+                        this.bus.emit(response);
+                    } catch (err) {
+                        console.error(err);
+                        return requestAttempt(["Произошла ошибка при валидации вашего ответа."]);
+                    }
+                });
+        };
+
+        requestAttempt([]);
     }
 }

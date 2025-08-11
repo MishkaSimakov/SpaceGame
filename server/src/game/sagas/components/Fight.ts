@@ -54,7 +54,7 @@ function* chooseProtectors(victim: Player) {
     );
 
     if (protectorPosition) {
-        const protector = SpaceshipGetters.getModuleByPosition(victim.spaceship, protectorPosition);
+        const protector = SpaceshipGetters.getModuleByPosition(victim.spaceship, protectorPosition)!;
 
         yield* put(activateProtector(victim, protectorPosition));
         yield* put(changePlayerEnergy(victim, -protector.energyCost, "use protector"));
@@ -142,12 +142,9 @@ function* damageByWeapon() {
             'chooseWeaponAndTargetResponse'
         );
 
-        let weapon = SpaceshipGetters.getModuleByPosition(attacker.spaceship, weaponPosition);
-
-        assert.ok(attacker.energy >= weapon.energyCost);
+        const weapon = SpaceshipGetters.getModuleByPosition(attacker.spaceship, weaponPosition)!;
 
         yield* damageModule(victim, targetPosition, weapon.strength, {type: "Player", attacker});
-
         yield* put(changePlayerEnergy(attacker, -weapon.energyCost, "used weapon in fight"));
 
         // update state

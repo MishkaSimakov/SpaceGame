@@ -3,7 +3,7 @@ import io, {Socket} from "socket.io-client";
 import {Event} from "@common/events/Event";
 import {HAS_PLAYERS_DATA} from "@common/Sockets";
 import {GameForPlayerDTO} from "@common/GameForPlayerDTO";
-import {Action} from "@common/actions/Action";
+import {Action, isAction} from "@common/actions/Action";
 
 import Game from "../Game";
 import {ListenersContainer} from "./listeners/ListenersContainer";
@@ -37,6 +37,8 @@ export default class SocketManager {
         // register socket listeners
         for (const actionType of Object.keys(listeners)) {
             this.socket.on(actionType, (payload, callback?) => {
+                this.showErrors(payload.errors);
+
                 listeners[actionType](payload, {
                     game: this.game,
                     socket: this.socket
@@ -109,5 +111,20 @@ export default class SocketManager {
                 resolve(isAccepted);
             });
         });
+    }
+
+    private showErrors(errors: any) {
+        if (!errors || !Array.isArray(errors)) {
+            console.error("Wrong value received in errors:", errors);
+            return;
+        }
+
+        errors.forEach(error => {
+            this.game.popupsScene.addPopup(
+                `Ошибка: ${error}. Если вы не пытались ничего сломать, напишите об ошибке Мише.`,
+                COLORS.BUTTON.DANGER.ACTIVE,
+                5000
+            );
+        })
     }
 }

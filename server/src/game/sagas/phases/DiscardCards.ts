@@ -17,9 +17,5 @@ export function* discardCards() {
         'discardCardsResponse'
     );
 
-    if (currentPlayer.hand.length - discardedCardsIndexes.length > state.settings.maxCardsOnHand) {
-        throw Error("player discarded not enough cards");
-    }
-
     yield* put(Actions.disposeCardsFromPlayerHand(currentPlayer, discardedCardsIndexes, "discard cards phase"));
 }

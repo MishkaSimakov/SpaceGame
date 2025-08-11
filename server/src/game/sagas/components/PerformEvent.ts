@@ -29,7 +29,7 @@ const {
     chooseModuleToRepairByDiceRequest,
     choosePlayerForAttackRequest,
     choosePlayerToStealCardRequest,
-    chooseTwoSolarPanelsToDestroyRequest,
+    chooseSolarPanelsToDestroyRequest,
     destructSpaceshipModules,
     disposeCardsFromPlayerHand,
     permuteTopThreeEventCardsRequest,
@@ -116,24 +116,15 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
     [EventTypes.DestroyTwoSolarPanelsOnYourSpaceship]: function* (state: GameState) {
         const player = StateGetters.currentPlayer(state);
 
-        if (SpaceshipGetters.getModulesByType(player.spaceship, ModuleType.SolarPanel).length === 0) {
+        const solarPanelsCount = SpaceshipGetters.getModulesByType(player.spaceship, ModuleType.SolarPanel).length;
+        if (solarPanelsCount === 0) {
             return;
         }
 
         const positions: Vector2[] = yield* request(
-            chooseTwoSolarPanelsToDestroyRequest(player),
-            'chooseTwoSolarPanelsToDestroyResponse'
+            chooseSolarPanelsToDestroyRequest(player, Math.min(2, solarPanelsCount)),
+            'chooseSolarPanelsToDestroyResponse'
         );
-
-        if (positions.length !== 1 && positions.length !== 2) {
-            // TODO: retry request
-            throw new Error("Wrong value");
-        }
-
-        const modules: Module[] = positions.map(pos => SpaceshipGetters.getModuleByPosition(player.spaceship, pos));
-        if (modules.some(m => m.type !== ModuleType.SolarPanel)) {
-            throw new Error("User have chosen wrong module type.");
-        }
 
         yield* put(destructSpaceshipModules(player, positions, "discard", "hand"));
     },
@@ -165,15 +156,11 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
     },
     [EventTypes.AttackAny]: function* (state: GameState) {
         const {victim} = yield* request(
-            choosePlayerForAttackRequest(StateGetters.currentPlayer(state), AttackReason.AttackAnyEventCard),
+            choosePlayerForAttackRequest(StateGetters.currentPlayer(state), AttackReason.AttackAnyEventCard, true),
             'choosePlayerForAttackResponse'
         );
 
-        if (!victim) {
-            throw new Error("Attacked player is undefined in choosing player for attack in AttackAny event card");
-        }
-
-        yield* put(beginFight(StateGetters.currentPlayer(state).id, victim, "event card (attack any)"));
+        yield* put(beginFight(StateGetters.currentPlayer(state).id, victim!, "event card (attack any)"));
         yield* fight();
     },
     [EventTypes.TossDiceAndTakeBuildingCards]: function* (state: GameState) {
@@ -187,15 +174,17 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
         const currentPlayer = StateGetters.currentPlayer(state);
         const damage = (yield* dice()) <= 4 ? 1 : 2;
 
-        const {victimId, victimModulePosition} = yield* request(
+        const info = yield* request(
             chooseModuleToDamageByDiceRequest(currentPlayer, damage),
             'chooseModuleToDamageByDiceResponse'
         );
 
-        if (victimId === undefined) return;
+        if (!info) {
+            return;
+        }
 
-        const victim = StateGetters.playerById(state, victimId)!;
-        yield* damageModule(victim, victimModulePosition, damage, {type: "EventCard"});
+        const victim = StateGetters.playerById(state, info.victimId)!;
+        yield* damageModule(victim, info.victimModulePosition, damage, {type: "EventCard"});
     },
     [EventTypes.TossDiceAndGetEnergy]: function* (state: GameState) {
         const energyCount = (yield* dice()) <= 4 ? 1 : 2;
@@ -209,10 +198,10 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
             return;
         }
 
-        const diceResult = yield* dice();
+        const repairAmount = (yield* dice()) <= 4 ? 1 : 2;
 
         const moduleToRepairPosition = yield* request(
-            chooseModuleToRepairByDiceRequest(currentPlayer, diceResult),
+            chooseModuleToRepairByDiceRequest(currentPlayer, repairAmount),
             'chooseModuleToRepairByDiceResponse'
         );
 
@@ -220,7 +209,7 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
             return;
         }
 
-        yield* put(changeModuleHealth(currentPlayer, moduleToRepairPosition, diceResult, "event card (toss dice & repair)"));
+        yield* put(changeModuleHealth(currentPlayer, moduleToRepairPosition, repairAmount, "event card (toss dice & repair)"));
     },
     [EventTypes.SaveCardAndThenAttack]: function* (state: GameState, event: Event) {
         yield* put(pushCardsToHand(StateGetters.currentPlayer(state), [event]));
@@ -230,7 +219,7 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
     },
     [EventTypes.ChoosePlayerAndStealHisCard]: function* (state: GameState) {
         const currentPlayer = StateGetters.currentPlayer(state);
-        let playersWithCards = state.players.filter(p => (p.hand.length !== 0) && (p.id !== currentPlayer.id));
+        const playersWithCards = state.players.filter(p => (p.hand.length !== 0) && (p.id !== currentPlayer.id));
 
         if (playersWithCards.length === 0) return;
 
@@ -265,9 +254,6 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
             'chooseCardsForRepairSpaceshipResponse'
         );
 
-        if (discardedCardsIndexes.length > 2)
-            throw new Error('Too many discarded cards in DiscardCardAndRepairSpaceship event');
-
         if (discardedCardsIndexes.length === 0) return;
 
         yield* put(disposeCardsFromPlayerHand(currentPlayer, discardedCardsIndexes, "event card (discard & repair)"))
@@ -277,17 +263,14 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
             'chooseModulesToRepairByDiscardedCardsResponse'
         );
 
-        if (modulesToRepairPositions.length > 2) {
-            throw new Error("Too many modules to repair");
-        }
-
         for (let modulePosition of modulesToRepairPositions) {
             yield* put(changeModuleHealth(currentPlayer, modulePosition, 2, "event card (discard & repair)"));
         }
     },
     [EventTypes.MoveDamage]: function* (state: GameState) {
         yield* moveDamage(MoveDamageReason.EventCard, 0, 1);
-    }, [EventTypes.DiscardCardsAndTakeBuildingCards]: function* (state: GameState) {
+    },
+    [EventTypes.DiscardCardsAndTakeBuildingCards]: function* (state: GameState) {
         const currentPlayer = StateGetters.currentPlayer(state);
         if (currentPlayer.hand.length == 0) {
             return;
@@ -297,10 +280,6 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
             chooseCardsToDiscardAndTakeAnotherRequest(currentPlayer),
             'chooseCardsToDiscardAndTakeAnotherResponse'
         );
-
-        if (cardsToDiscardIndexes.length > 2) {
-            throw new Error("Too many cards to discard");
-        }
 
         yield* put(disposeCardsFromPlayerHand(currentPlayer, cardsToDiscardIndexes, "event card (discard & take modules)"));
 

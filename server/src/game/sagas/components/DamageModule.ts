@@ -19,18 +19,18 @@ type DamageType =
     | { type: "Player", attacker: Player }
 
 export function* damageModule(victim: Player, position: Vector2, damage: number, type: DamageType) {
-    const module = SpaceshipGetters.getModuleByPosition(victim.spaceship, position);
+    const module = SpaceshipGetters.getModuleByPosition(victim.spaceship, position)!;
     const info = SpaceshipGetters.damageInfo(victim.spaceship, module, damage);
 
     const isDarkMatterGeneratorDestroyed = info.destroyed.some(
-        m => SpaceshipGetters.getModuleByPosition(victim.spaceship, m.position).type === ModuleType.DarkMatterGenerator
+        m => SpaceshipGetters.getModuleByPosition(victim.spaceship, m.position)!.type === ModuleType.DarkMatterGenerator
     );
     const isMainModuleDestroyed = info.destroyed.some(
-        m => SpaceshipGetters.getModuleByPosition(victim.spaceship, m.position).type === ModuleType.MainModule
+        m => SpaceshipGetters.getModuleByPosition(victim.spaceship, m.position)!.type === ModuleType.MainModule
     );
 
     if (isMainModuleDestroyed) {
-        info.destroyed = info.destroyed.filter(m => SpaceshipGetters.getModuleByPosition(victim.spaceship, m.position).type !== ModuleType.MainModule);
+        info.destroyed = info.destroyed.filter(m => SpaceshipGetters.getModuleByPosition(victim.spaceship, m.position)!.type !== ModuleType.MainModule);
     }
 
     if (isMainModuleDestroyed || info.shouldDeactivateProtector) {
@@ -42,7 +42,7 @@ export function* damageModule(victim: Player, position: Vector2, damage: number,
     }
 
     for (let destroyed of info.destroyed) {
-        const destroyedModule = SpaceshipGetters.getModuleByPosition(victim.spaceship, destroyed.position);
+        const destroyedModule = SpaceshipGetters.getModuleByPosition(victim.spaceship, destroyed.position)!;
 
         yield* put(removeSpaceshipModules(victim, [destroyed.position]));
 

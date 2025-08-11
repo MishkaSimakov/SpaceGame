@@ -22,17 +22,6 @@ export const reducers: ReducersType = {
     playerRebuiltSpaceship(state: GameState, payload) {
         const currentPlayer = state.players[state.currentPlayerIndex];
 
-        let oldPlayerCards = [...currentPlayer.spaceship.modules, ...currentPlayer.hand];
-        let newPlayerCards = [...payload.newSpaceship.modules, ...payload.newHand];
-
-        if (!areCardSetsEqual(oldPlayerCards, newPlayerCards)) {
-            throw new Error("Changed player has wrong cards");
-        }
-
-        if (!SpaceshipGetters.checkConfiguration(payload.newSpaceship)) {
-            throw new Error("Changed player has wrong spaceship configuration");
-        }
-
         currentPlayer.spaceship = payload.newSpaceship;
         currentPlayer.hand = payload.newHand;
 
@@ -124,7 +113,7 @@ export const reducers: ReducersType = {
 
     destructSpaceshipModules(state: GameState, payload) {
         const player = StateGetters.playerById(state, payload.player)!;
-        const destructed = payload.positions.map(p => SpaceshipGetters.getModuleByPosition(player.spaceship, p));
+        const destructed = payload.positions.map(p => SpaceshipGetters.getModuleByPosition(player.spaceship, p)!);
 
         SpaceshipModifiers.removeModule(player.spaceship, destructed);
 
@@ -169,7 +158,7 @@ export const reducers: ReducersType = {
 
     changeModuleHealth(state: GameState, payload) {
         const player = StateGetters.playerById(state, payload.player)!;
-        const module = SpaceshipGetters.getModuleByPosition(player.spaceship, payload.position);
+        const module = SpaceshipGetters.getModuleByPosition(player.spaceship, payload.position)!;
 
         module.health = Math.min(module.health + payload.delta, module.totalHealth);
     },

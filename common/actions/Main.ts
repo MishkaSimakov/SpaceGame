@@ -22,8 +22,8 @@ export default {
 
     ...request(
         'choosePlayerForAttack',
-        (player: Player, reason: AttackReason) => ({payload: {player: player.id, reason}}),
-        (victim: PlayerId) => ({payload: {victim}})
+        (player: Player, reason: AttackReason, required: boolean) => ({payload: {player: player.id, reason, required}}),
+        (victim: PlayerId | undefined) => ({payload: {victim}})
     ),
 
     ...request(
@@ -42,7 +42,7 @@ export default {
         'showCardsToPlayers',
         (player: Player, cardsReceiver: Player, cards: (Module | Event)[]) =>
             ({payload: {player: player.id, cardsReceiver: cardsReceiver.id, cards}}),
-        () => ({})
+        () => ({payload: {}})
     ),
 
     ...request(

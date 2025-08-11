@@ -76,8 +76,8 @@ function getConnectorInDirection(module: Module, direction: string): number {
     return module.connectors[directions[index] as keyof typeof module.connectors];
 }
 
-function getModuleByPosition(ship: Spaceship, x: number, y: number): Module;
-function getModuleByPosition(ship: Spaceship, position: Vector2): Module;
+function getModuleByPosition(ship: Spaceship, x: number, y: number): Module | undefined;
+function getModuleByPosition(ship: Spaceship, position: Vector2): Module | undefined;
 function getModuleByPosition(ship: Spaceship, x: (number | Vector2), y?: number): Module | undefined {
     if (typeof x == "number") {
         return ship.modules.filter(card => card.x === x && card.y === y)[0];
@@ -124,13 +124,15 @@ function getModulesConnectedTo(ship: Spaceship, module: Module): Module[] {
     let connectedModules: Module[] = [];
 
     for (let [index, direction] of Object.entries(directions)) {
-        if (!getModuleByPosition(ship, module.x + direction[0], module.y + direction[1]))
+        if (getConnectorInDirection(module, index) === 0) {
             continue;
+        }
 
-        if (getConnectorInDirection(module, index) === 0)
-            continue;
+        const moduleInDirection = getModuleByPosition(ship, module.x + direction[0], module.y + direction[1]);
 
-        connectedModules.push(getModuleByPosition(ship, module.x + direction[0], module.y + direction[1]));
+        if (moduleInDirection) {
+            connectedModules.push(moduleInDirection);
+        }
     }
 
     return connectedModules;
@@ -175,8 +177,13 @@ function hasDamagedModules(ship: Spaceship): boolean {
 
 function getUnconnectedModules(ship: Spaceship): Module[] {
     let unconnectedModules = ship.modules;
+    const mainModule = getMainModule(ship);
 
-    let addedModules: Module[] = [getModuleByPosition(ship, 0, 0)];
+    if (!mainModule) {
+        return unconnectedModules;
+    }
+
+    let addedModules: Module[] = [mainModule];
 
     do {
         let newAddedModules = [];
@@ -228,7 +235,7 @@ function damageInfoInternal(
 ): DamageInfo {
     let shouldDeactivateProtector = false;
 
-    const targetModule = SpaceshipGetters.getModuleByPosition(shipCopy, target);
+    const targetModule = SpaceshipGetters.getModuleByPosition(shipCopy, target)!;
 
     if (shipCopy.activatedProtector && SpaceshipGetters.isAdjacent(shipCopy, targetModule, shipCopy.activatedProtector)) {
         const protectorPosition = new Vector2(shipCopy.activatedProtector.x, shipCopy.activatedProtector.y);

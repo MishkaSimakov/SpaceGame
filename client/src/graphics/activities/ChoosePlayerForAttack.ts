@@ -18,16 +18,21 @@ const reasonStatus: Record<AttackReason, string> = {
 export class ChoosePlayerForAttackActivity extends Activity {
     private modal: Modal;
 
-    constructor(private scene: Controls, private players: OtherPlayer[], private attackReason: AttackReason) {
+    constructor(
+        private scene: Controls,
+        private players: OtherPlayer[],
+        private attackReason: AttackReason,
+        private required: boolean
+    ) {
         super();
     }
 
-    activate(): Promise<number> {
-        return new Promise((resolve: (playerId?: number) => void) => {
+    activate(): Promise<number | undefined> {
+        return new Promise<number | undefined>(resolve => {
             this.scene.topBarDrawer.setStatus(reasonStatus[this.attackReason]);
 
             const buttons = [{
-                text: this.showNoButton() ? "Да" : "Выбрать",
+                text: !this.required ? "Да" : "Выбрать",
                 color: COLORS.BUTTON.DANGER,
                 onClick: () => {
                     this.scene.topBarDrawer.setButtonsDisabled(true);
@@ -45,7 +50,7 @@ export class ChoosePlayerForAttackActivity extends Activity {
                 }
             }];
 
-            if (this.showNoButton()) {
+            if (!this.required) {
                 buttons.push({
                     text: "Нет",
                     color: COLORS.BUTTON.PRIMARY,
@@ -53,7 +58,7 @@ export class ChoosePlayerForAttackActivity extends Activity {
                         this.scene.topBarDrawer.removeButtons();
                         this.scene.topBarDrawer.clearStatus();
 
-                        resolve();
+                        resolve(undefined);
                     }
                 });
             }
@@ -66,11 +71,6 @@ export class ChoosePlayerForAttackActivity extends Activity {
 
     update() {
         this.modal?.update();
-    }
-
-    private showNoButton() {
-        return this.attackReason != AttackReason.AttackAnyEventCard
-            && this.attackReason != AttackReason.UsingAttackModuleSecondTime
     }
 
     private showModal() {

@@ -12,14 +12,12 @@ import Scene from "../engine/Scene";
 import {Group} from "../engine/Group";
 import {Card} from "../shapes/Card";
 
-import {ChoosePlayerForAttackActivity} from "../activities/ChoosePlayerForAttack";
 import {ShowCardsActivity} from "../activities/ShowCards";
 import {Activity} from "../activities/Activity";
 import {PermuteCardsActivity} from "../activities/PermuteCards";
 import {ChooseFromListActivity} from "../activities/ChooseFromList";
 import {ChooseCardsActivity} from "../activities/ChooseCards";
 import {Boundary, BoundaryType} from "../CountBoundary";
-import {ChooseModulesToMoveDamage} from "../activities/ChooseModulesToMoveDamage";
 import Color from "../Color";
 import {Button} from "../shapes/Button";
 import {ShowLostScreenActivity} from "../activities/ShowLostScreen";
@@ -83,10 +81,6 @@ export default class Controls extends Scene {
         return res;
     }
 
-    async choosePlayerForAttack(players: OtherPlayer[], attackReason: AttackReason) {
-        return await this.enqueueActivity(new ChoosePlayerForAttackActivity(this, players, attackReason));
-    }
-
     async showCards(cards: (Module | Event)[], title?: string): Promise<void> {
         return await this.enqueueActivity(new ShowCardsActivity(this, cards, title));
     }
@@ -104,13 +98,6 @@ export default class Controls extends Scene {
             type: BoundaryType.AT_LEAST,
             count: requiredDiscardCount
         }, this.gameManager.getCurrentPlayer().hand));
-    }
-
-    async chooseCards(cards: (Module | Event)[], count: number, title: string): Promise<number[]> {
-        return await this.enqueueActivity(new ChooseCardsActivity(this, title, {
-            type: BoundaryType.EQUAL,
-            count
-        }, cards));
     }
 
     async chooseModulesToRepair(title: string, maxCount: number): Promise<Vector2[]> {
@@ -206,10 +193,6 @@ export default class Controls extends Scene {
 
     async permuteCards(cards: (Event | Module)[]): Promise<number[]> {
         return await this.enqueueActivity(new PermuteCardsActivity(this, cards));
-    }
-
-    chooseModulesToMoveDamage(moveDamageReason: MoveDamageReason): Promise<Partial<{ from: Vector2, to: Vector2 }>> {
-        return this.enqueueActivity(new ChooseModulesToMoveDamage(this, this.gameManager.spaceshipsScene, moveDamageReason));
     }
 
     askYesOrNo(): Promise<boolean> {

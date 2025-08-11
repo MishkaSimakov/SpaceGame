@@ -38,9 +38,7 @@ export default {
         return {payload: {type}};
     }),
 
-    ...action('shiftTurnToNextPlayer', () => {
-        return {};
-    }),
+    ...action('shiftTurnToNextPlayer', () => ({payload: {}})),
 
     ...action('changePlayerEnergy', (player: Player, delta: number, reason: string) => {
         return {
@@ -122,9 +120,7 @@ export default {
         };
     }),
 
-    ...action('endFight', () => {
-        return {};
-    }),
+    ...action('endFight', () => ({payload: {}})),
 
     ...action('activateProtector', (player: Player, position: Vector2) => {
         return {
@@ -132,9 +128,7 @@ export default {
         };
     }),
 
-    ...action('shiftFightTurnToNextPlayer', () => {
-        return {};
-    }),
+    ...action('shiftFightTurnToNextPlayer', () => ({payload: {}})),
 
     ...action('playerUseModuleSecondTime', (player: Player) => {
         return {

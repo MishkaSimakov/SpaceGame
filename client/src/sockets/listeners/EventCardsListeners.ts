@@ -1,13 +1,15 @@
 import Actions from "@common/actions/Main";
 import {isMainModule, ModuleType} from "@common/modules/Module";
-import {SpaceshipGetters} from "@common/getters/Spaceship";
 import Vector2 from "@common/Vector2";
+import {PlayerId} from "@common/Player";
 
 import {ListenersContainer} from "./ListenersContainer";
 import Color from "../../graphics/Color";
 import {COLORS} from "../../graphics/constants";
 import {Button} from "../../graphics/shapes/Button";
 import {Boundary} from "../../graphics/CountBoundary";
+import {ChooseModulesToMoveDamage} from "../../graphics/activities/ChooseModulesToMoveDamage";
+import {ChooseCardsActivity} from "../../graphics/activities/ChooseCards";
 
 const {
     chooseCardsForRepairSpaceshipResponse,
@@ -20,7 +22,7 @@ const {
     chooseModuleToMoveDamageResponse,
     chooseModuleToRepairByDiceResponse,
     choosePlayerToStealCardResponse,
-    chooseTwoSolarPanelsToDestroyResponse,
+    chooseSolarPanelsToDestroyResponse,
     permuteTopThreeEventCardsResponse,
     useEventCardToDealDamageResponse
 } = Actions;
@@ -39,24 +41,45 @@ export const eventCardsListeners: ListenersContainer = {
     },
 
     async chooseCardToStealRequest({cards}, {game}) {
-        const index = (await game.controlsScene.chooseCards(cards, 1, "Выберите карту для кражи"))[0];
-
-        return chooseCardToStealResponse(index);
+        const indexes = await game.controlsScene.enqueueActivity(
+            new ChooseCardsActivity(
+                game.controlsScene,
+                "Выберите карту для кражи",
+                Boundary.equal(1),
+                cards
+            )
+        );
+        return chooseCardToStealResponse(indexes[0]);
     },
 
     async chooseCardsToDiscardAndTakeAnotherRequest({}, {game}) {
-        const indexes = await game.controlsScene.chooseCards(game.currentPlayer.hand, 2, "Выберите до 2-х карт");
-
+        const indexes = await game.controlsScene.enqueueActivity(
+            new ChooseCardsActivity(
+                game.controlsScene,
+                "Выберите до 2-х карт",
+                Boundary.noMoreThan(2),
+                game.currentPlayer.hand
+            )
+        );
         return chooseCardsToDiscardAndTakeAnotherResponse(indexes);
     },
 
     async chooseModuleToMoveDamageRequest({reason}, {game}) {
-        const {from, to} = await game.controlsScene.chooseModulesToMoveDamage(reason);
-        return chooseModuleToMoveDamageResponse(from, to);
+        const move = await game.controlsScene.enqueueActivity(
+            new ChooseModulesToMoveDamage(game.controlsScene, game.spaceshipsScene, reason)
+        );
+        return chooseModuleToMoveDamageResponse(move);
     },
 
     async chooseCardsForRepairSpaceshipRequest({}, {game}) {
-        const indexes = await game.controlsScene.chooseCards(game.currentPlayer.hand, 2, "Выберите до 2-х карт");
+        const indexes = await game.controlsScene.enqueueActivity(
+            new ChooseCardsActivity(
+                game.controlsScene,
+                "Выберите до 2-х карт",
+                Boundary.noMoreThan(2),
+                game.currentPlayer.hand
+            )
+        );
         return chooseCardsForRepairSpaceshipResponse(indexes);
     },
 
@@ -95,24 +118,24 @@ export const eventCardsListeners: ListenersContainer = {
 
         handle.onSet(validate);
 
-        const {playerId, modulePosition} = await new Promise<{
-            playerId?: number,
-            modulePosition?: Vector2
-        }>((resolve) => {
+        const result = await new Promise<{
+            victimId: PlayerId,
+            victimModulePosition: Vector2
+        } | undefined>((resolve) => {
             game.controlsScene.topBarDrawer.addButtons([{
                 text: "Атаковать",
                 color: COLORS.BUTTON.DANGER,
                 onClick: () => {
                     resolve({
-                        playerId: handle.get()[0].player,
-                        modulePosition: Vector2.modulePosition(handle.get()[0].module)
+                        victimId: handle.get()[0].player,
+                        victimModulePosition: Vector2.modulePosition(handle.get()[0].module)
                     });
                 }
             }, {
                 text: "Пропустить",
                 color: COLORS.BUTTON.PRIMARY,
                 onClick: () => {
-                    resolve({});
+                    resolve(undefined);
                 }
             }]);
 
@@ -123,16 +146,10 @@ export const eventCardsListeners: ListenersContainer = {
         game.controlsScene.topBarDrawer.clearStatus();
         game.spaceshipsScene.endChoosingModule();
 
-        return chooseModuleToDamageByDiceResponse(playerId, modulePosition);
+        return chooseModuleToDamageByDiceResponse(result);
     },
 
-    async chooseTwoSolarPanelsToDestroyRequest({}, {game}) {
-        const solarPanelsCount = SpaceshipGetters.getModulesByType(
-            game.getCurrentPlayer().spaceship,
-            ModuleType.SolarPanel
-        ).length;
-        const count = Math.min(solarPanelsCount, 2);
-
+    async chooseSolarPanelsToDestroyRequest({count}, {game}) {
         game.controlsScene.topBarDrawer.setStatus(`уничтожьте солнечные батареи: ${count}`);
 
         const handle = game.spaceshipsScene.chooseModules(
@@ -165,7 +182,7 @@ export const eventCardsListeners: ListenersContainer = {
         game.controlsScene.topBarDrawer.clearStatus();
         game.spaceshipsScene.endChoosingModule();
 
-        return chooseTwoSolarPanelsToDestroyResponse(positions);
+        return chooseSolarPanelsToDestroyResponse(positions);
     },
 
     async chooseModuleToDestroyRequest({}, {game}) {

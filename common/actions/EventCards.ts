@@ -36,15 +36,15 @@ export default {
     ),
 
     ...request(
-        'chooseTwoSolarPanelsToDestroy',
-        (player: Player) => ({payload: {player: player.id}}),
+        'chooseSolarPanelsToDestroy',
+        (player: Player, count: number) => ({payload: {player: player.id, count}}),
         (positions: Vector2[]) => ({payload: positions})
     ),
 
     ...request(
         'chooseModuleToRepairByDice',
         (player: Player, amount: number) => ({payload: {player: player.id, amount}}),
-        (position: Vector2) => ({payload: position})
+        (position: Vector2 | undefined) => ({payload: position})
     ),
 
     ...request(
@@ -56,13 +56,13 @@ export default {
     ...request(
         'chooseModuleToMoveDamage',
         (player: Player, reason: MoveDamageReason) => ({payload: {player: player.id, reason}}),
-        (from: Vector2, to: Vector2) => ({payload: {from, to}})
+        (move: { from: Vector2, to: Vector2 } | undefined) => ({payload: move})
     ),
 
     ...request(
         'chooseModuleToDamageByDice',
         (player: Player, damage: number) => ({payload: {player: player.id, damage}}),
-        (victimId: PlayerId, victimModulePosition: Vector2) => ({payload: {victimId, victimModulePosition}})
+        (info: {victimId: PlayerId, victimModulePosition: Vector2} | undefined) => ({payload: info})
     ),
 
     ...request(
