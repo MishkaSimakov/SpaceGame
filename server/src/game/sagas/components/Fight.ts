@@ -34,16 +34,16 @@ const {
 
 function* getCombatants() {
     const state = yield* select();
-    const fight = state.fight;
+    assert.ok(state.fight !== undefined);
 
-    assert.ok(fight !== undefined);
+    const fight = state.fight;
 
     const attackerId = fight.isFirstPlayerTurn ? fight.first : fight.second;
     const victimId = fight.isFirstPlayerTurn ? fight.second : fight.first;
 
     return {
-        attacker: StateGetters.playerById(state, attackerId),
-        victim: StateGetters.playerById(state, victimId)
+        attacker: StateGetters.playerById(state, attackerId)!,
+        victim: StateGetters.playerById(state, victimId)!
     };
 }
 

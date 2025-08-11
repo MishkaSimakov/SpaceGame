@@ -17,19 +17,18 @@ class MainModule extends Module {
         bottom: number,
         left: number
     }) {
-        super(connectors);
+        const indexToRomanian: string[] = ['I', 'II', 'III', 'IV', 'V'];
+
+        super(
+            'Командный модуль ' + indexToRomanian[index - 1],
+            ModuleType.MainModule,
+            13,
+            connectors
+        );
 
         this.mainModuleType = type;
-
-        let indexToRomanian: string[] = ['I', 'II', 'III', 'IV', 'V'];
-
-        this.name = 'Командный модуль ' + indexToRomanian[index - 1];
-        this.type = ModuleType.MainModule;
-
         this.energyIncrease = 1;
         this.capacity = 5;
-        this.health = 13;
-        this.totalHealth = 13;
     }
 }
 

@@ -9,7 +9,7 @@ export default class Vector2 {
     constructor(x: number | { x: number, y: number }, y?: number) {
         if (typeof x === 'number') {
             this.x = x;
-            this.y = y;
+            this.y = y!;
         } else {
             this.x = x.x;
             this.y = x.y;

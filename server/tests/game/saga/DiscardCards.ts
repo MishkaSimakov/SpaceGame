@@ -14,7 +14,7 @@ test('doesntDiscardWhenNotEnoughCards', async () => {
     const cardsCount = 4;
 
     for (let i = 0; i < cardsCount; ++i) {
-        player.hand.push(state.stack.module.pop());
+        player.hand.push(state.stack.module.pop()!);
     }
 
     const bus = new ActionsBus();
@@ -41,7 +41,7 @@ test('discardCardsWhenThereAreTooMany', async () => {
     const cardsCount = 6;
 
     for (let i = 0; i < cardsCount; ++i) {
-        player.hand.push(state.stack.module.pop());
+        player.hand.push(state.stack.module.pop()!);
     }
 
     const expectedCards = [player.hand[0], player.hand[5]];

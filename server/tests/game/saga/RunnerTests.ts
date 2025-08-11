@@ -6,12 +6,12 @@ import Actions from "@common/actions/Main"
 import {all, newTask, put, SagaGenerator, select, take} from "../../../src/game/sagas/Effects";
 import {SagaRunner} from "../../../src/game/sagas/SagaRunner";
 import ActionsBus from "../../../src/game/ActionsBus";
-import GameState from "../../../src/game/GameState";
+import {fakeGameState} from "../Utils";
 
 const {throwDice, throwDiceResult} = Actions;
 
 test('select', async () => {
-    const state = new GameState();
+    const state = fakeGameState(2);
     state.currentPlayerIndex = 42;
 
     const bus = new ActionsBus();
@@ -28,7 +28,7 @@ test('select', async () => {
 });
 
 test('put', async () => {
-    const state = new GameState();
+    const state = fakeGameState(2);
     const bus = new ActionsBus();
 
     function* testSaga(): SagaGenerator<void> {
@@ -48,7 +48,7 @@ test('put', async () => {
 });
 
 test('putAndTake', async () => {
-    const state = new GameState();
+    const state = fakeGameState(2);
     const bus = new ActionsBus();
 
     function* testSaga(): SagaGenerator<void> {
@@ -70,7 +70,7 @@ test('putAndTake', async () => {
 });
 
 test('putAndPut', async () => {
-    const state = new GameState();
+    const state = fakeGameState(2);
     const bus = new ActionsBus();
 
     function* testSaga(): SagaGenerator<void> {
@@ -129,7 +129,7 @@ test('putAndPut', async () => {
 // });
 
 test('cancelledTask', async () => {
-    const state = new GameState();
+    const state = fakeGameState(2);
     const bus = new ActionsBus();
 
     let continuedExecution = false;
@@ -158,7 +158,7 @@ test('cancelledTask', async () => {
 });
 
 test('cancelledTaskWithAllEffectAwaiting', async () => {
-    const state = new GameState();
+    const state = fakeGameState(2);
     const bus = new ActionsBus();
 
     let continuedExecution = false;

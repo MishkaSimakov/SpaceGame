@@ -42,11 +42,12 @@ function getTotalEnergyIncrease(ship: Spaceship): number {
 function canConnectModule(ship: Spaceship, module: Module, x: number, y: number): boolean;
 function canConnectModule(ship: Spaceship, module: Module): boolean;
 function canConnectModule(ship: Spaceship, module: Module, x?: number, y?: number): boolean {
-    if (ship.modules.indexOf(module) !== -1 && x === undefined && y === undefined) {
+    if (x === undefined || y === undefined) {
         x = module.x;
         y = module.y;
-    } else if (getModuleByPosition(ship, x, y))
+    } else if (getModuleByPosition(ship, x, y)) {
         return false;
+    }
 
     let hasConnection = false;
 
@@ -67,18 +68,17 @@ function canConnectModule(ship: Spaceship, module: Module, x?: number, y?: numbe
 }
 
 function getConnectorInDirection(module: Module, direction: string): number {
-    let directions = ["right", "top", "left", "bottom"];
+    const directions = ["right", "top", "left", "bottom"];
 
     let index = directions.indexOf(direction);
-
     index = (index + module.rotation) % 4;
 
-    return module.connectors[directions[index]];
+    return module.connectors[directions[index] as keyof typeof module.connectors];
 }
 
 function getModuleByPosition(ship: Spaceship, x: number, y: number): Module;
 function getModuleByPosition(ship: Spaceship, position: Vector2): Module;
-function getModuleByPosition(ship: Spaceship, x: (number | Vector2), y?: number): Module {
+function getModuleByPosition(ship: Spaceship, x: (number | Vector2), y?: number): Module | undefined {
     if (typeof x == "number") {
         return ship.modules.filter(card => card.x === x && card.y === y)[0];
     } else if (x && x.x !== undefined && x.y !== undefined) {

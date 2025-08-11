@@ -70,6 +70,7 @@ export default class GamesManager {
     }
 
     private async joinGame(token: string, gameId: string) {
+        assert.ok(process.env.JWT_SECRET_KEY, "Secret token must be set in .env file.");
         const decodedToken = jwt.verify(token, process.env.JWT_SECRET_KEY);
 
         const user = await User.findOneBy({
@@ -123,9 +124,13 @@ export default class GamesManager {
             id: gameId
         });
 
+        assert.ok(gameEntity);
+
         const winner = game.state.players.find(p => !p.lose);
         assert.ok(winner);
 
+        // TODO: strict typing for typeorm
+        // @ts-ignore
         gameEntity.winner = await User.findOneBy({id: winner.id});
         gameEntity.finishedAt = new Date();
 
@@ -153,7 +158,7 @@ export default class GamesManager {
         return undefined;
     }
 
-    private async activateGame(gameEntity: GameDBEntity): Promise<Game> {
+    private async activateGame(gameEntity: GameDBEntity): Promise<Game | undefined> {
         try {
             const game = new Game(
                 gameEntity.players,
@@ -197,7 +202,7 @@ export default class GamesManager {
         return result;
     }
 
-    private async reportGameError(game: GameDBEntity, error: Error) {
+    private async reportGameError(game: GameDBEntity, error: any) {
         console.warn("⚠️ error in game:", error);
 
         try {

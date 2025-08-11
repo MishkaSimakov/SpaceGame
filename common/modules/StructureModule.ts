@@ -2,17 +2,11 @@ import Module, {ModuleType} from "./Module";
 
 export default class StructureModule extends Module {
     constructor(left: number, top: number, right: number, bottom: number) {
-        super({
-            'left': left,
-            'top': top,
-            'right': right,
-            'bottom': bottom
-        });
-
-        this.name = 'Структурный модуль';
-        this.type = ModuleType.StructureModule;
-
-        this.health = 5;
-        this.totalHealth = 5;
+        super(
+            'Структурный модуль',
+            ModuleType.StructureModule,
+            5,
+            {left, top, right, bottom}
+        );
     }
 }

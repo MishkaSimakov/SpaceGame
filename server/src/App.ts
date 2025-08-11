@@ -7,9 +7,9 @@ import ServerManager from "./http/ServerManager";
 export default class App {
     private static instance: App;
 
-    databaseManager: DatabaseManager;
-    gamesManager: GamesManager;
-    serverManager: ServerManager;
+    databaseManager?: DatabaseManager;
+    gamesManager?: GamesManager;
+    serverManager?: ServerManager;
 
     private constructor() {
     }

@@ -1,19 +1,13 @@
-import Module , {ModuleType} from "./Module";
+import Module, {ModuleType} from "./Module";
 
 export default class AttackModule extends Module {
     constructor(left: number, top: number, right: number, bottom: number) {
-        super({
-            'left': left,
-            'top': top,
-            'right': right,
-            'bottom': bottom
-        });
-
-        this.name = 'Абордажный модуль';
-        this.type = ModuleType.AttackModule;
-
-        this.health = 3;
-        this.totalHealth = 3;
+        super(
+            'Абордажный модуль',
+            ModuleType.AttackModule,
+            3,
+            {left, top, right, bottom}
+        );
 
         this.energyCost = 5;
     }

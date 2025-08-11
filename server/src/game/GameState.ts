@@ -24,13 +24,16 @@ import {GameSettings} from "@common/GameSettings";
 export class FightData {
     first: PlayerId;
     second: PlayerId;
-
     isFirstPlayerTurn: boolean = true;
-
     isFightEnded: boolean = false;
+
+    constructor(first: PlayerId, second: PlayerId) {
+        this.first = first;
+        this.second = second;
+    }
 }
 
-const moduleName = {
+const moduleName: Record<string, new (left: number, top: number, right: number, bottom: number) => Module> = {
     "dark_matter_generator": DarkMatterGenerator,
     "small_quantum_protector": SmallQuantumProtector,
     "quantum_protector": QuantumProtector,
@@ -136,7 +139,7 @@ export default class GameState {
         new MainModule(5, MainModuleType.AttackOrRunaway, {top: 1, right: 1, bottom: 1, left: 1})
     ];
 
-    players: Player[] = [];
+    players: Player[];
     currentPlayerIndex: number = 0;
 
     fight?: FightData = undefined;
@@ -145,7 +148,10 @@ export default class GameState {
 
     timeRecords: TimeRecord[] = [];
 
-    constructor() {
+    constructor(settings: GameSettings, players: Player[]) {
+        this.settings = settings;
+        this.players = players;
+
         for (let module in modules) {
             for (let configuration of modules[module]["configurations"]) {
                 this.stack["module"].push(

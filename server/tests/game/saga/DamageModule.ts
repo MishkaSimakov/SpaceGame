@@ -20,7 +20,7 @@ test('simple', async () => {
 
     const attacker = state.players[0];
     const victim = state.players[1];
-    const expectedHealth = SpaceshipGetters.getMainModule(victim.spaceship).totalHealth - 1;
+    const expectedHealth = SpaceshipGetters.getMainModule(victim.spaceship)!.totalHealth - 1;
 
     const bus = new ActionsBus();
 
@@ -35,7 +35,7 @@ test('simple', async () => {
     await runner.run();
 
     // test
-    assert.equal(SpaceshipGetters.getMainModule(state.players[1].spaceship).health, expectedHealth);
+    assert.equal(SpaceshipGetters.getMainModule(state.players[1].spaceship)!.health, expectedHealth);
 });
 
 test('damageModuleReducesEnergyWhenCapacityDecreases', async () => {
@@ -46,7 +46,7 @@ test('damageModuleReducesEnergyWhenCapacityDecreases', async () => {
     let victim = state.players[1];
     const bus = new ActionsBus();
 
-    const mainModule = SpaceshipGetters.getMainModule(victim.spaceship);
+    const mainModule = SpaceshipGetters.getMainModule(victim.spaceship)!;
     mainModule.capacity = 25;
     mainModule.health = 10;
     mainModule.connectors = {top: 0, right: 1, bottom: 0, left: 0};
@@ -89,7 +89,7 @@ test('damageModuleNoEnergyAdjustmentWhenWithinCapacity', async () => {
     let victim = state.players[1];
     const bus = new ActionsBus();
 
-    const mainModule = SpaceshipGetters.getMainModule(victim.spaceship);
+    const mainModule = SpaceshipGetters.getMainModule(victim.spaceship)!;
     mainModule.capacity = 25;
     mainModule.health = 10;
     mainModule.connectors = {top: 0, right: 1, bottom: 0, left: 0};
@@ -132,7 +132,7 @@ test('damageModuleNoDestructionNoEnergyAdjustment', async () => {
     let victim = state.players[1];
     const bus = new ActionsBus();
 
-    const mainModule = SpaceshipGetters.getMainModule(victim.spaceship);
+    const mainModule = SpaceshipGetters.getMainModule(victim.spaceship)!;
     mainModule.capacity = 25;
     mainModule.health = 10;
     mainModule.connectors = {top: 0, right: 1, bottom: 0, left: 0};
@@ -175,7 +175,7 @@ test('damageFromNuclearReactor', async () => {
     let victim = state.players[1];
     const bus = new ActionsBus();
 
-    const mainModule = SpaceshipGetters.getMainModule(victim.spaceship);
+    const mainModule = SpaceshipGetters.getMainModule(victim.spaceship)!;
     mainModule.connectors = {top: 1, right: 1, bottom: 1, left: 1};
 
     const reactor = new NuclearReactor(1, 1, 1, 1);
@@ -210,7 +210,7 @@ test('damageFromNuclearReactorChain', async () => {
     let victim = state.players[1];
     const bus = new ActionsBus();
 
-    const mainModule = SpaceshipGetters.getMainModule(victim.spaceship);
+    const mainModule = SpaceshipGetters.getMainModule(victim.spaceship)!;
     mainModule.connectors = {top: 1, right: 1, bottom: 1, left: 1};
 
     const firstReactor = new NuclearReactor(1, 1, 1, 1);
@@ -262,7 +262,7 @@ test('healthIsRestoredWhenGoesToDiscards', async () => {
     let victim = state.players[1];
     const bus = new ActionsBus();
 
-    const mainModule = SpaceshipGetters.getMainModule(victim.spaceship);
+    const mainModule = SpaceshipGetters.getMainModule(victim.spaceship)!;
     mainModule.connectors = {top: 1, right: 1, bottom: 1, left: 1};
 
     const protector = new QuantumProtector(1, 1, 1, 1);

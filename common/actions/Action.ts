@@ -3,10 +3,10 @@ export interface Action<T extends string, P, M = unknown> {
     time: number;
 
     type: T;
-    payload?: P;
+    payload: P;
 
     //* Организация Meta, а также ее продукты Instagram и Facebook, признаны экстремистскими и запрещены на территории РФ.
-    meta?: M;
+    meta: M;
 }
 
 export function isAction(object: any): object is Action<string, any, any> {

@@ -77,7 +77,7 @@ export class SagaRunner<R> {
         let currentTask: { name: string, generator: Generator };
         do {
             assert.ok(this.stack.length !== 0, "trying to cancel a non-existing task");
-            currentTask = this.stack.pop();
+            currentTask = this.stack.pop()!;
 
             assert.ok(this.currentEffectCallback, "assumingly you are trying to call `cancel` from inside a saga. This is not implemented, don't do that, please.");
             currentTask.generator.return({});

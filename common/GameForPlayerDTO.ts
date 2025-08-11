@@ -1,32 +1,18 @@
 import Player, {PlayerId} from "./Player";
 import Spaceship from "./Spaceship";
-import {Options} from "./PlainToClass";
-import Module from "./modules/Module";
 import {Message} from "./Types";
-import {GameSettings, TimeControlSettings} from "./GameSettings";
+import {GameSettings} from "./GameSettings";
 
-class OtherPlayer {
+type OtherPlayer = {
     id: number;
     name: string;
     energy: number;
     spaceship: Spaceship;
     handSize: number;
     lose: boolean;
+};
 
-    static getPropertiesMap(): Options {
-        return {
-            spaceship: {
-                class: Spaceship,
-
-                modules: {
-                    class: Module
-                }
-            }
-        };
-    }
-}
-
-class GameForPlayerDTO {
+type GameForPlayerDTO = {
     currentTurnPlayerId: PlayerId;
 
     settings: GameSettings;
@@ -34,8 +20,8 @@ class GameForPlayerDTO {
     otherPlayers: OtherPlayer[];
     onlineMap: Record<PlayerId, boolean>;
 
-    timeControl: {
-        timeDecreasingPlayerId: number;
+    timeControl?: {
+        timeDecreasingPlayerId: number | undefined;
         playersTime: Record<number, number>
     };
 

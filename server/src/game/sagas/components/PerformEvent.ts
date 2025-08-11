@@ -194,7 +194,7 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
 
         if (victimId === undefined) return;
 
-        const victim = StateGetters.playerById(state, victimId);
+        const victim = StateGetters.playerById(state, victimId)!;
         yield* damageModule(victim, victimModulePosition, damage, {type: "EventCard"});
     },
     [EventTypes.TossDiceAndGetEnergy]: function* (state: GameState) {
@@ -239,7 +239,7 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
             'choosePlayerToStealCardResponse'
         );
 
-        const chosenPlayer = StateGetters.playerById(state, chosenPlayerId);
+        const chosenPlayer = StateGetters.playerById(state, chosenPlayerId)!;
 
         const chosenCardIndex = yield* request(
             chooseCardToStealRequest(currentPlayer, chosenPlayer.hand),

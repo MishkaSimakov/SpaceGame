@@ -1,36 +1,30 @@
 import {Request, Response} from "express";
 import {User} from "../../entity/user";
 import bcrypt from "bcrypt";
-import path from "path";
-import App from "../../App";
 import {AuthenticatedRequest} from "../middleware/auth";
 
 export const login = async (req: Request, res: Response) => {
-    try {
-        let user = await User.findOneBy({
-            login: req.body.login
-        });
+    let user = await User.findOneBy({
+        login: req.body.login
+    });
 
-        if (!user) {
-            throw new Error('user dont exist');
-        }
-
-        const isMatch = await bcrypt.compare(req.body.password, user.password);
-
-        if (!isMatch) {
-            throw new Error('Password is not correct');
-        }
-
-        let token = user.generateToken();
-
-        return res.cookie('authentication_token', token, {
-            expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365)
-        }).redirect('/');
-    } catch (error) {
-        console.error(error);
-
+    if (!user) {
+        req.flash('error', 'Неправильный логин или пароль.');
         return res.redirect('/login');
     }
+
+    const isMatch = await bcrypt.compare(req.body.password, user.password);
+
+    if (!isMatch) {
+        req.flash('error', 'Неправильный логин или пароль.');
+        return res.redirect('/login');
+    }
+
+    let token = user.generateToken();
+
+    return res.cookie('authentication_token', token, {
+        expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365)
+    }).redirect('/');
 };
 
 export const register = async (req: Request, res: Response) => {
@@ -60,10 +54,6 @@ export const register = async (req: Request, res: Response) => {
         return res.status(500).send('Something went wrong.');
     }
 };
-
-let getStaticPath = (staticPath: string): string => {
-    return path.join(App.getInstance().serverManager.staticBasePath, staticPath);
-}
 
 export const home = async (req: AuthenticatedRequest, res: Response) => {
     // TODO: return only current player games
@@ -109,8 +99,8 @@ export const home = async (req: AuthenticatedRequest, res: Response) => {
                     id: game.id,
                     name: game.name,
                     winner: {
-                        id: game.winner.id,
-                        login: game.winner.login
+                        id: game.winner!.id,
+                        login: game.winner!.login
                     },
                     players: game.players.map(p => {
                         return {
@@ -133,7 +123,14 @@ export const showRegisterPage = async (req: Request, res: Response) => {
 };
 
 export const showUserPage = async (req: Request, res: Response) => {
-    const userId = parseInt(req.url.split('/').pop());
+    const userId = Number(req.params.userId);
+
+    if (Number.isNaN(userId)) {
+        return res.status(404).render('error', {
+            code: 404
+        });
+    }
+
     const user = await User.findOne({
         where: {
             id: userId,
@@ -164,8 +161,8 @@ export const showUserPage = async (req: Request, res: Response) => {
                     id: game.id,
                     name: game.name,
                     winner: {
-                        id: game.winner.id,
-                        login: game.winner.login
+                        id: game.winner?.id,
+                        login: game.winner?.login
                     },
                     players: game.players.map(p => {
                         return {

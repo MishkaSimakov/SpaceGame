@@ -6,33 +6,25 @@ import Actions from "@common/actions/Main"
 
 import GameState from "../../src/game/GameState";
 import ActionsBus from "../../src/game/ActionsBus";
-import {reducers} from "../../src/game/reducers/Main";
+import {isReducerName, reducers} from "../../src/game/reducers/Main";
 
 const {throwDiceResult, shuffleResult} = Actions;
 
 export function fakeGameState(playersCount: number): GameState {
-    const state = new GameState();
+    const settings = new GameSettings("abracadabra", playersCount, false, false, false);
+    const state = new GameState(settings, []);
 
-    const settings = new GameSettings();
-    settings.size = playersCount;
-
-    state.settings = settings;
     state.currentPlayerIndex = 0;
 
     for (let i = 0; i < playersCount; ++i) {
-        const player = new Player();
+        const player = new Player(i, `player #${i}`, new Spaceship());
 
-        player.id = i;
-        player.name = `player #${i}`;
-
-        const mainModule = state.mainModules.pop();
+        const mainModule = state.mainModules.pop()!;
         mainModule.x = 0;
         mainModule.y = 0;
-
-        player.spaceship = new Spaceship();
         player.spaceship.modules.push(mainModule);
 
-        state.players.push(player)
+        state.players.push(player);
     }
 
     return state;
@@ -40,8 +32,11 @@ export function fakeGameState(playersCount: number): GameState {
 
 export function attachReducers(busRef: ActionsBus, stateRef: GameState) {
     busRef.on('*', (action: Action<string, any, any>) => {
-        if (action.type in reducers) {
+        if (isReducerName(action.type)) {
             let copy = structuredClone(stateRef);
+
+            // TODO: add typing
+            // @ts-ignore
             reducers[action.type](copy, action.payload);
 
             Object.assign(stateRef, copy);

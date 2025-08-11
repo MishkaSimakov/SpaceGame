@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import {Request, Response, NextFunction} from 'express';
 import {User, UserJWTPayload} from "../../entity/user";
+import * as assert from "node:assert";
 
 export interface AuthenticatedRequest extends Request {
     user: User;
@@ -14,7 +15,8 @@ export const auth = async (req: Request, res: Response, next: NextFunction) => {
         return;
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY) as UserJWTPayload;
+    assert.ok(process.env.JWT_SECRET_KEY, "Secret token must be set in .env file.");
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY) as unknown as UserJWTPayload;
 
     let user = await User.findOneBy({
         id: parseInt(decoded._id)

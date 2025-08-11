@@ -5,28 +5,26 @@ import App from "../../../App";
 import {Game as GameDBEntity} from "../../../entity/game";
 import {Logger} from "../../../game/Logger";
 import {AuthenticatedRequest} from "../../middleware/auth";
+import {gamePlayersValidator} from "../../../validation/GamePlayersValidator";
 
 
 export const create = async (req: AuthenticatedRequest, res: Response) => {
     try {
-        const usersIds = req.body.users;
+        const users = await User.find();
+
         const settings = req.body.settings as GameSettings;
         const name = req.body.name;
 
-        if (!Array.isArray(usersIds) || !usersIds.every(n => Number.isInteger(n))) {
-            return res.status(400).json({error: "'users' must be an array of integers"});
+        const result = gamePlayersValidator(users).safeParse(req.body.players);
+        if (result.error) {
+            return res.status(400).json({error: "wrong 'users' value"});
         }
 
-        const users = await User.find();
-        const selectedUsers = usersIds.map(id => {
-            return users.find(u => u.id === parseInt(id));
+        const selectedUsers = result.data.map(id => {
+            return users.find(u => u.id === id)!;
         });
 
-        if (selectedUsers.some(u => !u)) {
-            return res.status(400).json({error: "one of users ids is invalid"});
-        }
-
-        const gameId = await App.getInstance().gamesManager.createGame(name, req.user, selectedUsers, settings);
+        const gameId = await App.getInstance().gamesManager!.createGame(name, req.user, selectedUsers, settings);
 
         return res.json({gameId: gameId});
     } catch (error) {

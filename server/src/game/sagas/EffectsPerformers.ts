@@ -28,8 +28,9 @@ type EffectsPerformers = {
     };
 };
 
-function getChildCallbacksForAll(effects: Effect[], cb: any) {
-    const result = {};
+// TODO: add typing
+function getChildCallbacksForAll(effects: object, cb: any) {
+    const result: Record<string, any> = {};
 
     const childCallbacks: Record<string, {
         callback: {

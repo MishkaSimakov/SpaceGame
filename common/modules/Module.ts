@@ -51,7 +51,18 @@ export default class Module {
     y: number = 0;
     rotation: number = 0;
 
-    constructor(connectors: { top: number, right: number, bottom: number, left: number }) {
+    constructor(name: string, type: ModuleType, totalHealth: number, connectors: {
+        top: number,
+        right: number,
+        bottom: number,
+        left: number
+    }) {
+        this.name = name;
+        this.type = type;
+
+        this.totalHealth = totalHealth;
+        this.health = totalHealth;
+
         this.connectors = connectors;
     }
 }

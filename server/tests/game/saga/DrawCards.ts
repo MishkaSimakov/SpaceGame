@@ -6,7 +6,7 @@ import * as assert from "node:assert";
 import {popOneCard} from "../../../src/game/sagas/components/PopCards";
 
 test('drawOneCard', async () => {
-    for (const type of ["module", "event"]) {
+    for (const type of ["module", "event"] as ["module", "event"]) {
         const state = fakeGameState(2);
         const bus = new ActionsBus();
 
@@ -29,7 +29,7 @@ test('drawOneCard', async () => {
 });
 
 test('drawOneCardWithDiscards', async () => {
-    for (const type of ["module", "event"]) {
+    for (const type of ["module", "event"] as ["module", "event"]) {
         const state = fakeGameState(2);
         const bus = new ActionsBus();
 

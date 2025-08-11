@@ -1,7 +1,6 @@
 import {GameSettings} from "@common/GameSettings";
 import {GameForPlayerDTO, OtherPlayer} from "@common/GameForPlayerDTO";
 import {Message} from "@common/Types";
-import {plainToClass} from "@common/PlainToClass";
 import {PlayerGetters} from "@common/getters/Player";
 
 import Spaceships from "./graphics/scenes/Spaceships";
@@ -96,14 +95,12 @@ export default class Game {
     setGameData(gameDTO: GameForPlayerDTO) {
         this.currentTurnPlayerId = gameDTO.currentTurnPlayerId;
         this.onlineMap = gameDTO.onlineMap;
-
-        if (!this.rebuildSpaceshipManager.isRebuildingSpaceship)
-            this.currentPlayer = plainToClass(gameDTO.player, Player.getPropertiesMap());
-
-        this.otherPlayers = gameDTO.otherPlayers
-            .map(p => plainToClass(p, OtherPlayer.getPropertiesMap()));
-
+        this.otherPlayers = gameDTO.otherPlayers;
         this.settings = gameDTO.settings;
+
+        if (!this.rebuildSpaceshipManager.isRebuildingSpaceship) {
+            this.currentPlayer = gameDTO.player;
+        }
 
         // time control
         if (this.settings?.withTimeControl) {

@@ -43,7 +43,7 @@ type EffectUnion =
     | TakeEffect<keyof typeof Actions>
     | NewTaskEffect<any>;
 
-type GeneratorReturnValue<T> = T extends Generator<any, infer R, any> ? R : never;
+export type GeneratorReturnValue<T> = T extends Generator<any, infer R, any> ? R : never;
 
 export type AllEffect<T extends Record<string, GeneratorForEffect<EffectUnion>>> = {
     input: {

@@ -14,7 +14,7 @@ import {getDTO} from "./mappers/GameToGameForPlayerMapper";
 import SocketsManager from "./io/SocketsManager";
 import {gameSaga} from "./sagas/Main";
 import {Logger} from "./Logger";
-import {reducers} from "./reducers/Main";
+import {isReducerName, reducers} from "./reducers/Main";
 import {SagaRunner} from "./sagas/SagaRunner";
 import {Randomizer} from "./Randomizer";
 import {LossMiddleware} from "./LossMiddleware";
@@ -34,17 +34,10 @@ export default class Game {
     constructor(users: User[], settings: GameSettings, sockets: SocketsManager, logger: Logger) {
         this.users = users;
 
-        this.state = new GameState();
-        this.state.settings = settings;
-        this.state.players = this.users.map(u => {
-            const player = new Player();
-
-            player.id = u.id;
-            player.name = u.login;
-            player.spaceship = new Spaceship();
-
-            return player;
-        });
+        this.state = new GameState(
+            settings,
+            this.users.map(u => new Player(u.id, u.login, new Spaceship()))
+        );
 
         this.randomizer = new Randomizer(settings.seed);
         this.bus = new ActionsBus();
@@ -103,11 +96,11 @@ export default class Game {
         // register fake sockets listeners
         // they don't send anything to users and read responses from the log file
         const actionsReplayListener = (action: Action<string, any, any>) => {
-            if (actions.length === 0) {
+            const pastAction = actions.shift();
+            if (!pastAction) {
                 return;
             }
 
-            const pastAction = actions.shift();
             console.log("⏪ replay: ", pastAction.uuid, action.type, pastAction.type, "remaining: ", actions.length);
 
             assert.equal(pastAction.type, action.type);
@@ -184,8 +177,10 @@ export default class Game {
 
     registerReduceListeners() {
         this.bus.on('*', (action) => {
-            if (action.type in reducers) {
+            if (isReducerName(action.type)) {
                 let copy = structuredClone(this.state);
+                // TODO: strict typying
+                // @ts-ignore
                 reducers[action.type](copy, action.payload);
 
                 const delta = jsonpatch.compare(this.state, copy);
@@ -224,12 +219,7 @@ export default class Game {
         for (let player of this.state.players) {
             const socket = this.sockets.getSocket(player.id);
 
-            if (!socket) {
-                console.log(`🔄 sync with player ${player.id} failed`);
-            } else {
-                console.log(`🔄 sync with player ${player.id} successful`);
-                socket.emit('setGameData', getDTO(this, player));
-            }
+            socket?.emit('setGameData', getDTO(this, player));
         }
     }
 

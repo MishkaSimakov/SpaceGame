@@ -1,19 +1,22 @@
-export class TimeControlSettings {
+export type TimeControlSettings = {
     startTime: number;
     defaultTimeIncrease: number;
     fightTimeIncrease: number;
 }
 
 export class GameSettings {
-    seed: string;
+    constructor(
+        public readonly seed: string,
+        public readonly size: number,
+        public readonly withTimeControl: boolean,
+        public readonly loseWhenTimeout: boolean,
+        public readonly isPublic: boolean
+    ) {
+    }
 
-    size: number;
-    withTimeControl: boolean;
-    timeControlSettings?: TimeControlSettings;
-    loseWhenTimeout: boolean;
-    isPublic: boolean;
+    timeControlSettings?: TimeControlSettings = undefined;
 
-    startCardsCount: number = 4;
+    startCardsCount = 4;
     mainModuleRunawayEnergyCost = 5;
     energyToAttackByMainModule = 7;
     energyToMoveDamageByMainModule = 4;

@@ -35,9 +35,7 @@ export default {
     }),
 
     ...action('popCardFromHeap', (type: "module" | "event") => {
-        return {
-            payload: {type}
-        };
+        return {payload: {type}};
     }),
 
     ...action('shiftTurnToNextPlayer', () => {

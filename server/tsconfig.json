@@ -13,6 +13,7 @@
     "moduleResolution": "node16",
     "resolveJsonModule": true,
     "inlineSourceMap": true,
+    "strict": true,
     "paths": {
       "@common/*": [
         "../common/*"

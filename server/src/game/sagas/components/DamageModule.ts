@@ -54,7 +54,7 @@ export function* damageModule(victim: Player, position: Vector2, damage: number,
     }
 
     // update victim state
-    victim = StateGetters.playerById(yield* select(), victim.id);
+    victim = StateGetters.playerById(yield* select(), victim.id)!;
 
     if (info.destroyed.length !== 0) {
         const unconnectedModules = SpaceshipGetters.getUnconnectedModules(victim.spaceship);
@@ -75,7 +75,7 @@ export function* damageModule(victim: Player, position: Vector2, damage: number,
     }
 
     // update victim state
-    victim = StateGetters.playerById(yield* select(), victim.id);
+    victim = StateGetters.playerById(yield* select(), victim.id)!;
 
     if (victim.energy > SpaceshipGetters.getTotalCapacity(victim.spaceship)) {
         yield* put(changePlayerEnergy(

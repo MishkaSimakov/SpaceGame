@@ -3,7 +3,10 @@ import Actions from "@common/actions/Main"
 
 export type ActionDescriptor = (keyof typeof Actions) | "*";
 
-export type ActionListener<T extends ActionDescriptor> = (action: T extends keyof typeof Actions ? ReturnType<(typeof Actions)[T]> : Action<string, any, any>) => void;
+export type ActionListener<T extends ActionDescriptor> = (action:
+                                                          T extends keyof typeof Actions
+                                                              ? ReturnType<(typeof Actions)[T]>
+                                                              : T extends "*" ? Action<string, any, any> : never) => void;
 
 export abstract class Middleware {
     abstract apply(action: Action<string, any, any>): Action<string, any, any> | undefined;

@@ -4,20 +4,14 @@ import Module, {ModuleType} from "./Module";
 
 export default class SpaceSolver extends Module {
     constructor(left: number, top: number, right: number, bottom: number) {
-        super({
-            'left': left,
-            'top': top,
-            'right': right,
-            'bottom': bottom
-        });
-
-        this.name = 'Космический порешатель';
-        this.type = ModuleType.SpaceSolver;
+        super(
+            'Космический порешатель',
+            ModuleType.SpaceSolver,
+            1,
+            {left, top, right, bottom}
+        );
 
         this.strength = 1;
-        this.health = 1;
-        this.totalHealth = 1;
-
         this.energyCost = 1;
     }
 }

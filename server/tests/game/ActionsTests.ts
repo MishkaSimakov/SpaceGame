@@ -9,11 +9,12 @@ import GameState from "../../src/game/GameState";
 import ActionsBus from "../../src/game/ActionsBus";
 import {SagaRunner} from "../../src/game/sagas/SagaRunner";
 import {beforeTurn} from "../../src/game/sagas/phases/BeforeTurn";
+import {fakeGameState} from "./Utils";
 
 const {choosePlayerForAttackResponse} = Actions;
 
 test('attackLaterEventCard', async () => {
-    const state = new GameState();
+    const state = fakeGameState(2);
     const bus = new ActionsBus();
 
     // fake state
@@ -21,15 +22,12 @@ test('attackLaterEventCard', async () => {
     const card = state.stack.event[cardIndex];
     state.stack.event.splice(cardIndex, 1);
 
-    const fakeAttacker = new Player();
-    fakeAttacker.id = 0;
-    fakeAttacker.hand.push(card);
+    const [attacker, victim] = state.players;
 
-    const fakeVictim = new Player();
-    fakeVictim.id = 1;
+    attacker.id = 0;
+    attacker.hand.push(card);
 
-    state.players.push(fakeAttacker, fakeVictim);
-    state.currentPlayerIndex = 0;
+    victim.id = 1;
 
     const runner = new SagaRunner(state, bus, beforeTurn);
 

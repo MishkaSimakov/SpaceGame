@@ -6,16 +6,14 @@ import {SpaceshipGetters} from "./Spaceship";
 
 export const PlayerGetters = {
     forOtherPlayer(player: Player): OtherPlayer {
-        const otherPlayer = new OtherPlayer();
-
-        otherPlayer.id = player.id;
-        otherPlayer.name = player.name;
-        otherPlayer.energy = player.energy;
-        otherPlayer.spaceship = player.spaceship;
-        otherPlayer.handSize = player.hand.length;
-        otherPlayer.lose = player.lose;
-
-        return otherPlayer;
+        return {
+            id: player.id,
+            name: player.name,
+            energy: player.energy,
+            spaceship: player.spaceship,
+            handSize: player.hand.length,
+            lose: player.lose
+        };
     },
 
     canAttack(player: Player): boolean {

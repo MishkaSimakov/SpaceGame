@@ -21,35 +21,35 @@ export enum GameStatus {
 @Entity()
 export class Game extends BaseEntity {
     @PrimaryColumn({nullable: false})
-    id: string
+    id!: string
 
     @Column({nullable: false})
-    name: string;
+    name!: string;
 
     @ManyToOne(type => User, {nullable: false})
-    owner: User;
+    owner!: User;
 
     @ManyToOne(type => User, {nullable: true})
-    winner: User;
+    winner?: User;
 
     @ManyToMany(() => User, (user) => user.games, {nullable: false})
     @JoinTable()
-    players: User[];
+    players!: User[];
 
     @Column({nullable: false})
-    logFilepath: string;
+    logFilepath!: string;
 
     @Column("simple-json")
-    settings: GameSettings;
+    settings!: GameSettings;
 
     @Column({type: "enum", enum: GameStatus, nullable: false})
-    status: GameStatus;
+    status!: GameStatus;
 
     @Column({nullable: false, type: "timestamptz"})
-    createdAt: Date;
+    createdAt!: Date;
 
     @Column({nullable: true, type: "timestamptz"})
-    finishedAt: Date;
+    finishedAt?: Date;
 
 
     isFinished(): boolean {

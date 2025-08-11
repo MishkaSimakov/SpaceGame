@@ -14,10 +14,10 @@ function addModule(ship: Spaceship, module: Module, x: number, y: number): boole
     return true;
 }
 
-function removeModule(ship: Spaceship, x: number, y: number);
-function removeModule(ship: Spaceship, module: Module);
-function removeModule(ship: Spaceship, module: Module[]);
-function removeModule(ship: Spaceship, x: number | Module | Module[], y?: number) {
+function removeModule(ship: Spaceship, x: number, y: number): void;
+function removeModule(ship: Spaceship, module: Module): void;
+function removeModule(ship: Spaceship, module: Module[]): void;
+function removeModule(ship: Spaceship, x: number | Module | Module[], y?: number): void {
     if (typeof x === 'number') {
         ship.modules = ship.modules.filter(card => (card.x !== x || card.y !== y));
 

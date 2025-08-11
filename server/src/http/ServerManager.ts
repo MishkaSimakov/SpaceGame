@@ -8,6 +8,8 @@ import {Server as SocketServer} from "socket.io";
 import cors from "cors";
 import path from "path";
 import serveStatic from "serve-static";
+
+// @ts-ignore
 import edge from "express-edge";
 import cookieParser from 'cookie-parser';
 import {Express} from "express";
@@ -15,22 +17,23 @@ import session from "express-session";
 import flash from "express-flash";
 
 import * as process from "node:process";
+import * as assert from "node:assert";
 
 export default class ServerManager {
-    server: Express;
-    httpServer: HTTPServer;
-    io: SocketServer;
+    server?: Express;
+    httpServer?: HTTPServer;
+    io?: SocketServer;
 
     staticBasePath: string;
 
     constructor() {
+        this.staticBasePath = path.join(__dirname, '../../../client/dist');
     }
 
     initServer() {
-        this.staticBasePath = path.join(__dirname, '../../../client/dist');
-
         this.server = express();
 
+        assert.ok(process.env.SESSION_SECRET_KEY, "Secret key must be set in .env file");
         this.server.use(session({
             secret: process.env.SESSION_SECRET_KEY,
             resave: false,
@@ -46,7 +49,7 @@ export default class ServerManager {
         this.server.use(express.urlencoded({extended: false}));
 
         // error handler
-        this.server.use((err: unknown, req, res, next) => {
+        this.server.use((err: unknown, req: any, res: any, next: any) => {
             console.error(err);
             res.status(500).json({message: "Internal server error"});
         });
@@ -74,7 +77,7 @@ export default class ServerManager {
     }
 
     runServer() {
-        this.httpServer.listen(3000, () => {
+        this.httpServer!.listen(3000, () => {
             console.log('Server started!');
         });
     }

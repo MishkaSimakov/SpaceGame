@@ -6,27 +6,33 @@ import {GameSettings} from "@common/GameSettings";
 import {AuthenticatedGameRequest} from "../middleware/GameOwner";
 import {Game as GameDBEntity} from "../../entity/game";
 import {Logger} from "../../game/Logger";
-import {Action} from "@common/actions/Action";
+import {gamePlayersValidator} from "../../validation/GamePlayersValidator";
 
 export const create = async (req: AuthenticatedRequest, res: Response) => {
     try {
-        let users = await User.find();
+        const users = await User.find();
 
-        let selectedUsers = req.body.players.map(id => {
-            return users.find(u => u.id === parseInt(id));
+        // Define a zod schema for an array of integers (string numbers converted to integers)
+        const result = gamePlayersValidator(users).safeParse(req.body.players);
+        if (result.error) {
+            // TODO: display zod error
+            req.flash('error', 'Что-то не так с выбранными игроками.');
+            return res.redirect('/');
+        }
+
+        const selectedUsers = result.data.map(id => {
+            return users.find(u => u.id === id)!;
         });
 
-        if (selectedUsers.length < 2 || selectedUsers.length > 5)
-            throw Error('Wrong users count on game creation');
+        const withTimeControl = req.body['time-control'] === 'on';
 
-        let withTimeControl = req.body['time-control'] === 'on';
-
-        let gameSettings = new GameSettings();
-
-        gameSettings.withTimeControl = withTimeControl;
-        gameSettings.size = selectedUsers.length;
-        gameSettings.loseWhenTimeout = req.body['lose-when-timeout'] === 'on' && withTimeControl;
-        gameSettings.isPublic = req.body['is-public'] === 'on';
+        const gameSettings = new GameSettings(
+            String(Math.random()),
+            selectedUsers.length,
+            withTimeControl,
+            req.body['lose-when-timeout'] === 'on' && withTimeControl,
+            req.body['is-public'] === 'on'
+        );
 
         if (withTimeControl) {
             let startTime = parseInt(req.body['start-time']);
@@ -45,9 +51,7 @@ export const create = async (req: AuthenticatedRequest, res: Response) => {
             };
         }
 
-        gameSettings.seed = String(Math.random());
-
-        await App.getInstance().gamesManager.createGame(req.body.name, req.user, selectedUsers, gameSettings);
+        await App.getInstance().gamesManager!.createGame(req.body.name, req.user, selectedUsers, gameSettings);
 
         return res.redirect('/');
     } catch (err) {
@@ -108,30 +112,23 @@ export const showStatusPage = async (req: AuthenticatedGameRequest, res: Respons
         }
     });
 
-    let pastActions: Action<string, any, any>[];
-    let error: string = "";
-    try {
-        pastActions = new Logger(game.logFilepath).getPastActions()
-    } catch (err) {
-        console.error(err);
-
-        pastActions = [];
-        error = "Не удалось загрузить файл с логами.";
+    if (!game) {
+        req.flash('error', 'Не удалось найти нужную игру');
+        return res.redirect('/');
     }
 
     return res.render('game/status', {
         game: {
             ...game,
             settings: game.settings,
-            actions: pastActions,
-            isActive: App.getInstance().gamesManager.isActive(game.id)
-        },
-        error: error.length !== 0 ? [error] : []
+            actions: new Logger(game.logFilepath).getPastActions(),
+            isActive: App.getInstance().gamesManager!.isActive(game.id)
+        }
     });
 }
 
 export const deleteGame = async (req: AuthenticatedGameRequest, res: Response) => {
-    App.getInstance().gamesManager.deactivateGame(req.params.gameId);
+    App.getInstance().gamesManager!.deactivateGame(req.params.gameId);
 
     await GameDBEntity.delete({
         id: req.params.gameId
@@ -141,6 +138,6 @@ export const deleteGame = async (req: AuthenticatedGameRequest, res: Response) =
 }
 
 export const deactivateGame = async (req: AuthenticatedGameRequest, res: Response) => {
-    App.getInstance().gamesManager.deactivateGame(req.params.gameId);
+    App.getInstance().gamesManager!.deactivateGame(req.params.gameId);
     return res.redirect('/');
 }

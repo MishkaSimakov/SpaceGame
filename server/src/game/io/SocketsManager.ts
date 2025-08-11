@@ -1,16 +1,17 @@
 import {Server, Socket} from "socket.io";
-import Player, {PlayerId} from "../../../../common/Player";
+
+import {PlayerId} from "@common/Player";
 
 export type SocketPlayerInfo = {
     online: boolean;
-    socketId: string;
+    socketId?: string;
 };
 
 export default class SocketsManager {
     io: Server;
 
-    currentEmitPlayerId: PlayerId;
-    currentEmitFunction: () => void;
+    currentEmitPlayerId?: PlayerId;
+    currentEmitFunction?: () => void;
 
     players: Record<PlayerId, SocketPlayerInfo> = {};
 
@@ -30,7 +31,7 @@ export default class SocketsManager {
     getSocket(value: PlayerId | string): Socket | undefined {
         const socketId = (typeof value === 'string') ? value : this.players[value].socketId;
 
-        return this.io.sockets.sockets.get(socketId);
+        return socketId ? this.io.sockets.sockets.get(socketId) : undefined;
     }
 
     isOnline(playerId: PlayerId): boolean {
@@ -57,26 +58,7 @@ export default class SocketsManager {
         this.players[playerId].socketId = undefined;
     }
 
-    emit(player: PlayerId, event: string, payload: any) {
-        // generate function that must be called when player connected
-        const emitFunction = () => {
-            const socket = this.getSocket(player);
-
-            this.currentEmitFunction = undefined;
-            this.currentEmitPlayerId = undefined;
-
-            socket.emit(event, payload);
-        };
-
-        this.currentEmitFunction = emitFunction;
-        this.currentEmitPlayerId = player;
-
-        if (this.isPlayerConnected(player)) {
-            emitFunction();
-        }
-    }
-
-    async emitAndWait(playerId: PlayerId, event: string, withAcknowledgment: boolean, ...args) {
+    async emitAndWait(playerId: PlayerId, event: string, withAcknowledgment: boolean, ...args: any[]) {
         return new Promise(resolve => {
             // generate function that must be called when player connected
             const emitFunction = () => {
@@ -90,12 +72,12 @@ export default class SocketsManager {
                         resolve(result);
                     };
 
-                    socket.emit(event, ...args, acknowledgment);
+                    socket?.emit(event, ...args, acknowledgment);
                 } else {
                     this.currentEmitFunction = undefined;
                     this.currentEmitPlayerId = undefined;
 
-                    socket.emit(event, ...args);
+                    socket?.emit(event, ...args);
 
                     resolve(undefined);
                 }
@@ -115,13 +97,13 @@ export default class SocketsManager {
             return;
         }
 
-        if (this.isPlayerConnected(this.currentEmitPlayerId)) {
+        if (this.isPlayerConnected(this.currentEmitPlayerId) && this.currentEmitFunction) {
             this.currentEmitFunction();
         }
     }
 
     private isPlayerConnected(playerId: PlayerId): boolean {
-        const socket: Socket = this.getSocket(playerId);
+        const socket = this.getSocket(playerId);
         return socket !== undefined && socket.connected;
     }
 

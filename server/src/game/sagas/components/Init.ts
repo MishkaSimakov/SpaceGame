@@ -13,15 +13,14 @@ export function* init() {
     for (const player of state.players) {
         player.hand = state.stack.module.splice(0, state.settings.startCardsCount);
 
-        if (state.settings.withTimeControl) {
+        if (state.settings.timeControlSettings) {
             player.time = state.settings.timeControlSettings.startTime;
         }
 
         // initialize spaceship
-        const mainModule = state.mainModules.pop();
+        const mainModule = state.mainModules.pop()!;
         mainModule.x = 0;
         mainModule.y = 0;
-
         player.spaceship.modules.push(mainModule);
     }
 

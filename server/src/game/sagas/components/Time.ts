@@ -52,6 +52,10 @@ export function getTimeDecreasingPlayerId(state: GameState): PlayerId | undefine
 }
 
 export function getPlayerTime(state: GameState, playerId: PlayerId, currentTime: number) {
+    if (!state.settings.timeControlSettings) {
+        return 0;
+    }
+
     const playerRecords = state.timeRecords.filter(r => r.playerId === playerId);
 
     if (playerRecords.length === 0) {
@@ -59,7 +63,7 @@ export function getPlayerTime(state: GameState, playerId: PlayerId, currentTime:
     }
 
     const lastRecord = playerRecords[playerRecords.length - 1];
-    const recordedTime = StateGetters.playerById(state, playerId).time;
+    const recordedTime = StateGetters.playerById(state, playerId)!.time;
 
     if (lastRecord.type === TimeRecordType.DEFAULT_TURN_STARTED || lastRecord.type === TimeRecordType.DEFAULT_TURN_CONTINUED || lastRecord.type === TimeRecordType.FIGHT_TURN_STARTED) {
         return recordedTime - (currentTime - lastRecord.time);
@@ -71,7 +75,7 @@ export function getPlayerTime(state: GameState, playerId: PlayerId, currentTime:
 export function* addTimeRecord(playerId: PlayerId, type: TimeRecordType) {
     const state = yield* select();
 
-    if (!state.settings.withTimeControl) {
+    if (!state.settings.timeControlSettings) {
         return;
     }
 

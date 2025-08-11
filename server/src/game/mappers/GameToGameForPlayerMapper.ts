@@ -21,30 +21,25 @@ function getPlayersTime(state: GameState): Record<number, number> {
 }
 
 export const getDTO = (game: Game, forPlayer: Player): GameForPlayerDTO => {
-    let dto = new GameForPlayerDTO();
+    return {
+        currentTurnPlayerId: StateGetters.currentPlayer(game.state).id,
+        player: game.getPlayerById(forPlayer.id),
 
-    dto.currentTurnPlayerId = StateGetters.currentPlayer(game.state).id;
-    dto.player = game.getPlayerById(forPlayer.id);
+        otherPlayers: game.state.players
+            .filter(p => p.id !== forPlayer.id)
+            .map(PlayerGetters.forOtherPlayer),
 
-    dto.otherPlayers = game.state.players
-        .filter(p => p.id !== forPlayer.id)
-        .map(PlayerGetters.forOtherPlayer);
+        onlineMap: Object.fromEntries(
+            game.state.players
+                .map(p => [p.id, game.sockets.isOnline(p.id)])
+        ),
 
-    dto.onlineMap = Object.fromEntries(
-        game.state.players
-            .map(p => [p.id, game.sockets.isOnline(p.id)])
-    );
+        settings: game.state.settings,
 
-    dto.settings = game.state.settings;
-
-    if (game.state.settings.withTimeControl) {
-        dto.timeControl = {
+        timeControl: game.state.settings.timeControlSettings ? {
             timeDecreasingPlayerId: getTimeDecreasingPlayerId(game.state),
             playersTime: getPlayersTime(game.state)
-        };
-    }
-
-    dto.messages = [];
-
-    return dto;
+        } : undefined,
+        messages: [],
+    };
 }
