@@ -65,10 +65,12 @@ export default class Game {
         });
     }
 
-    async activate() {
+    async activate(): Promise<{ status: "cancelled" | "finished" }> {
         await this.replay(this.logger.getPastActions());
 
-        await this.sagaRunner.run();
+        const result = await this.sagaRunner.run();
+
+        return result === "cancel" ? {status: "cancelled"} : {status: "finished"};
     }
 
     private async replay(actions: Action<string, any, any>[]) {

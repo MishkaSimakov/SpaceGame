@@ -33,7 +33,7 @@ export type NewTaskEffect<R> = {
         type: "newTask",
         task: () => SagaGenerator<R>
     },
-    output: R
+    output: R | "cancel"
 };
 
 // all effect

@@ -31,7 +31,7 @@ export class SagaRunner<R> {
         });
     }
 
-    async run(): Promise<R> {
+    async run(): Promise<R | "cancel"> {
         let call_args: any = {}
 
         while (this.stack.length !== 0) {

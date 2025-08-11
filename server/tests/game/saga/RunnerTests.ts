@@ -164,8 +164,9 @@ test('cancelledTaskWithAllEffectAwaiting', async () => {
     let continuedExecution = false;
 
     function* parentSaga() {
-        yield* newTask(childSaga);
+        const result = yield* newTask(childSaga);
 
+        assert.equal(result, "cancel");
         continuedExecution = true;
     }
 

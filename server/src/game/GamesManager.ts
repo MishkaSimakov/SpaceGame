@@ -163,7 +163,7 @@ export default class GamesManager {
             );
 
             game.activate()
-                .then(async () => {
+                .then(async (result) => {
                     game.sockets.disconnectEveryone();
                     await this.storeGameResult(gameEntity.id, game);
                 })
