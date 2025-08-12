@@ -35,7 +35,7 @@ export class ChoosePlayerForAttackActivity extends Activity {
                 text: !this.required ? "Да" : "Выбрать",
                 color: COLORS.BUTTON.DANGER,
                 onClick: () => {
-                    this.scene.topBarDrawer.setButtonsDisabled(true);
+                    this.scene.topBarDrawer.setAllButtonsDisabled(true);
 
                     this.showModal().then(playerId => {
                         if (playerId !== undefined) {
@@ -45,7 +45,7 @@ export class ChoosePlayerForAttackActivity extends Activity {
                             resolve(playerId);
                         }
 
-                        this.scene.topBarDrawer.setButtonsDisabled(false);
+                        this.scene.topBarDrawer.setAllButtonsDisabled(false);
                     });
                 }
             }];

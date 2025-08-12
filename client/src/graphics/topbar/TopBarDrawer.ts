@@ -9,83 +9,64 @@ import {Text} from "../engine/shapes/Text";
 import {Group} from "../engine/Group";
 import {Button} from "../shapes/Button";
 import {PlayerDataLine} from "../shapes/PlayerDataLine";
-// import TopBarSmallAdaptor from "./TopBarSmallAdaptor";
 import TopBarDefaultAdaptor from "./TopBarDefaultAdaptor";
+import Color from "../Color";
 
 export type ButtonData = {
-    text: string, onClick: () => void, color: ButtonColors
+    text: string,
+    onClick: () => void,
+    color: ButtonColors,
+    name?: string
 };
 
 export default class TopBarDrawer {
     scene: Controls;
-
     group: Group;
 
-    showPlayersData: boolean = false;
-    playersDataBackground: Rectangle;
-    playersDataText: Map<number, PlayerDataLine> = new Map<number, PlayerDataLine>();
-    playersDataCloseText: Text;
-    currentPlayerData: PlayerDataLine;
-
-    status: {
-        text?: string,
-        backgroundShape?: Rectangle,
-        textShape?: Text
-    } = {};
-
-    messagesGroup: Group;
-
-    buttons: ButtonData[] = [];
-    buttonsGroup: Group;
-
+    // players
+    playersCard?: Group;
     otherPlayers: OtherPlayer[] = [];
     currentPlayer: Player;
     onlineMap: Record<PlayerId, boolean> = {};
-    playerTime: Record<number, number> = {};
+    playerTime: Record<PlayerId, number> = {};
 
-    sizes = {
-        margin: 15,
-        fontSize: 15,
+    // status
+    statusCard?: Group;
+    statusText: string;
+    buttons: ButtonData[] = [];
+
+    // messages
+    messagesCard?: Group;
+    messages: Message[] = [];
+
+    sidebarBackground?: Rectangle;
+
+    readonly sizes = {
         padding: 10,
+        fontSize: 15,
         strokeWidth: SIZES.STROKE_WIDTH,
         cornerRadius: SIZES.CORNER_RADIUS,
         statusWidth: 400
-    }
-
-    textStyle = {
-        fontFamily: 'Exo2Bold',
-        fontSize: '15px',
     };
-
-    statusStartY: number = this.sizes.margin;
-    messagesStartY: number = this.sizes.margin;
-
-    messages: Message[] = [];
-    messagesShape: Group[] = [];
 
     constructor(scene: Controls) {
         this.scene = scene;
-
         this.group = new Group();
-
         this.scene.add(this.group);
     }
 
     clearStatus() {
-        this.status.text = "";
+        this.statusText = "";
+        this.redraw();
+    }
 
+    setStatus(status: string) {
+        this.statusText = status;
         this.redraw();
     }
 
     setMessages(messages: Message[]) {
         this.messages = messages;
-
-        this.redraw();
-    }
-
-    setStatus(status: string) {
-        this.status.text = status;
-
         this.redraw();
     }
 
@@ -100,97 +81,172 @@ export default class TopBarDrawer {
     }
 
     private redraw() {
-        this.messagesShape.forEach(s => s.destroy());
-        this.status.backgroundShape?.destroy();
-        this.status.textShape?.destroy();
-        this.currentPlayerData?.destroy();
-
-        // clear players data background
-        this.playersDataBackground?.destroy();
-        this.playersDataText.forEach(t => t.destroy());
-        this.playersDataCloseText?.destroy();
-        this.playersDataText.clear();
-
-        // clear buttons
-        this.buttonsGroup?.destroy();
-
-        this.messagesGroup?.destroy();
+        // Clear old shapes
+        this.group.destroyChildren();
 
         const sceneWidth = this.scene.width();
+        const sceneHeight = this.scene.height();
         const adaptor = new TopBarDefaultAdaptor();
-        // const adaptor = sceneWidth < (400 + 2 * 15)
-        //     ? new TopBarSmallAdaptor()
-        //     : new TopBarDefaultAdaptor();
 
-        if (this.showPlayersData) {
-            adaptor.drawPlayersData(this, sceneWidth);
-        } else {
-            adaptor.drawCurrentPlayerData(this, sceneWidth);
+        const sidebarX = sceneWidth - this.sizes.statusWidth;
+        const sidebarY = 0;
+        const sidebarW = this.sizes.statusWidth;
+        const sidebarH = sceneHeight;
+
+        const offscreenOffset = 10;
+        this.sidebarBackground = new Rectangle({
+            x: sidebarX,
+            y: sidebarY - offscreenOffset,
+            width: sidebarW + offscreenOffset,
+            height: sidebarH + offscreenOffset * 2,
+            fill: Color.fromHex('#0B2545', 0.75).toString(),
+            stroke: Color.fromHex('#3D76BE').toString(),
+            strokeWidth: this.sizes.strokeWidth
+        });
+        this.group.add(this.sidebarBackground);
+
+        let currentY = 0;
+
+        // Players
+        this.playersCard = adaptor.drawPlayers(this);
+        this.playersCard.setPosition({
+            x: sidebarX,
+            y: currentY
+        });
+        this.group.add(this.playersCard);
+
+        currentY = this.playersCard.getClientRect().bottom + this.sizes.padding;
+
+        // Separator after players
+        this.group.add(new Rectangle({
+            x: sidebarX,
+            y: currentY,
+            width: sidebarW,
+            height: 1,
+            fill: Color.fromHex('#3D76BE').toString()
+        }));
+
+        // Status
+        this.statusCard = adaptor.drawStatus(this);
+        if (this.statusCard) {
+            this.statusCard.setPosition({
+                x: sidebarX,
+                y: currentY
+            });
+            this.group.add(this.statusCard);
+
+            currentY = this.statusCard.getClientRect().bottom + this.sizes.padding;
+
+            // Separator after status
+            this.group.add(new Rectangle({
+                x: sidebarX,
+                y: currentY,
+                width: sidebarW,
+                height: 1,
+                fill: Color.fromHex('#3D76BE').toString()
+            }));
         }
 
-        adaptor.drawStatus(this, sceneWidth);
-
-        // adaptor.drawMessages(this);
+        // Messages
+        this.messagesCard = this.drawMessagesBoard();
+        this.messagesCard.setPosition({
+            x: sidebarX,
+            y: currentY
+        });
+        this.group.add(this.messagesCard);
     }
 
-    togglePlayerCharacteristics() {
-        this.showPlayersData = !this.showPlayersData;
-
-        this.redraw();
+    togglePlayerCharacteristics() { /* no-op */
     }
 
-    updateTime(playerTime: Record<number, number>) {
+    updateTime(playerTime: Record<PlayerId, number>) {
         this.playerTime = playerTime;
 
-        for (let key in playerTime) {
-            const id = parseInt(key);
-
-            if (this.playersDataText.has(id)) {
-                this.playersDataText.get(id).time(this.playerTime[id]);
-            }
-
-            if (id === this.currentPlayer.id) {
-                this.currentPlayerData.time(this.playerTime[id])
-            }
+        for (const playerId in playerTime) {
+            const playerDataLine = this.playersCard.findOne(playerId) as PlayerDataLine;
+            playerDataLine?.time(this.playerTime[playerId]);
         }
     }
 
     addButtons(buttons: ButtonData[]) {
         this.buttons = buttons;
-
         this.redraw();
     }
 
     removeButtons() {
         this.buttons = [];
-
         this.redraw();
     }
 
-    setButtonsDisabled(isDisabled: boolean) {
-        this.buttonsGroup.children.forEach(b => {
-            (b as Button).disabled(isDisabled);
-        });
+    setButtonDisabled(name: string, isDisabled: boolean) {
+        (this.statusCard.findOne(`button.${name}`) as Button).disabled(isDisabled);
     }
 
-    getMessageShape(message: Message): Group {
-        return this.scene.createAndAdd.group();
+    setAllButtonsDisabled(isDisabled: boolean) {
+        for (const button of this.buttons) {
+            this.setButtonDisabled(button.name, isDisabled);
+        }
+    }
+
+    getMessageShape(message: Message, maxWidth: number): Group {
+        const group = new Group({width: maxWidth});
+
+        const textShape = new Text({
+            x: 0,
+            y: 0,
+            text: message.text,
+            fontFamily: "Exo2Regular",
+            fontSize: 14,
+            fill: "white",
+            width: maxWidth
+        });
+        group.add(textShape);
+
+        const rawActions = (message as any).actions ?? ((message as any).action ? [{
+            text: (message as any).action,
+            onClick: (message as any).onAction
+        }] : []);
+        let currentY = textShape.getClientRect().bottom + 6;
+
+        for (let action of rawActions) {
+            const actionText = new Text({
+                x: 0,
+                y: currentY,
+                text: action.text,
+                fontFamily: "Exo2Regular",
+                fontSize: 12,
+                fill: "rgba(200,200,200,1)",
+            });
+            const underline = new Rectangle({
+                x: 0,
+                y: actionText.getClientRect().bottom,
+                width: Math.min(actionText.getClientRect().width, maxWidth),
+                height: 1,
+                fill: "rgba(200,200,200,1)"
+            });
+            if (typeof action.onClick === 'function') {
+                actionText.on('click', action.onClick);
+                underline.on('click', action.onClick);
+            }
+            group.add(actionText, underline);
+            currentY = underline.getClientRect().bottom + 6;
+        }
+
+        return group;
     }
 
     getButtonsGroup(width: number): Group {
-        let group = new Group({
-            width: width
-        });
-
-        if (!this.buttons)
+        let group = new Group({width: width});
+        if (!this.buttons) {
             return group;
+        }
 
-        let buttonWidth = (width + this.sizes.padding) / this.buttons.length - this.sizes.padding;
+        let buttonWidth = width / this.buttons.length;
         let buttonHeight = 40;
 
         for (let [index, button] of this.buttons.entries()) {
             let buttonShape = new Button({
-                x: index * (buttonWidth + this.sizes.padding),
+                x: index * buttonWidth,
                 y: 0,
                 width: buttonWidth,
                 height: buttonHeight,
@@ -198,35 +254,30 @@ export default class TopBarDrawer {
                 fill: button.color.DEFAULT.toString(),
                 hoverFill: button.color.HOVER.toString(),
                 activeFill: button.color.ACTIVE.toString(),
-                disabledFill: button.color.DISABLED.toString()
-            })
-                .on('click', button.onClick);
-
+                disabledFill: button.color.DISABLED.toString(),
+                name: button.name ? `button.${button.name}` : `button.${index}`
+            }).on('click', button.onClick);
             group.add(buttonShape);
         }
-
         return group;
     }
 
-    getMessagesGroup(width: number, messagesCount: number): Group {
-        const messagesGroup = new Group({
-            width: width
-        });
+    private drawMessagesBoard(): Group {
+        const result = new Group();
+        let currentY = this.sizes.padding;
 
-        const messages = this.messages.slice(-messagesCount);
+        for (const message of this.messages) {
+            const messageGroup = this.getMessageShape(message, this.sizes.statusWidth - 2 * this.sizes.padding);
 
-        let messagesString = messages.map(message => {
-            return (message.playerId ?? 'Игра') + ': ' + message.text;
-        }).join('\n');
+            messageGroup.setPosition({
+                x: this.sizes.padding,
+                y: currentY
+            });
+            result.add(messageGroup);
 
-        messagesGroup.add(new Text({
-            x: 0,
-            y: 0,
-            text: messagesString,
-            fontFamily: "Exo2Regular",
-            fill: "white"
-        }));
+            currentY = messageGroup.getClientRect().bottom + this.sizes.padding;
+        }
 
-        return messagesGroup;
+        return result;
     }
 }

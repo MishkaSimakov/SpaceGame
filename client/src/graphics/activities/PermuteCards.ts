@@ -31,7 +31,7 @@ export class PermuteCardsActivity extends Activity {
                 text: "Переставить",
                 color: COLORS.BUTTON.PRIMARY,
                 onClick: () => {
-                    this.scene.topBarDrawer.setButtonsDisabled(true);
+                    this.scene.topBarDrawer.setAllButtonsDisabled(true);
 
                     this.showModal().then(order => {
                         if (order !== undefined) {
@@ -39,8 +39,7 @@ export class PermuteCardsActivity extends Activity {
 
                             resolve(order);
                         } else {
-                            console.log("resolved");
-                            this.scene.topBarDrawer.setButtonsDisabled(false);
+                            this.scene.topBarDrawer.setAllButtonsDisabled(false);
                         }
                     });
                 }

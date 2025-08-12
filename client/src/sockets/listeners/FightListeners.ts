@@ -39,7 +39,7 @@ export const fightListeners: ListenersContainer = {
         );
 
         const validate = () => {
-            (game.controlsScene.topBarDrawer.buttonsGroup.children[0] as Button).disabled(
+            game.controlsScene.topBarDrawer.setButtonDisabled('activate',
                 protectorHandle.get().length !== 1
             );
         };
@@ -53,7 +53,8 @@ export const fightListeners: ListenersContainer = {
                     color: COLORS.BUTTON.PRIMARY,
                     onClick: () => {
                         resolve(Vector2.modulePosition(protectorHandle.get()[0].module));
-                    }
+                    },
+                    name: 'activate'
                 },
                 {
                     text: "Пропустить",
@@ -93,7 +94,7 @@ export const fightListeners: ListenersContainer = {
         );
 
         const validate = () => {
-            game.controlsScene.topBarDrawer.setButtonsDisabled(
+            game.controlsScene.topBarDrawer.setAllButtonsDisabled(
                 weaponHandle.get().length !== 1 || targetHandle.get().length !== 1
             );
         };
@@ -136,7 +137,7 @@ export const fightListeners: ListenersContainer = {
         );
 
         const validate = () => {
-            game.controlsScene.topBarDrawer.setButtonsDisabled(
+            game.controlsScene.topBarDrawer.setAllButtonsDisabled(
                 targetHandle.get().length !== 1
             );
         };

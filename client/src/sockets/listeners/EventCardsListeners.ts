@@ -111,9 +111,7 @@ export const eventCardsListeners: ListenersContainer = {
         );
 
         const validate = () => {
-            (game.controlsScene.topBarDrawer.buttonsGroup.children[0] as Button).disabled(
-                handle.get().length === 0
-            );
+            game.controlsScene.topBarDrawer.setButtonDisabled('attack', handle.get().length === 0);
         };
 
         handle.onSet(validate);
@@ -130,7 +128,8 @@ export const eventCardsListeners: ListenersContainer = {
                         victimId: handle.get()[0].player,
                         victimModulePosition: Vector2.modulePosition(handle.get()[0].module)
                     });
-                }
+                },
+                name: 'attack'
             }, {
                 text: "Пропустить",
                 color: COLORS.BUTTON.PRIMARY,
@@ -159,7 +158,7 @@ export const eventCardsListeners: ListenersContainer = {
         );
 
         const validate = () => {
-            game.controlsScene.topBarDrawer.setButtonsDisabled(
+            game.controlsScene.topBarDrawer.setAllButtonsDisabled(
                 handle.get().length !== count
             );
         };
@@ -195,7 +194,7 @@ export const eventCardsListeners: ListenersContainer = {
         );
 
         const validate = () => {
-            game.controlsScene.topBarDrawer.setButtonsDisabled(
+            game.controlsScene.topBarDrawer.setAllButtonsDisabled(
                 handle.get().length !== 1
             );
         };
@@ -250,7 +249,7 @@ export const eventCardsListeners: ListenersContainer = {
         );
 
         const validate = () => {
-            game.controlsScene.topBarDrawer.setButtonsDisabled(
+            game.controlsScene.topBarDrawer.setAllButtonsDisabled(
                 handle.get().length !== 1
             );
         };

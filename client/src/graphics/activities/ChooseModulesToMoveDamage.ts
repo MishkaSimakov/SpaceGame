@@ -34,9 +34,7 @@ export class ChooseModulesToMoveDamage extends Activity {
         );
 
         const validate = () => {
-            (this.controlsScene.topBarDrawer.buttonsGroup.children[0] as Button).disabled(
-                fromHandle.get().length !== 1
-            );
+            this.controlsScene.topBarDrawer.setButtonDisabled('continue', fromHandle.get().length !== 1);
         };
 
         fromHandle.onSet(validate);
@@ -55,7 +53,8 @@ export class ChooseModulesToMoveDamage extends Activity {
                     this.chooseDestination().then(to => {
                         resolve({from, to});
                     });
-                }
+                },
+                name: 'continue'
             }, {
                 text: "Пропустить",
                 color: COLORS.BUTTON.PRIMARY,
@@ -81,7 +80,7 @@ export class ChooseModulesToMoveDamage extends Activity {
         );
 
         const validate = () => {
-            this.controlsScene.topBarDrawer.setButtonsDisabled(toHandle.get().length !== 1);
+            this.controlsScene.topBarDrawer.setButtonDisabled('continue', toHandle.get().length !== 1);
         };
 
         toHandle.onSet(validate);
@@ -92,7 +91,8 @@ export class ChooseModulesToMoveDamage extends Activity {
                 color: COLORS.BUTTON.PRIMARY,
                 onClick: () => {
                     resolve(Vector2.modulePosition(toHandle.get()[0].module));
-                }
+                },
+                name: 'continue'
             }]);
 
             validate();

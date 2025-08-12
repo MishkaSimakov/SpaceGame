@@ -1,7 +1,7 @@
 import Module from "@common/modules/Module";
 import Vector2 from "@common/Vector2";
 import {Event} from "@common/events/Event";
-import {AttackReason, MoveDamageReason} from "@common/Types";
+import {AttackReason, Message, MoveDamageReason} from "@common/Types";
 import {OtherPlayer} from "@common/GameForPlayerDTO";
 
 import Game from "../../Game";
@@ -54,6 +54,22 @@ export default class Controls extends Scene {
     }
 
     rebuildSpaceship(): Promise<void> {
+        this.gameManager.controlsScene.topBarDrawer.setMessages([
+            {
+                id: 123,
+                text: "Миша: вытянул карточку действия",
+                time: 321,
+                actions: [
+                    {
+                        text: "показать",
+                        onClick: () => {
+                            console.log("show card")
+                        }
+                    }
+                ]
+            } as Message
+        ]);
+
         return new Promise((resolve) => {
             this.topBarDrawer.setStatus("перестройка корабля");
 
@@ -115,9 +131,10 @@ export default class Controls extends Scene {
         );
 
         const validate = () => {
-            (this.topBarDrawer.buttonsGroup.children[0] as Button).disabled(
+            this.topBarDrawer.setButtonDisabled(
+                'repair',
                 handle.get().length === 0 || handle.get().length > maxCount
-            );
+            )
         };
 
         handle.onSet(validate);
@@ -128,7 +145,8 @@ export default class Controls extends Scene {
                 color: COLORS.BUTTON.PRIMARY,
                 onClick: () => {
                     resolve(handle.get().map(i => Vector2.modulePosition(i.module)));
-                }
+                },
+                name: 'repair'
             }, {
                 text: "Пропустить",
                 color: COLORS.BUTTON.PRIMARY,

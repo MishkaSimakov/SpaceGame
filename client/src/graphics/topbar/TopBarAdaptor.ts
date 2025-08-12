@@ -1,9 +1,11 @@
 import TopBarDrawer from "./TopBarDrawer";
+import {Group} from "../engine/Group";
 
 export abstract class TopBarAdaptor {
-    abstract drawStatus(drawer: TopBarDrawer, sceneWidth: number): void;
+    abstract drawPlayers(drawer: TopBarDrawer): Group;
 
-    abstract drawCurrentPlayerData(drawer: TopBarDrawer, sceneWidth: number): void;
+    abstract drawStatus(drawer: TopBarDrawer): Group;
 
-    abstract drawPlayersData(drawer: TopBarDrawer, sceneWidth: number): void;
+    // abstract drawCurrentPlayerData(drawer: TopBarDrawer, sceneWidth: number): void;
+
 }

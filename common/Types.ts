@@ -15,10 +15,7 @@ export enum MoveDamageReason {
 }
 
 export type Message = {
-    id: number;
-    playerId?: number;
     text: string;
-    time: number;
 }
 
 
