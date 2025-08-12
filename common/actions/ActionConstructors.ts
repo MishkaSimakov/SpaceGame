@@ -4,7 +4,6 @@ import {Action} from "./Action";
 
 type ActionConstructor<T extends string, P, M, Args extends any[]> = (...args: Args) => Action<T, P, M>;
 
-// Action helper function that returns an object with the action creator under the specified key
 export function action<T extends string, P = undefined, M = undefined, Args extends any[] = []>(
     type: T,
     creator: (...args: Args) => { payload: P; meta?: M }

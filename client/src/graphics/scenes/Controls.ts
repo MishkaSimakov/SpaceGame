@@ -54,22 +54,6 @@ export default class Controls extends Scene {
     }
 
     rebuildSpaceship(): Promise<void> {
-        this.gameManager.controlsScene.topBarDrawer.setMessages([
-            {
-                id: 123,
-                text: "Миша: вытянул карточку действия",
-                time: 321,
-                actions: [
-                    {
-                        text: "показать",
-                        onClick: () => {
-                            console.log("show card")
-                        }
-                    }
-                ]
-            } as Message
-        ]);
-
         return new Promise((resolve) => {
             this.topBarDrawer.setStatus("перестройка корабля");
 

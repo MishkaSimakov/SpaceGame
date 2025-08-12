@@ -14,10 +14,35 @@ import {addTimeRecord} from "./components/Time";
 
 import {TimeRecordType} from "../GameState";
 
-const {shiftTurnToNextPlayer} = Actions;
+const {setCurrentPlayer} = Actions;
 
 function* isGameEnded() {
     return (yield* select()).players.filter(p => !p.lose).length === 1;
+}
+
+function* shiftTurn() {
+    const state = yield* select();
+    let currentPlayerIndex = state.players.findIndex(p => p.id === state.currentPlayerId);
+
+    while (true) {
+        currentPlayerIndex++;
+        currentPlayerIndex %= state.players.length;
+
+        const player = state.players[currentPlayerIndex];
+
+        if (player.skipNextTurn) {
+            player.skipNextTurn = false;
+            continue;
+        }
+
+        if (player.lose) {
+            continue;
+        }
+
+        break;
+    }
+
+    yield* put(setCurrentPlayer(state.players[currentPlayerIndex]));
 }
 
 function* playerTurn() {
@@ -40,15 +65,12 @@ export function* gameSaga() {
     yield* init();
 
     while (true) {
+        yield* shiftTurn();
+
         yield* newTask(playerTurn);
 
-        console.log("player's turn ended");
-
         if (yield* isGameEnded()) {
-            console.log("game ended!");
             return;
         }
-
-        yield* put(shiftTurnToNextPlayer());
     }
 }

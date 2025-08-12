@@ -53,7 +53,7 @@ test('putAndTake', async () => {
 
     function* testSaga(): SagaGenerator<void> {
         const {req, res} = yield* all({
-            req: put(throwDice()),
+            req: put(throwDice(state.players[0])),
             res: take('throwDiceResult')
         });
 
@@ -141,7 +141,7 @@ test('cancelledTask', async () => {
     }
 
     function* childSaga() {
-        yield* put(throwDice());
+        yield* put(throwDice(state.players[0]));
 
         assert.unreachable("childSaga should have been cancelled");
     }
@@ -172,7 +172,7 @@ test('cancelledTaskWithAllEffectAwaiting', async () => {
 
     function* childSaga() {
         yield* all({
-            req: put(throwDice()),
+            req: put(throwDice(state.players[0])),
             res: take("throwDiceResult")
         });
 

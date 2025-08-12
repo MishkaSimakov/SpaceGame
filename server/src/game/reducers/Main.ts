@@ -20,7 +20,7 @@ export const reducers: ReducersType = {
         Object.assign(state, payload.state);
     },
     playerRebuiltSpaceship(state: GameState, payload) {
-        const currentPlayer = state.players[state.currentPlayerIndex];
+        const currentPlayer = StateGetters.currentPlayer(state);
 
         currentPlayer.spaceship = payload.newSpaceship;
         currentPlayer.hand = payload.newHand;
@@ -68,24 +68,8 @@ export const reducers: ReducersType = {
         stack.pop();
     },
 
-    shiftTurnToNextPlayer(state: GameState) {
-        while (true) {
-            state.currentPlayerIndex++;
-            state.currentPlayerIndex %= state.players.length;
-
-            const player = state.players[state.currentPlayerIndex];
-
-            if (player.skipNextTurn) {
-                player.skipNextTurn = false;
-                continue;
-            }
-
-            if (player.lose) {
-                continue;
-            }
-
-            break;
-        }
+    setCurrentPlayer(state: GameState, payload) {
+        state.currentPlayerId = payload.player;
     },
 
     changePlayerEnergy(state: GameState, payload) {

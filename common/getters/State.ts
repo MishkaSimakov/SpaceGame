@@ -7,11 +7,11 @@ export const StateGetters = {
     },
 
     currentPlayer(state: GameState): Player {
-        return state.players[state.currentPlayerIndex];
+        return this.playerById(state, state.currentPlayerId)!;
     },
 
     getPlayerIndexByOffset(state: GameState, offset: number): number {
-        let currentPlayerIndex = state.currentPlayerIndex;
+        let currentPlayerIndex = state.players.findIndex(p => p.id === state.currentPlayerId);
         const playersCount = state.players.length;
 
         do {

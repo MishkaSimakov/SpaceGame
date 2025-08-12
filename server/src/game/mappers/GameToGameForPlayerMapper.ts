@@ -40,6 +40,6 @@ export const getDTO = (game: Game, forPlayer: Player): GameForPlayerDTO => {
             timeDecreasingPlayerId: getTimeDecreasingPlayerId(game.state),
             playersTime: getPlayersTime(game.state)
         } : undefined,
-        messages: [],
+        messages: game.playerGameLog.messages,
     };
 }

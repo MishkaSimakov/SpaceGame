@@ -108,7 +108,7 @@ function* askForRunawayViaDice() {
         return false;
     }
 
-    return (yield* dice()) >= state.settings.diceResultToRunaway;
+    return (yield* dice(attacker)) >= state.settings.diceResultToRunaway;
 }
 
 function* askForRunawayViaMainModule() {

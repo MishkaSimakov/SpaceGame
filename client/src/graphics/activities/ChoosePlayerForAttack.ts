@@ -45,6 +45,7 @@ export class ChoosePlayerForAttackActivity extends Activity {
                             resolve(playerId);
                         }
 
+                        console.log("enable buttons");
                         this.scene.topBarDrawer.setAllButtonsDisabled(false);
                     });
                 }

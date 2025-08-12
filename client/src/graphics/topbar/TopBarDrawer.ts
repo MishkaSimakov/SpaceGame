@@ -163,12 +163,18 @@ export default class TopBarDrawer {
         this.playerTime = playerTime;
 
         for (const playerId in playerTime) {
-            const playerDataLine = this.playersCard.findOne(playerId) as PlayerDataLine;
+            const playerDataLine = this.playersCard.findOne(`.${playerId}`) as PlayerDataLine;
             playerDataLine?.time(this.playerTime[playerId]);
         }
     }
 
     addButtons(buttons: ButtonData[]) {
+        for (const [index, button] of buttons.entries()) {
+            if (!button.name) {
+                button.name = String(index);
+            }
+        }
+
         this.buttons = buttons;
         this.redraw();
     }
@@ -179,7 +185,7 @@ export default class TopBarDrawer {
     }
 
     setButtonDisabled(name: string, isDisabled: boolean) {
-        (this.statusCard.findOne(`button.${name}`) as Button).disabled(isDisabled);
+        (this.statusCard.findOne(`.button.${name}`) as Button).disabled(isDisabled);
     }
 
     setAllButtonsDisabled(isDisabled: boolean) {
@@ -241,12 +247,12 @@ export default class TopBarDrawer {
             return group;
         }
 
-        let buttonWidth = width / this.buttons.length;
+        let buttonWidth = (width - (this.buttons.length - 1) * this.sizes.padding) / this.buttons.length;
         let buttonHeight = 40;
 
-        for (let [index, button] of this.buttons.entries()) {
+        for (const [index, button] of this.buttons.entries()) {
             let buttonShape = new Button({
-                x: index * buttonWidth,
+                x: index * (buttonWidth + this.sizes.padding),
                 y: 0,
                 width: buttonWidth,
                 height: buttonHeight,
@@ -266,7 +272,8 @@ export default class TopBarDrawer {
         const result = new Group();
         let currentY = this.sizes.padding;
 
-        for (const message of this.messages) {
+        const reversed = Array.from(this.messages).reverse();
+        for (const message of reversed) {
             const messageGroup = this.getMessageShape(message, this.sizes.statusWidth - 2 * this.sizes.padding);
 
             messageGroup.setPosition({

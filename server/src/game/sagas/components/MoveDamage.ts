@@ -4,6 +4,7 @@ import {SpaceshipGetters} from "@common/getters/Spaceship";
 import {request} from "./Request";
 import Actions from "@common/actions/Main"
 import {damageModule} from "./DamageModule";
+import {StateGetters} from "@common/getters/State";
 
 const {chooseModuleToMoveDamageRequest, changePlayerEnergy, changeModuleHealth} = Actions;
 
@@ -14,7 +15,7 @@ const reasonDescription = {
 
 export function* moveDamage(reason: MoveDamageReason, energyCost: number, movedDamage: number) {
     const state = yield* select();
-    const currentPlayer = state.players[state.currentPlayerIndex];
+    const currentPlayer = StateGetters.currentPlayer(state);
 
     if (!SpaceshipGetters.hasDamagedModules(currentPlayer.spaceship)) {
         return;

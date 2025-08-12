@@ -67,7 +67,7 @@ export class Button extends Group<ButtonConfig> {
         }
 
         this._hitRect.on('pointerenter', () => {
-            if (this._state !== 'ACTIVE') {
+            if (this._state !== 'ACTIVE' && this._state !== 'DISABLED') {
                 this._state = 'HOVER';
 
                 this._updateFill();
@@ -75,21 +75,27 @@ export class Button extends Group<ButtonConfig> {
         });
 
         this._hitRect.on('pointerout', () => {
-            this._state = 'DEFAULT';
+            if (this._state !== 'DISABLED') {
+                this._state = 'DEFAULT';
 
-            this._updateFill();
+                this._updateFill();
+            }
         });
 
         this._hitRect.on('pointerdown', () => {
-            this._state = 'ACTIVE';
+            if (this._state !== 'DISABLED') {
+                this._state = 'ACTIVE';
 
-            this._updateFill();
+                this._updateFill();
+            }
         });
 
         this._hitRect.on('pointerup', () => {
-            this._state = 'HOVER';
+            if (this._state !== 'DISABLED') {
+                this._state = 'HOVER';
 
-            this._updateFill();
+                this._updateFill();
+            }
         });
     }
 
@@ -120,12 +126,7 @@ export class Button extends Group<ButtonConfig> {
     }
 
     disabled(value: boolean) {
-        if (value === (this._state === 'DISABLED')) {
-            return;
-        }
-
         if (value) {
-            this._hitRect.interactive(false);
             this._state = 'DISABLED';
 
             this._disabledRect = new Rectangle({
@@ -140,7 +141,6 @@ export class Button extends Group<ButtonConfig> {
 
             this.add(this._disabledRect);
         } else {
-            this._hitRect.interactive(true);
             this._state = this.isPointerInside() ? 'HOVER' : 'DEFAULT';
 
             this._disabledRect.destroy();

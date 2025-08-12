@@ -38,7 +38,7 @@ export default {
         return {payload: {type}};
     }),
 
-    ...action('shiftTurnToNextPlayer', () => ({payload: {}})),
+    ...action('setCurrentPlayer', (player: Player) => ({payload: {player: player.id}})),
 
     ...action('changePlayerEnergy', (player: Player, delta: number, reason: string) => {
         return {

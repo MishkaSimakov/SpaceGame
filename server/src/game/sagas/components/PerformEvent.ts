@@ -164,7 +164,8 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
         yield* fight();
     },
     [EventTypes.TossDiceAndTakeBuildingCards]: function* (state: GameState) {
-        const cardsCount = (yield* dice()) <= 4 ? 1 : 2;
+        const currentPlayer = StateGetters.currentPlayer(state);
+        const cardsCount = (yield* dice(currentPlayer)) <= 4 ? 1 : 2;
 
         const cards = yield* popCards("module", cardsCount);
 
@@ -172,7 +173,7 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
     },
     [EventTypes.TossDiceAndDealDamage]: function* (state: GameState) {
         const currentPlayer = StateGetters.currentPlayer(state);
-        const damage = (yield* dice()) <= 4 ? 1 : 2;
+        const damage = (yield* dice(currentPlayer)) <= 4 ? 1 : 2;
 
         const info = yield* request(
             chooseModuleToDamageByDiceRequest(currentPlayer, damage),
@@ -187,7 +188,8 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
         yield* damageModule(victim, info.victimModulePosition, damage, {type: "EventCard"});
     },
     [EventTypes.TossDiceAndGetEnergy]: function* (state: GameState) {
-        const energyCount = (yield* dice()) <= 4 ? 1 : 2;
+        const currentPlayer = StateGetters.currentPlayer(state);
+        const energyCount = (yield* dice(currentPlayer)) <= 4 ? 1 : 2;
 
         yield* put(changePlayerEnergy(StateGetters.currentPlayer(state), energyCount, "event card (toss dice & get energy)"));
     },
@@ -198,7 +200,7 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
             return;
         }
 
-        const repairAmount = (yield* dice()) <= 4 ? 1 : 2;
+        const repairAmount = (yield* dice(currentPlayer)) <= 4 ? 1 : 2;
 
         const moduleToRepairPosition = yield* request(
             chooseModuleToRepairByDiceRequest(currentPlayer, repairAmount),

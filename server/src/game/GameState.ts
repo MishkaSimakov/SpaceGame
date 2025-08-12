@@ -140,7 +140,7 @@ export default class GameState {
     ];
 
     players: Player[];
-    currentPlayerIndex: number = 0;
+    currentPlayerId: number;
 
     fight?: FightData = undefined;
 
@@ -151,6 +151,7 @@ export default class GameState {
     constructor(settings: GameSettings, players: Player[]) {
         this.settings = settings;
         this.players = players;
+        this.currentPlayerId = players[0].id;
 
         for (let module in modules) {
             for (let configuration of modules[module]["configurations"]) {

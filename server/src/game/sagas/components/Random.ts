@@ -2,12 +2,13 @@ import {DiceResult} from "@common/actions/Random";
 import {all, put, take} from "../Effects";
 
 import Actions from "@common/actions/Main"
+import Player from "@common/Player";
 
 const {shuffle, throwDice} = Actions;
 
-export function* dice(): Generator<any, DiceResult, any> {
+export function* dice(player: Player): Generator<any, DiceResult, any> {
     const {res} = yield* all({
-        req: put(throwDice()),
+        req: put(throwDice(player)),
         res: take('throwDiceResult')
     });
 

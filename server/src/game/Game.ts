@@ -19,7 +19,8 @@ import {SagaRunner} from "./sagas/SagaRunner";
 import {Randomizer} from "./Randomizer";
 import {LossMiddleware} from "./LossMiddleware";
 import {validators} from "./validation/ResponseValidators";
-import {ZodSafeParseResult, ZodType} from "zod";
+import {ZodType} from "zod";
+import {PlayerGameLogListener} from "./PlayerGameLogListener";
 
 export default class Game {
     users: User[];
@@ -30,6 +31,7 @@ export default class Game {
     sagaRunner: SagaRunner<void>;
     sockets: SocketsManager;
     logger: Logger;
+    playerGameLog: PlayerGameLogListener;
 
     inReplay: boolean = false;
 
@@ -47,6 +49,9 @@ export default class Game {
         this.sockets = sockets;
         this.logger = logger;
 
+        this.playerGameLog = new PlayerGameLogListener(this.bus, this.users);
+
+        this.playerGameLog.registerListeners();
         this.registerReduceListeners();
         this.registerLogListeners();
         this.registerRandomizerListeners();
