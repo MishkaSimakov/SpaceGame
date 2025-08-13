@@ -1,12 +1,14 @@
+import {isMainModule} from "@common/modules/Module";
+import SpaceshipData from "@common/Spaceship";
+
 import {Group} from "../engine/Group";
 import {NodeConfig} from "../engine/Node";
 import {GetSet, Vector2} from "../engine/types";
 import {Factory} from "../engine/Factory";
-import SpaceshipData from "../../../../common/Spaceship";
 import {Card} from "./Card";
-import Module, {isMainModule} from "../../../../common/modules/Module";
 
 export interface SpaceshipConfig extends NodeConfig {
+    id: string,
     cardSize: number,
     spaceship?: SpaceshipData,
 }
@@ -14,6 +16,17 @@ export interface SpaceshipConfig extends NodeConfig {
 export class Spaceship extends Group<SpaceshipConfig> {
     constructor(config: SpaceshipConfig) {
         super(config);
+
+        const storedPosition = localStorage.getItem(this.getStorageKey());
+        if (storedPosition) {
+            const [x, y] = storedPosition.split(',').map(Number);
+
+            if (Number.isNaN(x) || Number.isNaN(y)) {
+                localStorage.removeItem(this.getStorageKey());
+            }
+
+            this.setPosition({x, y});
+        }
     }
 
     setSpaceship(spaceship: SpaceshipData): Spaceship {
@@ -42,10 +55,13 @@ export class Spaceship extends Group<SpaceshipConfig> {
 
                 shape.on('dragmove', () => {
                     // TODO: make this better
-                    let newMainPosition = shape.getPosition();
+                    const newMainPosition = shape.getPosition();
                     shape.setPosition({x: 0, y: 0});
 
                     this.move(newMainPosition);
+
+                    const absolutePosition = this.getPosition();
+                    localStorage.setItem(this.getStorageKey(), `${absolutePosition.x},${absolutePosition.y}`);
                 });
             }
         }
@@ -76,9 +92,15 @@ export class Spaceship extends Group<SpaceshipConfig> {
         });
     }
 
+    private getStorageKey() {
+        return `spaceships//${this.id()}`;
+    }
+
+    id: GetSet<string, this>;
     spaceship: GetSet<SpaceshipData, this>;
     cardSize: GetSet<number, this>;
 }
 
+Factory.addGetterSetter(Spaceship, 'id');
 Factory.addGetterSetter(Spaceship, 'spaceship');
 Factory.addGetterSetter(Spaceship, 'cardSize');

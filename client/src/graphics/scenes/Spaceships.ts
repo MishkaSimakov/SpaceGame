@@ -188,7 +188,9 @@ export default class Spaceships extends Scene {
             if (this.spaceshipShapes[player.id] === undefined) {
                 const spaceshipPosition = spaceshipConfigurations[players.length - 1][index];
 
+                const gameId = window.location.href.split('/').pop();
                 this.spaceshipShapes[player.id] = new SpaceshipShape({
+                    id: `spaceship.${gameId}.${player.id}`,
                     cardSize: this.spaceshipsCardSize,
                     x: spaceshipPosition.x,
                     y: spaceshipPosition.y,
