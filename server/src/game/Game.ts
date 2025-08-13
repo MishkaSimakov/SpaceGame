@@ -197,11 +197,6 @@ export default class Game {
 
                 // for the sake of logging
                 this.bus.emit(Actions.reducerUpdatedState(delta));
-
-                if (!this.inReplay) {
-                    // notify players about state update
-                    this.syncPlayersData();
-                }
             }
         });
     }
@@ -231,6 +226,8 @@ export default class Game {
     }
 
     private sendSocketRequest(request: Action<string, any, any>) {
+        this.syncPlayersData();
+
         const responseType = request.type.replace("Request", "Response");
 
         assert.ok("player" in request.payload);

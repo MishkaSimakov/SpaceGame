@@ -75,3 +75,11 @@ documents:
         sourcePaths:
           - client/src/graphics
         filePattern: [ "*.ts" ]
+
+  - description: 'Actions'
+    outputPath: actions.md
+    sources:
+      - type: file
+        sourcePaths:
+          - common/actions
+        filePattern: [ "*.ts" ]

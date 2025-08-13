@@ -16,6 +16,7 @@ export enum MoveDamageReason {
 
 export type Message = {
     text: string;
+    payload?: any;
 }
 
 

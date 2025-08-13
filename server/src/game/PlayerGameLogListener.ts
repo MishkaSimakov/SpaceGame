@@ -4,7 +4,7 @@ import {Message} from "@common/Types";
 import ActionsBus from "./ActionsBus";
 import {Action} from "@common/actions/Action";
 import {User} from "../entity/user";
-import {PlayerId} from "@common/Player";
+import Player, {PlayerId} from "@common/Player";
 
 type Components = {
     lastRequestUser?: string,
@@ -141,6 +141,17 @@ const listeners: ListenersContainer = {
         `${lastRequestUser}: выбрал тип карты — ${chosenType === "module" ? "строительства" : "действия"}`,
 };
 
+type SubstitutePlayerInPayload<T> = T extends object ? {
+    [Key in keyof T]: Key extends "player" ? Player : T[Key];
+} : T;
+
+type PayloadByName<T> = T extends keyof typeof Actions
+    ? SubstitutePlayerInPayload<ReturnType<(typeof Actions)[T]>["payload"]>
+    : never;
+type MapNamesToPayloads<Names extends (keyof typeof Actions)[]> = {
+    [Key in keyof Names]: PayloadByName<Names[Key]>
+};
+
 export class PlayerGameLogListener {
     messages: Message[] = [];
 
@@ -150,9 +161,25 @@ export class PlayerGameLogListener {
     }
 
     registerListeners() {
+        // this.sequence(['throwDice', 'throwDiceResult'], ({player}, result) => {
+        //     return `${player.name}: бросил кубик, выпало ${result}`;
+        // });
+        //
+        // this.sequence(['chooseCardTypeRequest', 'chooseCardTypeResponse'], ({player}, {chosenType}) => {
+        //     return `${player.name}: тянет карту ${chosenType === "module" ? "строительства" : "действия"}`;
+        // });
+        //
+        // this.sequence(['drawAdditionalModuleCardRequest', 'drawAdditionalModuleCardResponse'], ({player}, {chosenType}) => {
+        //     return `${player.name}: тянет карту ${chosenType === "module" ? "строительства" : "действия"}`;
+        // });
+
         this.busRef.on('*', action => {
             this.handleAction(action);
         });
+    }
+
+    private sequence<T extends (keyof typeof Actions)[]>(actions: [...T], handler: (...args: MapNamesToPayloads<T>) => string) {
+
     }
 
     private handleAction(action: Action<string, any, any>) {

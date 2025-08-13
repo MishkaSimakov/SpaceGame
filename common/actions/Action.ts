@@ -10,7 +10,8 @@ export interface Action<T extends string, P, M = unknown> {
 }
 
 export function isAction(object: any): object is Action<string, any, any> {
-    return "uuid" in object
+    return typeof object === "object"
+        && "uuid" in object
         && "time" in object
         && "type" in object
         && typeof object.type === "string";

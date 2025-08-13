@@ -3,6 +3,8 @@ import Module, {isMainModule, ModuleType} from "../modules/Module";
 import Vector2 from "../Vector2";
 import Spaceship from "../Spaceship";
 
+type Direction = "left" | "top" | "right" | "bottom";
+
 const directions: Record<string, [number, number]> = {
     'left': [-1, 0],
     'top': [0, -1],
@@ -120,8 +122,10 @@ function getPossibleRotationsFor(ship: Spaceship, module: Module, x: number, y: 
     return possibleRotations;
 }
 
-function getModulesConnectedTo(ship: Spaceship, module: Module): Module[] {
-    let connectedModules: Module[] = [];
+function getModulesConnectedTo(ship: Spaceship, module: Module) {
+    let connectedModules: {
+        [Key in Direction]?: Module
+    } = {};
 
     for (let [index, direction] of Object.entries(directions)) {
         if (getConnectorInDirection(module, index) === 0) {
@@ -131,7 +135,7 @@ function getModulesConnectedTo(ship: Spaceship, module: Module): Module[] {
         const moduleInDirection = getModuleByPosition(ship, module.x + direction[0], module.y + direction[1]);
 
         if (moduleInDirection) {
-            connectedModules.push(moduleInDirection);
+            connectedModules[index as Direction] = moduleInDirection;
         }
     }
 
@@ -139,9 +143,10 @@ function getModulesConnectedTo(ship: Spaceship, module: Module): Module[] {
 }
 
 function isAdjacent(ship: Spaceship, first: Module, second: Module) {
-    for (let module of getModulesConnectedTo(ship, first)) {
-        if (module === second)
+    for (let module of Object.values(getModulesConnectedTo(ship, first))) {
+        if (module === second) {
             return true;
+        }
     }
 
     return false;
@@ -191,7 +196,10 @@ function getUnconnectedModules(ship: Spaceship): Module[] {
         for (let module of addedModules) {
             unconnectedModules = unconnectedModules.filter(m => (m.x !== module.x || m.y !== module.y));
 
-            newAddedModules.push(...getModulesConnectedTo(ship, module).filter(m => unconnectedModules.indexOf(m) !== -1));
+            newAddedModules.push(
+                ...Object.values(getModulesConnectedTo(ship, module))
+                    .filter(m => unconnectedModules.indexOf(m) !== -1)
+            );
         }
 
         addedModules = newAddedModules;
@@ -271,7 +279,7 @@ function damageInfoInternal(
         destroyed.set(targetKey, byNuclearReactor);
 
         if (targetModule.type === ModuleType.NuclearReactor) {
-            for (let module of SpaceshipGetters.getModulesConnectedTo(shipCopy, targetModule)) {
+            for (let module of Object.values(SpaceshipGetters.getModulesConnectedTo(shipCopy, targetModule))) {
                 const position = new Vector2(module.x, module.y);
                 // handle loop made of nuclear reactors (only one damage to all connected modules)
                 if (destroyed.has(`${position.x},${position.y}`))

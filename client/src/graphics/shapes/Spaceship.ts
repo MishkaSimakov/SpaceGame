@@ -6,6 +6,7 @@ import {NodeConfig} from "../engine/Node";
 import {GetSet, Vector2} from "../engine/types";
 import {Factory} from "../engine/Factory";
 import {Card} from "./Card";
+import {SpaceshipGetters} from "@common/getters/Spaceship";
 
 export interface SpaceshipConfig extends NodeConfig {
     id: string,
@@ -35,13 +36,21 @@ export class Spaceship extends Group<SpaceshipConfig> {
         let cardSize = this.cardSize();
 
         for (let module of spaceship.modules) {
+            const connected = SpaceshipGetters.getModulesConnectedTo(spaceship, module);
+
             let shape = new Card({
                 card: module,
                 size: cardSize,
                 x: module.x * cardSize,
                 y: module.y * cardSize,
                 originY: 0.5,
-                originX: 0.5
+                originX: 0.5,
+                connectorsState: {
+                    left: connected.left ? "connected" : "disconnected",
+                    top: connected.top ? "connected" : "disconnected",
+                    right: connected.right ? "connected" : "disconnected",
+                    bottom: connected.bottom ? "connected" : "disconnected",
+                }
             });
 
             this.add(shape);

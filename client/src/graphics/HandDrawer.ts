@@ -63,7 +63,7 @@ export default class HandDrawer {
 
         const cardSize = Math.max(128 * this.scene.width() / 1440, 75);
 
-        let sceneWidth = this.scene.width();
+        let sceneWidth = this.scene.width() - this.gameManager.controlsScene.topBarDrawer.sizes.width;
         let sceneHeight = this.scene.height();
 
         let spaceBetween = cardSize * 0.1;

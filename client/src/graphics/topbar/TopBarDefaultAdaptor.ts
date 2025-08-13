@@ -21,7 +21,7 @@ export default class TopBarDefaultAdaptor extends TopBarAdaptor {
             const playersDataLine = new PlayerDataLine({
                 x: drawer.sizes.padding,
                 y: currentY,
-                width: drawer.sizes.statusWidth - drawer.sizes.padding * 2,
+                width: drawer.sizes.width - drawer.sizes.padding * 2,
                 player: player,
                 status: {
                     online: drawer.onlineMap[player.id],
@@ -69,7 +69,7 @@ export default class TopBarDefaultAdaptor extends TopBarAdaptor {
         }
 
         if (drawer.buttons.length !== 0) {
-            const buttons = drawer.getButtonsGroup(drawer.sizes.statusWidth - 2 * drawer.sizes.padding);
+            const buttons = drawer.getButtonsGroup(drawer.sizes.width - 2 * drawer.sizes.padding);
             buttons.setAttrs({
                 originX: 0,
                 x: drawer.sizes.padding,

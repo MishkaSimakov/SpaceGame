@@ -126,6 +126,10 @@ export class Button extends Group<ButtonConfig> {
     }
 
     disabled(value: boolean) {
+        if (value === (this._state === 'DISABLED')) {
+            return;
+        }
+
         if (value) {
             this._state = 'DISABLED';
 

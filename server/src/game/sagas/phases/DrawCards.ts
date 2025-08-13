@@ -27,7 +27,8 @@ export function* canDrawAnotherEventCard() {
         && player.energy >= state.settings.energyToDragAnotherEventCardByMainModule;
 }
 
-export function canDrawAdditionalModuleCard(state: GameState) {
+export function* canDrawAdditionalModuleCard() {
+    const state = yield* select();
     const player = StateGetters.currentPlayer(state);
 
     return SpaceshipGetters.getMainModuleType(player.spaceship) === MainModuleType.DrawAdditionalModuleCard
@@ -49,7 +50,7 @@ export function* drawCards() {
 
             yield* showCards(currentPlayer, [card], true);
 
-            if (canDrawAdditionalModuleCard(state)) {
+            if (yield* canDrawAdditionalModuleCard()) {
                 drawAdditionalCard = yield* request(
                     drawAdditionalModuleCardRequest(currentPlayer),
                     'drawAdditionalModuleCardResponse'

@@ -51,6 +51,8 @@ export class ChooseModuleManager {
                 card.setState('ENABLED');
 
                 shape.on('click.choosemodule', () => {
+                    shape.moveToTop();
+
                     const selected = this.isSelected(info);
 
                     if (this.reachedUpperBound() && !selected) {

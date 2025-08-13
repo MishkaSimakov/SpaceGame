@@ -36,8 +36,8 @@ export default class Controls extends Scene {
     }
 
     adopted() {
-        this.handDrawer = new HandDrawer(this.gameManager, this);
         this.topBarDrawer = new TopBarDrawer(this);
+        this.handDrawer = new HandDrawer(this.gameManager, this);
     }
 
     updateData() {

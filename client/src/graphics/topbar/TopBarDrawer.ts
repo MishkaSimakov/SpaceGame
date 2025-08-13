@@ -46,7 +46,7 @@ export default class TopBarDrawer {
         fontSize: 15,
         strokeWidth: SIZES.STROKE_WIDTH,
         cornerRadius: SIZES.CORNER_RADIUS,
-        statusWidth: 400
+        width: 400
     };
 
     constructor(scene: Controls) {
@@ -88,9 +88,9 @@ export default class TopBarDrawer {
         const sceneHeight = this.scene.height();
         const adaptor = new TopBarDefaultAdaptor();
 
-        const sidebarX = sceneWidth - this.sizes.statusWidth;
+        const sidebarX = sceneWidth - this.sizes.width;
         const sidebarY = 0;
-        const sidebarW = this.sizes.statusWidth;
+        const sidebarW = this.sizes.width;
         const sidebarH = sceneHeight;
 
         const offscreenOffset = 10;
@@ -274,7 +274,7 @@ export default class TopBarDrawer {
 
         const reversed = Array.from(this.messages).reverse();
         for (const message of reversed) {
-            const messageGroup = this.getMessageShape(message, this.sizes.statusWidth - 2 * this.sizes.padding);
+            const messageGroup = this.getMessageShape(message, this.sizes.width - 2 * this.sizes.padding);
 
             messageGroup.setPosition({
                 x: this.sizes.padding,
