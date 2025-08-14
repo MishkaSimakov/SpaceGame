@@ -11,6 +11,7 @@ import {Button} from "../shapes/Button";
 import {PlayerDataLine} from "../shapes/PlayerDataLine";
 import TopBarDefaultAdaptor from "./TopBarDefaultAdaptor";
 import Color from "../Color";
+import message from "@common/actions/Message";
 
 export type ButtonData = {
     text: string,
@@ -18,6 +19,11 @@ export type ButtonData = {
     color: ButtonColors,
     name?: string
 };
+
+const newMessageColor = Color.fromHex("#ff9f1c");
+const messageColor = Color.WHITE;
+
+type MessageWithShape = Message & { shape?: Group, isNew: boolean };
 
 export default class TopBarDrawer {
     scene: Controls;
@@ -37,7 +43,7 @@ export default class TopBarDrawer {
 
     // messages
     messagesCard?: Group;
-    messages: Message[] = [];
+    messages: MessageWithShape[] = [];
 
     sidebarBackground?: Rectangle;
 
@@ -65,18 +71,42 @@ export default class TopBarDrawer {
         this.redraw();
     }
 
-    setMessages(messages: Message[]) {
-        this.messages = messages;
-        this.redraw();
-    }
-
-    setPlayersData(currentPlayer: Player, otherPlayers: OtherPlayer[], onlineMap: Record<PlayerId, boolean>, playerTime: Record<number, number>, messages: Message[]) {
+    setPlayersData(currentPlayer: Player, otherPlayers: OtherPlayer[], onlineMap: Record<PlayerId, boolean>, playerTime: Record<number, number>, newMessages: Message[]) {
         this.currentPlayer = currentPlayer;
         this.otherPlayers = otherPlayers;
         this.onlineMap = onlineMap;
         this.playerTime = playerTime;
-        this.messages = messages;
+        this.addMessages(newMessages);
 
+        this.redraw();
+    }
+
+    addMessages(newMessages: Message[]) {
+        if (newMessages.length === 0) {
+            return;
+        }
+
+        const newMessagesWithShapes: MessageWithShape[] = newMessages.map(m => ({
+            ...m,
+            isNew: true
+        }));
+
+        this.messages.push(...newMessagesWithShapes);
+        this.redraw();
+
+        setTimeout(() => {
+            newMessagesWithShapes.forEach(m => {
+                m.isNew = false;
+                (m.shape?.findOne('.text') as Text).fill(messageColor.toString());
+            });
+        }, 3000);
+    }
+
+    setMessages(messages: Message[]) {
+        this.messages = messages.map(m => ({
+            ...m,
+            isNew: false
+        }));
         this.redraw();
     }
 
@@ -164,7 +194,10 @@ export default class TopBarDrawer {
 
         for (const playerId in playerTime) {
             const playerDataLine = this.playersCard.findOne(`.${playerId}`) as PlayerDataLine;
-            playerDataLine?.time(this.playerTime[playerId]);
+
+            if (playerDataLine && playerDataLine.time() != this.playerTime[playerId]) {
+                playerDataLine.time(this.playerTime[playerId]);
+            }
         }
     }
 
@@ -194,7 +227,7 @@ export default class TopBarDrawer {
         }
     }
 
-    getMessageShape(message: Message, maxWidth: number): Group {
+    getMessageShape(message: MessageWithShape, maxWidth: number): Group {
         const group = new Group({width: maxWidth});
 
         const textShape = new Text({
@@ -203,8 +236,9 @@ export default class TopBarDrawer {
             text: message.text,
             fontFamily: "Exo2Regular",
             fontSize: 14,
-            fill: "white",
-            width: maxWidth
+            fill: (message.isNew ? newMessageColor : messageColor).toString(),
+            width: maxWidth,
+            name: "text"
         });
         group.add(textShape);
 
@@ -238,6 +272,7 @@ export default class TopBarDrawer {
             currentY = underline.getClientRect().bottom + 6;
         }
 
+        message.shape = group;
         return group;
     }
 

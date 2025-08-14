@@ -15,7 +15,7 @@ const {
     useModuleSecondTimeRequest,
 } = Actions;
 
-function* useRepairModule(repairModuleCost: number): Generator<any, boolean, any> {
+function* useRepairModule(repairModuleCost: number, secondTime: boolean): Generator<any, boolean, any> {
     const state = yield* select();
     const currentPlayer = StateGetters.currentPlayer(state);
 
@@ -30,6 +30,14 @@ function* useRepairModule(repairModuleCost: number): Generator<any, boolean, any
 
     yield* put(changeModuleHealth(currentPlayer, modulePosition, 1, "used repair module"));
     yield* put(changePlayerEnergy(currentPlayer, -repairModuleCost, "used repair module"));
+
+    const module = SpaceshipGetters.getModuleByPosition(currentPlayer.spaceship, modulePosition)!;
+
+    if (!secondTime) {
+        yield* put(Actions.message(currentPlayer, `чинит ${module.name}, используя ремонтный модуль (-${repairModuleCost}⚡)`));
+    } else {
+        yield* put(Actions.message(currentPlayer, `чинит ${module.name}, используя ремонтный модуль второй раз (-${repairModuleCost}⚡)`));
+    }
 
     return true;
 }
@@ -52,7 +60,7 @@ function* tryUseModuleSecondTime(repairModuleCost: number) {
 
         yield* put(playerUseModuleSecondTime(currentPlayer));
 
-        yield* useRepairModule(repairModuleCost * 2);
+        yield* useRepairModule(repairModuleCost * 2, true);
     }
 }
 
@@ -72,7 +80,7 @@ export function* fixSpaceship() {
         return;
     }
 
-    const usedModule = yield* useRepairModule(repairModuleCost);
+    const usedModule = yield* useRepairModule(repairModuleCost, false);
 
     if (usedModule) {
         yield* tryUseModuleSecondTime(repairModuleCost);

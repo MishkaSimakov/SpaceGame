@@ -53,6 +53,6 @@ export class Game extends BaseEntity {
 
 
     isFinished(): boolean {
-        return !!this.finishedAt;
+        return this.status === GameStatus.FINISHED;
     }
 }

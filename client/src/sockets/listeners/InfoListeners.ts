@@ -5,6 +5,7 @@ import {PlayerId} from "@common/Player";
 import Module from "@common/modules/Module";
 import {Event} from "@common/events/Event";
 import Game from "../../Game";
+import {ShowHugeMessageActivity} from "../../graphics/activities/ShowHugeMessage";
 
 const {showCardsToPlayersResponse} = Actions;
 
@@ -28,6 +29,8 @@ export const infoListeners: ListenersContainer = {
     },
 
     async sendPlayerLostInfo({}, {game}) {
-        await game.controlsScene.showLostScreen();
-    }
+        await game.controlsScene.enqueueActivity(
+            new ShowHugeMessageActivity(this, "Вы проиграли :(")
+        );
+    },
 }

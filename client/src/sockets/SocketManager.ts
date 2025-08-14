@@ -15,6 +15,7 @@ import {fightListeners} from "./listeners/FightListeners";
 import {SocketInitPayload} from "@common/Types";
 import Color from "../graphics/Color";
 import {COLORS} from "../graphics/constants";
+import {ShowHugeMessageActivity} from "../graphics/activities/ShowHugeMessage";
 
 const listeners: ListenersContainer = {
     ...mainListeners,
@@ -84,8 +85,6 @@ export default class SocketManager {
         this.socket = io(uri);
 
         this.on('connect', () => {
-            console.log('connected!');
-
             this.socket.emit('init', {
                 gameId: window.location.href.split('/').pop(),
                 token: document.cookie
@@ -95,13 +94,17 @@ export default class SocketManager {
             } as SocketInitPayload);
         });
 
-        this.on('disconnect', () => {
-            // window.location.href = '/spaceships/lobby';
-        });
-
         this.on('setGameData', (gameDTO: GameForPlayerDTO) => {
             this.game.setGameData(gameDTO);
         });
+
+        this.on('gameFinished', async () => {
+            await this.game.controlsScene.enqueueActivity(
+                new ShowHugeMessageActivity(this.game.controlsScene, "Игра окончена")
+            );
+
+            this.exit();
+        })
     }
 
     // return is event accepted
@@ -126,5 +129,9 @@ export default class SocketManager {
                 5000
             );
         })
+    }
+
+    private exit() {
+        window.location.href = window.location.origin;
     }
 }

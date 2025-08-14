@@ -12,6 +12,7 @@ import InfoActions from "./Info";
 import EventCardsActions from "./EventCards";
 import RandomActions from "./Random";
 import TimeActions from "./Time";
+import MessageActions from "./Message";
 
 export default {
     ...ReducerActions,
@@ -19,6 +20,7 @@ export default {
     ...EventCardsActions,
     ...RandomActions,
     ...TimeActions,
+    ...MessageActions,
 
     ...request(
         'choosePlayerForAttack',

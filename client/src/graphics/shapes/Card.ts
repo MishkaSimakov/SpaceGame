@@ -32,15 +32,10 @@ function getModuleColor(health: number, maxHealth: number): Color {
     const ratio = Math.max(0, Math.min(health / maxHealth, 1));
 
     // Parse hex colors to RGB
-    const start = {r: 0x5A, g: 0x7F, b: 0x52}; // Healthy green
-    const end = {r: 0x71, g: 0x16, b: 0x18}; // Critical red
+    const start = Color.fromRGBA(0x5A, 0x7F, 0x52); // Healthy green
+    const end = Color.fromRGBA(0x71, 0x16, 0x18); // Critical red
 
-    // Linear interpolation of RGB values
-    const r = Math.round(end.r + (start.r - end.r) * ratio);
-    const g = Math.round(end.g + (start.g - end.g) * ratio);
-    const b = Math.round(end.b + (start.b - end.b) * ratio);
-
-    return Color.fromRGBA(r, g, b, 1);
+    return Color.interpolate(start, end, 1 - ratio);
 }
 
 export class Card extends Group<CardConfig> {

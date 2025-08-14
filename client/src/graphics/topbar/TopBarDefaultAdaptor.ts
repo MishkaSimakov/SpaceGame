@@ -35,7 +35,7 @@ export default class TopBarDefaultAdaptor extends TopBarAdaptor {
                 drawer.scene.gameManager.spaceshipsScene.panToPlayerWithId(player.id);
             });
 
-            playersDataLine.setAttr("name", player.id);
+            playersDataLine.setAttr("name", String(player.id));
             result.add(playersDataLine);
 
             currentY += playersDataLine.getClientRect().height + 5;

@@ -4,7 +4,7 @@ import {User} from "../../entity/user";
 import {AuthenticatedRequest} from "../middleware/auth";
 import {GameSettings} from "@common/GameSettings";
 import {AuthenticatedGameRequest} from "../middleware/GameOwner";
-import {Game as GameDBEntity} from "../../entity/game";
+import {Game as GameDBEntity, GameStatus} from "../../entity/game";
 import {Logger} from "../../game/Logger";
 import {gamePlayersValidator} from "../../validation/GamePlayersValidator";
 
@@ -79,6 +79,11 @@ export const joinGame = async (req: AuthenticatedGameRequest, res: Response) => 
         game.players.find(p => p.id === req.user.id) === undefined
         && !game.settings.isPublic
     ) {
+        req.flash('error', 'Вы не можете присоединиться к данной игре.');
+        return res.redirect('/');
+    }
+
+    if (game.status !== GameStatus.ACTIVE) {
         req.flash('error', 'Вы не можете присоединиться к данной игре.');
         return res.redirect('/');
     }

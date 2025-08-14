@@ -22,7 +22,7 @@ export class LossMiddleware extends Middleware {
 
         const currentPlayer = StateGetters.currentPlayer(this.stateRef);
 
-        if (currentPlayer.lose) {
+        if (currentPlayer.lose || this.stateRef.players.filter(p => !p.lose).length === 1) {
             this.sagaRunnerRef.cancel("playerTurn");
             return;
         }

@@ -40,6 +40,7 @@ export function* drawCards() {
     const currentPlayer = StateGetters.currentPlayer(state);
 
     const {chosenType} = yield* request(chooseCardTypeRequest(currentPlayer.id), 'chooseCardTypeResponse');
+    yield* put(Actions.message(currentPlayer, `тянет карточку ${chosenType === "module" ? "строительства" : "действия"}`));
 
     if (chosenType === "module") {
         let drawAdditionalCard = false;
@@ -62,6 +63,8 @@ export function* drawCards() {
                         -state.settings.energyToDragAdditionalCardByMainModule,
                         "draw additional module card by main module"
                     ));
+
+                    yield* put(Actions.message(currentPlayer, `использует командный модуль, чтобы взять дополнительную карточку строительства (-${state.settings.energyToDragAdditionalCardByMainModule}⚡)`));
                 }
             } else {
                 drawAdditionalCard = false;
@@ -90,6 +93,8 @@ export function* drawCards() {
                     ));
 
                     yield* put(pushCardsToDiscard("event", [card]));
+
+                    yield* put(Actions.message(currentPlayer, `использует командный модуль, чтобы взять другую карточку действия (-${state.settings.energyToDragAnotherEventCardByMainModule}⚡)`));
                 }
             } else {
                 drawAnotherCard = false;

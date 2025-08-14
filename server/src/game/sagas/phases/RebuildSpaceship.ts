@@ -18,4 +18,6 @@ export function* rebuildSpaceship() {
     );
 
     yield* put(playerRebuiltSpaceship(currentPlayer, newSpaceship, newHand));
+
+    yield* put(Actions.message(currentPlayer, `перестроил свой корабль`));
 }

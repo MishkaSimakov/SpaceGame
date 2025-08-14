@@ -7,9 +7,10 @@ import Color from "../Color";
 import {DD} from "../engine/Drag";
 import {Spaceship as SpaceshipShape} from "../shapes/Spaceship";
 import {Card} from "../shapes/Card";
-import {PlayerId} from "@common/Player";
+import Player, {PlayerId} from "@common/Player";
 import {CountBoundary} from "../CountBoundary";
 import {ChooseModuleManager} from "../ChooseModuleManager";
+import {OtherPlayer} from "@common/GameForPlayerDTO";
 
 let spaceshipConfigurations: Vector2[][] = [
     [new Vector2(0, 0)],
@@ -181,9 +182,7 @@ export default class Spaceships extends Scene {
         return manager.getHandle();
     }
 
-    updateData() {
-        let players = this.gameManager.getAllPlayers();
-
+    updateData(players: OtherPlayer[]) {
         for (let [index, player] of players.entries()) {
             if (this.spaceshipShapes[player.id] === undefined) {
                 const spaceshipPosition = spaceshipConfigurations[players.length - 1][index];
@@ -199,10 +198,6 @@ export default class Spaceships extends Scene {
                 this.spaceshipShapes[player.id].spaceship(player.spaceship);
 
                 this.add(this.spaceshipShapes[player.id]);
-
-                if (player.id === this.gameManager.currentPlayer.id) {
-                    this.panToPlayerWithId(player.id, 0);
-                }
             } else {
                 this.spaceshipShapes[player.id].setSpaceship(player.spaceship);
             }

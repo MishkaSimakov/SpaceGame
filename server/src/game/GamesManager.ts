@@ -132,6 +132,7 @@ export default class GamesManager {
         // TODO: strict typing for typeorm
         // @ts-ignore
         gameEntity.winner = await User.findOneBy({id: winner.id});
+        gameEntity.status = GameStatus.FINISHED;
         gameEntity.finishedAt = new Date();
 
         await gameEntity.save();
@@ -145,7 +146,7 @@ export default class GamesManager {
 
         // search in DB
         const game = await GameDBEntity.findOne({
-            where: {id,},
+            where: {id},
             relations: {
                 players: {}
             }
@@ -170,7 +171,10 @@ export default class GamesManager {
             game.activate()
                 .then(async (result) => {
                     game.sockets.disconnectEveryone();
-                    await this.storeGameResult(gameEntity.id, game);
+
+                    if (result.status === "finished") {
+                        await this.storeGameResult(gameEntity.id, game);
+                    }
                 })
                 .catch(err => this.reportGameError(gameEntity, err));
 

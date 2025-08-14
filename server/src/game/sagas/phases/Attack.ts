@@ -39,6 +39,7 @@ export function* attack() {
     yield* put(changePlayerEnergy(currentPlayer, -energyCost, "use attack module"));
 
     yield* put(beginFight(currentPlayer.id, victim, "use attack module"));
+    yield* put(Actions.message(currentPlayer, `напал на ${StateGetters.playerById(state, victim)!.name}, используя абордажный модуль (-${energyCost}⚡)`));
     yield* fight();
 
     // update state
@@ -63,7 +64,12 @@ export function* attack() {
             'choosePlayerForAttackResponse'
         );
 
-        yield* put(beginFight(currentPlayer.id, victim!, "use attack module second time"));
+        if (!victim) {
+            return;
+        }
+
+        yield* put(beginFight(currentPlayer.id, victim, "use attack module second time"));
+        yield* put(Actions.message(currentPlayer, `напал на ${StateGetters.playerById(state, victim)!.name}, используя абордажный модуль второй раз (-${energyCost * 2}⚡)`));
         yield* fight();
     }
 }

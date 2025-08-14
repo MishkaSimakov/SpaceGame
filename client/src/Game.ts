@@ -11,6 +11,7 @@ import SocketManager from "./sockets/SocketManager";
 import {Graphics} from "./graphics/engine/Graphics";
 import {DD} from "./graphics/engine/Drag";
 import PopupsScene from "./graphics/scenes/Popups";
+import {ShowHugeMessageActivity} from "./graphics/activities/ShowHugeMessage";
 
 export default class Game {
     currentTurnPlayerId: PlayerId;
@@ -32,7 +33,9 @@ export default class Game {
     playerTime: Record<number, number> = {};
     timeDecreasingPlayerId: number;
 
-    messages: Message[];
+    messages: Message[] = [];
+
+    isFirstDraw: boolean = true;
 
     constructor() {
         const graphics = new Graphics({
@@ -59,13 +62,11 @@ export default class Game {
 
         let prevTime = (new Date()).getTime();
         setInterval(() => {
-            if (!this.settings || !this.settings.withTimeControl)
+            if (!this.settings || !this.settings.timeControlSettings || !this.timeDecreasingPlayerId) {
                 return;
+            }
 
-            if (!this.timeDecreasingPlayerId)
-                return;
-
-            let currTime = (new Date()).getTime();
+            const currTime = (new Date()).getTime();
             this.playerTime[this.timeDecreasingPlayerId] -= (currTime - prevTime);
             prevTime = currTime;
 
@@ -85,10 +86,10 @@ export default class Game {
             this.controlsScene.setSize(newSize);
             this.popupsScene.setSize(newSize);
 
-            this.controlsScene.activitiesQueue[0]?.update();
+            this.controlsScene.activitiesQueue[0]?.activity.update();
             this.popupsScene.update();
 
-            this.redraw();
+            this.redraw([]);
         });
     }
 
@@ -114,15 +115,21 @@ export default class Game {
             }
         }
 
+        const newMessages = gameDTO.messages.slice(this.messages.length);
         this.messages = gameDTO.messages;
 
         this.updatePageTitle();
-        this.redraw();
+        this.redraw(newMessages);
     }
 
-    redraw() {
-        this.controlsScene.updateData();
-        this.spaceshipsScene.updateData();
+    redraw(newMessages: Message[]) {
+        this.controlsScene.updateData(newMessages);
+        this.spaceshipsScene.updateData(this.getAllPlayers());
+
+        if (this.isFirstDraw) {
+            this.isFirstDraw = false;
+            this.spaceshipsScene.panToPlayerWithId(this.currentPlayer.id, 0);
+        }
 
         if (this.rebuildSpaceshipManager.isRebuildingSpaceship) {
             this.rebuildSpaceshipManager.setIsRebuildSpaceshipAllowed(true);

@@ -58,6 +58,8 @@ function* chooseProtectors(victim: Player) {
 
         yield* put(activateProtector(victim, protectorPosition));
         yield* put(changePlayerEnergy(victim, -protector.energyCost, "use protector"));
+
+        yield* put(Actions.message(victim, `активирует ${protector.name} (-${protector.energyCost}⚡)`));
     }
 }
 
@@ -93,6 +95,9 @@ function* tryDamageByEventCard() {
     yield* put(popCardFromPlayerHand(attacker, damageLaterCardIndex));
 
     yield* damageModule(victim, position, 1, {type: "EventCard"});
+
+    const module = SpaceshipGetters.getModuleByPosition(victim.spaceship, position)!;
+    yield* put(Actions.message(attacker, `атакует ${module.name}, используя карточку действия (-1❤)`));
 }
 
 function* askForRunawayViaDice() {
@@ -108,7 +113,15 @@ function* askForRunawayViaDice() {
         return false;
     }
 
-    return (yield* dice(attacker)) >= state.settings.diceResultToRunaway;
+    const diceResult = yield* dice(attacker);
+
+    if (diceResult >= state.settings.diceResultToRunaway) {
+        yield* put(Actions.message(attacker, `пытался сбежать, выпало ${diceResult} => сбежал`));
+        return true;
+    } else {
+        yield* put(Actions.message(attacker, `пытался сбежать, выпало ${diceResult} => не сбежал`));
+        return false;
+    }
 }
 
 function* askForRunawayViaMainModule() {
@@ -129,6 +142,7 @@ function* askForRunawayViaMainModule() {
     }
 
     yield* put(changePlayerEnergy(attacker, -state.settings.mainModuleRunawayEnergyCost, "used main module to run away"));
+    yield* put(Actions.message(attacker, `сбежал, используя командный модуль (-${state.settings.mainModuleRunawayEnergyCost}⚡)`));
 
     return true;
 }
@@ -144,8 +158,11 @@ function* damageByWeapon() {
 
         const weapon = SpaceshipGetters.getModuleByPosition(attacker.spaceship, weaponPosition)!;
 
-        yield* damageModule(victim, targetPosition, weapon.strength, {type: "Player", attacker});
+        const target = SpaceshipGetters.getModuleByPosition(victim.spaceship, targetPosition)!;
+        yield* put(Actions.message(attacker, `атаковал ${target.name} (-${weapon.energyCost}⚡ -${weapon.strength}❤️)`));
+
         yield* put(changePlayerEnergy(attacker, -weapon.energyCost, "used weapon in fight"));
+        yield* damageModule(victim, targetPosition, weapon.strength, {type: "Player", attacker});
 
         // update state
         ({attacker, victim} = yield* getCombatants());
@@ -162,9 +179,12 @@ function* damageByWeapon() {
                     'chooseTargetResponse'
                 );
 
-                yield* damageModule(victim, targetPosition, weapon.strength, {type: "Player", attacker});
+                const target = SpaceshipGetters.getModuleByPosition(victim.spaceship, targetPosition)!;
+                yield* put(Actions.message(attacker, `атаковал ${target.name}, используя оружие второй раз (-${weapon.energyCost * 2}⚡ -${weapon.strength}❤️)`));
 
                 yield* put(changePlayerEnergy(attacker, -weapon.energyCost * 2, "used weapon in fight second time"));
+
+                yield* damageModule(victim, targetPosition, weapon.strength, {type: "Player", attacker});
             }
         }
     }
@@ -210,6 +230,7 @@ export function* fight() {
             const {victim, attacker} = yield* getCombatants();
 
             if (!PlayerGetters.canDamage(victim) && !PlayerGetters.canDamage(attacker)) {
+                yield* put(Actions.message(attacker, `никто не может атаковать => бой окончен`));
                 break;
             }
 

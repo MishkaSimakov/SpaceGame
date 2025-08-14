@@ -18,4 +18,6 @@ export function* discardCards() {
     );
 
     yield* put(Actions.disposeCardsFromPlayerHand(currentPlayer, discardedCardsIndexes, "discard cards phase"));
+
+    yield* put(Actions.message(currentPlayer, `сбросил ${discardedCardsIndexes.length} карт в конце хода`));
 }

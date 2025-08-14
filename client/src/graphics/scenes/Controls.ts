@@ -1,8 +1,7 @@
 import Module from "@common/modules/Module";
 import Vector2 from "@common/Vector2";
 import {Event} from "@common/events/Event";
-import {AttackReason, Message, MoveDamageReason} from "@common/Types";
-import {OtherPlayer} from "@common/GameForPlayerDTO";
+import {Message} from "@common/Types";
 
 import Game from "../../Game";
 import HandDrawer from "../HandDrawer";
@@ -11,23 +10,21 @@ import TopBarDrawer from "../topbar/TopBarDrawer";
 import Scene from "../engine/Scene";
 import {Group} from "../engine/Group";
 import {Card} from "../shapes/Card";
+import Color from "../Color";
+import {Boundary, BoundaryType} from "../CountBoundary";
 
 import {ShowCardsActivity} from "../activities/ShowCards";
 import {Activity} from "../activities/Activity";
 import {PermuteCardsActivity} from "../activities/PermuteCards";
 import {ChooseFromListActivity} from "../activities/ChooseFromList";
 import {ChooseCardsActivity} from "../activities/ChooseCards";
-import {Boundary, BoundaryType} from "../CountBoundary";
-import Color from "../Color";
-import {Button} from "../shapes/Button";
-import {ShowLostScreenActivity} from "../activities/ShowLostScreen";
 
 export default class Controls extends Scene {
     handDrawer: HandDrawer;
     topBarDrawer: TopBarDrawer;
     gameManager: Game;
 
-    activitiesQueue: Activity[] = [];
+    activitiesQueue: { activity: Activity, lock: Promise<void> }[] = [];
 
     constructor(game: Game) {
         super();
@@ -40,7 +37,7 @@ export default class Controls extends Scene {
         this.handDrawer = new HandDrawer(this.gameManager, this);
     }
 
-    updateData() {
+    updateData(newMessages: Message[]) {
         this.handDrawer.setHandData(this.gameManager.currentPlayer.hand);
         this.handDrawer.redraw();
 
@@ -49,7 +46,7 @@ export default class Controls extends Scene {
             this.gameManager.otherPlayers,
             this.gameManager.onlineMap,
             this.gameManager.playerTime,
-            this.gameManager.messages
+            newMessages
         );
     }
 
@@ -73,20 +70,28 @@ export default class Controls extends Scene {
     // Promise<Awaited<T>> is an identity metafunction for T extends Promise, but typescript
     // requires that a return type of async function is Promise<...>
     async enqueueActivity<T extends Activity>(activity: T): Promise<Awaited<ReturnType<T["activate"]>>> {
-        this.activitiesQueue.push(activity);
+        let resolve;
+        const lock = new Promise<void>(res => {
+            resolve = res;
+        });
 
-        // TODO: more than 1 activity in queue
-        const res = await activity.activate();
+        this.activitiesQueue.push({activity, lock});
+
+        if (this.activitiesQueue.length > 1) {
+            await this.activitiesQueue[this.activitiesQueue.length - 2].lock;
+        }
+
+        const result = await activity.activate();
         this.activitiesQueue.shift();
-        return res;
+
+        // unlock execution of next activity
+        resolve();
+
+        return result;
     }
 
     async showCards(cards: (Module | Event)[], title?: string): Promise<void> {
         return await this.enqueueActivity(new ShowCardsActivity(this, cards, title));
-    }
-
-    async showLostScreen(): Promise<void> {
-        return await this.enqueueActivity(new ShowLostScreenActivity(this));
     }
 
     async chooseFromList(title: string, values: string[]): Promise<number> {

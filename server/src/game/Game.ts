@@ -70,7 +70,19 @@ export default class Game {
 
         const result = await this.sagaRunner.run();
 
-        return result === "cancel" ? {status: "cancelled"} : {status: "finished"};
+        if (result === "cancel") {
+            return {status: "cancelled"};
+        }
+
+        // game has finished
+        // notify players about it
+        for (let player of this.state.players) {
+            const socket = this.sockets.getSocket(player.id);
+            socket?.emit('gameFinished');
+            socket?.disconnect();
+        }
+
+        return {status: "finished"};
     }
 
     private async replay(actions: Action<string, any, any>[]) {
