@@ -186,4 +186,4 @@ export default {
             [0, 1, 0, 1]
         ]
     }
-}
+} as Record<string, { configurations: [number, number, number, number][] }>;

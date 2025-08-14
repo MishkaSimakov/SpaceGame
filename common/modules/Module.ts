@@ -1,6 +1,13 @@
 import {Event} from "../events/Event";
+import SmallQuantumProtector from "./SmallQuantumProtector";
+import QuantumProtector from "./QuantumProtector";
+import {MainModule} from "./MainModule";
+import Vector2 from "../Vector2";
+import SpaceSolver from "./SpaceSolver";
+import IonDestroyer from "./IonDestroyer";
+import QuantumDestabilizer from "./QuantumDestabilizer";
 
-enum ModuleTypes {
+export enum ModuleType {
     MainModule,
 
     // weapon
@@ -29,7 +36,7 @@ enum ModuleTypes {
 
 export let moduleIdCounter = 0;
 
-class Module {
+export default class Module {
     id: number = moduleIdCounter++;
 
     name: string;
@@ -39,29 +46,46 @@ class Module {
     capacity: number = 0;
     energyCost: number = 0;
     energyIncrease: number = 0;
-    x: number = 0;
-    y: number = 0;
-    sprite: string;
-    isMain: boolean = false;
-    type: ModuleTypes;
+    type: ModuleType;
     totalHealth: number;
     health: number;
-    rotation: number = 0;
-    isActivated: boolean = false;
 
-    constructor(connectors: { top: number, right: number, bottom: number, left: number }) {
+    x: number = 0;
+    y: number = 0;
+    rotation: number = 0;
+
+    constructor(name: string, type: ModuleType, totalHealth: number, connectors: {
+        top: number,
+        right: number,
+        bottom: number,
+        left: number
+    }) {
+        this.name = name;
+        this.type = type;
+
+        this.totalHealth = totalHealth;
+        this.health = totalHealth;
+
         this.connectors = connectors;
     }
 }
 
-function isModule(card: Module | Event) {
+export function isModule(card: Module | Event): card is Module {
     return (card as Module).name !== undefined;
 }
 
-export default Module;
+export function isProtector(card: Module | Event): card is (SmallQuantumProtector | QuantumProtector) {
+    return isModule(card) && (card.type === ModuleType.SmallQuantumProtector || card.type === ModuleType.QuantumProtector);
+}
 
-export {
-    Module,
-    ModuleTypes,
-    isModule
+export function isMainModule(card: Module | Event): card is MainModule {
+    return isModule(card) && card.type === ModuleType.MainModule;
+}
+
+export function isWeapon(card: Module | Event): card is (SpaceSolver | IonDestroyer | QuantumDestabilizer) {
+    return isModule(card) && (
+        card.type === ModuleType.SpaceSolver
+        || card.type === ModuleType.IonDestroyer
+        || card.type === ModuleType.QuantumDestabilizer
+    );
 }

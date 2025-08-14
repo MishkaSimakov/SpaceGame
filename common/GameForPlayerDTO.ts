@@ -1,55 +1,31 @@
-import Player from "./Player";
+import Player, {PlayerId} from "./Player";
 import Spaceship from "./Spaceship";
-import {Options} from "./PlainToClass";
-import Module from "./modules/Module";
 import {Message} from "./Types";
+import {GameSettings} from "./GameSettings";
 
-type TimeControlSettings = {
-    START_TIME: number;
-    DEFAULT_TIME_INCREASE: number;
-    FIGHT_TIME_INCREASE: number;
-};
-
-type GameSettings = {
-    size: number,
-    withTimeControl: boolean,
-    timeControlSettings?: TimeControlSettings,
-    loseWhenTimeout: boolean,
-    isPublic: boolean
-};
-
-class OtherPlayer {
+type OtherPlayer = {
     id: number;
     name: string;
     energy: number;
-    online: boolean;
     spaceship: Spaceship;
     handSize: number;
+    lose: boolean;
+};
 
-    static getPropertiesMap(): Options {
-        return {
-            spaceship: {
-                class: Spaceship,
+type GameForPlayerDTO = {
+    currentTurnPlayerId: PlayerId;
 
-                modules: {
-                    class: Module
-                }
-            }
-        };
-    }
-}
-
-class GameForPlayerDTO {
     settings: GameSettings;
     player: Player;
     otherPlayers: OtherPlayer[];
+    onlineMap: Record<PlayerId, boolean>;
 
-    timeControl: {
-        timeDecreasingPlayerId: number;
+    timeControl?: {
+        timeDecreasingPlayerId: number | undefined;
         playersTime: Record<number, number>
     };
 
     messages: Message[];
 }
 
-export { GameSettings, GameForPlayerDTO, OtherPlayer, TimeControlSettings };
+export {GameForPlayerDTO, OtherPlayer};

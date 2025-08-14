@@ -1,7 +1,15 @@
 {
   "compilerOptions": {
     "target": "es2021",
-    "moduleResolution": "node"
+    "lib": ["es2021", "dom"],
+    "moduleResolution": "node",
+    "baseUrl": "src",
+
+    "paths": {
+      "@common/*": [
+        "../../common/*"
+      ]
+    }
   },
   "include": [
     "./src/**/*",

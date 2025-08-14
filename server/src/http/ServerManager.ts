@@ -1,30 +1,45 @@
 import initRoutes from "./routes";
 
-const express = require('express');
-const http = require('http');
+import express from 'express';
+import http, {Server as HTTPServer} from 'http';
 
-import {Server, Socket} from "socket.io";
+import {Server as SocketServer} from "socket.io";
 
 import cors from "cors";
 import path from "path";
 import serveStatic from "serve-static";
+
+// @ts-ignore
 import edge from "express-edge";
 import cookieParser from 'cookie-parser';
 import {Express} from "express";
+import session from "express-session";
+import flash from "express-flash";
+
+import * as process from "node:process";
+import * as assert from "node:assert";
 
 export default class ServerManager {
-    server: Express;
-    httpServer;
-    io: Server;
+    server?: Express;
+    httpServer?: HTTPServer;
+    io?: SocketServer;
 
     staticBasePath: string;
 
-    constructor() {}
+    constructor() {
+        this.staticBasePath = path.join(__dirname, '../../../client/dist');
+    }
 
     initServer() {
-        this.staticBasePath = path.join(__dirname, '../../../client/dist');
-
         this.server = express();
+
+        assert.ok(process.env.SESSION_SECRET_KEY, "Secret key must be set in .env file");
+        this.server.use(session({
+            secret: process.env.SESSION_SECRET_KEY,
+            resave: false,
+            saveUninitialized: true
+        }));
+        this.server.use(flash());
 
         this.server.use(cookieParser());
         this.server.use(edge);
@@ -32,6 +47,12 @@ export default class ServerManager {
         this.server.use(cors());
         this.server.use(serveStatic(this.staticBasePath));
         this.server.use(express.urlencoded({extended: false}));
+
+        // error handler
+        this.server.use((err: unknown, req: any, res: any, next: any) => {
+            console.error(err);
+            res.status(500).json({message: "Internal server error"});
+        });
 
         initRoutes(this.server);
 
@@ -42,10 +63,10 @@ export default class ServerManager {
         });
     }
 
-    initSockets(): Server {
+    initSockets(): SocketServer {
         this.httpServer = http.createServer(this.server);
 
-        this.io = new Server(this.httpServer, {
+        this.io = new SocketServer(this.httpServer, {
             cors: {
                 origin: "http://127.0.0.1:3000",
                 methods: ["GET", "POST"]
@@ -56,7 +77,7 @@ export default class ServerManager {
     }
 
     runServer() {
-        this.httpServer.listen(3000, () => {
+        this.httpServer!.listen(3000, () => {
             console.log('Server started!');
         });
     }

@@ -1,23 +1,31 @@
-import Spaceships from "./graphics/scenes/spaceships";
-import Controls from "./graphics/scenes/controls";
-import Player from "../../common/Player";
+import {GameSettings} from "@common/GameSettings";
+import {GameForPlayerDTO, OtherPlayer} from "@common/GameForPlayerDTO";
+import {Message} from "@common/Types";
+import {PlayerGetters} from "@common/getters/Player";
+
+import Spaceships from "./graphics/scenes/Spaceships";
+import Controls from "./graphics/scenes/Controls";
+import Player, {PlayerId} from "../../common/Player";
 import RebuildSpaceshipManager from "./graphics/RebuildSpaceshipManager";
-import {plainToClass} from "../../common/PlainToClass";
 import SocketManager from "./sockets/SocketManager";
-import {Event, EventTypes} from "../../common/events/Event";
-import {GameForPlayerDTO, GameSettings, OtherPlayer} from "../../common/GameForPlayerDTO";
-import {Message} from "../../common/Types";
 import {Graphics} from "./graphics/engine/Graphics";
 import {DD} from "./graphics/engine/Drag";
+import PopupsScene from "./graphics/scenes/Popups";
+import {ShowHugeMessageActivity} from "./graphics/activities/ShowHugeMessage";
 
 export default class Game {
+    currentTurnPlayerId: PlayerId;
+
     currentPlayer: Player;
     otherPlayers: OtherPlayer[];
+    onlineMap: Record<PlayerId, boolean> = {};
 
     socketManager: SocketManager;
 
     spaceshipsScene: Spaceships;
     controlsScene: Controls;
+    popupsScene: PopupsScene;
+
     rebuildSpaceshipManager: RebuildSpaceshipManager;
 
     settings: GameSettings;
@@ -25,7 +33,9 @@ export default class Game {
     playerTime: Record<number, number> = {};
     timeDecreasingPlayerId: number;
 
-    messages: Message[];
+    messages: Message[] = [];
+
+    isFirstDraw: boolean = true;
 
     constructor() {
         const graphics = new Graphics({
@@ -40,9 +50,11 @@ export default class Game {
 
         this.spaceshipsScene = new Spaceships(this);
         this.controlsScene = new Controls(this);
+        this.popupsScene = new PopupsScene(this);
 
         graphics.add(this.spaceshipsScene);
         graphics.add(this.controlsScene);
+        graphics.add(this.popupsScene);
 
         this.rebuildSpaceshipManager = new RebuildSpaceshipManager(this);
 
@@ -50,28 +62,46 @@ export default class Game {
 
         let prevTime = (new Date()).getTime();
         setInterval(() => {
-            if (!this.settings || !this.settings.withTimeControl)
+            if (!this.settings || !this.settings.timeControlSettings || !this.timeDecreasingPlayerId) {
                 return;
+            }
 
-            if (!this.timeDecreasingPlayerId)
-                return;
-
-            let currTime = (new Date()).getTime();
+            const currTime = (new Date()).getTime();
             this.playerTime[this.timeDecreasingPlayerId] -= (currTime - prevTime);
             prevTime = currTime;
 
             this.controlsScene.topBarDrawer.updateTime(this.playerTime);
         }, 1000);
+
+        window.addEventListener('resize', () => {
+            // game data is not loaded yet
+            if (!this.settings) return;
+
+            const newSize = {
+                width: window.innerWidth,
+                height: window.innerHeight
+            };
+
+            this.spaceshipsScene.setSize(newSize);
+            this.controlsScene.setSize(newSize);
+            this.popupsScene.setSize(newSize);
+
+            this.controlsScene.activitiesQueue[0]?.activity.update();
+            this.popupsScene.update();
+
+            this.redraw([]);
+        });
     }
 
     setGameData(gameDTO: GameForPlayerDTO) {
-        if (!this.rebuildSpaceshipManager.isRebuildingSpaceship)
-            this.currentPlayer = plainToClass(gameDTO.player, Player.getPropertiesMap());
-
-        this.otherPlayers = gameDTO.otherPlayers
-            .map(p => plainToClass(p, OtherPlayer.getPropertiesMap()));
-
+        this.currentTurnPlayerId = gameDTO.currentTurnPlayerId;
+        this.onlineMap = gameDTO.onlineMap;
+        this.otherPlayers = gameDTO.otherPlayers;
         this.settings = gameDTO.settings;
+
+        if (!this.rebuildSpaceshipManager.isRebuildingSpaceship) {
+            this.currentPlayer = gameDTO.player;
+        }
 
         // time control
         if (this.settings?.withTimeControl) {
@@ -85,16 +115,21 @@ export default class Game {
             }
         }
 
+        const newMessages = gameDTO.messages.slice(this.messages.length);
         this.messages = gameDTO.messages;
 
         this.updatePageTitle();
-
-        this.redraw();
+        this.redraw(newMessages);
     }
 
-    redraw() {
-        this.controlsScene.updateData();
-        this.spaceshipsScene.updateData();
+    redraw(newMessages: Message[]) {
+        this.controlsScene.updateData(newMessages);
+        this.spaceshipsScene.updateData(this.getAllPlayers());
+
+        if (this.isFirstDraw) {
+            this.isFirstDraw = false;
+            this.spaceshipsScene.panToPlayerWithId(this.currentPlayer.id, 0);
+        }
 
         if (this.rebuildSpaceshipManager.isRebuildingSpaceship) {
             this.rebuildSpaceshipManager.setIsRebuildSpaceshipAllowed(true);
@@ -109,14 +144,14 @@ export default class Game {
         let allPlayers: OtherPlayer[] = [];
 
         allPlayers.push(...this.otherPlayers);
-        allPlayers.push(this.currentPlayer.getOtherPlayer());
+        allPlayers.push(PlayerGetters.forOtherPlayer(this.currentPlayer));
 
         return allPlayers;
     }
 
     getPlayerById(id: number): OtherPlayer {
         if (id === this.currentPlayer.id)
-            return this.currentPlayer.getOtherPlayer();
+            return PlayerGetters.forOtherPlayer(this.currentPlayer);
 
         for (let player of this.otherPlayers) {
             if (player.id === id)
@@ -124,16 +159,8 @@ export default class Game {
         }
     }
 
-    async useEventCard(event: Event): Promise<boolean> {
-        if (event.type === EventTypes.SaveCardAndThenDealDamage) {
-            // if (!this.getCurrentPlayer().isInFight) return false;
-
-            return await this.socketManager.useEventCard(event);
-        }
-    }
-
     updatePageTitle() {
-        if (this.timeDecreasingPlayerId === this.currentPlayer.id) {
+        if (this.currentTurnPlayerId === this.currentPlayer.id) {
             document.title = 'Ваш ход - Космические баталии';
         } else {
             document.title = 'Космические баталии';

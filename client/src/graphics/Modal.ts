@@ -3,6 +3,8 @@ import {Rectangle} from "./engine/shapes/Rectangle";
 import {Text} from "./engine/shapes/Text";
 import Color from "./Color";
 
+const offset = 10;
+
 export default class Modal {
     scene: Scene;
 
@@ -13,51 +15,26 @@ export default class Modal {
     lines: Text[] = [];
     bottomTextShape: Text;
 
-    textStartX: number;
-    textStartY: number;
-
-    sceneWidth: number;
-    sceneHeight: number;
-
-    offset: number;
-
     constructor(scene: Scene) {
         this.scene = scene;
 
-        this.sceneWidth = this.scene.width();
-        this.sceneHeight = this.scene.height();
-
-        this.offset = 10;
-
-        let width = Math.min(500, this.sceneWidth - 2 * this.offset);
-        let height = 500;
-
-        this.textStartX = (this.sceneWidth - width) / 2 + this.offset;
-
         this.fadeShape = this.scene.createAndAdd.rectangle({
-            x: 0,
-            y: 0,
-            width: this.sceneWidth,
-            height: this.sceneHeight,
             fill: Color.fromHex('#000000', 0.75).toString(),
         });
 
         this.backgroundShape = this.scene.createAndAdd.rectangle({
-            x: this.sceneWidth / 2,
-            y: this.sceneHeight / 2,
-            width, height,
             originX: 0.5,
             originY: 0.5,
             fill: Color.fromHex('#0B2545', 0.75).toString(),
             stroke: Color.fromHex('#3D76BE').toString(),
             strokeWidth: 2
-        })
+        });
+
+        this.update();
     }
 
     setTitle(title: string): Text {
         this.titleShape = this.scene.createAndAdd.text({
-            x: this.sceneWidth / 2,
-            y: this.sceneHeight / 2 - 250 + this.offset,
             text: title,
             fill: "white",
             fontFamily: "Exo2Regular",
@@ -65,7 +42,7 @@ export default class Modal {
             originX: 0.5
         });
 
-        this.textStartY = this.titleShape.getClientRect().bottom + this.offset;
+        this.update();
 
         return this.titleShape;
     }
@@ -73,8 +50,6 @@ export default class Modal {
     addLine(text: string): Text {
         this.lines.push(
             this.scene.createAndAdd.text({
-                x: this.textStartX,
-                y: this.textStartY + this.lines.length * 20,
                 text: text,
                 fontSize: 15,
                 fill: "white",
@@ -82,13 +57,13 @@ export default class Modal {
             })
         );
 
+        this.update();
+
         return this.lines[this.lines.length - 1];
     }
 
     setBottomText(text: string): Text {
         this.bottomTextShape = this.scene.createAndAdd.text({
-            x: this.textStartX,
-            y: this.sceneHeight / 2 + 250 - this.offset,
             text: text,
             fill: "white",
             fontFamily: "Exo2Bold",
@@ -96,16 +71,62 @@ export default class Modal {
             originY: 1
         });
 
-        this.updateBackground();
+        this.update();
 
         return this.bottomTextShape;
     }
 
-    updateBackground() {
-        // this.backgroundShape.setSize(
-        //     this.backgroundShape.width,
-        //     this.
-        // );
+    update() {
+        const sceneWidth = this.scene.width();
+        const sceneHeight = this.scene.height();
+
+        const width = Math.min(500, sceneWidth - 2 * offset);
+        const height = 500;
+
+        const centerX = sceneWidth / 2;
+        const centerY = sceneHeight / 2;
+
+        // Update fade overlay
+        this.fadeShape.setAttrs({
+            width: sceneWidth,
+            height: sceneHeight
+        });
+
+        // Update background
+        this.backgroundShape.setAttrs({
+            x: centerX,
+            y: centerY,
+            width,
+            height
+        });
+
+        // Update title
+        if (this.titleShape) {
+            this.titleShape.setAttrs({
+                x: centerX,
+                y: centerY - height / 2 + offset
+            });
+        }
+
+        const textStartY = this.titleShape
+            ? this.titleShape.getClientRect().bottom + offset
+            : centerX - height / 2 + offset;
+
+        // Update lines
+        for (let i = 0; i < this.lines.length; i++) {
+            this.lines[i].setAttrs({
+                x: (sceneWidth - width) / 2 + offset,
+                y: textStartY + i * 20
+            });
+        }
+
+        // Update bottom text
+        if (this.bottomTextShape) {
+            this.bottomTextShape.setAttrs({
+                x: (sceneWidth - width) / 2 + offset,
+                y: centerY + 250 - offset
+            });
+        }
     }
 
     destroy() {

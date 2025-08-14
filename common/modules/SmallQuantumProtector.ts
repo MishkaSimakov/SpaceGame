@@ -1,20 +1,13 @@
-import {Module, ModuleTypes} from "./Module";
+import Module, {ModuleType} from "./Module";
 
 export default class SmallQuantumProtector extends Module {
     constructor(left: number, top: number, right: number, bottom: number) {
-        super({
-            'left': left,
-            'top': top,
-            'right': right,
-            'bottom': bottom
-        });
-
-        this.name = 'Малый квантовый протектор';
-        this.type = ModuleTypes.SmallQuantumProtector;
-        this.sprite = 'small-quantum-protector';
-
-        this.health = 3;
-        this.totalHealth = 3;
+        super(
+            'Малый квантовый протектор',
+            ModuleType.SmallQuantumProtector,
+            3,
+            {left, top, right, bottom}
+        );
 
         this.energyCost = 2;
     }

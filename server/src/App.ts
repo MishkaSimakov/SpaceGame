@@ -1,27 +1,33 @@
+import dotenv from 'dotenv';
+
 import DatabaseManager from "./database/DatabaseManager";
 import GamesManager from "./game/GamesManager";
 import ServerManager from "./http/ServerManager";
 
-import dotenv from 'dotenv';
-
 export default class App {
     private static instance: App;
 
-    databaseManager: DatabaseManager;
-    gamesManager: GamesManager;
-    serverManager: ServerManager;
+    databaseManager?: DatabaseManager;
+    gamesManager?: GamesManager;
+    serverManager?: ServerManager;
 
-    private constructor() {}
+    private constructor() {
+    }
 
     async init() {
         // init environment
-        dotenv.config({
-            path: "./server/.env"
+        const output = dotenv.config({
+            path: ".env"
         });
+
+        if (output.error) {
+            throw output.error;
+        }
 
         // init database connection
         this.databaseManager = new DatabaseManager();
         await this.databaseManager.initConnection();
+        await this.databaseManager.fakeUsers();
 
         // init http server
         this.serverManager = new ServerManager();

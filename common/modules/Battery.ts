@@ -1,22 +1,14 @@
-// да, я понимаю, что порешатель и solver имеют разное значение, это такая шутка
-
-import {Module, ModuleTypes} from "./Module";
+import Module, {ModuleType} from "./Module";
 
 export default class Battery extends Module {
     constructor(left: number, top: number, right: number, bottom: number) {
-        super({
-            'left': left,
-            'top': top,
-            'right': right,
-            'bottom': bottom
-        });
+        super(
+            'Аккумулятор',
+            ModuleType.Battery,
+            4,
+            {left, top, right, bottom}
+        );
 
-        this.name = 'Аккумулятор';
-        this.type = ModuleTypes.Battery;
-        this.sprite = 'battery';
-
-        this.health = 4;
-        this.totalHealth = 4;
         this.capacity = 10;
     }
 }

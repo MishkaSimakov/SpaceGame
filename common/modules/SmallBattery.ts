@@ -1,20 +1,14 @@
-import {Module, ModuleTypes} from "./Module";
+import Module, {ModuleType} from "./Module";
 
 export default class SmallBattery extends Module {
     constructor(left: number, top: number, right: number, bottom: number) {
-        super({
-            'left': left,
-            'top': top,
-            'right': right,
-            'bottom': bottom
-        });
+        super(
+            'Малый аккумулятор',
+            ModuleType.SmallBattery,
+            3,
+            {left, top, right, bottom}
+        );
 
-        this.name = 'Малый аккумулятор';
-        this.type = ModuleTypes.SmallBattery;
-        this.sprite = 'small-battery';
-
-        this.health = 3;
-        this.totalHealth = 3;
         this.capacity = 5;
     }
 }

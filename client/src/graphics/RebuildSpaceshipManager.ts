@@ -1,12 +1,14 @@
-import Spaceships from "./scenes/spaceships";
-import Controls from "./scenes/controls";
-import Module from "../../../common/modules/Module";
+import Spaceships from "./scenes/Spaceships";
+import Controls from "./scenes/Controls";
+import Module, {isMainModule} from "../../../common/modules/Module";
 import Spaceship from "../../../common/Spaceship";
 import {Event} from "../../../common/events/Event";
 import Game from "../Game";
 import Player from "../../../common/Player";
 import {DD} from "./engine/Drag";
 import {Spaceship as SpaceshipShape} from "./shapes/Spaceship";
+import {SpaceshipGetters} from "../../../common/getters/Spaceship";
+import {SpaceshipModifiers} from "../../../common/modifiers/Spaceship";
 
 export default class RebuildSpaceshipManager {
     gameManager: Game;
@@ -34,28 +36,28 @@ export default class RebuildSpaceshipManager {
         for (let shape of this.spaceshipShape.getModules()) {
             const module = shape.card() as Module;
 
-            if (module.isMain)
+            if (isMainModule(module))
                 continue;
 
-            shape.on('click.rebuild pointerclick.rebuild', () => {
+            shape.on('click.rebuild', () => {
                 const initRotation = module.rotation;
-                this.spaceship.removeModule(module);
+                SpaceshipModifiers.removeModule(this.spaceship, module);
 
-                let possibleRotations = this.spaceship.getPossibleRotationsFor(module, module.x, module.y);
+                const possibleRotations = SpaceshipGetters.getPossibleRotationsFor(this.spaceship, module, module.x, module.y);
 
                 let index = possibleRotations.indexOf(initRotation);
                 index = (index + 1) % possibleRotations.length;
 
                 module.rotation = possibleRotations[index];
 
-                if (this.spaceship.addModule(module, module.x, module.y)) {
+                if (SpaceshipModifiers.addModule(this.spaceship, module, module.x, module.y)) {
                     shape.rotateCard(module.rotation * (Math.PI / 2));
                 } else {
                     // something really went wrong
                     module.rotation = initRotation;
 
                     // last hope
-                    this.spaceship.addModule(module, module.x, module.y);
+                    SpaceshipModifiers.addModule(this.spaceship, module, module.x, module.y);
                 }
             });
 
@@ -68,14 +70,14 @@ export default class RebuildSpaceshipManager {
                     this.spaceshipShape.getRelativePointerPosition()
                 );
 
-                this.spaceship.removeModule(module.x, module.y);
+                SpaceshipModifiers.removeModule(this.spaceship, module.x, module.y);
 
                 // try possible rotations
-                let canConnect = this.spaceship.canConnectModule(module, localPosition.x, localPosition.y);
+                let canConnect = SpaceshipGetters.canConnectModule(this.spaceship, module, localPosition.x, localPosition.y);
 
                 if (!canConnect) {
-                    const possibleRotations = this.spaceship.getPossibleRotationsFor(
-                        module, localPosition.x, localPosition.y
+                    const possibleRotations = SpaceshipGetters.getPossibleRotationsFor(
+                        this.spaceship, module, localPosition.x, localPosition.y
                     );
 
                     if (possibleRotations.length) {
@@ -86,15 +88,15 @@ export default class RebuildSpaceshipManager {
                 }
 
                 if (canConnect) {
-                    this.spaceship.addModule(module, localPosition.x, localPosition.y);
+                    SpaceshipModifiers.addModule(this.spaceship, module, localPosition.x, localPosition.y);
 
                     shape.setPosition({
                         x: localPosition.x * spaceshipCardSize,
                         y: localPosition.y * spaceshipCardSize
                     });
 
-                    let unconnected = this.spaceship.getUnconnectedModules();
-                    this.spaceship.removeModule(unconnected);
+                    let unconnected = SpaceshipGetters.getUnconnectedModules(this.spaceship);
+                    SpaceshipModifiers.removeModule(this.spaceship, unconnected);
 
                     this.spaceshipShape.setSpaceship(this.spaceship);
 
@@ -112,8 +114,8 @@ export default class RebuildSpaceshipManager {
                 // remove from spaceship shapes
 
                 // find modules that become unconnected to main module
-                let unconnected = this.spaceship.getUnconnectedModules();
-                this.spaceship.removeModule(unconnected);
+                let unconnected = SpaceshipGetters.getUnconnectedModules(this.spaceship);
+                SpaceshipModifiers.removeModule(this.spaceship, unconnected);
 
                 this.spaceshipShape.setSpaceship(this.spaceship);
 
@@ -147,11 +149,11 @@ export default class RebuildSpaceshipManager {
                 );
 
                 // try possible rotations
-                let canConnect = this.spaceship.canConnectModule(module, localPosition.x, localPosition.y);
+                let canConnect = SpaceshipGetters.canConnectModule(this.spaceship, module, localPosition.x, localPosition.y);
 
                 if (!canConnect) {
-                    const possibleRotations = this.spaceship.getPossibleRotationsFor(
-                        module, localPosition.x, localPosition.y
+                    const possibleRotations = SpaceshipGetters.getPossibleRotationsFor(
+                        this.spaceship, module, localPosition.x, localPosition.y
                     );
 
                     if (possibleRotations.length) {
@@ -162,7 +164,7 @@ export default class RebuildSpaceshipManager {
                 }
 
                 if (canConnect) {
-                    this.spaceship.addModule(module, localPosition.x, localPosition.y);
+                    SpaceshipModifiers.addModule(this.spaceship, module, localPosition.x, localPosition.y);
 
                     // remove from hand cards
                     this.hand.splice(this.hand.indexOf(module), 1);

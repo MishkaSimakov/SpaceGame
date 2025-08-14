@@ -8,6 +8,7 @@ import {Shape} from "./Shape";
 import {Graphics} from "./Graphics";
 import {DD} from "./Drag";
 import {Draw} from "./Global";
+import Color from "../Color";
 
 const TRANSFORM = 'TRANSFORM',
     ABSOLUTE_TRANSFORM = 'ABSOLUTE_TRANSFORM',
@@ -817,13 +818,14 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         this.clearCache(attr);
     }
 
-    animate(newAttrs, duration: number, animationFunc?: (x: number) => number) {
+    animate(newAttrs: object, duration: number, animationFunc?: (x: number) => number) {
         if (this.inAnimation)
             return;
 
         this.inAnimation = true;
 
-        const animationAttrs = ['x', 'y', 'scaleX', 'scaleY'];
+        const animationAttrs = ['x', 'y', 'scaleX', 'scaleY', 'fill']
+            .filter(attr => Object.keys(newAttrs).includes(attr));
 
         const animationStart = new Date().getTime();
         const startAttrs = {};
@@ -839,18 +841,25 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
 
         const makeAnimationStep = () => {
             requestAnimationFrame(() => {
-                let currentTime = new Date().getTime();
-                let shouldStop = (currentTime - animationStart) >= duration
+                const currentTime = new Date().getTime();
+                const shouldStop = (currentTime - animationStart) >= duration
 
-                let percent = _animationFunction((currentTime - animationStart) / duration);
+                const percent = shouldStop ? 1 : _animationFunction((currentTime - animationStart) / duration);
+
+                const interpolateAttribute = (attr: string, percent: number) => {
+                    if (attr != "fill") {
+                        return newAttrs[attr] * percent + startAttrs[attr] * (1 - percent);
+                    } else {
+                        const startColor = Color.fromString(startAttrs[attr]);
+                        const newColor = Color.fromString(newAttrs[attr]);
+
+                        return Color.interpolate(startColor, newColor, percent);
+                    }
+                }
 
                 this.batchTransformChanges(() => {
-                    for (let attr of animationAttrs) {
-                        const newValue = shouldStop
-                            ? newAttrs[attr]
-                            : newAttrs[attr] * percent + startAttrs[attr] * (1 - percent);
-
-                        this[attr](newValue);
+                    for (const attr of animationAttrs) {
+                        this[attr](interpolateAttribute(attr, percent));
                     }
                 });
 

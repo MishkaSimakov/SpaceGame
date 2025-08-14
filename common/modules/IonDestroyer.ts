@@ -1,22 +1,15 @@
-import {Module, ModuleTypes} from "./Module";
+import Module, {ModuleType} from "./Module";
 
 export default class IonDestroyer extends Module {
     constructor(left: number, top: number, right: number, bottom: number) {
-        super({
-            'left': left,
-            'top': top,
-            'right': right,
-            'bottom': bottom
-        });
-
-        this.name = 'Ионный разрушитель';
-        this.type = ModuleTypes.IonDestroyer;
-        this.sprite = 'ion-destroyer';
+        super(
+            'Ионный разрушитель',
+            ModuleType.IonDestroyer,
+            3,
+            {left, top, right, bottom}
+        );
 
         this.strength = 3;
-        this.health = 3;
-        this.totalHealth = 3;
-
         this.energyCost = 2;
     }
 }

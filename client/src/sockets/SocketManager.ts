@@ -1,19 +1,34 @@
 import io, {Socket} from "socket.io-client";
-import EventCardsEventListener from "./listeners/EventCardsEventListener";
-import FightEventListener from "./listeners/FightEventListener";
-import InfoEventListener from "./listeners/InfoEventListener";
+
+import {Event} from "@common/events/Event";
+import {HAS_PLAYERS_DATA} from "@common/Sockets";
+import {GameForPlayerDTO} from "@common/GameForPlayerDTO";
+import {Action, isAction} from "@common/actions/Action";
+
 import Game from "../Game";
-import MainGameEventListener from "./listeners/MainGameEventListener";
-import {Event} from "../../../common/events/Event";
-import {HAS_PLAYERS_DATA} from "../../../common/Sockets";
-import {GameForPlayerDTO} from "../../../common/GameForPlayerDTO";
-import {Options, plainToClass} from "../../../common/PlainToClass";
+import {ListenersContainer} from "./listeners/ListenersContainer";
+
+import {mainListeners} from "./listeners/MainListeners";
+import {infoListeners} from "./listeners/InfoListeners";
+import {eventCardsListeners} from "./listeners/EventCardsListeners";
+import {fightListeners} from "./listeners/FightListeners";
+import {SocketInitPayload} from "@common/Types";
+import Color from "../graphics/Color";
+import {COLORS} from "../graphics/constants";
+import {ShowHugeMessageActivity} from "../graphics/activities/ShowHugeMessage";
+
+const listeners: ListenersContainer = {
+    ...mainListeners,
+    ...infoListeners,
+    ...eventCardsListeners,
+    ...fightListeners
+};
 
 export default class SocketManager {
     game: Game;
-
     socket: Socket;
-    listeners: any[] = [MainGameEventListener, EventCardsEventListener, FightEventListener, InfoEventListener];
+
+    wasDisconnected: boolean = false;
 
     constructor(game: Game) {
         this.game = game;
@@ -21,9 +36,35 @@ export default class SocketManager {
         this.initSocket(window.location.origin);
 
         // register socket listeners
-        for (let listener of this.listeners) {
-            new listener(this, this.game);
+        for (const actionType of Object.keys(listeners)) {
+            this.socket.on(actionType, (payload, callback?) => {
+                this.showErrors(payload.errors);
+
+                listeners[actionType](payload, {
+                    game: this.game,
+                    socket: this.socket
+                }).then((action: Action<string, any, any>) => {
+                    if (actionType.endsWith('Request')) {
+                        callback(action);
+                    }
+                });
+            });
         }
+
+        this.socket.onAny((...args) => {
+            console.log("⚡", ...args);
+        });
+
+        this.socket.on('disconnect', () => {
+            this.wasDisconnected = true;
+            this.game.popupsScene.addPopup("Соединение с сервером потеряно", COLORS.BUTTON.DANGER.ACTIVE);
+        });
+
+        this.socket.on('connect', () => {
+            if (this.wasDisconnected) {
+                this.game.popupsScene.addPopup("Соединение с сервером восстановлено", COLORS.BUTTON.PRIMARY.ACTIVE);
+            }
+        });
     }
 
     on(ev: string, listener: (...args) => any) {
@@ -44,18 +85,26 @@ export default class SocketManager {
         this.socket = io(uri);
 
         this.on('connect', () => {
-            console.log('connected!');
-
-            this.socket.emit('gameId', window.location.href.split('/').pop());
-        });
-
-        this.on('disconnect', () => {
-            // window.location.href = '/spaceships/lobby';
+            this.socket.emit('init', {
+                gameId: window.location.href.split('/').pop(),
+                token: document.cookie
+                    .split("; ")
+                    .find((row) => row.startsWith("authentication_token"))
+                    ?.split("=")[1]
+            } as SocketInitPayload);
         });
 
         this.on('setGameData', (gameDTO: GameForPlayerDTO) => {
             this.game.setGameData(gameDTO);
         });
+
+        this.on('gameFinished', async () => {
+            await this.game.controlsScene.enqueueActivity(
+                new ShowHugeMessageActivity(this.game.controlsScene, "Игра окончена")
+            );
+
+            this.exit();
+        })
     }
 
     // return is event accepted
@@ -65,5 +114,24 @@ export default class SocketManager {
                 resolve(isAccepted);
             });
         });
+    }
+
+    private showErrors(errors: any) {
+        if (!errors || !Array.isArray(errors)) {
+            console.error("Wrong value received in errors:", errors);
+            return;
+        }
+
+        errors.forEach(error => {
+            this.game.popupsScene.addPopup(
+                `Ошибка: ${error}. Если вы не пытались ничего сломать, напишите об ошибке Мише.`,
+                COLORS.BUTTON.DANGER.ACTIVE,
+                5000
+            );
+        })
+    }
+
+    private exit() {
+        window.location.href = window.location.origin;
     }
 }

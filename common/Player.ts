@@ -1,143 +1,23 @@
 import Spaceship from "./Spaceship";
-import Module, {isModule, ModuleTypes} from "./modules/Module";
+import Module from "./modules/Module";
 import {Event} from "./events/Event";
-import {Options} from "./PlainToClass";
-import {OtherPlayer} from "./GameForPlayerDTO";
 
-function isObject(object) {
-    return object != null && typeof object === 'object';
-}
-
-function deepEqual(object1: Object, object2: Object, exclude: string[] = []): boolean {
-    const keys1 = Object.keys(object1);
-    const keys2 = Object.keys(object2);
-
-    if (keys1.length !== keys2.length)
-        return false;
-
-    for (const key of keys1) {
-        if (exclude.indexOf(key) !== -1)
-            continue;
-
-        const val1 = object1[key];
-        const val2 = object2[key];
-        const areObjects = isObject(val1) && isObject(val2);
-        if (
-            areObjects && !deepEqual(val1, val2, exclude) ||
-            !areObjects && val1 !== val2
-        )
-            return false;
-    }
-
-    return true;
-}
-
-function arrayCompare<T>(arr1: Array<T>, arr2: Array<T>) {
-    if (arr1.length !== arr2.length)
-        return false;
-
-    for (const idx_1 of arr1.keys())
-        for (const idx_2 of arr2.keys())
-            if (deepEqual(arr1[idx_1], arr2[idx_2], ['x', 'y', 'rotation'])) {
-                arr2.splice(idx_2, 1);
-                break;
-            }
-
-    return !arr2.length;
-}
-
+export type PlayerId = number;
 
 export default class Player {
-    id: number;
+    id: PlayerId;
     name: string;
-
-    socketId: string;
-
     spaceship: Spaceship;
     hand: (Module | Event)[] = [];
-
     energy: number = 0;
-    skipNextTurn: boolean;
+    skipNextTurn: boolean = false;
+    usedModuleSecondTimeOnThisTurn: boolean = false;
+    lose: boolean = false;
+    time: number = 0;
 
-    online: boolean;
-
-    usedRepairOrAttackModuleSecondTimeOnThisTurn: boolean = false;
-
-    protected lose: boolean = false;
-
-    constructor() {}
-
-    canBeTurnedInto(changedPlayer: Player): boolean {
-        let currentCards = [...this.spaceship.modules, ...this.hand];
-        let changedCards = [...changedPlayer.spaceship.modules, ...changedPlayer.hand];
-
-        return arrayCompare(currentCards, changedCards) && this.energy === changedPlayer.energy;
-    }
-
-    collectEnergy() {
-        this.energy = Math.min(this.energy + this.spaceship.getTotalEnergyIncrease(), this.spaceship.getTotalCapacity());
-    }
-
-    canDamage(): boolean {
-        let weaponCost = this.spaceship.modules.filter(m => m.strength > 0).map(m => m.energyCost);
-
-        if (weaponCost.length === 0)
-            return false;
-
-        return Math.min(...weaponCost) <= this.energy;
-    }
-
-    canProtect(): boolean {
-        let protectorCost = this.spaceship.modules.filter(m => m.type === ModuleTypes.QuantumProtector || m.type === ModuleTypes.SmallQuantumProtector)
-            .map(m => m.energyCost);
-
-        if (protectorCost.length === 0)
-            return false;
-
-        return Math.min(...protectorCost) <= this.energy;
-    }
-
-    static getPropertiesMap(): Options {
-        return {
-            class: Player,
-
-            spaceship: {
-                class: Spaceship,
-
-                modules: {
-                    class: Module
-                }
-            },
-            hand: {
-                classifier: (plain) => {
-                    if (isModule(plain)) {
-                        return Module;
-                    } else {
-                        return Event;
-                    }
-                }
-            }
-        };
-    }
-
-    setLose() {
-        this.lose = true;
-    }
-
-    isLose(): boolean {
-        return this.lose;
-    }
-
-    getOtherPlayer(): OtherPlayer {
-        let otherPlayer = new OtherPlayer();
-
-        otherPlayer.id = this.id;
-        otherPlayer.name = this.name;
-        otherPlayer.energy = this.energy;
-        otherPlayer.online = this.online;
-        otherPlayer.spaceship = this.spaceship;
-        otherPlayer.handSize = this.hand.length;
-
-        return otherPlayer;
+    constructor(id: PlayerId, name: string, spaceship: Spaceship) {
+        this.id = id;
+        this.name = name;
+        this.spaceship = spaceship;
     }
 }

@@ -1,9 +1,10 @@
+import {isEvent, Event} from "@common/events/Event";
+import Module, {isMainModule, isModule} from "@common/modules/Module";
+
 import {Group} from "../engine/Group";
 import {ShapeConfig} from "../engine/Shape";
 import {GetSet} from "../engine/types";
 import {Factory} from "../engine/Factory";
-import Module, {isModule} from "../../../../common/modules/Module";
-import {isEvent, Event} from "../../../../common/events/Event";
 import {Rectangle} from "../engine/shapes/Rectangle";
 import {Text} from "../engine/shapes/Text";
 import Color from "../Color";
@@ -17,13 +18,30 @@ export interface CardConfig extends ShapeConfig {
     stroke?: string;
     strokeWidth?: number;
     state?: ModuleStates,
+    connectorsState?: Record<string, "connected" | "disconnected">
 
     disabledColor?: string
+}
+
+/**
+ * Returns a color hex between '#5A7F52' (healthy) and '#711618' (critical)
+ * based on the module's current health and total health.
+ */
+function getModuleColor(health: number, maxHealth: number): Color {
+    // Clamp health ratio between 0 and 1
+    const ratio = Math.max(0, Math.min(health / maxHealth, 1));
+
+    // Parse hex colors to RGB
+    const start = Color.fromRGBA(0x5A, 0x7F, 0x52); // Healthy green
+    const end = Color.fromRGBA(0x71, 0x16, 0x18); // Critical red
+
+    return Color.interpolate(start, end, 1 - ratio);
 }
 
 export class Card extends Group<CardConfig> {
     _rotationGroup: Group;
     _background: Rectangle;
+    _strokeRect: Rectangle;
     _title: Text;
     _values: Text;
     _connectors: Rectangle[] = [];
@@ -32,28 +50,28 @@ export class Card extends Group<CardConfig> {
     constructor(config: CardConfig) {
         super(config);
 
-        let size = this.size(),
+        const size = this.size(),
             card = this.card(),
             scale = this.size() / 256,
             title = isModule(card)
-                ? (card as Module).name.replaceAll(' ', '\n')
-                : (card as Event).description,
-            baseConnectorWidth = 150,
-            baseConnectorHeight = 18;
+                ? card.name.replaceAll(' ', '\n')
+                : card.description,
+            baseConnectorWidth = 100,
+            baseConnectorHeight = 20;
 
-        let blueColor = Color.fromHex('#4343FE').toString();
-        let redColor = Color.fromHex('#FF2525').toString();
+        let blueColor = Color.fromHex('#4343F4').toString();
+        let redColor = Color.fromHex('#EA4035').toString();
 
         let color: Color;
 
         if (isModule(card)) {
-            if ((card as Module).isMain) {
-                color = Color.fromHex('#155745');
-            } else if ((card as Module).isActivated) {
-                color = Color.fromHex('#30332E');
-            } else {
-                color = Color.fromHex('#95AFBA');
-            }
+            color = getModuleColor(card.health, card.totalHealth);
+            // if (isMainModule(card)) {
+            //     color = Color.fromHex('#155745');
+            // } else {
+            //     color = Color.fromHex('#95AFBA');
+            // }
+
         } else {
             color = Color.fromHex('#f8b195');
         }
@@ -63,12 +81,22 @@ export class Card extends Group<CardConfig> {
             height: size
         });
 
+        const offset = 10 * scale;
         this._background = new Rectangle({
+            width: size - offset * 2,
+            height: size - offset * 2,
+            x: offset,
+            y: offset,
+            fill: color.toString(),
+            cornerRadius: 5
+        });
+
+        this._strokeRect = new Rectangle({
             width: size,
             height: size,
-            fill: color.toString(),
             x: 0,
-            y: 0
+            y: 0,
+            fill: Color.transparent().toString(),
         });
 
         const titleFontSize = 25 * scale;
@@ -110,10 +138,10 @@ export class Card extends Group<CardConfig> {
             if (module.connectors.top) {
                 this._connectors.push(new Rectangle({
                     x: size / 2,
-                    y: 0,
+                    y: -1,
                     originX: 0.5,
                     width: baseConnectorWidth * scale,
-                    height: baseConnectorHeight * scale,
+                    height: baseConnectorHeight * scale + 1,
                     fill: module.connectors.top === 1 ? blueColor : redColor,
                     cornerRadius: [0, 0, 10 * scale, 10 * scale]
                 }));
@@ -121,10 +149,10 @@ export class Card extends Group<CardConfig> {
 
             if (module.connectors.left) {
                 this._connectors.push(new Rectangle({
-                    x: 0,
+                    x: -1,
                     y: size / 2,
                     originY: 0.5,
-                    width: baseConnectorHeight * scale,
+                    width: baseConnectorHeight * scale + 1,
                     height: baseConnectorWidth * scale,
                     fill: module.connectors.left === 1 ? blueColor : redColor,
                     cornerRadius: [0, 10 * scale, 10 * scale, 0]
@@ -134,11 +162,11 @@ export class Card extends Group<CardConfig> {
             if (module.connectors.bottom) {
                 this._connectors.push(new Rectangle({
                     x: size / 2,
-                    y: size,
+                    y: size + 1,
                     originY: 1,
                     originX: 0.5,
                     width: baseConnectorWidth * scale,
-                    height: baseConnectorHeight * scale,
+                    height: baseConnectorHeight * scale + 1,
                     fill: module.connectors.bottom === 1 ? blueColor : redColor,
                     cornerRadius: [10 * scale, 10 * scale, 0, 0]
                 }));
@@ -146,11 +174,11 @@ export class Card extends Group<CardConfig> {
 
             if (module.connectors.right) {
                 this._connectors.push(new Rectangle({
-                    x: size,
+                    x: size + 1,
                     y: size / 2,
                     originX: 1,
                     originY: 0.5,
-                    width: baseConnectorHeight * scale,
+                    width: baseConnectorHeight * scale + 1,
                     height: baseConnectorWidth * scale,
                     fill: module.connectors.right === 1 ? blueColor : redColor,
                     cornerRadius: [10 * scale, 0, 0, 10 * scale]
@@ -165,14 +193,18 @@ export class Card extends Group<CardConfig> {
         }
 
         this._hitRect = new Rectangle({
-            x: 0,
-            y: 0,
-            width: size,
-            height: size,
+            x: -1,
+            y: -1,
+            width: size + 2,
+            height: size + 2,
             visible: false
         });
 
+        this.add(this._strokeRect);
         this.add(this._hitRect);
+
+        this.width(size);
+        this.height(size);
     }
 
     drawHit() {
@@ -184,14 +216,6 @@ export class Card extends Group<CardConfig> {
 
     rotateCard(rotation) {
         this._rotationGroup.rotation(rotation);
-    }
-
-    setWidth() {
-        console.warn('Nope! Use setSize instead');
-    }
-
-    setHeight() {
-        console.warn('Nope! Use setSize instead');
     }
 
     get isModule(): boolean {
@@ -230,23 +254,23 @@ export class Card extends Group<CardConfig> {
     }
 
     setStroke(color: string): Card {
-        this._background.stroke(color);
+        this._strokeRect.stroke(color);
 
         return this;
     }
 
     getStroke(): string {
-        return this._background.stroke();
+        return this._strokeRect.stroke();
     }
 
     setStrokeWidth(width: number): Card {
-        this._background.strokeWidth(width);
+        this._strokeRect.strokeWidth(width);
 
         return this;
     }
 
     getStrokeWidth(): number {
-        return this._background.strokeWidth();
+        return this._strokeRect.strokeWidth();
     }
 
     setState(state: ModuleStates): Card {
@@ -285,6 +309,7 @@ export class Card extends Group<CardConfig> {
     stroke: GetSet<string, this>;
     strokeWidth: GetSet<number, this>;
     state: GetSet<ModuleStates, this>;
+    connectorsState: GetSet<Record<string, "connected" | "disconnected">, this>;
 
     disabledColor: GetSet<string, this>;
 }
@@ -296,5 +321,6 @@ Factory.addGetterSetter(Card, 'stroke');
 Factory.addGetterSetter(Card, 'strokeWidth');
 
 Factory.addGetterSetter(Card, 'state', 'DEFAULT');
+Factory.addGetterSetter(Card, 'connectorsState');
 
 Factory.addGetterSetter(Card, 'disabledColor', Color.fromHex('#000000', 0.5).toString());

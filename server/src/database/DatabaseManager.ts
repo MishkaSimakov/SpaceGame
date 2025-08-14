@@ -1,6 +1,7 @@
 import {DataSource} from "typeorm";
 import {User} from "../entity/user";
 import {Game} from "../entity/game";
+import * as process from "node:process";
 
 export default class DatabaseManager {
     constructor() {
@@ -10,7 +11,7 @@ export default class DatabaseManager {
         const AppDataSource = new DataSource({
             type: "postgres",
             host: process.env.DB_HOST,
-            port: parseInt(process.env.DB_PORT),
+            port: parseInt(process.env.DB_PORT ?? "5432"),
             username: process.env.DB_USERNAME,
             password: process.env.DB_PASSWORD,
             database: process.env.DB_DATABASE,
@@ -26,5 +27,29 @@ export default class DatabaseManager {
                 console.warn(err);
                 throw new Error("Error during Data Source initialization");
             });
+    }
+
+    // for testing
+    async fakeUsers() {
+        const users = ['first', 'second'];
+
+        for (const name of users) {
+            const existUserWithSameName = await User.createQueryBuilder().where({
+                login: name
+            }).getExists();
+
+            if (existUserWithSameName) {
+                continue;
+            }
+
+            let user = new User();
+
+            user.login = name;
+            user.password = await User.createHashedPassword(name);
+            user.isBot = false;
+            await user.save();
+
+            console.log(`🤥 fake user '${name}' generated`);
+        }
     }
 }

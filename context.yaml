@@ -1,0 +1,85 @@
+$schema: 'https://raw.githubusercontent.com/context-hub/generator/refs/heads/main/json-schema.json'
+
+documents:
+  - description: 'Project structure overview'
+    outputPath: project-structure.md
+    overwrite: true
+    sources:
+      - type: tree
+        sourcePaths:
+          - client/src
+          - server/src
+          - server/tests
+          - common
+        filePattern: '*'
+        renderFormat: ascii
+        enabled: true
+        showCharCount: true
+
+  - description: 'Game sagas'
+    outputPath: game-sagas.md
+    sources:
+      - type: file
+        sourcePaths:
+          - server/src/game/sagas
+        filePattern: "*"
+        modifiers:
+          - name: sanitizer
+            options:
+              rules:
+                - type: regex
+                  patterns:
+                    "~\\s*import\\s+(?:[\\w*\\s{},]*\\s+from\\s+)?[\"'][^\"' ]+[\"'];?\\s*~": ""
+
+  - description: 'Tests'
+    outputPath: tests.md
+    sources:
+      - type: file
+        sourcePaths:
+          - server/tests
+        filePattern: "*"
+        modifiers:
+          - name: sanitizer
+            options:
+              rules:
+                - type: regex
+                  patterns:
+                    "~\\s*import\\s+(?:[\\w*\\s{},]*\\s+from\\s+)?[\"'][^\"' ]+[\"'];?\\s*~": ""
+
+  - description: 'Server'
+    outputPath: server.md
+    sources:
+      - type: file
+        sourcePaths:
+          - server/src
+        filePattern: [ "*.ts" ]
+        modifiers:
+          - name: sanitizer
+            options:
+              rules:
+                - type: regex
+                  patterns:
+                    "~\\s*import\\s+(?:[\\w*\\s{},]*\\s+from\\s+)?[\"'][^\"' ]+[\"'];?\\s*~": ""
+  - description: 'Top Bar'
+    outputPath: topbar.md
+    sources:
+      - type: file
+        sourcePaths:
+          - client/src/graphics/topbar
+        filePattern: [ "*.ts" ]
+
+  - description: 'Graphics'
+    outputPath: graphics.md
+    sources:
+      - type: file
+        sourcePaths:
+          - client/src/graphics
+        filePattern: [ "*.ts" ]
+
+  - description: 'Actions'
+    outputPath: actions.md
+    sources:
+      - type: file
+        sourcePaths:
+          - common/actions
+        filePattern: [ "*.ts" ]

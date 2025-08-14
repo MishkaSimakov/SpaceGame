@@ -2,21 +2,31 @@
   "compilerOptions": {
     "sourceMap": true,
     "outDir": "dist",
-    "target": "ES2020",
-    "module": "commonjs",
-    "lib": ["esnext"],
+    "target": "es2024",
+    "module": "node16",
+    "lib": [
+      "esnext"
+    ],
     "esModuleInterop": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "moduleResolution": "node",
+    "moduleResolution": "node16",
     "resolveJsonModule": true,
     "inlineSourceMap": true,
+    "strict": true,
+    "paths": {
+      "@common/*": [
+        "../common/*"
+      ]
+    }
   },
   "exclude": [
     "node_modules"
   ],
   "include": [
-    "./src/**/*"
+    "./src/**/*",
+    "./tests/**/*",
+    "../common/**/*"
   ],
   "rootDirs": [
     ".",

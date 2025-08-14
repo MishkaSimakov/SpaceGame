@@ -1,12 +1,15 @@
+import {isMainModule} from "@common/modules/Module";
+import SpaceshipData from "@common/Spaceship";
+
 import {Group} from "../engine/Group";
 import {NodeConfig} from "../engine/Node";
 import {GetSet, Vector2} from "../engine/types";
 import {Factory} from "../engine/Factory";
-import SpaceshipData from "../../../../common/Spaceship";
 import {Card} from "./Card";
-import Module from "../../../../common/modules/Module";
+import {SpaceshipGetters} from "@common/getters/Spaceship";
 
 export interface SpaceshipConfig extends NodeConfig {
+    id: string,
     cardSize: number,
     spaceship?: SpaceshipData,
 }
@@ -14,6 +17,17 @@ export interface SpaceshipConfig extends NodeConfig {
 export class Spaceship extends Group<SpaceshipConfig> {
     constructor(config: SpaceshipConfig) {
         super(config);
+
+        const storedPosition = localStorage.getItem(this.getStorageKey());
+        if (storedPosition) {
+            const [x, y] = storedPosition.split(',').map(Number);
+
+            if (Number.isNaN(x) || Number.isNaN(y)) {
+                localStorage.removeItem(this.getStorageKey());
+            }
+
+            this.setPosition({x, y});
+        }
     }
 
     setSpaceship(spaceship: SpaceshipData): Spaceship {
@@ -22,18 +36,26 @@ export class Spaceship extends Group<SpaceshipConfig> {
         let cardSize = this.cardSize();
 
         for (let module of spaceship.modules) {
+            const connected = SpaceshipGetters.getModulesConnectedTo(spaceship, module);
+
             let shape = new Card({
                 card: module,
                 size: cardSize,
                 x: module.x * cardSize,
                 y: module.y * cardSize,
                 originY: 0.5,
-                originX: 0.5
+                originX: 0.5,
+                connectorsState: {
+                    left: connected.left ? "connected" : "disconnected",
+                    top: connected.top ? "connected" : "disconnected",
+                    right: connected.right ? "connected" : "disconnected",
+                    bottom: connected.bottom ? "connected" : "disconnected",
+                }
             });
 
             this.add(shape);
 
-            if (module.isMain) {
+            if (isMainModule(module)) {
                 shape.draggable(true).dragDistance(5);
 
                 shape.on('dragstart', () => {
@@ -42,10 +64,13 @@ export class Spaceship extends Group<SpaceshipConfig> {
 
                 shape.on('dragmove', () => {
                     // TODO: make this better
-                    let newMainPosition = shape.getPosition();
+                    const newMainPosition = shape.getPosition();
                     shape.setPosition({x: 0, y: 0});
 
                     this.move(newMainPosition);
+
+                    const absolutePosition = this.getPosition();
+                    localStorage.setItem(this.getStorageKey(), `${absolutePosition.x},${absolutePosition.y}`);
                 });
             }
         }
@@ -69,17 +94,22 @@ export class Spaceship extends Group<SpaceshipConfig> {
     }
 
     setModulesDraggable(draggable: boolean) {
-        this.children?.forEach(c => {
-            let card = (c as Card).card();
-
-            if (!(card as Module).isMain)
-                c.draggable(draggable);
+        this.getModules().forEach(card => {
+            if (!isMainModule(card.card())) {
+                card.draggable(draggable);
+            }
         });
     }
 
+    private getStorageKey() {
+        return `spaceships//${this.id()}`;
+    }
+
+    id: GetSet<string, this>;
     spaceship: GetSet<SpaceshipData, this>;
     cardSize: GetSet<number, this>;
 }
 
+Factory.addGetterSetter(Spaceship, 'id');
 Factory.addGetterSetter(Spaceship, 'spaceship');
 Factory.addGetterSetter(Spaceship, 'cardSize');

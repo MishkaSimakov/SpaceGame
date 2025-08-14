@@ -1,5 +1,4 @@
 import Module from "../modules/Module";
-import {Options} from "../PlainToClass";
 
 enum EventTypes {
     PutTopThreeCardsInAnyOrder,
@@ -54,7 +53,7 @@ function addEvents(type: EventTypes, description: string, count: number, sprite:
     return events;
 }
 
-function isEvent(card: Module | Event) {
+function isEvent(card: Module | Event): card is Event {
     return (card as Module).name === undefined;
 }
 

@@ -1,0 +1,68 @@
+@include('partials/header')
+
+<div class="container mt-4">
+    @include('partials/flash')
+
+    <div class="d-flex align-items-center mb-1">
+        <h1 class="me-3 mb-0">{{ game.name }}</h1>
+    </div>
+
+    <div class="mb-3">
+    <span class="badge bg-{{ game.status == 'active' ? 'success' : game.status == 'finished' ? 'secondary' : 'danger' }}">
+        {{ game.status }}
+    </span>
+    <span class="ms-1 badge bg-{{ game.isActive ? 'success' : 'secondary' }}">
+        {{ game.isActive ? "загружена в память" : "выгружена из памяти" }}
+    </span>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header">Настройки игры</div>
+        <div class="card-body">
+            <andypf-json-viewer>
+                {{ JSON.stringify(game.settings, null, 2) }}
+            </andypf-json-viewer>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>Логи</span>
+        </div>
+        <div class="card-body">
+            <andypf-json-viewer>
+                {{ JSON.stringify(game.actions, null, 2) }}
+            </andypf-json-viewer>
+        </div>
+    </div>
+
+    <div class="d-flex mt-3 mb-3">
+        <form action="/game/{{ game.id }}/delete" method="POST"
+              onsubmit="return confirm('Вы уверены? Это действие нельзя отменить!');">
+            <button type="submit" class="btn btn-outline-danger">Удалить игру</button>
+        </form>
+
+        @if(game.isActive)
+        <button id="reloadGame" class="btn btn-outline-primary ms-3"
+                title="Выгрузить игру из оперативной памяти сервера">
+            Деактивировать
+        </button>
+        @endif
+    </div>
+</div>
+
+<script>
+    document.getElementById('reloadGame')?.addEventListener('click', () => {
+        fetch(`/game/{{ game.id }}/deactivate`, {method: 'POST'})
+            .then(r => {
+                if (r.ok) {
+                    alert('Игра успешно деактивирована!');
+                    location.reload();
+                } else {
+                    alert('Ошибка при деактивации игры');
+                }
+            });
+    });
+</script>
+
+@include('partials/footer')

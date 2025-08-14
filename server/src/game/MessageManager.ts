@@ -1,5 +1,5 @@
-import Player from "../../../common/Player";
-import {Message} from "../../../common/Types";
+import Player from "@common/Player";
+import {Message} from "@common/Types";
 
 
 export default class MessageManager {

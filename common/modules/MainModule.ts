@@ -1,4 +1,4 @@
-import {Module, ModuleTypes} from "./Module";
+import Module, {ModuleType} from "./Module";
 
 enum MainModuleType {
     DrawAnotherEventCard,
@@ -11,21 +11,24 @@ enum MainModuleType {
 class MainModule extends Module {
     mainModuleType: MainModuleType;
 
-    constructor(index: number, type: MainModuleType, connectors: { top: number, right: number, bottom: number, left: number }) {
-        super(connectors);
+    constructor(index: number, type: MainModuleType, connectors: {
+        top: number,
+        right: number,
+        bottom: number,
+        left: number
+    }) {
+        const indexToRomanian: string[] = ['I', 'II', 'III', 'IV', 'V'];
+
+        super(
+            'Командный модуль ' + indexToRomanian[index - 1],
+            ModuleType.MainModule,
+            13,
+            connectors
+        );
 
         this.mainModuleType = type;
-
-        let indexToRomanian: string[] = ['I', 'II', 'III', 'IV', 'V'];
-
-        this.name = 'Командный модуль ' + indexToRomanian[index - 1];
-        this.type = ModuleTypes.MainModule;
-        this.isMain = true;
-
         this.energyIncrease = 1;
         this.capacity = 5;
-        this.health = 13;
-        this.totalHealth = 13;
     }
 }
 

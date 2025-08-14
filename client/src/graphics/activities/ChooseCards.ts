@@ -1,0 +1,212 @@
+import {Event} from "@common/events/Event";
+import Vector2 from "@common/Vector2";
+import Module from "@common/modules/Module";
+
+import {Group} from "../engine/Group";
+import {Rectangle} from "../engine/shapes/Rectangle";
+import {Text} from "../engine/shapes/Text";
+import Color from "../Color";
+import {Card} from "../shapes/Card";
+import Controls from "../scenes/Controls";
+import {Activity} from "./Activity";
+import {COLORS} from "../constants";
+import {BoundaryType, CountBoundary, CountBoundaryValidationResult} from "../CountBoundary";
+
+export class ChooseCardsActivity extends Activity {
+    private modalGroup?: Group = undefined;
+    private buttonShape?: Text = undefined;
+    private resolveModal: Function | undefined = undefined;
+
+    private selected: number[] = [];
+
+    constructor(private scene: Controls, private title: string, private count: CountBoundary, private cards: (Event | Module)[]) {
+        super();
+    }
+
+    activate() {
+        return new Promise<number[]>(resolve => {
+            this.scene.topBarDrawer.setStatus(this.title);
+
+            this.scene.topBarDrawer.addButtons([{
+                text: "Выбрать",
+                color: COLORS.BUTTON.PRIMARY,
+                onClick: () => {
+                    this.showModal().then(selected => {
+                        if (selected !== undefined) {
+                            this.scene.topBarDrawer.removeButtons();
+                            this.scene.topBarDrawer.clearStatus();
+
+                            resolve(selected);
+                        }
+                    });
+                }
+            }]);
+        });
+    }
+
+    update() {
+        if (this.modalGroup !== undefined) {
+            this.destructModal();
+            this.resolveModal();
+
+            this.resolveModal = undefined;
+        }
+    }
+
+    private showModal() {
+        return new Promise<number[] | undefined>(resolve => {
+            this.resolveModal = resolve;
+
+            this.modalGroup = new Group();
+
+            const offset = 20;
+
+            const sceneWidth = this.scene.width();
+            const sceneHeight = this.scene.height();
+
+            const cardShapes = this.scene.drawCardsOnScreen(this.cards);
+
+            const fadeShape = new Rectangle({
+                x: 0,
+                y: 0,
+                width: sceneWidth,
+                height: sceneHeight,
+                fill: Color.fromHex('#000000', 0.75).toString()
+            });
+
+            const titleShape = new Text({
+                x: sceneWidth / 2,
+                y: cardShapes.getClientRect().top - 15,
+                text: this.title,
+                originX: 0.5,
+                originY: 1,
+                fill: "white",
+                fontFamily: "Exo2Bold",
+                fontSize: 20
+            });
+
+            this.buttonShape = new Text({
+                x: sceneWidth / 2,
+                y: cardShapes.getClientRect().bottom + 15,
+                text: "",
+                fontFamily: "Exo2Bold",
+                originX: 0.5
+            })
+                .on('pointerdown', () => {
+                    const validationResult = this.validateCount(this.selected.length);
+
+                    if (validationResult.verdict === "correct") {
+                        this.destructModal();
+                        resolve(this.selected);
+                    }
+                });
+            this.updateButton();
+
+            const backgroundPosition1 = new Vector2(
+                Math.min(cardShapes.getClientRect().left, titleShape.getClientRect().left) - offset,
+                titleShape.getClientRect().top - offset
+            );
+            const backgroundPosition2 = new Vector2(
+                Math.max(cardShapes.getClientRect().right, titleShape.getClientRect().right) + offset,
+                this.buttonShape.getClientRect().bottom + offset
+            );
+
+            const backgroundShape = new Rectangle({
+                x: backgroundPosition1.x,
+                y: backgroundPosition1.y,
+                width: backgroundPosition2.x - backgroundPosition1.x,
+                height: backgroundPosition2.y - backgroundPosition1.y,
+                fill: Color.fromHex('#0B2545', 0.75).toString(),
+                stroke: Color.fromHex('#3D76BE').toString(),
+                strokeWidth: 2
+            });
+
+            cardShapes.children.forEach((shape, index) => {
+                const card = shape as Card;
+                this.updateCard(card, index);
+
+                card.on('click', () => {
+                    if (this.selected.includes(index)) {
+                        this.selected = this.selected.filter(v => v != index);
+                    } else {
+                        this.selected.push(index);
+                    }
+
+                    this.updateCard(card, index);
+                    this.updateButton();
+                });
+            });
+
+            fadeShape.on('click', () => {
+                this.destructModal();
+
+                resolve(undefined);
+            });
+
+            this.modalGroup.add(fadeShape, backgroundShape, titleShape, this.buttonShape, cardShapes);
+            this.scene.add(this.modalGroup);
+        });
+    }
+
+    private destructModal() {
+        this.modalGroup?.destroy();
+        this.buttonShape = undefined;
+        this.modalGroup = undefined;
+    }
+
+    private validateCount(count: number): CountBoundaryValidationResult {
+        switch (this.count.type) {
+            case BoundaryType.AT_LEAST: {
+                if (count >= this.count.count) {
+                    return {verdict: "correct"};
+                } else {
+                    return {verdict: "error", error: `Выбрано недостаточно карт (${count} < ${this.count.count})`};
+                }
+            }
+            case BoundaryType.EQUAL: {
+                if (count == this.count.count) {
+                    return {verdict: "correct"};
+                } else {
+                    return {
+                        verdict: "error",
+                        error: `Выбрано неправильное количество (${count} != ${this.count.count})`
+                    };
+                }
+            }
+            case BoundaryType.NO_MORE_THAN: {
+                if (count <= this.count.count) {
+                    return {verdict: "correct"};
+                } else {
+                    return {
+                        verdict: "error",
+                        error: `Выбрано слишком много карт (${count} > ${this.count.count})`
+                    };
+                }
+            }
+        }
+    }
+
+    private updateButton() {
+        const validationResult = this.validateCount(this.selected.length);
+
+        if (validationResult.verdict === "correct") {
+            this.buttonShape.setAttrs({
+                text: "готово",
+                fill: "white"
+            });
+        } else {
+            this.buttonShape.setAttrs({
+                text: validationResult.error,
+                fill: COLORS.TEXT_DANGER
+            });
+        }
+    }
+
+    private updateCard(card: Card, index: number) {
+        if (this.selected.includes(index)) {
+            card.setStrokeWidth(5).setStroke(Color.fromHex('#FF9F1C').toString());
+        } else {
+            card.strokeWidth(0);
+        }
+    }
+}

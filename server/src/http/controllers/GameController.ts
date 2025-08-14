@@ -2,32 +2,42 @@ import {Request, Response} from "express";
 import App from "../../App";
 import {User} from "../../entity/user";
 import {AuthenticatedRequest} from "../middleware/auth";
-import {arrayShuffle} from "../../game/GameData";
-import {GameSettings} from "../../../../common/GameForPlayerDTO";
+import {GameSettings} from "@common/GameSettings";
+import {AuthenticatedGameRequest} from "../middleware/GameOwner";
+import {Game as GameDBEntity, GameStatus} from "../../entity/game";
+import {Logger} from "../../game/Logger";
+import {gamePlayersValidator} from "../../validation/GamePlayersValidator";
 
-export const create = async (req: Request, res: Response) => {
+export const create = async (req: AuthenticatedRequest, res: Response) => {
     try {
-        let users = await User.find();
+        const users = await User.find();
 
-        let selectedUsers = req.body.players.map(id => {
-            return users.find(u => u.id === parseInt(id));
+        // Define a zod schema for an array of integers (string numbers converted to integers)
+        const result = gamePlayersValidator(users).safeParse(req.body.players);
+        if (result.error) {
+            // TODO: display zod error
+            req.flash('error', 'Что-то не так с выбранными игроками.');
+            return res.redirect('/');
+        }
+
+        const selectedUsers = result.data.map(id => {
+            return users.find(u => u.id === id)!;
         });
 
-        if (selectedUsers.length < 2 || selectedUsers.length > 5)
-            throw Error('Wrong users count on game creation');
+        const withTimeControl = req.body['time-control'] === 'on';
 
-        selectedUsers = arrayShuffle(selectedUsers);
-
-        let withTimeControl = req.body['time-control'] === 'on';
-
-        let gameSettings: GameSettings = {
-            withTimeControl: withTimeControl,
-            size: selectedUsers.length,
-            loseWhenTimeout: req.body['lose-when-timeout'] === 'on' && withTimeControl,
-            isPublic: req.body['is-public'] === 'on'
-        };
+        const gameSettings = new GameSettings(
+            String(Math.random()),
+            selectedUsers.length,
+            withTimeControl,
+            req.body['lose-when-timeout'] === 'on' && withTimeControl,
+            req.body['is-public'] === 'on'
+        );
 
         if (withTimeControl) {
+            let startTime = parseInt(req.body['start-time']);
+            startTime = isNaN(startTime) ? 300 : startTime;
+
             let defaultTimeIncrease = parseInt(req.body['default-time-increase']);
             defaultTimeIncrease = isNaN(defaultTimeIncrease) ? 45 : defaultTimeIncrease;
 
@@ -35,34 +45,54 @@ export const create = async (req: Request, res: Response) => {
             fightTimeIncrease = isNaN(fightTimeIncrease) ? 10 : fightTimeIncrease;
 
             gameSettings.timeControlSettings = {
-                START_TIME: 5 * 60 * 1000,
-                DEFAULT_TIME_INCREASE: defaultTimeIncrease * 1000,
-                FIGHT_TIME_INCREASE: fightTimeIncrease * 1000
+                startTime: startTime * 1000,
+                defaultTimeIncrease: defaultTimeIncrease * 1000,
+                fightTimeIncrease: fightTimeIncrease * 1000
             };
         }
 
-        App.getInstance().gamesManager.createGame(req.body.name, selectedUsers, gameSettings);
+        await App.getInstance().gamesManager!.createGame(req.body.name, req.user, selectedUsers, gameSettings);
 
         return res.redirect('/');
     } catch (err) {
+        console.log(err);
         return res.redirect('/game/create');
     }
 };
 
-export const joinGame = async (req: AuthenticatedRequest, res: Response) => {
-    let gameId = req.url.split('/').pop();
-    let game = App.getInstance().gamesManager.getGameById(gameId);
+export const joinGame = async (req: AuthenticatedGameRequest, res: Response) => {
+    const game = await GameDBEntity.findOne({
+        where: {
+            id: req.params.gameId,
+        },
+        relations: {
+            players: true,
+        }
+    });
 
-    const isPlayerInGame = !!game?.players.find(p => p.id === req.user.id);
-    if (!game || !(isPlayerInGame || game.settings.isPublic)) {
+    if (!game) {
+        req.flash('error', 'Вы не можете присоединиться к данной игре.');
         return res.redirect('/');
     }
 
-    res.render('game/game');
+    if (
+        game.players.find(p => p.id === req.user.id) === undefined
+        && !game.settings.isPublic
+    ) {
+        req.flash('error', 'Вы не можете присоединиться к данной игре.');
+        return res.redirect('/');
+    }
+
+    if (game.status !== GameStatus.ACTIVE) {
+        req.flash('error', 'Вы не можете присоединиться к данной игре.');
+        return res.redirect('/');
+    }
+
+    return res.render('game/game');
 };
 
-export const showCreatePage = async (req: Request, res: Response) => {
-    let users = await User.createQueryBuilder("user")
+export const showCreatePage = async (req: AuthenticatedRequest, res: Response) => {
+    const users = await User.createQueryBuilder("user")
         .select(['id', 'login'])
         .getRawMany();
 
@@ -73,4 +103,46 @@ export const showCreatePage = async (req: Request, res: Response) => {
 
 export const showRules = async (req: Request, res: Response) => {
     return res.render('game/rules');
+}
+
+export const showStatusPage = async (req: AuthenticatedGameRequest, res: Response) => {
+    const game = await GameDBEntity.findOne({
+        where: {
+            id: req.params.gameId,
+        },
+        relations: {
+            owner: true,
+            players: true,
+            winner: true
+        }
+    });
+
+    if (!game) {
+        req.flash('error', 'Не удалось найти нужную игру');
+        return res.redirect('/');
+    }
+
+    return res.render('game/status', {
+        game: {
+            ...game,
+            settings: game.settings,
+            actions: new Logger(game.logFilepath).getPastActions(),
+            isActive: App.getInstance().gamesManager!.isActive(game.id)
+        }
+    });
+}
+
+export const deleteGame = async (req: AuthenticatedGameRequest, res: Response) => {
+    App.getInstance().gamesManager!.deactivateGame(req.params.gameId);
+
+    await GameDBEntity.delete({
+        id: req.params.gameId
+    });
+
+    return res.redirect('/');
+}
+
+export const deactivateGame = async (req: AuthenticatedGameRequest, res: Response) => {
+    App.getInstance().gamesManager!.deactivateGame(req.params.gameId);
+    return res.redirect('/');
 }
