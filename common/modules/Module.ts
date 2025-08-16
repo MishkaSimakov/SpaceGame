@@ -53,6 +53,9 @@ export default class Module {
 
     x: number = 0;
     y: number = 0;
+
+    // rotation is clockwise: 0 - 0 degrees, 1 - 90 degrees, etc.
+    // for example, when `rotation === 1`, top connector color is `connectors.left`
     rotation: number = 0;
 
     constructor(name: string, type: ModuleType, totalHealth: number, connectors: {
