@@ -213,9 +213,25 @@ function hasRepairModule(ship: Spaceship): boolean {
 }
 
 function checkConfiguration(ship: Spaceship): boolean {
+    // check that all positions are different
+    const positions = ship.modules
+        .map(module => new Vector2(module.x, module.y))
+        .map(position => `${position.x},${position.y}`);
+
+    if (new Set(positions).size !== positions.length) {
+        return false;
+    }
+
+    // check all connections
     for (let module of ship.modules) {
-        if (!canConnectModule(ship, module))
+        if (!canConnectModule(ship, module)) {
             return false;
+        }
+    }
+
+    // check that all modules are connected
+    if (getUnconnectedModules(ship).length !== 0) {
+        return false;
     }
 
     return true;

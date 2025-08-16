@@ -4,10 +4,11 @@ import Actions from "@common/actions/Main";
 import {StateGetters} from "@common/getters/State";
 import {areCardSetsEqual} from "@common/Utils";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
-import {isMainModule, isProtector, isWeapon, ModuleType} from "@common/modules/Module";
+import {isMainModule, isModule, isProtector, isWeapon, ModuleType} from "@common/modules/Module";
 
 import {booleanSchema, makeActivePlayerIdSchema, numberArraySchema, vector2ArraySchema, vector2Schema} from "./Helpers";
 import GameState from "../GameState";
+import Spaceship from "@common/Spaceship";
 
 type ValidatorType<Res extends keyof typeof Actions, Req> =
     Req extends keyof typeof Actions
@@ -32,20 +33,48 @@ export const validators: ResponseValidatorsContainer = {
         });
     },
     rebuildSpaceshipResponse: (state, request) =>
-        z
-            .object({
-                newSpaceship: z.any(),
-                newHand: z.array(z.any(), {error: "Неверный формат руки"}),
-            }, {error: "Ответ должен содержать `new Spaceship` и `newHand`"})
-            .refine(response => {
-                const player = StateGetters.playerById(state, request.payload.player)!;
-                const oldPlayerCards = [...player.spaceship.modules, ...player.hand];
-                const newPlayerCards = [...response.newSpaceship.modules, ...response.newHand];
-                return areCardSetsEqual(oldPlayerCards, newPlayerCards);
-            }, {error: "Неправильный набор карт."})
-            .refine(response => {
-                return SpaceshipGetters.checkConfiguration(response.newSpaceship);
-            }, {error: "Неправильная конфигурация корабля."}),
+        z.array(
+            z.object({
+                id: z.int(),
+                position: vector2Schema,
+                rotation: z.int().min(0).max(3)
+            }),
+            {error: "Ожидался массив с информацией о положениях модулей"}
+        )
+            .refine(
+                modules => new Set(modules.map(m => m.id)).size === modules.length,
+                {error: "Все модули должны быть различными"}
+            )
+            .refine(modules => {
+                    const currentPlayer = StateGetters.currentPlayer(state);
+                    const playerCards = [...currentPlayer.spaceship.modules, ...currentPlayer.hand]
+                        .filter(card => isModule(card))
+                        .map(card => card.id);
+
+                    return !modules.some(m => !playerCards.includes(m.id));
+                },
+                {error: "В корабле присутствует модуль, которого нет у игрока"}
+            )
+            .refine(modules => {
+                    const currentPlayer = StateGetters.currentPlayer(state);
+                    const playerCards = [...currentPlayer.spaceship.modules, ...currentPlayer.hand]
+                        .filter(card => isModule(card));
+
+                    const spaceship = new Spaceship();
+                    spaceship.modules = modules.map(m => {
+                        const playerModule = playerCards.find(c => c.id === m.id)!;
+
+                        playerModule.x = m.position.x;
+                        playerModule.y = m.position.y;
+                        playerModule.rotation = m.rotation;
+
+                        return playerModule;
+                    });
+
+                    return SpaceshipGetters.checkConfiguration(spaceship);
+                },
+                {error: "Неправильная конфигурация корабля"}),
+
     chooseCardTypeResponse: () =>
         z.object({chosenType: z.enum(["event", "module"], {error: "Неверный тип карты"})}),
     showCardsToPlayersResponse: () => z.object({}),

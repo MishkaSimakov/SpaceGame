@@ -34,10 +34,11 @@ export enum ModuleType {
     StructureModule
 }
 
+export type ModuleId = number;
 export let moduleIdCounter = 0;
 
 export default class Module {
-    id: number = moduleIdCounter++;
+    id: ModuleId = moduleIdCounter++;
 
     name: string;
 

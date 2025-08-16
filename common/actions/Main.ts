@@ -1,7 +1,7 @@
 import Player, {PlayerId} from "../Player";
 import {AttackReason} from "../Types";
 import Spaceship from "../Spaceship";
-import Module, {ModuleType} from "../modules/Module";
+import Module, {ModuleId, ModuleType} from "../modules/Module";
 import {Event} from "../events/Event";
 import Vector2 from "../Vector2";
 
@@ -31,7 +31,11 @@ export default {
     ...request(
         'rebuildSpaceship',
         (player: Player) => ({payload: {player: player.id}}),
-        (newSpaceship: Spaceship, newHand: (Module | Event)[]) => ({payload: {newSpaceship, newHand}})
+        (newSpaceship: {
+            id: ModuleId
+            position: Vector2,
+            rotation: number
+        }[]) => ({payload: newSpaceship})
     ),
 
     ...request(

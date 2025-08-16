@@ -4,6 +4,7 @@ import {ModuleType} from "@common/modules/Module";
 import {COLORS} from "../../graphics/constants";
 import {ListenersContainer} from "./ListenersContainer";
 import {ChoosePlayerForAttackActivity} from "../../graphics/activities/ChoosePlayerForAttack";
+import Vector2 from "@common/Vector2";
 
 const {
     chooseCardTypeResponse,
@@ -23,7 +24,11 @@ export const mainListeners: ListenersContainer = {
         await game.controlsScene.rebuildSpaceship();
         game.rebuildSpaceshipManager.setIsRebuildSpaceshipAllowed(false);
 
-        return rebuildSpaceshipResponse(game.currentPlayer.spaceship, game.currentPlayer.hand);
+        return rebuildSpaceshipResponse(game.currentPlayer.spaceship.modules.map(module => ({
+            id: module.id,
+            position: new Vector2(module.x, module.y),
+            rotation: module.rotation
+        })));
     },
 
     async chooseCardTypeRequest({}, {game}) {
