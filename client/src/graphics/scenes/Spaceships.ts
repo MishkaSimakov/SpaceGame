@@ -1,16 +1,16 @@
 import Vector2 from "@common/Vector2";
 import Module from "@common/modules/Module";
+import {OtherPlayer} from "@common/GameForPlayerDTO";
+import {PlayerId} from "@common/Player";
 
 import Game from "../../Game";
-import Scene from "../engine/Scene";
 import Color from "../Color";
-import {DD} from "../engine/Drag";
-import {Spaceship as SpaceshipShape} from "../shapes/Spaceship";
-import {Card} from "../shapes/Card";
-import Player, {PlayerId} from "@common/Player";
+import {SpaceshipShape} from "../shapes/Spaceship";
 import {CountBoundary} from "../CountBoundary";
 import {ChooseModuleManager} from "../ChooseModuleManager";
-import {OtherPlayer} from "@common/GameForPlayerDTO";
+
+import {Layer} from "konva/lib/Layer";
+import HandDrawer from "../HandDrawer";
 
 let spaceshipConfigurations: Vector2[][] = [
     [new Vector2(0, 0)],
@@ -20,12 +20,16 @@ let spaceshipConfigurations: Vector2[][] = [
     [new Vector2(0, 0), new Vector2(0, -1000), new Vector2(1000, 0), new Vector2(1000, -1000), new Vector2(500, 1500)]
 ];
 
-export default class Spaceships extends Scene {
-    spaceshipShapes: Record<number, SpaceshipShape> = {};
+export default class Spaceships extends Layer {
     gameManager: Game;
-    spaceshipsCardSize: number;
 
+    spaceshipShapes: Record<PlayerId, SpaceshipShape> = {};
+    spaceshipsCardSize: number;
     activeChooseModule: ChooseModuleManager[] = [];
+
+    handDrawer: HandDrawer;
+
+    isRebuildingSpaceship: boolean = false;
 
     constructor(game: Game) {
         super({
@@ -34,16 +38,19 @@ export default class Spaceships extends Scene {
         });
 
         this.gameManager = game;
+
+        this.handDrawer = new HandDrawer(game, this);
     }
 
-    adopted() {
+    registerEvents() {
         this.spaceshipsCardSize = 256 * this.width() / 1440;
 
         let prevPointerPosition = undefined;
-        this.getGraphics().on("mousemove", ({evt}) => {
-            let pointerPosition = this.getGraphics().getRelativePointerPosition();
+        this.getStage().on("mousemove", ({evt}) => {
+            let pointerPosition = this.getRelativePointerPosition();
 
-            if (!DD.isDragging() && prevPointerPosition && evt.buttons !== 0) {
+            // TODO: isDragging
+            if (prevPointerPosition && evt.buttons !== 0) {
                 this.move({
                     x: pointerPosition.x - prevPointerPosition.x,
                     y: pointerPosition.y - prevPointerPosition.y
@@ -53,21 +60,21 @@ export default class Spaceships extends Scene {
             prevPointerPosition = pointerPosition;
         });
 
-        this.getGraphics().on("touchend", () => {
+        this.getStage().on("touchend", () => {
             prevPointerPosition = undefined;
 
             lastDist = 0;
             lastCenter = null;
         });
 
-        this.getGraphics().on("touchstart", () => {
+        this.getStage().on("touchstart", () => {
             prevPointerPosition = undefined;
 
             lastDist = 0;
             lastCenter = null;
         });
 
-        this.getGraphics().on("wheel", ({evt}) => {
+        this.getStage().on("wheel", ({evt}) => {
             let deltaY = evt.deltaY,
                 zoom = this.scaleX(),
                 newZoom = zoom,
@@ -103,16 +110,17 @@ export default class Spaceships extends Scene {
         let lastCenter = undefined;
         let lastDist = 0;
 
-        this.getGraphics().on('touchmove', ({evt}) => {
+        this.getStage().on('touchmove', ({evt}) => {
             evt.preventDefault();
 
             let touch1 = evt.touches[0];
             let touch2 = evt.touches[1];
 
             if (touch1 && !touch2) {
-                let pointerPosition = this.getGraphics().getRelativePointerPosition();
+                let pointerPosition = this.getRelativePointerPosition();
 
-                if (!DD.isDragging() && prevPointerPosition) {
+                // TODO: isDragging
+                if (prevPointerPosition) {
                     this.move({
                         x: pointerPosition.x - prevPointerPosition.x,
                         y: pointerPosition.y - prevPointerPosition.y
@@ -189,13 +197,12 @@ export default class Spaceships extends Scene {
 
                 const gameId = window.location.href.split('/').pop();
                 this.spaceshipShapes[player.id] = new SpaceshipShape({
-                    id: `spaceship.${gameId}.${player.id}`,
+                    key: `spaceship.${gameId}.${player.id}`,
                     cardSize: this.spaceshipsCardSize,
+                    spaceship: player.spaceship,
                     x: spaceshipPosition.x,
-                    y: spaceshipPosition.y,
+                    y: spaceshipPosition.y
                 });
-
-                this.spaceshipShapes[player.id].spaceship(player.spaceship);
 
                 this.add(this.spaceshipShapes[player.id]);
             } else {
@@ -210,9 +217,10 @@ export default class Spaceships extends Scene {
         this.activeChooseModule = [];
 
         for (let key in this.spaceshipShapes) {
-            for (let shape of this.spaceshipShapes[key].children) {
-                (shape as Card).strokeWidth(0);
-                (shape as Card).setState('DEFAULT');
+            for (let shape of this.spaceshipShapes[key].getModules()) {
+                shape.setStrokeWidth(0);
+                // TODO: uncomment
+                // shape.setState('DEFAULT');
 
                 shape.off('click.choosemodule');
             }
@@ -220,11 +228,204 @@ export default class Spaceships extends Scene {
     }
 
     panToPlayerWithId(playerId: number, duration: number = 500) {
-        let position = this.spaceshipShapes[playerId].getPosition();
+        const newPosition = this.spaceshipShapes[playerId].getPosition();
 
-        this.animate({
-            x: -position.x * this.scaleX(),
-            y: -position.y * this.scaleY()
-        }, duration);
+        this.to({
+            x: newPosition.x,
+            y: newPosition.y,
+            duration
+        })
+    }
+
+    // rebuild spaceship
+    setIsRebuildSpaceshipAllowed(allowed: boolean): void {
+        this.isRebuildingSpaceship = allowed;
+
+        this.spaceshipShapes[this.gameManager.currentPlayer.id].setModulesDraggable(allowed);
+        this.handDrawer.setDragEnabled(allowed);
+
+        this.removeEvents();
+        if (allowed) {
+            this.addEvents();
+        }
+    }
+
+    protected addEvents() {
+        // for (let shape of spaceshipShape.getModules()) {
+        //     const module = shape.module;
+        //
+        //     if (isMainModule(module))
+        //         continue;
+        //
+        //     shape.on('click.rebuild', () => {
+        //         const initRotation = module.rotation;
+        //         SpaceshipModifiers.removeModule(this.spaceship, module);
+        //
+        //         const possibleRotations = SpaceshipGetters.getPossibleRotationsFor(this.spaceship, module, module.x, module.y);
+        //
+        //         let index = possibleRotations.indexOf(initRotation);
+        //         index = (index + 1) % possibleRotations.length;
+        //
+        //         module.rotation = possibleRotations[index];
+        //
+        //         if (SpaceshipModifiers.addModule(this.spaceship, module, module.x, module.y)) {
+        //             shape.rotateCard(module.rotation * (Math.PI / 2));
+        //         } else {
+        //             // something really went wrong
+        //             module.rotation = initRotation;
+        //
+        //             // last hope
+        //             SpaceshipModifiers.addModule(this.spaceship, module, module.x, module.y);
+        //         }
+        //     });
+        //
+        //     shape.on('dragstart.rebuild', () => {
+        //         shape.moveToTop();
+        //     });
+        //
+        //     shape.on('dragend.rebuild', () => {
+        //         let localPosition = this.spaceshipShape.transformToCardPosition(
+        //             new Vector2(this.spaceshipShape.getRelativePointerPosition())
+        //         );
+        //
+        //         SpaceshipModifiers.removeModule(this.spaceship, module.x, module.y);
+        //
+        //         // try possible rotations
+        //         let canConnect = SpaceshipGetters.canConnectModule(this.spaceship, module, localPosition.x, localPosition.y);
+        //
+        //         if (!canConnect) {
+        //             const possibleRotations = SpaceshipGetters.getPossibleRotationsFor(
+        //                 this.spaceship, module, localPosition.x, localPosition.y
+        //             );
+        //
+        //             if (possibleRotations.length) {
+        //                 module.rotation = possibleRotations[0];
+        //                 shape.rotation(module.rotation * Math.PI / 2);
+        //                 canConnect = true;
+        //             }
+        //         }
+        //
+        //         if (canConnect) {
+        //             SpaceshipModifiers.addModule(this.spaceship, module, localPosition.x, localPosition.y);
+        //
+        //             shape.setPosition({
+        //                 x: localPosition.x * spaceshipCardSize,
+        //                 y: localPosition.y * spaceshipCardSize
+        //             });
+        //
+        //             let unconnected = SpaceshipGetters.getUnconnectedModules(this.spaceship);
+        //             SpaceshipModifiers.removeModule(this.spaceship, unconnected);
+        //
+        //             this.spaceshipShape.setSpaceship(this.spaceship);
+        //
+        //             this.hand.push(...unconnected);
+        //
+        //             this.handDrawer.setHandData(this.hand);
+        //             this.handDrawer.redraw();
+        //
+        //             this.setIsRebuildSpaceshipAllowed(true);
+        //
+        //             return;
+        //         }
+        //
+        //         // remove from spaceship modules
+        //         // remove from spaceship shapes
+        //
+        //         // find modules that become unconnected to main module
+        //         let unconnected = SpaceshipGetters.getUnconnectedModules(this.spaceship);
+        //         SpaceshipModifiers.removeModule(this.spaceship, unconnected);
+        //
+        //         this.spaceshipShape.setSpaceship(this.spaceship);
+        //
+        //         // add to hand cards
+        //         this.hand.push(module, ...unconnected);
+        //
+        //         // add to hand shapes
+        //         this.handDrawer.setHandData(this.hand);
+        //         this.handDrawer.redraw();
+        //
+        //         this.setIsRebuildSpaceshipAllowed(true);
+        //     });
+        // }
+
+        // for (let shape of this.handDrawer.cardShapes) {
+        //     if (shape.isEvent)
+        //         continue;
+        //
+        //     let module = shape.card() as Module;
+        //     let dragStartPos;
+        //
+        //     shape.on('dragstart.rebuild', () => {
+        //         shape.moveToTop();
+        //
+        //         dragStartPos = this.getRelativePointerPosition();
+        //     });
+        //
+        //     shape.on('dragend.rebuild', () => {
+        //         let localPosition = this.spaceshipShape.transformToCardPosition(
+        //             new Vector2(this.spaceshipShape.getRelativePointerPosition())
+        //         );
+        //
+        //         // try possible rotations
+        //         let canConnect = SpaceshipGetters.canConnectModule(this.spaceship, module, localPosition.x, localPosition.y);
+        //
+        //         if (!canConnect) {
+        //             const possibleRotations = SpaceshipGetters.getPossibleRotationsFor(
+        //                 this.spaceship, module, localPosition.x, localPosition.y
+        //             );
+        //
+        //             if (possibleRotations.length) {
+        //                 module.rotation = possibleRotations[0];
+        //                 shape.rotation(module.rotation * Math.PI / 2);
+        //                 canConnect = true;
+        //             }
+        //         }
+        //
+        //         if (canConnect) {
+        //             SpaceshipModifiers.addModule(this.spaceship, module, localPosition.x, localPosition.y);
+        //
+        //             // remove from hand cards
+        //             this.hand.splice(this.hand.indexOf(module), 1);
+        //
+        //             // add to spaceship modules
+        //             // add to spaceship shapes
+        //             this.setSpaceship(this.spaceship);
+        //
+        //             // redraw hand
+        //             this.handDrawer.setHandData(this.hand);
+        //             this.handDrawer.redraw();
+        //
+        //             this.setIsRebuildSpaceshipAllowed(true);
+        //
+        //             return;
+        //         }
+        //
+        //         // TODO:
+        //         // let {startPos} = DD._dragElements.get(shape._id);
+        //         //
+        //         // if (!startPos)
+        //         //     return;
+        //         //
+        //         // shape.setPosition(startPos);
+        //     });
+        // }
+    }
+
+    protected removeEvents() {
+        for (let shape of this.currentPlayerSpaceshipShape.getModules()) {
+            shape.off('.rebuild');
+        }
+
+        for (let shape of this.handDrawer.cardShapes) {
+            shape.off('.rebuild');
+        }
+    }
+
+    protected get currentPlayerSpaceship() {
+        return this.gameManager.currentPlayer.spaceship;
+    }
+
+    protected get currentPlayerSpaceshipShape() {
+        return this.spaceshipShapes[this.gameManager.currentPlayer.id];
     }
 }

@@ -3,15 +3,16 @@ import {Event} from "@common/events/Event";
 
 import Controls from "../scenes/Controls";
 import Color from "../Color";
-import {Group} from "../engine/Group";
-import {Rectangle} from "graphics/engine/shapes/Rectangle";
-import {Text} from "../engine/shapes/Text";
 import {Activity} from "./Activity";
+
+import {Group} from "konva/lib/Group";
+import {Rect} from "konva/lib/shapes/Rect";
+import {Text} from "konva/lib/shapes/Text";
 
 export class ShowCardsActivity extends Activity {
     private cardsShape?: Group;
     private titleShape?: Text;
-    private fadeShape?: Rectangle;
+    private fadeShape?: Rect;
 
     constructor(private scene: Controls, private cards: (Module | Event)[], private title?: string) {
         super();
@@ -19,15 +20,16 @@ export class ShowCardsActivity extends Activity {
 
     activate() {
         return new Promise<void>(resolve => {
-            this.fadeShape = this.scene.createAndAdd.rectangle({
+            this.fadeShape = new Rect({
                 fill: Color.fromHex('#000000', 0.75).toString()
             });
+            this.scene.add(this.fadeShape);
 
             this.cardsShape = this.scene.drawCardsOnScreen(this.cards);
             this.scene.add(this.cardsShape);
 
             if (this.title) {
-                this.titleShape = this.scene.createAndAdd.text({
+                this.titleShape = new Text({
                     text: this.title,
                     originX: 0.5,
                     originY: 1,
@@ -35,14 +37,17 @@ export class ShowCardsActivity extends Activity {
                     fill: "white",
                     fontSize: 20,
                 });
+                this.scene.add(this.titleShape);
             }
 
             this.setPositions();
 
-            this.scene.getGraphics().once('pointerdown', () => {
+            this.scene.on('pointerdown.close', () => {
                 this.titleShape?.destroy();
                 this.fadeShape.destroy();
                 this.cardsShape.destroy();
+
+                this.scene.off('pointerdown.close');
 
                 resolve();
             });
@@ -71,7 +76,7 @@ export class ShowCardsActivity extends Activity {
 
         this.titleShape?.setAttrs({
             x: sceneWidth / 2,
-            y: this.cardsShape.getClientRect().top - 15,
+            y: this.cardsShape.getClientRect().y - 15,
         });
     }
 }

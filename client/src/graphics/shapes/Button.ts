@@ -1,139 +1,129 @@
-import {Group} from "../engine/Group";
-import {ShapeConfig} from "../engine/Shape";
-import {GetSet} from "../engine/types";
-import {Factory} from "../engine/Factory";
-import {Rectangle} from "../engine/shapes/Rectangle";
-import {Text} from "../engine/shapes/Text";
+import {Rect} from "konva/lib/shapes/Rect";
+import {Group} from "konva/lib/Group";
+import {ContainerConfig} from "konva/lib/Container";
+import {ButtonColors} from "../constants";
+import {Text} from "konva/lib/shapes/Text";
 import Color from "../Color";
-import {COLORS} from "../constants";
 
-export interface ButtonConfig extends ShapeConfig {
-    text?: string;
-    fontSize?: number;
-    fontFamily?: string;
-
-    fill?: string;
-    hoverFill?: string;
-    activeFill?: string;
-    disabledFill?: string;
+type ButtonConfig = ContainerConfig & {
+    text: string;
+    colors: ButtonColors
 }
 
-export class Button extends Group<ButtonConfig> {
-    _background: Rectangle;
-    _text: Text;
-    _disabledRect?: Rectangle = undefined;
-    _hitRect: Rectangle;
+export class Button extends Group {
+    private readonly colors: ButtonColors;
 
-    _state: 'DEFAULT' | 'HOVER' | 'ACTIVE' | 'DISABLED' = 'DEFAULT';
+    private backgroundShape: Rect;
+    private textShape: Text;
+    private disabledRect?: Rect = undefined;
 
-    constructor(config?: ButtonConfig) {
+    private state: 'DEFAULT' | 'HOVER' | 'ACTIVE' | 'DISABLED' = 'DEFAULT';
+
+    constructor(config: ButtonConfig) {
         super(config);
 
-        let width = this.width(),
-            height = this.height(),
-            text = this.text();
+        this.colors = config.colors;
 
-        this._background = new Rectangle({
+        const width = this.width();
+        const height = this.height();
+
+        this.backgroundShape = new Rect({
             width: width,
-            height: height,
-            fill: this.fill()
+            height: height
         });
 
-        this._text = new Text({
+        this.textShape = new Text({
             x: width / 2,
             y: height / 2,
-            text: text,
-            originY: 0.5,
-            originX: 0.5,
+            text: config.text,
             fill: "white",
-            fontFamily: this.fontFamily(),
-            fontSize: this.fontSize()
+            fontFamily: "Exo2Bold",
+            fontSize: 12,
+
+            align: "center",
+            verticalAlign: "middle",
         });
+        this.textShape.offsetX(this.textShape.width() / 2);
+        this.textShape.offsetY(this.textShape.height() / 2);
 
-        this._hitRect = new Rectangle({
-            x: 0,
-            y: 0,
-            width: width,
-            height: height,
-            visible: false,
-        })
-
-        this.add(this._background, this._text, this._hitRect);
+        this.add(this.backgroundShape, this.textShape);
 
         if (this.isPointerInside()) {
-            this._state = 'HOVER';
-
-            this._updateFill();
+            this.state = 'HOVER';
         }
 
-        this._hitRect.on('pointerenter', () => {
-            if (this._state !== 'ACTIVE' && this._state !== 'DISABLED') {
-                this._state = 'HOVER';
+        this.updateFill();
 
-                this._updateFill();
+        this.on('pointerenter', () => {
+            if (this.state !== 'ACTIVE' && this.state !== 'DISABLED') {
+                this.state = 'HOVER';
+
+                this.updateFill();
             }
         });
 
-        this._hitRect.on('pointerout', () => {
-            if (this._state !== 'DISABLED') {
-                this._state = 'DEFAULT';
+        this.on('pointerout', () => {
+            if (this.state !== 'DISABLED') {
+                this.state = 'DEFAULT';
 
-                this._updateFill();
+                this.updateFill();
             }
         });
 
-        this._hitRect.on('pointerdown', () => {
-            if (this._state !== 'DISABLED') {
-                this._state = 'ACTIVE';
+        this.on('pointerdown', () => {
+            if (this.state !== 'DISABLED') {
+                this.state = 'ACTIVE';
 
-                this._updateFill();
+                this.updateFill();
             }
         });
 
-        this._hitRect.on('pointerup', () => {
-            if (this._state !== 'DISABLED') {
-                this._state = 'HOVER';
+        this.on('pointerup', () => {
+            if (this.state !== 'DISABLED') {
+                this.state = 'HOVER';
 
-                this._updateFill();
+                this.updateFill();
             }
         });
     }
 
-    drawHit() {
-        if (!this.shouldDrawHit())
-            return;
+    private isPointerInside() {
+        const pointerPosition = this.getRelativePointerPosition();
 
-        this._hitRect.drawHit();
-    }
-
-    isPointerInside(): boolean {
-        const pos = this.getRelativePointerPosition();
-
-        return !!this.getClientRect()?.contains(pos);
-    }
-
-    _updateFill() {
-        const stateDesign = {
-            'DEFAULT': ['default', this.fill()],
-            'HOVER': ['pointer', this.hoverFill()],
-            'ACTIVE': ['pointer', this.activeFill()],
+        if (!pointerPosition) {
+            return false;
         }
 
-        if (this._state !== "DISABLED") {
-            document.body.style.cursor = stateDesign[this._state][0];
-            this._background.fill(stateDesign[this._state][1]);
+        return 0 <= pointerPosition.x && pointerPosition.x <= this.width()
+            && 0 <= pointerPosition.y && pointerPosition.y <= this.height();
+    }
+
+    private updateFill() {
+        const pointerStyle = {
+            DEFAULT: 'default',
+            HOVER: 'pointer',
+            ACTIVE: 'pointer',
         }
+
+        if (this.state !== "DISABLED") {
+            document.body.style.cursor = pointerStyle[this.state];
+            this.backgroundShape.fill(this.colors[this.state].toString());
+        }
+    }
+
+    isDisabled() {
+        return this.state === 'DISABLED';
     }
 
     disabled(value: boolean) {
-        if (value === (this._state === 'DISABLED')) {
+        if (value === this.isDisabled()) {
             return;
         }
 
         if (value) {
-            this._state = 'DISABLED';
+            this.state = 'DISABLED';
 
-            this._disabledRect = new Rectangle({
+            this.disabledRect = new Rect({
                 x: 0,
                 y: 0,
                 fill: Color.fromRGBA(0, 0, 0, 0.5).toString(),
@@ -143,32 +133,14 @@ export class Button extends Group<ButtonConfig> {
                 interactive: true
             });
 
-            this.add(this._disabledRect);
+            this.add(this.disabledRect);
         } else {
-            this._state = this.isPointerInside() ? 'HOVER' : 'DEFAULT';
+            this.state = this.isPointerInside() ? 'HOVER' : 'DEFAULT';
 
-            this._disabledRect.destroy();
-            this._disabledRect = undefined;
+            this.disabledRect.destroy();
+            this.disabledRect = undefined;
         }
 
-        this._updateFill();
+        this.updateFill();
     }
-
-    fill: GetSet<string, this>;
-    hoverFill: GetSet<string, this>;
-    activeFill: GetSet<string, this>;
-    disabledFill: GetSet<string, this>;
-
-    text: GetSet<string, this>;
-    fontSize: GetSet<number, this>;
-    fontFamily: GetSet<string, this>;
 }
-
-Factory.addGetterSetter(Button, 'fill', '');
-Factory.addGetterSetter(Button, 'hoverFill', '');
-Factory.addGetterSetter(Button, 'activeFill', '');
-Factory.addGetterSetter(Button, 'disabledFill', '');
-
-Factory.addGetterSetter(Button, 'text', '');
-Factory.addGetterSetter(Button, 'fontSize', 12);
-Factory.addGetterSetter(Button, 'fontFamily', 'Exo2Bold');

@@ -2,10 +2,10 @@ import {OtherPlayer} from "@common/GameForPlayerDTO";
 import {PlayerGetters} from "@common/getters/Player";
 
 import TopBarDrawer from "./TopBarDrawer";
-import {Text} from "../engine/shapes/Text";
 import {PlayerDataLine} from "../shapes/PlayerDataLine";
-import {Group} from "../engine/Group";
 import {TopBarAdaptor} from "./TopBarAdaptor";
+import {Text} from "konva/lib/shapes/Text";
+import {Group} from "konva/lib/Group";
 
 export default class TopBarDefaultAdaptor extends TopBarAdaptor {
     drawPlayers(drawer: TopBarDrawer): Group {

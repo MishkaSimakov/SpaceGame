@@ -88,13 +88,11 @@ export class ChoosePlayerForAttackActivity extends Activity {
                 });
             }
 
-            const graphics = this.scene.getGraphics();
-
-            graphics.on('pointerdown.modal', () => {
+            this.scene.on('pointerdown.modal', () => {
                 const pos = this.scene.getRelativePointerPosition();
 
-                if (!this.modal.backgroundShape.getClientRect().contains(pos)) {
-                    graphics.off("pointerdown.modal");
+                if (!this.modal.backgroundShape.intersects(pos)) {
+                    this.scene.off("pointerdown.modal");
                     resolve(undefined);
 
                     this.modal.destroy();

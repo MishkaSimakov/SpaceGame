@@ -11,6 +11,7 @@
     "@types/css-font-loading-module": "^0.0.14",
     "bootstrap": "^5.3.7",
     "jsoneditor": "^10.3.0",
+    "konva": "^9.3.22",
     "rollup": "^2.35.1",
     "rollup-plugin-commonjs": "^10.1.0",
     "rollup-plugin-node-resolve": "^5.2.0",

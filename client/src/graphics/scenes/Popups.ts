@@ -1,106 +1,120 @@
-import Scene from "../engine/Scene";
-import {Group} from "../engine/Group";
-import {Rectangle} from "../engine/shapes/Rectangle";
-import {Text} from "../engine/shapes/Text";
+import Konva from "konva";
 import Color from "../Color";
-import Game from "../../Game";
 
-export default class PopupsScene extends Scene {
-    private popups: Group[] = [];
-    private gameManager: Game;
+export default class PopupsLayer extends Konva.Layer {
+    private popups: Konva.Group[] = [];
 
-    constructor(game: Game) {
+    constructor() {
         super({
-            // Ensure it's transparent and overlays without blocking lower scenes
-            interactive: true, // Allow clicks on popups
+            listening: true // allow clicks
         });
-
-        this.gameManager = game;
     }
 
     /**
      * Creates a new popup with the given text and background color.
-     * The popup will appear at the top center and disappear after the timeout (in ms) or when closed.
      * @param text The text to display in the popup.
-     * @param color The background color of the popup.
+     * @param color The background color of the popup (CSS color string).
      * @param timeout Optional timeout in milliseconds after which the popup auto-disappears.
      */
-    addPopup(text: string, color: Color, timeout?: number): Group {
-        const popupGroup = new Group();
+    addPopup(text: string, color: Color, timeout?: number): Konva.Group {
+        const popupGroup = new Konva.Group({
+            listening: true,
+            opacity: 0,      // start invisible
+            y: -30           // start slightly above
+        });
 
         const padding = 10;
         const fontSize = 15;
 
-        // Text element
-        const popupText = new Text({
+        const popupText = new Konva.Text({
             text: text,
             fontFamily: "Exo2Regular",
             fontSize: fontSize,
             fill: "white",
             x: padding,
             y: padding,
-            align: "left",
+            align: "left"
         });
 
-        // Calculate dimensions based on text
-        const textRect = popupText.getClientRect();
-        const popupWidth = textRect.width + padding * 2;
-        const popupHeight = textRect.height + padding * 2;
+        const popupWidth = popupText.width() + padding * 2;
+        const popupHeight = popupText.height() + padding * 2;
 
-        // Background rectangle
-        const background = new Rectangle({
+        const background = new Konva.Rect({
             width: popupWidth,
             height: popupHeight,
             fill: color.toString(),
             strokeWidth: 2,
-            cornerRadius: 10,
+            cornerRadius: 10
         });
 
-        popupGroup.add(background, popupText);
-        popupGroup.on('click', () => this.removePopup(popupGroup));
+        popupGroup.add(background);
+        popupGroup.add(popupText);
+
+        popupGroup.on("click", () => this.animateRemove(popupGroup));
 
         this.add(popupGroup);
         this.popups.push(popupGroup);
 
         // Auto-disappear if timeout is provided
         if (timeout) {
-            setTimeout(() => this.removePopup(popupGroup), timeout);
+            setTimeout(() => this.animateRemove(popupGroup), timeout);
         }
 
-        // Position all popups (including this new one)
-        this.update();
+        // Position all popups before animating
+        this.updatePositions();
+
+        // Animate fade-in + slide
+        popupGroup.to({
+            opacity: 1,
+            y: popupGroup.y() + 30, // slide down into position
+            duration: 0.3,
+            easing: Konva.Easings.EaseOut
+        });
 
         return popupGroup;
     }
 
-    private removePopup(popup: Group) {
+    private animateRemove(popup: Konva.Group) {
+        // Fade-out + slide up
+        popup.to({
+            opacity: 0,
+            y: popup.y() - 20,
+            duration: 0.25,
+            easing: Konva.Easings.EaseIn,
+            onFinish: () => this.removePopup(popup)
+        });
+    }
+
+    private removePopup(popup: Konva.Group) {
         const index = this.popups.indexOf(popup);
         if (index !== -1) {
             this.popups.splice(index, 1);
             popup.destroy();
-            this.update(); // Reposition remaining popups
+            this.updatePositions();
+            this.draw();
         }
     }
 
     /**
-     * Recalculates sizes and positions of all popups based on current scene dimensions.
-     * Popups are stacked vertically at the top center.
+     * Stack all popups vertically at the top center.
      */
-    update() {
-        const sceneWidth = this.width();
-        const verticalSpacing = 10; // Space between stacked popups
-        let currentY = 20; // Start from top with some margin
+    updatePositions() {
+        const layerWidth = this.getStage()?.width() || 0;
+        const verticalSpacing = 10;
+        let currentY = 20;
 
         this.popups.forEach((popup) => {
-            const popupRect = popup.getClientRect();
-            const posX = (sceneWidth - popupRect.width) / 2; // Center horizontally
+            const rect = popup.getClientRect({relativeTo: this});
+            const posX = (layerWidth - rect.width) / 2;
 
-            popup.setPosition({
+            popup.position({
                 x: posX,
-                y: currentY,
+                y: currentY
             });
 
-            currentY += popupRect.height + verticalSpacing;
+            currentY += rect.height + verticalSpacing;
         });
+
+        this.batchDraw();
     }
 }

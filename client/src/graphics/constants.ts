@@ -1,8 +1,12 @@
 import Color from "./Color";
 
-type ButtonColors = { DISABLED: Color, DEFAULT: Color, HOVER: Color, ACTIVE: Color };
+export type ButtonColors = {
+    DEFAULT: Color,
+    HOVER: Color,
+    ACTIVE: Color
+};
 
-const COLORS = {
+export const COLORS = {
     BACKGROUND: 0x20202A,
     STROKE: 0x474E68,
     BUTTON: {
@@ -25,9 +29,7 @@ const COLORS = {
     DEFAULT_STROKE: Color.fromHex('#a3b18a'),
 };
 
-let SIZES = {
+export const SIZES = {
     STROKE_WIDTH: 5,
     CORNER_RADIUS: 10,
 };
-
-export {COLORS, SIZES, ButtonColors};

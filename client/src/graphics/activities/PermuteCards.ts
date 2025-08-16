@@ -2,14 +2,14 @@ import {Event} from "@common/events/Event";
 import Module from "@common/modules/Module";
 
 import Controls from "../scenes/Controls";
-import {Group} from "../engine/Group";
 import {COLORS} from "../constants";
-import {Rectangle} from "../engine/shapes/Rectangle";
 import Color from "../Color";
-import {Text} from "../engine/shapes/Text";
-import Vector2 from "@common/Vector2";
 import {Activity} from "./Activity";
-import {Card} from "../shapes/Card";
+import {Group} from "konva/lib/Group";
+import {Rect} from "konva/lib/shapes/Rect";
+import {Text} from "konva/lib/shapes/Text";
+import {getBackground} from "../shapes/ModalBackground";
+import {ModuleShape} from "../shapes/Card";
 
 export class PermuteCardsActivity extends Activity {
     private modalGroup?: Group = undefined;
@@ -62,7 +62,6 @@ export class PermuteCardsActivity extends Activity {
 
             this.modalGroup = new Group();
 
-            const offset = 20;
             const sceneWidth = this.scene.width();
             const sceneHeight = this.scene.height();
 
@@ -72,7 +71,7 @@ export class PermuteCardsActivity extends Activity {
                 return card.getPosition();
             });
 
-            const fadeShape = new Rectangle({
+            const fadeShape = new Rect({
                 x: 0,
                 y: 0,
                 width: sceneWidth,
@@ -83,9 +82,9 @@ export class PermuteCardsActivity extends Activity {
             const horizontal = sceneWidth > sceneHeight;
             const titleShape = new Text({
                 x: horizontal
-                    ? cardShapes.getClientRect().left
+                    ? cardShapes.getClientRect().x
                     : sceneWidth / 2,
-                y: cardShapes.getClientRect().top - 15,
+                y: cardShapes.getClientRect().y - 15,
                 text: "Верх колоды",
                 originX: horizontal ? 0 : 0.5,
                 originY: 1,
@@ -96,42 +95,26 @@ export class PermuteCardsActivity extends Activity {
 
             const buttonShape = new Text({
                 x: sceneWidth / 2,
-                y: cardShapes.getClientRect().bottom + 15,
+                y: cardShapes.getClientRect().y + cardShapes.getClientRect().height + 15,
                 text: "Далее",
                 fill: "white",
                 fontFamily: "Exo2Bold",
                 originX: 0.5
-            })
-                .on('click', () => {
-                    this.destructModal();
-                    resolve(this.order);
-                });
-
-            const backgroundPosition1 = new Vector2(
-                Math.min(cardShapes.getClientRect().left, titleShape.getClientRect().left) - offset,
-                titleShape.getClientRect().top - offset
-            );
-            const backgroundPosition2 = new Vector2(
-                Math.max(cardShapes.getClientRect().right, titleShape.getClientRect().right) + offset,
-                buttonShape.getClientRect().bottom + offset
-            );
-            const backgroundShape = new Rectangle({
-                x: backgroundPosition1.x,
-                y: backgroundPosition1.y,
-                width: backgroundPosition2.x - backgroundPosition1.x,
-                height: backgroundPosition2.y - backgroundPosition1.y,
-                fill: Color.fromHex('#0B2545', 0.75).toString(),
-                stroke: Color.fromHex('#3D76BE').toString(),
-                strokeWidth: 2
             });
+            buttonShape.on('click', () => {
+                this.destructModal();
+                resolve(this.order);
+            });
+
+            const backgroundShape = getBackground(titleShape, buttonShape, cardShapes);
 
             //
 
-            const cardShapesInOrder: Card[] = [];
+            const cardShapesInOrder: ModuleShape[] = [];
 
             for (let i = 0; i < this.cards.length; ++i) {
                 const cardShape = cardShapes.children[i];
-                cardShapesInOrder.push(cardShape as Card);
+                cardShapesInOrder.push(cardShape as ModuleShape);
 
                 cardShape.draggable(true);
                 cardShape.on('dragstart', () => {

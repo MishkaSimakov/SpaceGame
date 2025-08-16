@@ -4,12 +4,8 @@ import {Event} from "@common/events/Event";
 import {Message} from "@common/Types";
 
 import Game from "../../Game";
-import HandDrawer from "../HandDrawer";
 import {COLORS} from "../constants";
 import TopBarDrawer from "../topbar/TopBarDrawer";
-import Scene from "../engine/Scene";
-import {Group} from "../engine/Group";
-import {Card} from "../shapes/Card";
 import Color from "../Color";
 import {Boundary, BoundaryType} from "../CountBoundary";
 
@@ -19,28 +15,24 @@ import {PermuteCardsActivity} from "../activities/PermuteCards";
 import {ChooseFromListActivity} from "../activities/ChooseFromList";
 import {ChooseCardsActivity} from "../activities/ChooseCards";
 
-export default class Controls extends Scene {
-    handDrawer: HandDrawer;
-    topBarDrawer: TopBarDrawer;
+import {Layer} from "konva/lib/Layer";
+import {Group} from "konva/lib/Group";
+import {ModuleShape} from "../shapes/Card";
+
+export default class Controls extends Layer {
     gameManager: Game;
 
+    topBarDrawer: TopBarDrawer;
     activitiesQueue: { activity: Activity, lock: Promise<void> }[] = [];
 
     constructor(game: Game) {
         super();
 
         this.gameManager = game;
-    }
-
-    adopted() {
         this.topBarDrawer = new TopBarDrawer(this);
-        this.handDrawer = new HandDrawer(this.gameManager, this);
     }
 
     updateData(newMessages: Message[]) {
-        this.handDrawer.setHandData(this.gameManager.currentPlayer.hand);
-        this.handDrawer.redraw();
-
         this.topBarDrawer.setPlayersData(
             this.gameManager.currentPlayer,
             this.gameManager.otherPlayers,
@@ -178,12 +170,7 @@ export default class Controls extends Scene {
 
         for (let card of cards) {
             cardShapes.add(
-                new Card({
-                    x: position.x,
-                    y: position.y,
-                    size: cardSize,
-                    card: card
-                })
+                new ModuleShape(card as Module, cardSize)
             );
 
             position.add(offset);
@@ -191,8 +178,8 @@ export default class Controls extends Scene {
 
         cardShapes
             .setPosition({
-                x: (sceneWidth - cardShapes.getWidth()) / 2,
-                y: (sceneHeight - cardShapes.getHeight()) / 2
+                x: (sceneWidth - cardShapes.width()) / 2,
+                y: (sceneHeight - cardShapes.height()) / 2
             });
 
         return cardShapes;

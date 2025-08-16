@@ -1,34 +1,35 @@
 import {Event} from "@common/events/Event";
+import Module, {isModule} from "@common/modules/Module";
 
 import Game from "../Game";
 import {SIZES} from "./constants";
-import {Card} from "./shapes/Card";
-import Scene from "./engine/Scene";
-import {Rectangle} from "./engine/shapes/Rectangle";
 import Color from "./Color";
-import {Group} from "./engine/Group";
-import Module, {isModule} from "../../../common/modules/Module";
+import {Group} from "konva/lib/Group";
+import {ModuleShape} from "./shapes/Card";
+import {Layer} from "konva/lib/Layer";
+import {Rect} from "konva/lib/shapes/Rect";
 
 export default class HandDrawer {
     group: Group;
 
-    cardShapes: Card[] = [];
+    cardShapes: ModuleShape[] = [];
 
-    scene: Scene;
+    scene: Layer;
 
     gameManager: Game;
-    background: Rectangle;
+    background: Rect;
 
     hand: (Module | Event)[] = [];
 
-    constructor(game: Game, scene: Scene) {
+    constructor(game: Game, scene: Layer) {
         this.scene = scene;
 
         this.gameManager = game;
 
-        this.group = this.scene.createAndAdd.group();
-        this.background = new Rectangle();
+        this.group = new Group();
+        this.scene.add(this.group);
 
+        this.background = new Rect();
         this.group.add(this.background);
     }
 
@@ -108,13 +109,13 @@ export default class HandDrawer {
         // draw cards
 
         for (let [index, card] of hand.entries()) {
-            let cardShape = new Card({
-                size: cardSize,
-                card: card,
+            const cardShape = new ModuleShape(card as Module, cardSize);
+            cardShape.setAttrs({
                 x: startPosition + index * (cardSize + spaceBetween),
                 y: sceneHeight - spaceBetween,
                 originY: 1
             });
+
             this.group.add(cardShape);
 
             cardShape.on('click', () => {
@@ -130,7 +131,7 @@ export default class HandDrawer {
 
     setDragEnabled(isEnabled: boolean) {
         for (let shape of this.cardShapes) {
-            if (shape.isModule)
+            if (shape)
                 shape.draggable(isEnabled);
         }
     }

@@ -4,14 +4,13 @@ import {Message} from "@common/Types";
 
 import Controls from "../scenes/Controls";
 import {ButtonColors, SIZES} from "../constants";
-import {Rectangle} from "../engine/shapes/Rectangle";
-import {Text} from "../engine/shapes/Text";
-import {Group} from "../engine/Group";
 import {Button} from "../shapes/Button";
 import {PlayerDataLine} from "../shapes/PlayerDataLine";
 import TopBarDefaultAdaptor from "./TopBarDefaultAdaptor";
 import Color from "../Color";
-import message from "@common/actions/Message";
+import {Group} from "konva/lib/Group";
+import {Rect} from "konva/lib/shapes/Rect";
+import {Text} from "konva/lib/shapes/Text";
 
 export type ButtonData = {
     text: string,
@@ -45,7 +44,7 @@ export default class TopBarDrawer {
     messagesCard?: Group;
     messages: MessageWithShape[] = [];
 
-    sidebarBackground?: Rectangle;
+    sidebarBackground?: Rect;
 
     readonly sizes = {
         padding: 10,
@@ -124,7 +123,7 @@ export default class TopBarDrawer {
         const sidebarH = sceneHeight;
 
         const offscreenOffset = 10;
-        this.sidebarBackground = new Rectangle({
+        this.sidebarBackground = new Rect({
             x: sidebarX,
             y: sidebarY - offscreenOffset,
             width: sidebarW + offscreenOffset,
@@ -145,10 +144,10 @@ export default class TopBarDrawer {
         });
         this.group.add(this.playersCard);
 
-        currentY = this.playersCard.getClientRect().bottom + this.sizes.padding;
+        currentY = this.playersCard.getClientRect().y + this.playersCard.getClientRect().height + this.sizes.padding;
 
         // Separator after players
-        this.group.add(new Rectangle({
+        this.group.add(new Rect({
             x: sidebarX,
             y: currentY,
             width: sidebarW,
@@ -165,10 +164,10 @@ export default class TopBarDrawer {
             });
             this.group.add(this.statusCard);
 
-            currentY = this.statusCard.getClientRect().bottom + this.sizes.padding;
+            currentY = this.statusCard.getClientRect().y + this.statusCard.getClientRect().height + this.sizes.padding;
 
             // Separator after status
-            this.group.add(new Rectangle({
+            this.group.add(new Rect({
                 x: sidebarX,
                 y: currentY,
                 width: sidebarW,
@@ -193,11 +192,7 @@ export default class TopBarDrawer {
         this.playerTime = playerTime;
 
         for (const playerId in playerTime) {
-            const playerDataLine = this.playersCard.findOne(`.${playerId}`) as PlayerDataLine;
-
-            if (playerDataLine && playerDataLine.time() != this.playerTime[playerId]) {
-                playerDataLine.time(this.playerTime[playerId]);
-            }
+            (this.playersCard.findOne(`.${playerId}`) as PlayerDataLine)?.setTime(this.playerTime[playerId]);
         }
     }
 
@@ -246,7 +241,7 @@ export default class TopBarDrawer {
             text: (message as any).action,
             onClick: (message as any).onAction
         }] : []);
-        let currentY = textShape.getClientRect().bottom + 6;
+        let currentY = textShape.getClientRect().y + textShape.getClientRect().height + 6;
 
         for (let action of rawActions) {
             const actionText = new Text({
@@ -257,9 +252,9 @@ export default class TopBarDrawer {
                 fontSize: 12,
                 fill: "rgba(200,200,200,1)",
             });
-            const underline = new Rectangle({
+            const underline = new Rect({
                 x: 0,
-                y: actionText.getClientRect().bottom,
+                y: actionText.getClientRect().y + actionText.getClientRect().height,
                 width: Math.min(actionText.getClientRect().width, maxWidth),
                 height: 1,
                 fill: "rgba(200,200,200,1)"
@@ -269,7 +264,7 @@ export default class TopBarDrawer {
                 underline.on('click', action.onClick);
             }
             group.add(actionText, underline);
-            currentY = underline.getClientRect().bottom + 6;
+            currentY = underline.getClientRect().y + underline.getClientRect().height + 6;
         }
 
         message.shape = group;
@@ -286,18 +281,16 @@ export default class TopBarDrawer {
         let buttonHeight = 40;
 
         for (const [index, button] of this.buttons.entries()) {
-            let buttonShape = new Button({
+            const buttonShape = new Button({
                 x: index * (buttonWidth + this.sizes.padding),
                 y: 0,
                 width: buttonWidth,
                 height: buttonHeight,
                 text: button.text,
-                fill: button.color.DEFAULT.toString(),
-                hoverFill: button.color.HOVER.toString(),
-                activeFill: button.color.ACTIVE.toString(),
-                disabledFill: button.color.DISABLED.toString(),
+                colors: button.color,
                 name: button.name ? `button.${button.name}` : `button.${index}`
-            }).on('click', button.onClick);
+            });
+            buttonShape.on('click', button.onClick);
             group.add(buttonShape);
         }
         return group;
@@ -317,7 +310,7 @@ export default class TopBarDrawer {
             });
             result.add(messageGroup);
 
-            currentY = messageGroup.getClientRect().bottom + this.sizes.padding;
+            currentY = messageGroup.getClientRect().y + messageGroup.getClientRect().height + this.sizes.padding;
         }
 
         return result;

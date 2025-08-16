@@ -3,9 +3,9 @@ import Module from "@common/modules/Module";
 import {PlayerId} from "@common/Player";
 import {BoundaryType, CountBoundary} from "./CountBoundary";
 import Color from "./Color";
-import {Card} from "./shapes/Card";
 import {Observable} from "./Observable";
 import Vector2 from "@common/Vector2";
+import {ModuleShape} from "./shapes/Card";
 
 type SelectedModuleInfo = {
     module: Module,
@@ -30,25 +30,24 @@ export class ChooseModuleManager {
 
     activate() {
         for (const info of this.selected) {
-            this.getShape(info).strokeWidth(5).stroke(this.strokeColor.toString());
+            this.getShape(info).setStrokeWidth(5).setStroke(this.strokeColor.toString());
         }
 
         for (let key in this.scene.spaceshipShapes) {
             const playerId = parseInt(key);
 
-            for (let shape of this.scene.spaceshipShapes[playerId].children) {
-                const card = shape as Card;
+            for (let shape of this.scene.spaceshipShapes[playerId].getModules()) {
                 const info = {
                     player: playerId,
-                    position: new Vector2((card.card() as Module).x, (card.card() as Module).y),
+                    position: new Vector2(shape.module.x, shape.module.y),
                 };
 
-                if (!this.check({player: playerId, module: card.card() as Module})) {
-                    card.setState('DISABLED');
+                if (!this.check({player: playerId, module: shape.module})) {
+                    shape.setState('DISABLED');
                     continue;
                 }
 
-                card.setState('ENABLED');
+                shape.setState('ENABLED');
 
                 shape.on('click.choosemodule', () => {
                     shape.moveToTop();
@@ -96,13 +95,13 @@ export class ChooseModuleManager {
     }
 
     private deselect(info: { player: PlayerId, position: Vector2 }) {
-        this.getShape(info).strokeWidth(0);
+        this.getShape(info).setStrokeWidth(0);
 
         this.selected = this.selected.filter(s => !this.isEqual(s, info));
     }
 
     private select(info: { player: PlayerId, position: Vector2 }) {
-        this.getShape(info).strokeWidth(5).stroke(this.strokeColor.toString());
+        this.getShape(info).setStrokeWidth(5).setStroke(this.strokeColor.toString());
         this.selected.push(info);
     }
 
@@ -110,16 +109,15 @@ export class ChooseModuleManager {
         this.handle.set(this.selected.map(s => {
             return {
                 player: s.player,
-                module: this.getShape(s).card() as Module
+                module: this.getShape(s).module
             };
         }))
     }
 
-    private getShape({player, position}: { player: PlayerId, position: Vector2 }): Card {
+    private getShape({player, position}: { player: PlayerId, position: Vector2 }): ModuleShape {
         const spaceship = this.scene.spaceshipShapes[player];
-        return spaceship.getModules().find(card => {
-            const module = card.card() as Module;
-            return module.x === position.x && module.y === position.y;
+        return spaceship.getModules().find(shape => {
+            return shape.module.x === position.x && shape.module.y === position.y;
         });
     }
 }

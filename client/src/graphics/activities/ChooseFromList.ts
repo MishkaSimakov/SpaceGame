@@ -16,11 +16,12 @@ export class ChooseFromListActivity extends Activity {
             this.modal.setTitle(this.title);
 
             for (let index = 0; index < this.values.length; ++index) {
-                this.modal.addLine(this.values[index]).once('pointerdown', () => {
-                    resolve(index);
+                this.modal.addLine(this.values[index])
+                    .on('pointerdown', () => {
+                        resolve(index);
 
-                    this.modal.destroy();
-                });
+                        this.modal.destroy();
+                    });
             }
         });
     }

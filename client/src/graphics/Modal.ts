@@ -1,28 +1,28 @@
-import Scene from "./engine/Scene";
-import {Rectangle} from "./engine/shapes/Rectangle";
-import {Text} from "./engine/shapes/Text";
 import Color from "./Color";
+import {Layer} from "konva/lib/Layer";
+import {Rect} from "konva/lib/shapes/Rect";
+import {Text} from "konva/lib/shapes/Text";
 
 const offset = 10;
 
 export default class Modal {
-    scene: Scene;
+    scene: Layer;
 
-    backgroundShape: Rectangle;
+    backgroundShape: Rect;
     titleShape: Text;
-    fadeShape: Rectangle;
+    fadeShape: Rect;
 
     lines: Text[] = [];
     bottomTextShape: Text;
 
-    constructor(scene: Scene) {
+    constructor(scene: Layer) {
         this.scene = scene;
 
-        this.fadeShape = this.scene.createAndAdd.rectangle({
+        this.fadeShape = new Rect({
             fill: Color.fromHex('#000000', 0.75).toString(),
         });
 
-        this.backgroundShape = this.scene.createAndAdd.rectangle({
+        this.backgroundShape = new Rect({
             originX: 0.5,
             originY: 0.5,
             fill: Color.fromHex('#0B2545', 0.75).toString(),
@@ -30,46 +30,51 @@ export default class Modal {
             strokeWidth: 2
         });
 
+        this.scene.add(this.fadeShape, this.backgroundShape);
+
         this.update();
     }
 
     setTitle(title: string): Text {
-        this.titleShape = this.scene.createAndAdd.text({
+        this.titleShape = new Text({
             text: title,
             fill: "white",
             fontFamily: "Exo2Regular",
             fontSize: 20,
-            originX: 0.5
         });
 
+        this.scene.add(this.titleShape);
         this.update();
 
         return this.titleShape;
     }
 
     addLine(text: string): Text {
-        this.lines.push(
-            this.scene.createAndAdd.text({
-                text: text,
-                fontSize: 15,
-                fill: "white",
-                fontFamily: "Exo2Regular"
-            })
-        );
+        const line = new Text({
+            text: text,
+            fontSize: 15,
+            fill: "white",
+            fontFamily: "Exo2Regular"
+        });
+
+        this.lines.push(line);
+        this.scene.add(line);
 
         this.update();
 
-        return this.lines[this.lines.length - 1];
+        return line;
     }
 
     setBottomText(text: string): Text {
-        this.bottomTextShape = this.scene.createAndAdd.text({
+        this.bottomTextShape = new Text({
             text: text,
             fill: "white",
             fontFamily: "Exo2Bold",
             fontSize: 15,
             originY: 1
         });
+
+        this.scene.add(this.bottomTextShape);
 
         this.update();
 
@@ -109,7 +114,7 @@ export default class Modal {
         }
 
         const textStartY = this.titleShape
-            ? this.titleShape.getClientRect().bottom + offset
+            ? this.titleShape.getClientRect().y + this.titleShape.getClientRect().height + offset
             : centerX - height / 2 + offset;
 
         // Update lines

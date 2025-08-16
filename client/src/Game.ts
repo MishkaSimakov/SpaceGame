@@ -6,12 +6,10 @@ import {PlayerGetters} from "@common/getters/Player";
 import Spaceships from "./graphics/scenes/Spaceships";
 import Controls from "./graphics/scenes/Controls";
 import Player, {PlayerId} from "../../common/Player";
-import RebuildSpaceshipManager from "./graphics/RebuildSpaceshipManager";
 import SocketManager from "./sockets/SocketManager";
-import {Graphics} from "./graphics/engine/Graphics";
-import {DD} from "./graphics/engine/Drag";
 import PopupsScene from "./graphics/scenes/Popups";
-import {ShowHugeMessageActivity} from "./graphics/activities/ShowHugeMessage";
+
+import {Stage} from "konva/lib/Stage";
 
 export default class Game {
     currentTurnPlayerId: PlayerId;
@@ -26,8 +24,6 @@ export default class Game {
     controlsScene: Controls;
     popupsScene: PopupsScene;
 
-    rebuildSpaceshipManager: RebuildSpaceshipManager;
-
     settings: GameSettings;
 
     playerTime: Record<number, number> = {};
@@ -38,25 +34,21 @@ export default class Game {
     isFirstDraw: boolean = true;
 
     constructor() {
-        const graphics = new Graphics({
+        const stage = new Stage({
             container: 'app',
             width: window.innerWidth,
             height: window.innerHeight
         });
 
-        window["graphics"] = graphics;
-        window["drag"] = DD;
-        window["errors"] = [];
-
         this.spaceshipsScene = new Spaceships(this);
         this.controlsScene = new Controls(this);
-        this.popupsScene = new PopupsScene(this);
+        this.popupsScene = new PopupsScene();
 
-        graphics.add(this.spaceshipsScene);
-        graphics.add(this.controlsScene);
-        graphics.add(this.popupsScene);
+        stage.add(this.spaceshipsScene);
+        stage.add(this.controlsScene);
+        stage.add(this.popupsScene);
 
-        this.rebuildSpaceshipManager = new RebuildSpaceshipManager(this);
+        this.spaceshipsScene.registerEvents();
 
         this.socketManager = new SocketManager(this);
 
@@ -87,7 +79,7 @@ export default class Game {
             this.popupsScene.setSize(newSize);
 
             this.controlsScene.activitiesQueue[0]?.activity.update();
-            this.popupsScene.update();
+            this.popupsScene.updatePositions();
 
             this.redraw([]);
         });
@@ -99,7 +91,7 @@ export default class Game {
         this.otherPlayers = gameDTO.otherPlayers;
         this.settings = gameDTO.settings;
 
-        if (!this.rebuildSpaceshipManager.isRebuildingSpaceship) {
+        if (!this.spaceshipsScene.isRebuildingSpaceship) {
             this.currentPlayer = gameDTO.player;
         }
 
@@ -131,8 +123,8 @@ export default class Game {
             this.spaceshipsScene.panToPlayerWithId(this.currentPlayer.id, 0);
         }
 
-        if (this.rebuildSpaceshipManager.isRebuildingSpaceship) {
-            this.rebuildSpaceshipManager.setIsRebuildSpaceshipAllowed(true);
+        if (this.spaceshipsScene.isRebuildingSpaceship) {
+            this.spaceshipsScene.setIsRebuildSpaceshipAllowed(true);
         }
     }
 

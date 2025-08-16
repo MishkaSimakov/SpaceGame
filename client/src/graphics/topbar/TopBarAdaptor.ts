@@ -1,5 +1,6 @@
 import TopBarDrawer from "./TopBarDrawer";
-import {Group} from "../engine/Group";
+
+import {Group} from "konva/lib/Group";
 
 export abstract class TopBarAdaptor {
     abstract drawPlayers(drawer: TopBarDrawer): Group;

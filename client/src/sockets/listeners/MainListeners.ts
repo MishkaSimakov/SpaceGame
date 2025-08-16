@@ -18,10 +18,10 @@ const {
 
 export const mainListeners: ListenersContainer = {
     async rebuildSpaceshipRequest({}, {game}) {
-        game.rebuildSpaceshipManager.setIsRebuildSpaceshipAllowed(true);
+        game.spaceshipsScene.setIsRebuildSpaceshipAllowed(true);
 
         await game.controlsScene.rebuildSpaceship();
-        game.rebuildSpaceshipManager.setIsRebuildSpaceshipAllowed(false);
+        game.spaceshipsScene.setIsRebuildSpaceshipAllowed(false);
 
         return rebuildSpaceshipResponse(game.currentPlayer.spaceship, game.currentPlayer.hand);
     },

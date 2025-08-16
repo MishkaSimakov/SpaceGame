@@ -4,7 +4,6 @@ import Vector2 from "@common/Vector2";
 import {Activity} from "./Activity";
 import Controls from "../scenes/Controls";
 import Spaceships from "../scenes/Spaceships";
-import {Button} from "../shapes/Button";
 import {Boundary} from "../CountBoundary";
 import Color from "../Color";
 import {COLORS} from "../constants";

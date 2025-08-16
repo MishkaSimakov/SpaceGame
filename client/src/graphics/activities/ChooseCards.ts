@@ -2,15 +2,16 @@ import {Event} from "@common/events/Event";
 import Vector2 from "@common/Vector2";
 import Module from "@common/modules/Module";
 
-import {Group} from "../engine/Group";
-import {Rectangle} from "../engine/shapes/Rectangle";
-import {Text} from "../engine/shapes/Text";
 import Color from "../Color";
-import {Card} from "../shapes/Card";
 import Controls from "../scenes/Controls";
 import {Activity} from "./Activity";
 import {COLORS} from "../constants";
 import {BoundaryType, CountBoundary, CountBoundaryValidationResult} from "../CountBoundary";
+import {Group} from "konva/lib/Group";
+import {Rect} from "konva/lib/shapes/Rect";
+import {Text} from "konva/lib/shapes/Text";
+import {getBackground} from "../shapes/ModalBackground";
+import {ModuleShape} from "../shapes/Card";
 
 export class ChooseCardsActivity extends Activity {
     private modalGroup?: Group = undefined;
@@ -66,7 +67,7 @@ export class ChooseCardsActivity extends Activity {
 
             const cardShapes = this.scene.drawCardsOnScreen(this.cards);
 
-            const fadeShape = new Rectangle({
+            const fadeShape = new Rect({
                 x: 0,
                 y: 0,
                 width: sceneWidth,
@@ -76,7 +77,7 @@ export class ChooseCardsActivity extends Activity {
 
             const titleShape = new Text({
                 x: sceneWidth / 2,
-                y: cardShapes.getClientRect().top - 15,
+                y: cardShapes.getClientRect().y - 15,
                 text: this.title,
                 originX: 0.5,
                 originY: 1,
@@ -87,42 +88,25 @@ export class ChooseCardsActivity extends Activity {
 
             this.buttonShape = new Text({
                 x: sceneWidth / 2,
-                y: cardShapes.getClientRect().bottom + 15,
+                y: cardShapes.getClientRect().y + cardShapes.getClientRect().height + 15,
                 text: "",
                 fontFamily: "Exo2Bold",
                 originX: 0.5
-            })
-                .on('pointerdown', () => {
-                    const validationResult = this.validateCount(this.selected.length);
+            });
+            this.buttonShape.on('pointerdown', () => {
+                const validationResult = this.validateCount(this.selected.length);
 
-                    if (validationResult.verdict === "correct") {
-                        this.destructModal();
-                        resolve(this.selected);
-                    }
-                });
+                if (validationResult.verdict === "correct") {
+                    this.destructModal();
+                    resolve(this.selected);
+                }
+            });
             this.updateButton();
 
-            const backgroundPosition1 = new Vector2(
-                Math.min(cardShapes.getClientRect().left, titleShape.getClientRect().left) - offset,
-                titleShape.getClientRect().top - offset
-            );
-            const backgroundPosition2 = new Vector2(
-                Math.max(cardShapes.getClientRect().right, titleShape.getClientRect().right) + offset,
-                this.buttonShape.getClientRect().bottom + offset
-            );
-
-            const backgroundShape = new Rectangle({
-                x: backgroundPosition1.x,
-                y: backgroundPosition1.y,
-                width: backgroundPosition2.x - backgroundPosition1.x,
-                height: backgroundPosition2.y - backgroundPosition1.y,
-                fill: Color.fromHex('#0B2545', 0.75).toString(),
-                stroke: Color.fromHex('#3D76BE').toString(),
-                strokeWidth: 2
-            });
+            const backgroundShape = getBackground(titleShape, cardShapes, this.buttonShape);
 
             cardShapes.children.forEach((shape, index) => {
-                const card = shape as Card;
+                const card = shape as ModuleShape;
                 this.updateCard(card, index);
 
                 card.on('click', () => {
@@ -202,11 +186,11 @@ export class ChooseCardsActivity extends Activity {
         }
     }
 
-    private updateCard(card: Card, index: number) {
+    private updateCard(card: ModuleShape, index: number) {
         if (this.selected.includes(index)) {
             card.setStrokeWidth(5).setStroke(Color.fromHex('#FF9F1C').toString());
         } else {
-            card.strokeWidth(0);
+            card.setStrokeWidth(0);
         }
     }
 }

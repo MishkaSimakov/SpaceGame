@@ -1,12 +1,8 @@
 import {OtherPlayer} from "@common/GameForPlayerDTO";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
 
-import {NodeConfig} from "../engine/Node";
-import {Group} from "../engine/Group";
-import {Text} from "../engine/shapes/Text";
-import {GetSet} from "../engine/types";
-import {Factory} from "../engine/Factory";
-import {Rectangle} from "../engine/shapes/Rectangle";
+import {Group, GroupConfig} from "konva/lib/Group";
+import {Text} from "konva/lib/shapes/Text";
 
 export type PlayerStatus = {
     online: boolean,
@@ -14,7 +10,7 @@ export type PlayerStatus = {
     isHisTurn: boolean
 };
 
-export interface PlayerDataLineConfig extends NodeConfig {
+type PlayerDataLineConfig = GroupConfig & {
     player: OtherPlayer,
     status: PlayerStatus,
     withTimeControl: boolean,
@@ -22,21 +18,17 @@ export interface PlayerDataLineConfig extends NodeConfig {
     width: number
 }
 
-export class PlayerDataLine extends Group<PlayerDataLineConfig> {
-    _hitRect: Rectangle;
-
+export class PlayerDataLine extends Group {
     constructor(config: PlayerDataLineConfig) {
         super(config);
 
         let startX = 0;
-        const player = this.player();
-
-        let availableSpace = this.width();
+        let availableSpace = config.width;
 
         const playerNameText = new Text({
             x: 0,
             y: 0,
-            text: player.name + ":",
+            text: config.player.name + ":",
             fontFamily: "Exo2Bold",
             fontSize: 15,
             fill: "white",
@@ -59,15 +51,15 @@ export class PlayerDataLine extends Group<PlayerDataLineConfig> {
         availableSpace -= 150;
         startX += 150;
 
-        let elementsCount = this.withTimeControl() ? 3 : 2;
+        let elementsCount = config.withTimeControl ? 3 : 2;
         let spacePerElement = availableSpace / elementsCount;
 
-        if (!this.player().lose) {
+        if (!config.player.lose) {
             this.add(
                 new Text({
                     x: startX,
                     y: 0,
-                    text: `${player.energy}/${SpaceshipGetters.getTotalCapacity(player.spaceship)}(+${SpaceshipGetters.getTotalEnergyIncrease(player.spaceship)}) ⚡️`,
+                    text: `${config.player.energy}/${SpaceshipGetters.getTotalCapacity(config.player.spaceship)}(+${SpaceshipGetters.getTotalEnergyIncrease(config.player.spaceship)}) ⚡️`,
                     fontFamily: "Exo2Bold",
                     fontSize: 15,
                     fill: "white",
@@ -78,19 +70,19 @@ export class PlayerDataLine extends Group<PlayerDataLineConfig> {
                 new Text({
                     x: startX + spacePerElement,
                     y: 0,
-                    text: `${player.handSize} 🤚`,
+                    text: `${config.player.handSize} 🤚`,
                     fontFamily: "Exo2Bold",
                     fontSize: 15,
                     fill: "white",
                 })
             );
 
-            if (this.withTimeControl()) {
+            if (config.withTimeControl) {
                 this.add(
                     new Text({
                         x: startX + spacePerElement * 3,
                         y: 0,
-                        text: `${this.timeToString(this.time())} ` + (this.time() >= 0 ? '⏰' : '🤡'),
+                        text: this.timeToString(config.time),
                         fontFamily: "Exo2Bold",
                         fontSize: 15,
                         fill: "white",
@@ -102,39 +94,15 @@ export class PlayerDataLine extends Group<PlayerDataLineConfig> {
                 );
             }
         }
-
-        let hitOffset = 5;
-        let hitRect = new Rectangle({
-            x: -hitOffset,
-            y: -hitOffset,
-            width: this.width() + hitOffset * 2,
-            height: this.height() + hitOffset * 2,
-            visible: false,
-        });
-
-        this._hitRect = hitRect;
-
-        this.add(hitRect);
-    }
-
-    drawHit() {
-        if (!this.shouldDrawHit())
-            return;
-
-        this._hitRect.drawHit();
     }
 
     setTime(time: number) {
-        (this.findOne('.time') as Text)?.text(`${this.timeToString(time)} ` + (this.time() >= 0 ? '⏰' : '🤡'));
-
-        this.setAttr('time', time);
-
+        (this.findOne('.time') as Text)?.text(this.timeToString(time));
         return this;
     }
 
     onClick(callback: () => void): PlayerDataLine {
-        this._hitRect.on('click', callback);
-
+        this.on('click', callback);
         return this;
     }
 
@@ -147,11 +115,11 @@ export class PlayerDataLine extends Group<PlayerDataLineConfig> {
 
         if (time >= 0) {
             let minutes = Math.floor(time / 60);
-            return minutes + ":" + padWithLeadingZeros(time - minutes * 60, 2);
+            return minutes + ":" + padWithLeadingZeros(time - minutes * 60, 2) + " ⏰";
         } else {
             time = -time;
             let minutes = Math.floor(time / 60);
-            return "-" + minutes + ":" + padWithLeadingZeros(time - minutes * 60, 2);
+            return "-" + minutes + ":" + padWithLeadingZeros(time - minutes * 60, 2) + " 🤡";
         }
     }
 
@@ -170,12 +138,4 @@ export class PlayerDataLine extends Group<PlayerDataLineConfig> {
 
         return result;
     }
-
-    player: GetSet<OtherPlayer, this>;
-    withTimeControl: GetSet<boolean, this>;
-    time: GetSet<number, this>;
 }
-
-Factory.addGetterSetter(PlayerDataLine, 'player');
-Factory.addGetterSetter(PlayerDataLine, 'withTimeControl', false);
-Factory.addGetterSetter(PlayerDataLine, 'time', false);
