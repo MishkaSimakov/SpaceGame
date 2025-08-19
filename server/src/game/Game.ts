@@ -9,7 +9,7 @@ import Spaceship from "@common/Spaceship";
 import Actions from "@common/actions/Main"
 
 import GameState from "./GameState";
-import {User} from "../entity/user";
+import {User} from "../database/entity/user";
 import {getDTO} from "./mappers/GameToGameForPlayerMapper";
 import SocketsManager from "./io/SocketsManager";
 import {gameSaga} from "./sagas/Main";

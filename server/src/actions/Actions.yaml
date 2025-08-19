@@ -1,0 +1,717 @@
+# -----------------------------
+# From Reducer.ts
+# -----------------------------
+- name: initGameState
+  payload:
+    - name: state
+      type:
+        ref: GameState
+
+- name: playerRebuiltSpaceship
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+    - name: newSpaceship
+      type:
+        ref: Spaceship
+    - name: newHand
+      type:
+        elements:
+          ref: Card
+
+- name: disposeCardsFromPlayerHand
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+    - name: indices
+      type:
+        elements:
+          type: int32
+  meta:
+    - name: reason
+      type:
+        type: string
+
+- name: beginFight
+  payload:
+    - name: attacker
+      type:
+        ref: PlayerId
+    - name: victim
+      type:
+        ref: PlayerId
+  meta:
+    - name: reason
+      type:
+        type: string
+
+- name: popCardFromHeap
+  payload:
+    - name: type
+      type:
+        ref: CardType
+
+- name: setCurrentPlayer
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+
+- name: changePlayerEnergy
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+    - name: delta
+      type:
+        type: int32
+  meta:
+    - name: reason
+      type:
+        type: string
+
+- name: returnDiscardsToStack
+  payload:
+    - name: type
+      type:
+        ref: CardType
+    - name: discards
+      type:
+        elements:
+          ref: Card
+
+- name: playerSkipNextTurn
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+
+- name: destructSpaceshipModules
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+    - name: positions
+      type:
+        elements:
+          ref: Vector2
+    - name: destructedCardsDestiny
+      type:
+        ref: CardDestination
+    - name: detachedCardsDestiny
+      type:
+        ref: CardDestination
+
+- name: pushCardsToStack
+  payload:
+    - name: type
+      type:
+        ref: CardType
+    - name: cards
+      type:
+        elements:
+          ref: Card
+
+- name: pushCardsToHand
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+    - name: cards
+      type:
+        elements:
+          ref: Card
+
+- name: changeModuleHealth
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+    - name: position
+      type:
+        ref: Vector2
+    - name: delta
+      type:
+        type: int32
+  meta:
+    - name: reason
+      type:
+        type: string
+
+- name: popCardFromPlayerHand
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+    - name: index
+      type:
+        type: int32
+
+- name: deactivateProtectorIfActive
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+
+- name: removeSpaceshipModules
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+    - name: positions
+      type:
+        elements:
+          ref: Vector2
+
+- name: pushCardsToDiscard
+  payload:
+    - name: type
+      type:
+        ref: CardType
+    - name: cards
+      type:
+        elements:
+          ref: Card
+
+- name: playerLost
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+
+- name: endFight
+  payload: [ ]
+
+- name: activateProtector
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+    - name: position
+      type:
+        ref: Vector2
+
+- name: shiftFightTurnToNextPlayer
+  payload: [ ]
+
+- name: playerUseModuleSecondTime
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+
+- name: addTimeRecord
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+    - name: type
+      type:
+        ref: TimeRecordType
+    - name: time
+      type:
+        type: int32
+
+- name: changePlayerTime
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+    - name: delta
+      type:
+        type: int32
+
+- name: insertPause
+  payload:
+    - name: from
+      type:
+        type: int32
+    - name: to
+      type:
+        type: int32
+
+# -----------------------------
+# From Main.ts (requests + misc)
+# -----------------------------
+- name: choosePlayerForAttackRequest
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+    - name: reason
+      type:
+        ref: AttackReason
+    - name: required
+      type:
+        type: boolean
+
+- name: choosePlayerForAttackResponse
+  payload:
+    - name: victim
+      type:
+        ref: PlayerId
+        nullable: true
+
+- name: rebuildSpaceshipRequest
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+
+- name: rebuildSpaceshipResponse
+  payload:
+    - name: newSpaceship
+      type:
+        elements:
+          properties:
+            id:
+              ref: ModuleId
+            position:
+              ref: Vector2
+            rotation:
+              type: int32
+
+- name: chooseCardTypeRequest
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+
+- name: chooseCardTypeResponse
+  payload:
+    - name: chosenType
+      type:
+        ref: CardType
+
+- name: showCardsToPlayersRequest
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+    - name: cardsReceiver
+      type:
+        ref: PlayerId
+    - name: cards
+      type:
+        elements:
+          ref: Card
+
+- name: showCardsToPlayersResponse
+  payload: [ ]
+
+- name: drawAdditionalModuleCardRequest
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+
+- name: drawAdditionalModuleCardResponse
+  payload:
+    - name: draw
+      type:
+        type: boolean
+
+- name: drawAnotherEventCardRequest
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+
+- name: drawAnotherEventCardResponse
+  payload:
+    - name: draw
+      type:
+        type: boolean
+
+- name: discardCardsRequest
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+
+- name: discardCardsResponse
+  payload:
+    - name: indexes
+      type:
+        elements:
+          type: int32
+
+- name: chooseProtectorRequest
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+
+- name: chooseProtectorResponse
+  payload:
+    - name: position
+      type:
+        ref: Vector2
+        nullable: true
+
+- name: chooseWeaponAndTargetRequest
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+    - name: victim
+      type:
+        ref: PlayerId
+
+- name: chooseWeaponAndTargetResponse
+  payload:
+    - name: targetPosition
+      type:
+        ref: Vector2
+    - name: weaponPosition
+      type:
+        ref: Vector2
+
+- name: useModuleSecondTimeRequest
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+    - name: moduleType
+      type:
+        ref: ModuleType
+
+- name: useModuleSecondTimeResponse
+  payload:
+    - name: use
+      type:
+        type: boolean
+
+- name: chooseTargetRequest
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+    - name: victim
+      type:
+        ref: PlayerId
+
+- name: chooseTargetResponse
+  payload:
+    - name: position
+      type:
+        ref: Vector2
+
+- name: chooseModuleToRepairRequest
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+
+- name: chooseModuleToRepairResponse
+  payload:
+    - name: position
+      type:
+        ref: Vector2
+        nullable: true
+
+- name: reducerUpdatedState
+  payload:
+    - name: delta
+      type: { }
+
+# -----------------------------
+# From Info.ts
+# -----------------------------
+- name: showCardsInfo
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+    - name: cardsReceiver
+      type:
+        ref: PlayerId
+    - name: cards
+      type:
+        elements:
+          ref: Card
+
+- name: sendPlayerLostInfo
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+
+# -----------------------------
+# From EventCards.ts (requests)
+# -----------------------------
+- name: permuteTopThreeEventCardsRequest
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+    - name: cards
+      type:
+        elements:
+          ref: EventCard
+
+- name: permuteTopThreeEventCardsResponse
+  payload:
+    - name: order
+      type:
+        elements:
+          type: int32
+
+- name: chooseModuleToDestroyRequest
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+
+- name: chooseModuleToDestroyResponse
+  payload:
+    - name: position
+      type:
+        ref: Vector2
+
+- name: chooseCardsForRepairSpaceshipRequest
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+
+- name: chooseCardsForRepairSpaceshipResponse
+  payload:
+    - name: indexes
+      type:
+        elements:
+          type: int32
+
+- name: chooseModulesToRepairByDiscardedCardsRequest
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+    - name: count
+      type:
+        type: int32
+
+- name: chooseModulesToRepairByDiscardedCardsResponse
+  payload:
+    - name: positions
+      type:
+        elements:
+          ref: Vector2
+
+- name: chooseSolarPanelsToDestroyRequest
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+    - name: count
+      type:
+        type: int32
+
+- name: chooseSolarPanelsToDestroyResponse
+  payload:
+    - name: positions
+      type:
+        elements:
+          ref: Vector2
+
+- name: chooseModuleToRepairByDiceRequest
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+    - name: amount
+      type:
+        type: int32
+
+- name: chooseModuleToRepairByDiceResponse
+  payload:
+    - name: position
+      type:
+        ref: Vector2
+        nullable: true
+
+- name: chooseCardsToDiscardAndTakeAnotherRequest
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+
+- name: chooseCardsToDiscardAndTakeAnotherResponse
+  payload:
+    - name: indexes
+      type:
+        elements:
+          type: int32
+
+- name: chooseModuleToMoveDamageRequest
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+    - name: reason
+      type:
+        ref: MoveDamageReason
+
+- name: chooseModuleToMoveDamageResponse
+  payload:
+    - name: move
+      type:
+        properties:
+          from:
+            ref: Vector2
+          to:
+            ref: Vector2
+        nullable: true
+
+- name: chooseModuleToDamageByDiceRequest
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+    - name: damage
+      type:
+        type: int32
+
+- name: chooseModuleToDamageByDiceResponse
+  payload:
+    - name: info
+      type:
+        properties:
+          victimId:
+            ref: PlayerId
+          victimModulePosition:
+            ref: Vector2
+        nullable: true
+
+- name: choosePlayerToStealCardRequest
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+    - name: options
+      type:
+        elements:
+          ref: PlayerId
+
+- name: choosePlayerToStealCardResponse
+  payload:
+    - name: target
+      type:
+        ref: PlayerId
+
+- name: chooseCardToStealRequest
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+    - name: cards
+      type:
+        elements:
+          ref: Card
+
+- name: chooseCardToStealResponse
+  payload:
+    - name: chosenCardIndex
+      type:
+        type: int32
+
+- name: useEventCardToDealDamageRequest
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+
+- name: useEventCardToDealDamageResponse
+  payload:
+    - name: useEventCard
+      type:
+        type: boolean
+
+- name: chooseModuleToDamageByEventCardRequest
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+    - name: victim
+      type:
+        ref: PlayerId
+
+- name: chooseModuleToDamageByEventCardResponse
+  payload:
+    - name: position
+      type:
+        ref: Vector2
+
+- name: tryToRunawayRequest
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+    - name: type
+      type:
+        ref: RunawayType
+
+- name: tryToRunawayResponse
+  payload:
+    - name: willRunaway
+      type:
+        type: boolean
+
+# -----------------------------
+# From Random.ts
+# -----------------------------
+- name: throwDice
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+
+- name: throwDiceResult
+  payload:
+    - name: result
+      type:
+        type: int32 # 1..6
+
+- name: shuffle
+  payload:
+    - name: length
+      type:
+        type: int32
+
+- name: shuffleResult
+  payload:
+    - name: order
+      type:
+        elements:
+          type: int32
+
+# -----------------------------
+# From Time.ts
+# -----------------------------
+- name: time
+  payload: [ ]
+
+- name: timeResult
+  payload:
+    - name: result
+      type:
+        type: int32
+
+# -----------------------------
+# From Message.ts
+# -----------------------------
+- name: message
+  payload:
+    - name: text
+      type:
+        type: string
+    - name: player
+      type:
+        ref: PlayerId
+
+# -----------------------------
+# From Info.ts (already above) — kept for completeness
+# -----------------------------
+# (showCardsInfo, sendPlayerLostInfo)

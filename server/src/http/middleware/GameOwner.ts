@@ -1,6 +1,6 @@
 import {NextFunction, Response} from "express";
 import {AuthenticatedRequest} from "./auth";
-import {Game as GameDBEntity} from "../../entity/game";
+import {Game as GameDBEntity} from "../../database/entity/game";
 
 export type AuthenticatedGameRequest = AuthenticatedRequest & {
     params: {

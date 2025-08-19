@@ -1,8 +1,8 @@
 import {Server, Socket} from "socket.io";
 import Player from "../../../common/Player";
-import {User} from "../entity/user";
+import {User} from "../database/entity/user";
 import jwt, {JwtPayload} from "jsonwebtoken";
-import {Game as GameDBEntity, GameStatus} from "../entity/game";
+import {Game as GameDBEntity, GameStatus} from "../database/entity/game";
 import Game from "./Game";
 import SocketsManager from "./io/SocketsManager";
 import {GameSettings} from "@common/GameSettings";

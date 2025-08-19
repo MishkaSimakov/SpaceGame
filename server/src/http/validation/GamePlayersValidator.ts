@@ -1,5 +1,5 @@
 import {z} from "zod";
-import {User} from "../entity/user";
+import {User} from "../../database/entity/user";
 
 export const gamePlayersValidator = (users: User[]) =>
     z.array(

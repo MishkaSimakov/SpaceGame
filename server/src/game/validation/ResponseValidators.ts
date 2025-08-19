@@ -76,7 +76,7 @@ export const validators: ResponseValidatorsContainer = {
                 {error: "Неправильная конфигурация корабля"}),
 
     chooseCardTypeResponse: () =>
-        z.object({chosenType: z.enum(["event", "module"], {error: "Неверный тип карты"})}),
+        z.enum(["event", "module"], {error: "Неверный тип карты"}),
     showCardsToPlayersResponse: () => z.object({}),
     drawAdditionalModuleCardResponse: () => booleanSchema,
     drawAnotherEventCardResponse: () => booleanSchema,

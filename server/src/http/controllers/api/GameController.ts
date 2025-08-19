@@ -1,11 +1,11 @@
 import {Request, Response} from "express";
-import {User} from "../../../entity/user";
+import {User} from "../../../database/entity/user";
 import {GameSettings} from "@common/GameSettings";
 import App from "../../../App";
-import {Game as GameDBEntity} from "../../../entity/game";
+import {Game as GameDBEntity} from "../../../database/entity/game";
 import {Logger} from "../../../game/Logger";
 import {AuthenticatedRequest} from "../../middleware/auth";
-import {gamePlayersValidator} from "../../../validation/GamePlayersValidator";
+import {gamePlayersValidator} from "../../validation/GamePlayersValidator";
 
 
 export const create = async (req: AuthenticatedRequest, res: Response) => {

@@ -31,12 +31,10 @@ enum EventTypes {
 class Event {
     type: EventTypes;
     description: string;
-    sprite: string;
 
-    constructor(type: EventTypes, description: string, sprite: string) {
+    constructor(type: EventTypes, description: string) {
         this.type = type;
         this.description = description;
-        this.sprite = sprite;
     }
 
     toString(): string {
@@ -44,11 +42,11 @@ class Event {
     }
 }
 
-function addEvents(type: EventTypes, description: string, count: number, sprite: string = ""): Event[] {
+function addEvents(type: EventTypes, description: string, count: number): Event[] {
     let events: Event[] = [];
 
     for (let i = 0; i < count; i++)
-        events.push(new Event(type, description, sprite));
+        events.push(new Event(type, description));
 
     return events;
 }

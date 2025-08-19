@@ -14,6 +14,11 @@ export enum MoveDamageReason {
     EventCard
 }
 
+export enum RunawayType {
+    DICE,
+    MAIN_MODULE
+}
+
 export type Message = {
     text: string;
     payload?: any;

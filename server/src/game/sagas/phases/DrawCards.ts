@@ -39,7 +39,7 @@ export function* drawCards() {
     const state = yield* select();
     const currentPlayer = StateGetters.currentPlayer(state);
 
-    const {chosenType} = yield* request(chooseCardTypeRequest(currentPlayer.id), 'chooseCardTypeResponse');
+    const chosenType = yield* request(chooseCardTypeRequest(currentPlayer.id), 'chooseCardTypeResponse');
     yield* put(Actions.message(currentPlayer, `тянет карточку ${chosenType === "module" ? "строительства" : "действия"}`));
 
     if (chosenType === "module") {

@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import {Request, Response, NextFunction} from 'express';
-import {User, UserJWTPayload} from "../../entity/user";
+import {User, UserJWTPayload} from "../../database/entity/user";
 import * as assert from "node:assert";
 
 export interface AuthenticatedRequest extends Request {

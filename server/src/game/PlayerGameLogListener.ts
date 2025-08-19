@@ -1,6 +1,6 @@
 import {Message} from "@common/Types";
 import ActionsBus from "./ActionsBus";
-import {User} from "../entity/user";
+import {User} from "../database/entity/user";
 
 export class PlayerGameLogListener {
     messages: Message[] = [];
