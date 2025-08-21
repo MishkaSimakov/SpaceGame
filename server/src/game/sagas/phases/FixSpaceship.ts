@@ -1,4 +1,4 @@
-import {ModuleType} from "@common/modules/Module";
+import {ModuleType} from "@common/modules/ModuleCard";
 import {MainModuleType} from "@common/modules/MainModule";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
 import {StateGetters} from "@common/getters/State";

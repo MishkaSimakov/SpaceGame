@@ -2,14 +2,14 @@ import {ListenersContainer} from "./ListenersContainer";
 
 import Actions from "@common/actions/Main";
 import {PlayerId} from "@common/Player";
-import Module from "@common/modules/Module";
-import {Event} from "@common/events/Event";
+import ModuleCard from "@common/modules/ModuleCard";
+import {EventCard} from "@common/events/EventCard";
 import Game from "../../Game";
 import {ShowHugeMessageActivity} from "../../graphics/activities/ShowHugeMessage";
 
 const {showCardsToPlayersResponse} = Actions;
 
-async function showCards(player: PlayerId, cards: (Module | Event)[], game: Game) {
+async function showCards(player: PlayerId, cards: (ModuleCard | EventCard)[], game: Game) {
     const playerName = game.getPlayerById(player)?.name || player;
 
     await game.controlsScene.showCards(

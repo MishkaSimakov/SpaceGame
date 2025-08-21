@@ -1,5 +1,5 @@
 import Vector2 from "@common/Vector2";
-import Module from "@common/modules/Module";
+import ModuleCard from "@common/modules/ModuleCard";
 
 import Game from "../../Game";
 import Scene from "../engine/Scene";
@@ -171,7 +171,7 @@ export default class Spaceships extends Scene {
     }
 
     chooseModules(check: (info: {
-        module: Module,
+        module: ModuleCard,
         player: PlayerId
     }) => boolean, count: CountBoundary, outlineColor: Color) {
         const manager = new ChooseModuleManager(this, check, count, outlineColor);

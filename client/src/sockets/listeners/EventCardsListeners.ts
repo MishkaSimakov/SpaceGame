@@ -1,5 +1,5 @@
 import Actions from "@common/actions/Main";
-import {isMainModule, ModuleType} from "@common/modules/Module";
+import {isMainModule, ModuleType} from "@common/modules/ModuleCard";
 import Vector2 from "@common/Vector2";
 import {PlayerId} from "@common/Player";
 

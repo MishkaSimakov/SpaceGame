@@ -1,4 +1,4 @@
-import {Event} from "@common/events/Event";
+import {EventCard} from "@common/events/EventCard";
 
 import Game from "../Game";
 import {SIZES} from "./constants";
@@ -7,7 +7,7 @@ import Scene from "./engine/Scene";
 import {Rectangle} from "./engine/shapes/Rectangle";
 import Color from "./Color";
 import {Group} from "./engine/Group";
-import Module, {isModule} from "../../../common/modules/Module";
+import ModuleCard, {isModule} from "@common/modules/ModuleCard";
 
 export default class HandDrawer {
     group: Group;
@@ -19,7 +19,7 @@ export default class HandDrawer {
     gameManager: Game;
     background: Rectangle;
 
-    hand: (Module | Event)[] = [];
+    hand: (ModuleCard | EventCard)[] = [];
 
     constructor(game: Game, scene: Scene) {
         this.scene = scene;
@@ -32,19 +32,19 @@ export default class HandDrawer {
         this.group.add(this.background);
     }
 
-    setHandData(hand: (Module | Event)[]) {
+    setHandData(hand: (ModuleCard | EventCard)[]) {
         let newHandData = [];
 
         for (let card of hand) {
             if (isModule(card)) {
-                const module = card as Module;
+                const module = card as ModuleCard;
 
                 const existingModule = this.hand.find(c => {
-                    return isModule(c) && (c as Module).id === module.id;
+                    return isModule(c) && (c as ModuleCard).id === module.id;
                 });
 
                 if (existingModule)
-                    module.rotation = (existingModule as Module).rotation;
+                    module.rotation = (existingModule as ModuleCard).rotation;
             }
 
             newHandData.push(card);

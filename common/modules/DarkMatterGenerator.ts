@@ -1,6 +1,6 @@
-import Module, {ModuleType} from "./Module";
+import ModuleCard, {ModuleType} from "./ModuleCard";
 
-export default class DarkMatterGenerator extends Module {
+export default class DarkMatterGenerator extends ModuleCard {
     constructor(left: number, top: number, right: number, bottom: number) {
         super(
             'Генератор тёмной материи',

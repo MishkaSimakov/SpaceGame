@@ -1,8 +1,8 @@
-import {Action} from "@common/actions/Action";
 import {StateGetters} from "@common/getters/State";
-import Actions from "@common/actions/Main"
+import {Action} from "@common/ActionsHelpers";
+import {playerLost} from "@common/Actions";
 
-import GameState from "./GameState";
+import GameState from "./InitGameState";
 import {Middleware} from "./ActionsBus";
 import {SagaRunner} from "./sagas/SagaRunner";
 import {getPlayerTime} from "./sagas/components/Time";
@@ -27,12 +27,12 @@ export class LossMiddleware extends Middleware {
             return;
         }
 
-        if (this.stateRef.settings.withTimeControl && this.stateRef.settings.loseWhenTimeout) {
+        if (this.stateRef.settings.timeControlSettings?.loseWhenTimeout) {
             const time = getPlayerTime(this.stateRef, currentPlayer.id, action.time);
 
             if (time < 0) {
                 this.sagaRunnerRef.cancel("playerTurn");
-                return Actions.playerLost(currentPlayer);
+                return playerLost(currentPlayer);
             }
         }
 

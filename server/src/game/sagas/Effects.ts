@@ -1,5 +1,5 @@
 import {Action} from "@common/actions/Action";
-import GameState from "../GameState";
+import GameState from "../InitGameState";
 
 import Actions from "@common/actions/Main";
 

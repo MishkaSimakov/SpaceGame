@@ -1,6 +1,6 @@
 import {PlayerGetters} from "@common/getters/Player";
 import {StateGetters} from "@common/getters/State";
-import {EventTypes, isEvent} from "@common/events/Event";
+import {EventTypes, isEvent} from "@common/events/EventCard";
 import {MainModuleType} from "@common/modules/MainModule";
 import * as assert from "node:assert";
 import Vector2 from "@common/Vector2";
@@ -14,7 +14,7 @@ import {put, select} from "../Effects";
 import {damageModule} from "./DamageModule";
 import {dice} from "./Random";
 import {addTimeRecord} from "./Time";
-import {TimeRecordType} from "../../GameState";
+import {TimeRecordType} from "../../InitGameState";
 
 const {
     chooseModuleToDamageByEventCardRequest,

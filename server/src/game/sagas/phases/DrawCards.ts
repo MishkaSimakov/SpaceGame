@@ -1,13 +1,13 @@
 import {put, select} from "../Effects";
 import Actions from "@common/actions/Main";
-import GameState from "../../GameState";
+import GameState from "../../InitGameState";
 import {StateGetters} from "@common/getters/State";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
 import {MainModuleType} from "@common/modules/MainModule";
 import {request} from "../components/Request";
 import {popOneCard} from "../components/PopCards";
 import {showCards} from "../components/ShowCards";
-import {Event} from "@common/events/Event";
+import {EventCard} from "@common/events/EventCard";
 import {performEvent} from "../components/PerformEvent";
 
 const {
@@ -72,7 +72,7 @@ export function* drawCards() {
         } while (drawAdditionalCard);
     } else {
         let drawAnotherCard = false;
-        let card: Event;
+        let card: EventCard;
 
         do {
             card = yield* popOneCard("event");

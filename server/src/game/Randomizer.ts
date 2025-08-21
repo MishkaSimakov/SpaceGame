@@ -1,5 +1,4 @@
 import Rand from "rand-seed";
-import {DiceResult} from "@common/actions/Random";
 
 export class Randomizer {
     rand: Rand;
@@ -8,8 +7,8 @@ export class Randomizer {
         this.rand = new Rand(seed);
     }
 
-    dice(): DiceResult {
-        return (Math.floor(this.rand.next() * 6) + 1) as DiceResult;
+    dice() {
+        return Math.floor(this.rand.next() * 6) + 1;
     }
 
     shuffle<T>(array: T[]) {

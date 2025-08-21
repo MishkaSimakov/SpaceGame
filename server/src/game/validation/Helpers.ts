@@ -1,6 +1,6 @@
 // ===== Base schemas without state =====
 
-import GameState from "../GameState";
+import GameState from "../InitGameState";
 import * as z from "zod";
 import Vector2 from "@common/Vector2";
 import {StateGetters} from "@common/getters/State";

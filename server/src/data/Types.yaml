@@ -28,7 +28,35 @@ ModuleType:
     - QuantumProtector
     - AttackModule
     - RepairModule
-    - StructureModul
+    - StructureModule
+
+EventType:
+  enum:
+    - PutTopThreeCardsInAnyOrder
+    - PutTopThreeCardsInAnyOrderAndTakeTop
+    - TakeOneBuildingCard
+    - TakeTwoBuildingCards
+    - LooseFiveEnergy
+    - TakeFiveEnergy
+    - SkipNextTurn
+    - LooseAllYourCards
+    - DestroyAnyModuleOnYourSpaceship
+    - DestroyTwoSolarPanelsOnYourSpaceship
+    - AttackRight
+    - AttackLeft
+    - AttackNextToRight
+    - AttackNextToLeft
+    - AttackAny
+    - TossDiceAndTakeBuildingCards
+    - TossDiceAndDealDamage
+    - TossDiceAndGetEnergy
+    - TossDiceAndRepairYourModule
+    - SaveCardAndThenAttack
+    - SaveCardAndThenDealDamage
+    - ChoosePlayerAndStealHisCard
+    - DiscardCardAndRepairSpaceship
+    - MoveDamage
+    - DiscardCardsAndTakeBuildingCards
 
 ModuleCard:
   properties:
@@ -74,7 +102,7 @@ ModuleCard:
 EventCard:
   properties:
     type:
-      type: int32
+      ref: EventType
     description:
       type: string
 
@@ -101,9 +129,13 @@ TimeControlSettings:
       type: int32
     fightTimeIncrease:
       type: int32
+    loseWhenTimeout:
+      type: boolean
 
 GameSettings:
   properties:
+    seed:
+      type: string
     startCardsCount:
       type: int32
     mainModuleRunawayEnergyCost:
@@ -228,6 +260,17 @@ GameState:
   optionalProperties:
     fight:
       ref: FightState
+
+Message:
+  properties:
+    id:
+      type: int32
+    playerId:
+      ref: PlayerId
+    time:
+      type: int32
+    text:
+      type: string
 
 # Enums for Actions
 MoveDamageReason:

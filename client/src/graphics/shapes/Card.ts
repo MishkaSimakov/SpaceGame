@@ -1,5 +1,5 @@
-import {isEvent, Event} from "@common/events/Event";
-import Module, {isMainModule, isModule} from "@common/modules/Module";
+import {isEvent, EventCard} from "@common/events/EventCard";
+import ModuleCard, {isMainModule, isModule} from "@common/modules/ModuleCard";
 
 import {Group} from "../engine/Group";
 import {ShapeConfig} from "../engine/Shape";
@@ -14,7 +14,7 @@ export type ModuleStates = 'DEFAULT' | 'ENABLED' | 'DISABLED' | 'PROTECTED' | 'S
 
 export interface CardConfig extends ShapeConfig {
     size: number;
-    card: (Module | Event);
+    card: (ModuleCard | EventCard);
     stroke?: string;
     strokeWidth?: number;
     state?: ModuleStates,
@@ -122,7 +122,7 @@ export class Card extends Group<CardConfig> {
         this.add(this._rotationGroup);
 
         if (isModule(card)) {
-            let module = card as Module;
+            let module = card as ModuleCard;
 
             this._values = new Text({
                 x: size / 2,
@@ -232,7 +232,7 @@ export class Card extends Group<CardConfig> {
         if (!card || !isModule(card))
             return "";
 
-        const module = card as Module;
+        const module = card as ModuleCard;
 
         let values = '';
 
@@ -305,7 +305,7 @@ export class Card extends Group<CardConfig> {
     }
 
     size: GetSet<number, this>;
-    card: GetSet<Module | Event, this>;
+    card: GetSet<ModuleCard | EventCard, this>;
     stroke: GetSet<string, this>;
     strokeWidth: GetSet<number, this>;
     state: GetSet<ModuleStates, this>;

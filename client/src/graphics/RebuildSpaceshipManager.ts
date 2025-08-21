@@ -1,8 +1,8 @@
 import Spaceships from "./scenes/Spaceships";
 import Controls from "./scenes/Controls";
-import Module, {isMainModule} from "../../../common/modules/Module";
+import ModuleCard, {isMainModule} from "@common/modules/ModuleCard";
 import Spaceship from "../../../common/Spaceship";
-import {Event} from "../../../common/events/Event";
+import {EventCard} from "@common/events/EventCard";
 import Game from "../Game";
 import Player from "../../../common/Player";
 import {DD} from "./engine/Drag";
@@ -34,7 +34,7 @@ export default class RebuildSpaceshipManager {
         let spaceshipCardSize = this.spaceshipShape.cardSize();
 
         for (let shape of this.spaceshipShape.getModules()) {
-            const module = shape.card() as Module;
+            const module = shape.card() as ModuleCard;
 
             if (isMainModule(module))
                 continue;
@@ -134,7 +134,7 @@ export default class RebuildSpaceshipManager {
             if (shape.isEvent)
                 continue;
 
-            let module = shape.card() as Module;
+            let module = shape.card() as ModuleCard;
             let dragStartPos;
 
             shape.on('dragstart.rebuild', () => {
@@ -218,7 +218,7 @@ export default class RebuildSpaceshipManager {
         return this.gameManager.spaceshipsScene.spaceshipShapes[this.player.id];
     }
 
-    private get hand(): (Event | Module)[] {
+    private get hand(): (EventCard | ModuleCard)[] {
         return this.player.hand;
     }
 

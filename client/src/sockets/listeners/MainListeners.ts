@@ -1,5 +1,5 @@
 import Actions from "@common/actions/Main";
-import {ModuleType} from "@common/modules/Module";
+import {ModuleType} from "@common/modules/ModuleCard";
 
 import {COLORS} from "../../graphics/constants";
 import {ListenersContainer} from "./ListenersContainer";

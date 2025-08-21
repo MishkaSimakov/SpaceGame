@@ -4,7 +4,7 @@ import * as assert from "node:assert";
 import {attachReducers, fakeGameState} from "../../Utils";
 import ActionsBus from "../../../../src/game/ActionsBus";
 import {SagaRunner} from "../../../../src/game/sagas/SagaRunner";
-import {EventTypes} from "@common/events/Event";
+import {EventTypes} from "@common/events/EventCard";
 import {performEvent} from "../../../../src/game/sagas/components/PerformEvent";
 import Actions from "@common/actions/Main"
 

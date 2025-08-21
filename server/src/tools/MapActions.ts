@@ -23,8 +23,8 @@ type Action = {
 
 async function main() {
     // Load schema and data
-    const actionsData = loadYaml(basePath("server/src/actions/Actions.yaml"));
-    const typesData = loadYaml(basePath("server/src/actions/Types.yaml"));
+    const actionsData = loadYaml(basePath("server/src/data/Actions.yaml"));
+    const typesData = loadYaml(basePath("server/src/data/Types.yaml"));
 
     const schema = {
         definitions: typesData

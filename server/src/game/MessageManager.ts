@@ -1,6 +1,4 @@
-import Player from "@common/Player";
-import {Message} from "@common/Types";
-
+import {Message, Player} from "@common/Types";
 
 export default class MessageManager {
     messages: Message[] = [];
@@ -11,7 +9,7 @@ export default class MessageManager {
     addMessage(text: string, player?: Player) {
         this.messages.push({
             id: this.messages.length,
-            playerId: player?.id,
+            playerId: player!.id,
             text: text,
             time: (new Date()).getTime()
         });

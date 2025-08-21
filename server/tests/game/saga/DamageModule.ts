@@ -4,7 +4,7 @@ import * as assert from "node:assert";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
 import Vector2 from "@common/Vector2";
 import Battery from "@common/modules/Battery";
-import {ModuleType} from "@common/modules/Module";
+import {ModuleType} from "@common/modules/ModuleCard";
 
 import {attachReducers, fakeGameState} from "../Utils";
 import ActionsBus from "../../../src/game/ActionsBus";

@@ -4,7 +4,7 @@ import Player from "@common/Player";
 import {GameSettings} from "@common/GameSettings";
 import Actions from "@common/actions/Main"
 
-import GameState from "../../src/game/GameState";
+import GameState from "../../src/game/InitGameState";
 import ActionsBus from "../../src/game/ActionsBus";
 import {isReducerName, reducers} from "../../src/game/reducers/Main";
 

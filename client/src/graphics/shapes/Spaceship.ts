@@ -1,4 +1,4 @@
-import {isMainModule} from "@common/modules/Module";
+import {isMainModule} from "@common/modules/ModuleCard";
 import SpaceshipData from "@common/Spaceship";
 
 import {Group} from "../engine/Group";

@@ -1,6 +1,6 @@
-import Module, {ModuleType} from "./Module";
+import ModuleCard, {ModuleType} from "./ModuleCard";
 
-export default class QuantumProtector extends Module {
+export default class QuantumProtector extends ModuleCard {
     constructor(left: number, top: number, right: number, bottom: number) {
         super(
             'Квантовый протектор',

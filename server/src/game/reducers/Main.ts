@@ -1,6 +1,6 @@
-import Module, {isModule, ModuleType} from "@common/modules/Module";
-import {Event} from "@common/events/Event";
-import GameState, {TimeRecordType} from "../GameState";
+import ModuleCard, {isModule, ModuleType} from "@common/modules/ModuleCard";
+import {EventCard} from "@common/events/EventCard";
+import GameState, {TimeRecordType} from "../InitGameState";
 import * as assert from "node:assert";
 import {areCardSetsEqual} from "@common/Utils";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
@@ -82,10 +82,10 @@ export const reducers: ReducersType = {
 
     returnDiscardsToStack(state: GameState, {type, discards}) {
         if (type === "module") {
-            state.stack.module = discards as Module[];
+            state.stack.module = discards as ModuleCard[];
             state.discards.module = [];
         } else {
-            state.stack.event = discards as Event[];
+            state.stack.event = discards as EventCard[];
             state.discards.event = [];
         }
     },
@@ -119,9 +119,9 @@ export const reducers: ReducersType = {
 
     pushCardsToStack(state: GameState, {type, cards}) {
         if (type === "module") {
-            state.stack.module.push(...(cards as Module[]));
+            state.stack.module.push(...(cards as ModuleCard[]));
         } else {
-            state.stack.event.push(...(cards) as Event[]);
+            state.stack.event.push(...(cards) as EventCard[]);
         }
     },
 
@@ -133,10 +133,10 @@ export const reducers: ReducersType = {
 
     pushCardsToDiscard(state: GameState, {type, cards}) {
         if (type === "module") {
-            (cards as Module[]).forEach(card => card.health = card.totalHealth);
-            state.discards.module.push(...cards as Module[]);
+            (cards as ModuleCard[]).forEach(card => card.health = card.totalHealth);
+            state.discards.module.push(...cards as ModuleCard[]);
         } else {
-            state.discards.event.push(...cards as Event[])
+            state.discards.event.push(...cards as EventCard[])
         }
     },
 

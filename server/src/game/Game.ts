@@ -1,14 +1,13 @@
 import * as assert from "node:assert";
 import jsonpatch from 'fast-json-patch'
+import {ZodType} from "zod";
 
-import Player from "@common/Player";
+import {GameSettings, Player, GameState} from "@common/Types"
+import {reducerUpdatedState, sendPlayerLostInfo, shuffleResult, throwDiceResult, timeResult} from "@common/Actions";
+import * as Actions from "@common/Actions";
+import {Action, isAction} from "@common/ActionsHelpers";
+
 import ActionsBus from "./ActionsBus";
-import {GameSettings} from "@common/GameSettings";
-import {Action, isAction} from "@common/actions/Action";
-import Spaceship from "@common/Spaceship";
-import Actions from "@common/actions/Main"
-
-import GameState from "./GameState";
 import {User} from "../database/entity/user";
 import {getDTO} from "./mappers/GameToGameForPlayerMapper";
 import SocketsManager from "./io/SocketsManager";
@@ -19,8 +18,9 @@ import {SagaRunner} from "./sagas/SagaRunner";
 import {Randomizer} from "./Randomizer";
 import {LossMiddleware} from "./LossMiddleware";
 import {validators} from "./validation/ResponseValidators";
-import {ZodType} from "zod";
 import {PlayerGameLogListener} from "./PlayerGameLogListener";
+import {getInitialGameState} from "./InitGameState";
+
 
 export default class Game {
     users: User[];
@@ -38,10 +38,7 @@ export default class Game {
     constructor(users: User[], settings: GameSettings, sockets: SocketsManager, logger: Logger) {
         this.users = users;
 
-        this.state = new GameState(
-            settings,
-            this.users.map(u => new Player(u.id, u.login, new Spaceship()))
-        );
+        this.state = getInitialGameState(users, settings);
 
         this.randomizer = new Randomizer(settings.seed);
         this.bus = new ActionsBus();
@@ -61,7 +58,7 @@ export default class Game {
         this.registerLossMiddleware();
 
         this.bus.on('playerLost', (action) => {
-            this.bus.emit(Actions.sendPlayerLostInfo(action.payload.player));
+            this.bus.emit(sendPlayerLostInfo(action.payload.player));
         });
     }
 
@@ -156,7 +153,7 @@ export default class Game {
 
     registerRandomizerListeners() {
         this.bus.on('throwDice', () => {
-            this.bus.emit(Actions.throwDiceResult(this.randomizer.dice()));
+            this.bus.emit(throwDiceResult(this.randomizer.dice()));
         });
 
         this.bus.on('shuffle', (action) => {
@@ -166,7 +163,7 @@ export default class Game {
             }
 
             this.randomizer.shuffle(result)
-            this.bus.emit(Actions.shuffleResult(result));
+            this.bus.emit(shuffleResult(result));
         });
     }
 
@@ -208,7 +205,7 @@ export default class Game {
                 Object.assign(this.state, copy);
 
                 // for the sake of logging
-                this.bus.emit(Actions.reducerUpdatedState(delta));
+                this.bus.emit(reducerUpdatedState(delta));
             }
         });
     }
@@ -219,7 +216,7 @@ export default class Game {
                 return;
             }
 
-            this.bus.emit(Actions.timeResult(action.time));
+            this.bus.emit(timeResult(action.time));
         });
     }
 

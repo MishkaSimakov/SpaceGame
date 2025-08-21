@@ -2,7 +2,7 @@ import {test} from "uvu";
 import * as assert from "node:assert";
 import {reducers} from "../../../src/game/reducers/Main";
 import {fakeGameState} from "../Utils";
-import {ModuleType} from "@common/modules/Module";
+import {ModuleType} from "@common/modules/ModuleCard";
 import SolarPanel from "@common/modules/SolarPanel";
 import QuantumProtector from "@common/modules/QuantumProtector";
 import Vector2 from "@common/Vector2";

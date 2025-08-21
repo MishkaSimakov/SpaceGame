@@ -1,5 +1,5 @@
 import {MainModule, MainModuleType} from "../modules/MainModule";
-import Module, {isMainModule, ModuleType} from "../modules/Module";
+import ModuleCard, {isMainModule, ModuleType} from "../modules/ModuleCard";
 import Vector2 from "../Vector2";
 import Spaceship from "../Spaceship";
 
@@ -41,9 +41,9 @@ function getTotalEnergyIncrease(ship: Spaceship): number {
     return ship.modules.reduce((ps, card) => ps + card.energyIncrease, 0);
 }
 
-function canConnectModule(ship: Spaceship, module: Module, x: number, y: number): boolean;
-function canConnectModule(ship: Spaceship, module: Module): boolean;
-function canConnectModule(ship: Spaceship, module: Module, x?: number, y?: number): boolean {
+function canConnectModule(ship: Spaceship, module: ModuleCard, x: number, y: number): boolean;
+function canConnectModule(ship: Spaceship, module: ModuleCard): boolean;
+function canConnectModule(ship: Spaceship, module: ModuleCard, x?: number, y?: number): boolean {
     if (x === undefined || y === undefined) {
         x = module.x;
         y = module.y;
@@ -69,7 +69,7 @@ function canConnectModule(ship: Spaceship, module: Module, x?: number, y?: numbe
     return hasConnection || isMainModule(module);
 }
 
-function getConnectorInDirection(module: Module, direction: string): number {
+function getConnectorInDirection(module: ModuleCard, direction: string): number {
     const directions = ["right", "top", "left", "bottom"];
 
     let index = directions.indexOf(direction);
@@ -78,9 +78,9 @@ function getConnectorInDirection(module: Module, direction: string): number {
     return module.connectors[directions[index] as keyof typeof module.connectors];
 }
 
-function getModuleByPosition(ship: Spaceship, x: number, y: number): Module | undefined;
-function getModuleByPosition(ship: Spaceship, position: Vector2): Module | undefined;
-function getModuleByPosition(ship: Spaceship, x: (number | Vector2), y?: number): Module | undefined {
+function getModuleByPosition(ship: Spaceship, x: number, y: number): ModuleCard | undefined;
+function getModuleByPosition(ship: Spaceship, position: Vector2): ModuleCard | undefined;
+function getModuleByPosition(ship: Spaceship, x: (number | Vector2), y?: number): ModuleCard | undefined {
     if (typeof x == "number") {
         return ship.modules.filter(card => card.x === x && card.y === y)[0];
     } else if (x && x.x !== undefined && x.y !== undefined) {
@@ -88,7 +88,7 @@ function getModuleByPosition(ship: Spaceship, x: (number | Vector2), y?: number)
     }
 }
 
-function getPossibleConnectionsFor(ship: Spaceship, module: Module): number[][] {
+function getPossibleConnectionsFor(ship: Spaceship, module: ModuleCard): number[][] {
     let possible_connections = []
 
     for (let i in ship.modules) {
@@ -106,7 +106,7 @@ function getPossibleConnectionsFor(ship: Spaceship, module: Module): number[][] 
     return possible_connections;
 }
 
-function getPossibleRotationsFor(ship: Spaceship, module: Module, x: number, y: number): number[] {
+function getPossibleRotationsFor(ship: Spaceship, module: ModuleCard, x: number, y: number): number[] {
     const initRotation = module.rotation;
     let possibleRotations = [];
 
@@ -122,9 +122,9 @@ function getPossibleRotationsFor(ship: Spaceship, module: Module, x: number, y: 
     return possibleRotations;
 }
 
-function getModulesConnectedTo(ship: Spaceship, module: Module) {
+function getModulesConnectedTo(ship: Spaceship, module: ModuleCard) {
     let connectedModules: {
-        [Key in Direction]?: Module
+        [Key in Direction]?: ModuleCard
     } = {};
 
     for (let [index, direction] of Object.entries(directions)) {
@@ -142,7 +142,7 @@ function getModulesConnectedTo(ship: Spaceship, module: Module) {
     return connectedModules;
 }
 
-function isAdjacent(ship: Spaceship, first: Module, second: Module) {
+function isAdjacent(ship: Spaceship, first: ModuleCard, second: ModuleCard) {
     for (let module of Object.values(getModulesConnectedTo(ship, first))) {
         if (module === second) {
             return true;
@@ -152,7 +152,7 @@ function isAdjacent(ship: Spaceship, first: Module, second: Module) {
     return false;
 }
 
-function getModulesByType(ship: Spaceship, type: ModuleType): Module[] {
+function getModulesByType(ship: Spaceship, type: ModuleType): ModuleCard[] {
     return ship.modules.filter((m) => m.type === type);
 }
 
@@ -180,7 +180,7 @@ function hasDamagedModules(ship: Spaceship): boolean {
     return false;
 }
 
-function getUnconnectedModules(ship: Spaceship): Module[] {
+function getUnconnectedModules(ship: Spaceship): ModuleCard[] {
     let unconnectedModules = ship.modules;
     const mainModule = getMainModule(ship);
 
@@ -188,7 +188,7 @@ function getUnconnectedModules(ship: Spaceship): Module[] {
         return unconnectedModules;
     }
 
-    let addedModules: Module[] = [mainModule];
+    let addedModules: ModuleCard[] = [mainModule];
 
     do {
         let newAddedModules = [];
@@ -322,7 +322,7 @@ function damageInfoInternal(
     };
 }
 
-function damageInfo(ship: Spaceship, target: Module, damage: number) {
+function damageInfo(ship: Spaceship, target: ModuleCard, damage: number) {
     const shipCopy = structuredClone(ship);
     return damageInfoInternal(
         shipCopy,

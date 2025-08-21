@@ -1,4 +1,4 @@
-import Module, {ModuleType} from "./Module";
+import ModuleCard, {ModuleType} from "./ModuleCard";
 
 enum MainModuleType {
     DrawAnotherEventCard,
@@ -8,7 +8,7 @@ enum MainModuleType {
     AttackOrRunaway
 }
 
-class MainModule extends Module {
+class MainModule extends ModuleCard {
     mainModuleType: MainModuleType;
 
     constructor(index: number, type: MainModuleType, connectors: {

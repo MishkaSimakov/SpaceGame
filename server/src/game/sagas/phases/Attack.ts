@@ -1,5 +1,5 @@
 import {AttackReason} from "@common/Types";
-import {ModuleType} from "@common/modules/Module";
+import {ModuleType} from "@common/modules/ModuleCard";
 import {MainModuleType} from "@common/modules/MainModule";
 import {StateGetters} from "@common/getters/State";
 import {PlayerGetters} from "@common/getters/Player";

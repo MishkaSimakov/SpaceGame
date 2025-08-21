@@ -1,5 +1,5 @@
-import Module from "@common/modules/Module";
-import {Event} from "@common/events/Event";
+import ModuleCard from "@common/modules/ModuleCard";
+import {EventCard} from "@common/events/EventCard";
 import Actions from "@common/actions/Main";
 
 import {put, select} from "../Effects";
@@ -13,9 +13,9 @@ export function* popOneCard<T extends "module" | "event">(type: T): Generator<an
 
     if (state.stack[type].length === 0) {
         if (type === "module") {
-            yield* shuffleArray(discards as Module[]);
+            yield* shuffleArray(discards as ModuleCard[]);
         } else {
-            yield* shuffleArray(discards as Event[]);
+            yield* shuffleArray(discards as EventCard[]);
         }
 
         yield* put(Actions.returnDiscardsToStack(type, discards));

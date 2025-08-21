@@ -1,13 +1,13 @@
 import * as z from "zod";
 
-import Actions from "@common/actions/Main";
+import Actions from "@common/Actions";
 import {StateGetters} from "@common/getters/State";
 import {areCardSetsEqual} from "@common/Utils";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
-import {isMainModule, isModule, isProtector, isWeapon, ModuleType} from "@common/modules/Module";
+import {isMainModule, isModule, isProtector, isWeapon, ModuleType} from "@common/Types";
 
 import {booleanSchema, makeActivePlayerIdSchema, numberArraySchema, vector2ArraySchema, vector2Schema} from "./Helpers";
-import GameState from "../GameState";
+import GameState from "../InitGameState";
 import Spaceship from "@common/Spaceship";
 
 type ValidatorType<Res extends keyof typeof Actions, Req> =

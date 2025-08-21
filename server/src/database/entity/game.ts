@@ -1,16 +1,14 @@
 import {
     Entity,
-    PrimaryGeneratedColumn,
     Column,
     BaseEntity,
-    OneToMany,
     ManyToOne,
     ManyToMany,
     JoinTable,
     PrimaryColumn
 } from "typeorm"
 import {User} from "./user";
-import {GameSettings} from "@common/GameSettings";
+import {GameSettings} from "@common/Types";
 
 export enum GameStatus {
     ACTIVE = "active",

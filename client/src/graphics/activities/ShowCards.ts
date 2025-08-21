@@ -1,5 +1,5 @@
-import Module from "@common/modules/Module";
-import {Event} from "@common/events/Event";
+import ModuleCard from "@common/modules/ModuleCard";
+import {EventCard} from "@common/events/EventCard";
 
 import Controls from "../scenes/Controls";
 import Color from "../Color";
@@ -13,7 +13,7 @@ export class ShowCardsActivity extends Activity {
     private titleShape?: Text;
     private fadeShape?: Rectangle;
 
-    constructor(private scene: Controls, private cards: (Module | Event)[], private title?: string) {
+    constructor(private scene: Controls, private cards: (ModuleCard | EventCard)[], private title?: string) {
         super();
     }
 

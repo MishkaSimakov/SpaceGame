@@ -3,9 +3,9 @@ import Actions from "@common/actions/Main";
 import {put, select} from "../Effects";
 import {StateGetters} from "@common/getters/State";
 import {request} from "../components/Request";
-import {isModule} from "@common/modules/Module";
+import {isModule} from "@common/modules/ModuleCard";
 import Spaceship from "@common/Spaceship";
-import {isEvent} from "@common/events/Event";
+import {isEvent} from "@common/events/EventCard";
 
 const {
     rebuildSpaceshipRequest,

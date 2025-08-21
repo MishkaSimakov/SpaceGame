@@ -1,8 +1,8 @@
-// да, я понимаю, что порешатель и solver имеют разное значение, это такая шутка
 
-import Module, {ModuleType} from "./Module";
 
-export default class SpaceSolver extends Module {
+import ModuleCard, {ModuleType} from "./ModuleCard";
+
+export default class SpaceSolver extends ModuleCard {
     constructor(left: number, top: number, right: number, bottom: number) {
         super(
             'Космический порешатель',

@@ -4,7 +4,7 @@ import ActionsBus from '../../../src/game/ActionsBus';
 import SolarPanel from '@common/modules/SolarPanel';
 import DarkMatterGenerator from '@common/modules/DarkMatterGenerator';
 
-import GameState from '../../../src/game/GameState';
+import GameState from '../../../src/game/InitGameState';
 import {SagaRunner} from '../../../src/game/sagas/SagaRunner';
 import {collectEnergy} from '../../../src/game/sagas/phases/CollectEnergy';
 import * as assert from "node:assert";

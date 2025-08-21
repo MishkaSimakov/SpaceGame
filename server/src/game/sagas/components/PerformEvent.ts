@@ -1,13 +1,13 @@
-import {Event, EventTypes} from "@common/events/Event";
+import {EventCard, EventTypes} from "@common/events/EventCard";
 import Actions from "@common/actions/Main";
 import {StateGetters} from "@common/getters/State";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
-import Module, {ModuleType} from "@common/modules/Module";
+import ModuleCard, {ModuleType} from "@common/modules/ModuleCard";
 import Vector2 from "@common/Vector2";
 import {AttackReason, MoveDamageReason} from "@common/Types";
 
 import {put, select} from "../Effects";
-import GameState from "../../GameState";
+import GameState from "../../InitGameState";
 import {request} from "./Request";
 import {fight} from "./Fight";
 import {damageModule} from "./DamageModule";
@@ -48,7 +48,7 @@ function* putTopThreeCardsInAnyOrder(state: GameState) {
         'permuteTopThreeEventCardsResponse'
     );
 
-    let newOrderedCards: Event[] = [];
+    let newOrderedCards: EventCard[] = [];
     for (let i = 0; i < 3; ++i) {
         newOrderedCards.push(topThreeCards[order[i]]);
     }
@@ -65,9 +65,9 @@ function* takeBuildingCards(state: GameState, count: number) {
     yield* showCards(player, cards, false);
 }
 
-let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) => Generator> = {
+let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: EventCard) => Generator> = {
     [EventTypes.PutTopThreeCardsInAnyOrder]: putTopThreeCardsInAnyOrder,
-    [EventTypes.PutTopThreeCardsInAnyOrderAndTakeTop]: function* (state: GameState, event: Event) {
+    [EventTypes.PutTopThreeCardsInAnyOrderAndTakeTop]: function* (state: GameState, event: EventCard) {
         yield* putTopThreeCardsInAnyOrder(state);
 
         const topEvent = yield* popOneCard("event");
@@ -213,10 +213,10 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
 
         yield* put(changeModuleHealth(currentPlayer, moduleToRepairPosition, repairAmount, "event card (toss dice & repair)"));
     },
-    [EventTypes.SaveCardAndThenAttack]: function* (state: GameState, event: Event) {
+    [EventTypes.SaveCardAndThenAttack]: function* (state: GameState, event: EventCard) {
         yield* put(pushCardsToHand(StateGetters.currentPlayer(state), [event]));
     },
-    [EventTypes.SaveCardAndThenDealDamage]: function* (state: GameState, event: Event) {
+    [EventTypes.SaveCardAndThenDealDamage]: function* (state: GameState, event: EventCard) {
         yield* put(pushCardsToHand(StateGetters.currentPlayer(state), [event]));
     },
     [EventTypes.ChoosePlayerAndStealHisCard]: function* (state: GameState) {
@@ -292,7 +292,7 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: Event) 
     }
 };
 
-export function* performEvent(event: Event) {
+export function* performEvent(event: EventCard) {
     const state = yield* select();
     yield* eventsPerformFunctions[event.type](state, event);
 }

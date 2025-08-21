@@ -1,6 +1,6 @@
-import Module from "@common/modules/Module";
+import ModuleCard from "@common/modules/ModuleCard";
 import Vector2 from "@common/Vector2";
-import {Event} from "@common/events/Event";
+import {EventCard} from "@common/events/EventCard";
 import {Message} from "@common/Types";
 
 import Game from "../../Game";
@@ -90,7 +90,7 @@ export default class Controls extends Scene {
         return result;
     }
 
-    async showCards(cards: (Module | Event)[], title?: string): Promise<void> {
+    async showCards(cards: (ModuleCard | EventCard)[], title?: string): Promise<void> {
         return await this.enqueueActivity(new ShowCardsActivity(this, cards, title));
     }
 
@@ -154,7 +154,7 @@ export default class Controls extends Scene {
         return positions;
     }
 
-    drawCardsOnScreen(cards: (Module | Event)[]): Group {
+    drawCardsOnScreen(cards: (ModuleCard | EventCard)[]): Group {
         let sceneWidth = this.width();
         let sceneHeight = this.height();
 
@@ -198,7 +198,7 @@ export default class Controls extends Scene {
         return cardShapes;
     }
 
-    async permuteCards(cards: (Event | Module)[]): Promise<number[]> {
+    async permuteCards(cards: (EventCard | ModuleCard)[]): Promise<number[]> {
         return await this.enqueueActivity(new PermuteCardsActivity(this, cards));
     }
 

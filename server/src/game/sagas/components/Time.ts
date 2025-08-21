@@ -1,7 +1,7 @@
 import {PlayerId} from "@common/Player";
 import Actions from "@common/actions/Main"
 
-import GameState, {TimeRecord, TimeRecordType} from "../../GameState";
+import GameState, {TimeRecord, TimeRecordType} from "../../InitGameState";
 import {all, put, select, take} from "../Effects";
 import * as assert from "node:assert";
 import {StateGetters} from "@common/getters/State";

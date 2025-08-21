@@ -1,5 +1,5 @@
-import Module from "@common/modules/Module";
-import {Event} from "@common/events/Event";
+import ModuleCard from "@common/modules/ModuleCard";
+import {EventCard} from "@common/events/EventCard";
 import Player from "@common/Player";
 import Actions from "@common/actions/Main";
 
@@ -8,7 +8,7 @@ import {put, select} from "../Effects";
 
 const {showCardsToPlayersRequest, showCardsInfo} = Actions;
 
-export function* showCards(player: Player, cards: (Module | Event)[], showToOthers: boolean) {
+export function* showCards(player: Player, cards: (ModuleCard | EventCard)[], showToOthers: boolean) {
     const state = yield* select();
 
     if (showToOthers) {

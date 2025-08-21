@@ -1,5 +1,5 @@
-import {isModule} from "@common/modules/Module";
-import {EventTypes} from "@common/events/Event";
+import {isModule} from "@common/modules/ModuleCard";
+import {EventTypes} from "@common/events/EventCard";
 import Actions from "@common/actions/Main";
 
 import {fight} from "../components/Fight";

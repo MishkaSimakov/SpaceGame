@@ -1,5 +1,5 @@
-import {Event} from "@common/events/Event";
-import Module from "@common/modules/Module";
+import {EventCard} from "@common/events/EventCard";
+import ModuleCard from "@common/modules/ModuleCard";
 
 import Controls from "../scenes/Controls";
 import {Group} from "../engine/Group";
@@ -17,7 +17,7 @@ export class PermuteCardsActivity extends Activity {
 
     private resolveModal: Function | undefined = undefined;
 
-    constructor(private scene: Controls, private cards: (Event | Module)[]) {
+    constructor(private scene: Controls, private cards: (EventCard | ModuleCard)[]) {
         super();
 
         for (let i = 0; i < cards.length; ++i) {

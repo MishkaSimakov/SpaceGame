@@ -1,5 +1,5 @@
-import Module from "./modules/Module";
-import {Event} from "./events/Event";
+import ModuleCard from "./modules/ModuleCard";
+import {EventCard} from "./events/EventCard";
 
 function isObject(value: any): value is object {
     return value != null && typeof value === 'object';
@@ -32,7 +32,7 @@ function deepEqual<T extends object>(object1: T, object2: T, exclude: string[] =
     return true;
 }
 
-export function areCardSetsEqual(arr1: (Module | Event)[], arr2: (Module | Event)[]) {
+export function areCardSetsEqual(arr1: (ModuleCard | EventCard)[], arr2: (ModuleCard | EventCard)[]) {
     if (arr1.length !== arr2.length) {
         return false;
     }

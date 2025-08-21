@@ -1,4 +1,4 @@
-import GameState from "../GameState";
+import GameState from "../InitGameState";
 import {ActionsBusProxy} from "./ActionsBusProxy";
 import {
     AllEffect,

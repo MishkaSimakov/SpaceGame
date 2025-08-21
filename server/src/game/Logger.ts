@@ -1,7 +1,6 @@
 import path from "path";
 import * as fs from "node:fs";
-
-import {Action} from "@common/actions/Action";
+import {Action} from "@common/ActionsHelpers";
 
 export class Logger {
     logFilepath: string;

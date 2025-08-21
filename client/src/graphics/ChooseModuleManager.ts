@@ -1,5 +1,5 @@
 import Spaceships from "./scenes/Spaceships";
-import Module from "@common/modules/Module";
+import ModuleCard from "@common/modules/ModuleCard";
 import {PlayerId} from "@common/Player";
 import {BoundaryType, CountBoundary} from "./CountBoundary";
 import Color from "./Color";
@@ -8,7 +8,7 @@ import {Observable} from "./Observable";
 import Vector2 from "@common/Vector2";
 
 type SelectedModuleInfo = {
-    module: Module,
+    module: ModuleCard,
     player: PlayerId
 }
 
@@ -40,10 +40,10 @@ export class ChooseModuleManager {
                 const card = shape as Card;
                 const info = {
                     player: playerId,
-                    position: new Vector2((card.card() as Module).x, (card.card() as Module).y),
+                    position: new Vector2((card.card() as ModuleCard).x, (card.card() as ModuleCard).y),
                 };
 
-                if (!this.check({player: playerId, module: card.card() as Module})) {
+                if (!this.check({player: playerId, module: card.card() as ModuleCard})) {
                     card.setState('DISABLED');
                     continue;
                 }
@@ -110,7 +110,7 @@ export class ChooseModuleManager {
         this.handle.set(this.selected.map(s => {
             return {
                 player: s.player,
-                module: this.getShape(s).card() as Module
+                module: this.getShape(s).card() as ModuleCard
             };
         }))
     }
@@ -118,7 +118,7 @@ export class ChooseModuleManager {
     private getShape({player, position}: { player: PlayerId, position: Vector2 }): Card {
         const spaceship = this.scene.spaceshipShapes[player];
         return spaceship.getModules().find(card => {
-            const module = card.card() as Module;
+            const module = card.card() as ModuleCard;
             return module.x === position.x && module.y === position.y;
         });
     }

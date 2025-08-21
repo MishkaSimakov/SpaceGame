@@ -1,15 +1,15 @@
+import * as assert from "node:assert";
 import {Server, Socket} from "socket.io";
-import Player from "../../../common/Player";
-import {User} from "../database/entity/user";
+import path from "path";
 import jwt, {JwtPayload} from "jsonwebtoken";
+
+import {User} from "../database/entity/user";
 import {Game as GameDBEntity, GameStatus} from "../database/entity/game";
 import Game from "./Game";
 import SocketsManager from "./io/SocketsManager";
-import {GameSettings} from "@common/GameSettings";
-import {SocketInitPayload} from "@common/Types";
-import path from "path";
 import {Logger} from "./Logger";
-import * as assert from "node:assert";
+import {GameSettings, Player} from "@common/Types";
+import {SocketInitPayload} from "@common/SocketsTypes";
 
 export default class GamesManager {
     io: Server;

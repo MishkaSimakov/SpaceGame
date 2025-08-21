@@ -1,5 +1,5 @@
 import Player from "@common/Player";
-import {ModuleType} from "@common/modules/Module";
+import {ModuleType} from "@common/modules/ModuleCard";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
 import {StateGetters} from "@common/getters/State";
 import Actions from "@common/actions/Reducer";

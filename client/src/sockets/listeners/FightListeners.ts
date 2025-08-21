@@ -1,6 +1,6 @@
 import Vector2 from "@common/Vector2";
 import Actions from "@common/actions/Main";
-import {isProtector} from "@common/modules/Module";
+import {isProtector} from "@common/modules/ModuleCard";
 
 import {COLORS} from "../../graphics/constants";
 import Color from "../../graphics/Color";

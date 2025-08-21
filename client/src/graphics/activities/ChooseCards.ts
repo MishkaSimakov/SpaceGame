@@ -1,6 +1,6 @@
-import {Event} from "@common/events/Event";
+import {EventCard} from "@common/events/EventCard";
 import Vector2 from "@common/Vector2";
-import Module from "@common/modules/Module";
+import ModuleCard from "@common/modules/ModuleCard";
 
 import {Group} from "../engine/Group";
 import {Rectangle} from "../engine/shapes/Rectangle";
@@ -19,7 +19,7 @@ export class ChooseCardsActivity extends Activity {
 
     private selected: number[] = [];
 
-    constructor(private scene: Controls, private title: string, private count: CountBoundary, private cards: (Event | Module)[]) {
+    constructor(private scene: Controls, private title: string, private count: CountBoundary, private cards: (EventCard | ModuleCard)[]) {
         super();
     }
 

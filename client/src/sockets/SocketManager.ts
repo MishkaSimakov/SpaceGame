@@ -1,7 +1,7 @@
 import io, {Socket} from "socket.io-client";
 
-import {Event} from "@common/events/Event";
-import {HAS_PLAYERS_DATA} from "@common/Sockets";
+import {EventCard} from "@common/events/EventCard";
+import {HAS_PLAYERS_DATA} from "@common/SocketsTypes";
 import {GameForPlayerDTO} from "@common/GameForPlayerDTO";
 import {Action, isAction} from "@common/actions/Action";
 
@@ -108,7 +108,7 @@ export default class SocketManager {
     }
 
     // return is event accepted
-    useEventCard(event: Event): Promise<boolean> {
+    useEventCard(event: EventCard): Promise<boolean> {
         return new Promise((resolve) => {
             this.socket.emit('useEventCard', event, (isAccepted: boolean) => {
                 resolve(isAccepted);

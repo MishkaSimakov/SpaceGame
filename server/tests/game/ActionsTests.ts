@@ -2,10 +2,10 @@ import {test} from "uvu";
 import * as assert from "node:assert";
 
 import Player from "@common/Player";
-import {EventTypes} from "@common/events/Event";
+import {EventTypes} from "@common/events/EventCard";
 import Actions from "@common/actions/Main";
 
-import GameState from "../../src/game/GameState";
+import GameState from "../../src/game/InitGameState";
 import ActionsBus from "../../src/game/ActionsBus";
 import {SagaRunner} from "../../src/game/sagas/SagaRunner";
 import {beforeTurn} from "../../src/game/sagas/phases/BeforeTurn";

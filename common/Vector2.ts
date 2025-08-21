@@ -1,4 +1,4 @@
-import Module from "./modules/Module";
+import ModuleCard from "./modules/ModuleCard";
 
 export default class Vector2 {
     x: number;
@@ -73,7 +73,7 @@ export default class Vector2 {
         return this;
     }
 
-    static modulePosition(module: Module | undefined): Vector2 | undefined {
+    static modulePosition(module: ModuleCard | undefined): Vector2 | undefined {
         if (!module) {
             return undefined;
         }

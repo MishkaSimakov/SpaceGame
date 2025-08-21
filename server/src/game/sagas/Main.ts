@@ -12,7 +12,7 @@ import {fixSpaceship} from "./phases/FixSpaceship";
 import {init} from "./components/Init";
 import {addTimeRecord} from "./components/Time";
 
-import {TimeRecordType} from "../GameState";
+import {TimeRecordType} from "../InitGameState";
 
 const {setCurrentPlayer} = Actions;
 
