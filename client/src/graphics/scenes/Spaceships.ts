@@ -1,23 +1,21 @@
-import Vector2 from "@common/Vector2";
-import ModuleCard from "@common/modules/ModuleCard";
+import {OtherPlayer} from "@common/GameForPlayerDTO";
+import {ModuleCard, PlayerId, Vector2} from "@common/Types";
 
 import Game from "../../Game";
 import Scene from "../engine/Scene";
 import Color from "../Color";
 import {DD} from "../engine/Drag";
 import {Spaceship as SpaceshipShape} from "../shapes/Spaceship";
-import {Card} from "../shapes/Card";
-import Player, {PlayerId} from "@common/Player";
+import {CardShape} from "../shapes/CardShape";
 import {CountBoundary} from "../CountBoundary";
 import {ChooseModuleManager} from "../ChooseModuleManager";
-import {OtherPlayer} from "@common/GameForPlayerDTO";
 
 let spaceshipConfigurations: Vector2[][] = [
-    [new Vector2(0, 0)],
-    [new Vector2(0, 0), new Vector2(0, -2500)],
-    [new Vector2(0, 0), new Vector2(-1000, -1000), new Vector2(1000, -1000)],
-    [new Vector2(0, 0), new Vector2(0, -1000), new Vector2(1000, 0), new Vector2(1000, -1000)],
-    [new Vector2(0, 0), new Vector2(0, -1000), new Vector2(1000, 0), new Vector2(1000, -1000), new Vector2(500, 1500)]
+    [{x: 0, y: 0}],
+    [{x: 0, y: 0}, {x: 0, y: -2500}],
+    [{x: 0, y: 0}, {x: -1000, y: -1000}, {x: 1000, y: -1000}],
+    [{x: 0, y: 0}, {x: 0, y: -1000}, {x: 1000, y: 0}, {x: 1000, y: -1000}],
+    [{x: 0, y: 0}, {x: 0, y: -1000}, {x: 1000, y: 0}, {x: 1000, y: -1000}, {x: 500, y: 1500}]
 ];
 
 export default class Spaceships extends Scene {
@@ -211,8 +209,8 @@ export default class Spaceships extends Scene {
 
         for (let key in this.spaceshipShapes) {
             for (let shape of this.spaceshipShapes[key].children) {
-                (shape as Card).strokeWidth(0);
-                (shape as Card).setState('DEFAULT');
+                (shape as CardShape).strokeWidth(0);
+                (shape as CardShape).setState('DEFAULT');
 
                 shape.off('click.choosemodule');
             }

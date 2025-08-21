@@ -1,5 +1,5 @@
 import {SchemaFormType} from "jtd";
-import {PrimitiveType} from "./Types";
+import {PrimitiveType} from "./AST";
 
 export const typeMapping: Record<SchemaFormType["type"], PrimitiveType> = {
     string: PrimitiveType.STRING,

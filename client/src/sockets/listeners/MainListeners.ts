@@ -1,21 +1,14 @@
-import Actions from "@common/actions/Main";
-import {ModuleType} from "@common/modules/ModuleCard";
-
 import {COLORS} from "../../graphics/constants";
 import {ListenersContainer} from "./ListenersContainer";
 import {ChoosePlayerForAttackActivity} from "../../graphics/activities/ChoosePlayerForAttack";
-import Vector2 from "@common/Vector2";
-
-const {
-    chooseCardTypeResponse,
-    chooseModuleToRepairResponse,
-    choosePlayerForAttackResponse,
-    discardCardsResponse,
+import {
+    chooseCardTypeResponse, chooseModuleToRepairResponse, choosePlayerForAttackResponse, discardCardsResponse,
     drawAdditionalModuleCardResponse,
     drawAnotherEventCardResponse,
-    rebuildSpaceshipResponse,
-    useModuleSecondTimeResponse
-} = Actions;
+    rebuildSpaceshipResponse, useModuleSecondTimeResponse
+} from "@common/Actions";
+import {ModuleGetters} from "@common/getters/Module";
+import {CardType, ModuleType} from "@common/Types";
 
 export const mainListeners: ListenersContainer = {
     async rebuildSpaceshipRequest({}, {game}) {
@@ -26,7 +19,7 @@ export const mainListeners: ListenersContainer = {
 
         return rebuildSpaceshipResponse(game.currentPlayer.spaceship.modules.map(module => ({
             id: module.id,
-            position: new Vector2(module.x, module.y),
+            position: ModuleGetters.position(module),
             rotation: module.rotation
         })));
     },
@@ -34,12 +27,12 @@ export const mainListeners: ListenersContainer = {
     async chooseCardTypeRequest({}, {game}) {
         game.controlsScene.topBarDrawer.setStatus("выберите тип карты")
 
-        const chosenType = await new Promise<'module' | 'event'>((resolve) => {
+        const chosenType = await new Promise<CardType>((resolve) => {
             game.controlsScene.topBarDrawer.addButtons([{
                 text: "Строительства",
                 color: COLORS.BUTTON.PRIMARY,
                 onClick: () => {
-                    resolve('module');
+                    resolve(CardType.Module);
 
                     game.controlsScene.topBarDrawer.removeButtons();
                     game.controlsScene.topBarDrawer.clearStatus();
@@ -49,7 +42,7 @@ export const mainListeners: ListenersContainer = {
                 text: "Действия",
                 color: COLORS.BUTTON.PRIMARY,
                 onClick: () => {
-                    resolve('event');
+                    resolve(CardType.Event);
 
                     game.controlsScene.topBarDrawer.removeButtons();
                     game.controlsScene.topBarDrawer.clearStatus();

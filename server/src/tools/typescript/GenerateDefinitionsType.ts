@@ -18,7 +18,7 @@ import {
     RecordType,
     Type,
     UnionType
-} from "./Types";
+} from "./AST";
 import {typeMapping} from "./TypeMapping";
 
 export function generateDefinitions(definitions: Record<string, Schema>) {
@@ -67,20 +67,26 @@ function generateDefinitionTypeWithState(schema: Schema, state: GenerationState)
     } else if (isPropertiesForm(schema)) {
         state.path.push('properties');
 
-        const properties: Record<string, Type> = {};
+        const properties: Record<string, { type: Type, nullable: boolean }> = {};
 
         if (schema.properties) {
             for (const [name, property] of Object.entries(schema.properties)) {
                 state.path.push(name)
-                properties[name] = generateDefinitionTypeWithState(property, state);
+                properties[name] = {
+                    type: generateDefinitionTypeWithState(property, state),
+                    nullable: false
+                };
                 state.path.pop();
             }
         }
 
         if (schema.optionalProperties) {
             for (const [name, property] of Object.entries(schema.optionalProperties)) {
-                state.path.push(name + '?')
-                properties[name + '?'] = generateDefinitionTypeWithState(property, state);
+                state.path.push(name)
+                properties[name] = {
+                    type: generateDefinitionTypeWithState(property, state),
+                    nullable: true
+                };
                 state.path.pop();
             }
         }
@@ -100,7 +106,10 @@ function generateDefinitionTypeWithState(schema: Schema, state: GenerationState)
             const objectType = generateDefinitionTypeWithState(option, state) as ObjectType;
             state.path.pop();
 
-            objectType.children[schema.discriminator] = new LiteralType(name);
+            objectType.children[schema.discriminator] = {
+                type: new LiteralType(name),
+                nullable: false
+            };
 
             options.push(objectType);
         }

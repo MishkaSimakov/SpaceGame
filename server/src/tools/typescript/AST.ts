@@ -27,6 +27,21 @@ export class Definition<T extends Type> {
     }
 }
 
+export class Parameter<T extends Type> {
+    constructor(
+        public name: string,
+        public type: T,
+        public nullable: boolean
+    ) {
+    }
+
+    emit() {
+        const nameWithNullable = this.name + (this.nullable ? '?' : '');
+
+        return `${nameWithNullable}: ${this.type.emitInline()}`;
+    }
+}
+
 interface IType {
     emitInline(): string;
 
@@ -71,13 +86,13 @@ export class RecordType<V extends Type> implements IType {
 
 export class ObjectType implements IType {
     constructor(
-        public children: Record<string, Type>
+        public children: Record<string, { type: Type, nullable: boolean }>
     ) {
     }
 
     emitInline(): string {
-        const properties = Object.entries(this.children)
-            .map(([name, type]) => `${name}: ${type.emitInline()}`)
+        const properties = Object.keys(this.children)
+            .map(this.getPropertyRow.bind(this))
             .join(', ');
 
         return `{ ${properties} }`;
@@ -86,13 +101,18 @@ export class ObjectType implements IType {
     emitForDefinition(): string {
         let result = '{\n';
 
-        for (const [name, type] of Object.entries(this.children)) {
-            result += `    ${name}: ${type.emitInline()},\n`;
+        for (const name of Object.keys(this.children)) {
+            result += `    ${this.getPropertyRow(name)},\n`;
         }
 
         result += '}';
 
         return result;
+    }
+
+    private getPropertyRow(name: string) {
+        const nameWithNullable = name + (this.children[name].nullable ? '?' : '');
+        return `${nameWithNullable}: ${this.children[name].type.emitInline()}`;
     }
 }
 

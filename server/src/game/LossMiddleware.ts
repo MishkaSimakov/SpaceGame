@@ -1,8 +1,8 @@
 import {StateGetters} from "@common/getters/State";
 import {Action} from "@common/ActionsHelpers";
 import {playerLost} from "@common/Actions";
+import {GameState} from "@common/Types";
 
-import GameState from "./InitGameState";
 import {Middleware} from "./ActionsBus";
 import {SagaRunner} from "./sagas/SagaRunner";
 import {getPlayerTime} from "./sagas/components/Time";
@@ -32,7 +32,7 @@ export class LossMiddleware extends Middleware {
 
             if (time < 0) {
                 this.sagaRunnerRef.cancel("playerTurn");
-                return playerLost(currentPlayer);
+                return playerLost(currentPlayer.id);
             }
         }
 

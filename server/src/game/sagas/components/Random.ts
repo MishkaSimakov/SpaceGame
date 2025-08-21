@@ -1,18 +1,17 @@
-import {DiceResult} from "@common/actions/Random";
+import {Player} from "@common/Types";
+import {shuffle, throwDice} from "@common/Actions";
+
 import {all, put, take} from "../Effects";
 
-import Actions from "@common/actions/Main"
-import Player from "@common/Player";
-
-const {shuffle, throwDice} = Actions;
+export type DiceResult = 1 | 2 | 3 | 4 | 5 | 6;
 
 export function* dice(player: Player): Generator<any, DiceResult, any> {
     const {res} = yield* all({
-        req: put(throwDice(player)),
+        req: put(throwDice(player.id)),
         res: take('throwDiceResult')
     });
 
-    return res.payload;
+    return res.payload.result as DiceResult;
 }
 
 export function* shuffleArray<T>(array: T[]) {
@@ -21,6 +20,6 @@ export function* shuffleArray<T>(array: T[]) {
         res: take('shuffleResult')
     });
 
-    const shuffled = res.payload.map(i => array[i]);
+    const shuffled = res.payload.order.map(i => array[i]);
     array.splice(0, array.length, ...shuffled);
 }

@@ -1,7 +1,4 @@
-import Player, {PlayerId} from "./Player";
-import Spaceship from "./Spaceship";
-import {Message} from "./Types";
-import {GameSettings} from "./GameSettings";
+import {GameSettings, Message, Player, PlayerId, Spaceship} from "./Types";
 
 type OtherPlayer = {
     id: number;

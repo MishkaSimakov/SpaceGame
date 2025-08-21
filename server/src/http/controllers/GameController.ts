@@ -1,12 +1,15 @@
 import {Request, Response} from "express";
+
+import {GameSettings} from "@common/Types";
+
 import App from "../../App";
 import {User} from "../../database/entity/user";
 import {AuthenticatedRequest} from "../middleware/auth";
-import {GameSettings} from "@common/GameSettings";
 import {AuthenticatedGameRequest} from "../middleware/GameOwner";
 import {Game as GameDBEntity, GameStatus} from "../../database/entity/game";
 import {Logger} from "../../game/Logger";
 import {gamePlayersValidator} from "../validation/GamePlayersValidator";
+import {defaultSettings} from "../../game/DefaultSettings";
 
 export const create = async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -26,13 +29,10 @@ export const create = async (req: AuthenticatedRequest, res: Response) => {
 
         const withTimeControl = req.body['time-control'] === 'on';
 
-        const gameSettings = new GameSettings(
-            String(Math.random()),
-            selectedUsers.length,
-            withTimeControl,
-            req.body['lose-when-timeout'] === 'on' && withTimeControl,
-            req.body['is-public'] === 'on'
-        );
+        const gameSettings: GameSettings = {
+            seed: String(Math.random()),
+            ...defaultSettings
+        };
 
         if (withTimeControl) {
             let startTime = parseInt(req.body['start-time']);
@@ -45,6 +45,7 @@ export const create = async (req: AuthenticatedRequest, res: Response) => {
             fightTimeIncrease = isNaN(fightTimeIncrease) ? 10 : fightTimeIncrease;
 
             gameSettings.timeControlSettings = {
+                loseWhenTimeout: req.body['lose-when-timeout'] === 'on',
                 startTime: startTime * 1000,
                 defaultTimeIncrease: defaultTimeIncrease * 1000,
                 fightTimeIncrease: fightTimeIncrease * 1000
@@ -77,7 +78,7 @@ export const joinGame = async (req: AuthenticatedGameRequest, res: Response) => 
 
     if (
         game.players.find(p => p.id === req.user.id) === undefined
-        && !game.settings.isPublic
+        && !game.settings
     ) {
         req.flash('error', 'Вы не можете присоединиться к данной игре.');
         return res.redirect('/');

@@ -1,24 +1,20 @@
-import Vector2 from "@common/Vector2";
-import Actions from "@common/actions/Main";
-import {isProtector} from "@common/modules/ModuleCard";
+import {
+    chooseProtectorResponse,
+    chooseTargetResponse,
+    chooseWeaponAndTargetResponse,
+    tryToRunawayResponse
+} from "@common/Actions";
+import {RunawayType, Vector2} from "@common/Types";
+import {ModuleGetters} from "@common/getters/Module";
 
 import {COLORS} from "../../graphics/constants";
 import Color from "../../graphics/Color";
 import {ListenersContainer} from "./ListenersContainer";
 import {Boundary} from "../../graphics/CountBoundary";
-import {Button} from "../../graphics/shapes/Button";
-import {RunawayType} from "@common/actions/EventCards";
-
-const {
-    chooseProtectorResponse,
-    chooseTargetResponse,
-    chooseWeaponAndTargetResponse,
-    tryToRunawayResponse,
-} = Actions;
 
 export const fightListeners: ListenersContainer = {
     async tryToRunawayRequest({type}, {game}) {
-        const message = type === RunawayType.MAIN_MODULE
+        const message = type === RunawayType.MainModule
             ? "будете ли вы сбегать, используя командный модуль?"
             : "будете ли вы сбегать?";
 
@@ -33,7 +29,7 @@ export const fightListeners: ListenersContainer = {
         game.controlsScene.topBarDrawer.setStatus("выберите протектор");
 
         const protectorHandle = game.spaceshipsScene.chooseModules(
-            ({module, player}) => player === game.getCurrentPlayer().id && isProtector(module),
+            ({module, player}) => player === game.getCurrentPlayer().id && ModuleGetters.isProtector(module),
             Boundary.noMoreThan(1),
             Color.fromHex('#a3b18a')
         );
@@ -52,7 +48,7 @@ export const fightListeners: ListenersContainer = {
                     text: "Активировать",
                     color: COLORS.BUTTON.PRIMARY,
                     onClick: () => {
-                        resolve(Vector2.modulePosition(protectorHandle.get()[0].module));
+                        resolve(ModuleGetters.position(protectorHandle.get()[0].module));
                     },
                     name: 'activate'
                 },
@@ -111,8 +107,8 @@ export const fightListeners: ListenersContainer = {
                 color: COLORS.BUTTON.DANGER,
                 onClick: () => {
                     resolve({
-                        weaponPosition: Vector2.modulePosition(weaponHandle.get()[0].module),
-                        targetPosition: Vector2.modulePosition(targetHandle.get()[0].module)
+                        weaponPosition: ModuleGetters.position(weaponHandle.get()[0].module),
+                        targetPosition: ModuleGetters.position(targetHandle.get()[0].module)
                     });
                 }
             }]);
@@ -149,7 +145,7 @@ export const fightListeners: ListenersContainer = {
                 text: "Атаковать",
                 color: COLORS.BUTTON.DANGER,
                 onClick: () => {
-                    resolve(Vector2.modulePosition(targetHandle.get()[0].module));
+                    resolve(ModuleGetters.position(targetHandle.get()[0].module));
                 }
             }]);
 

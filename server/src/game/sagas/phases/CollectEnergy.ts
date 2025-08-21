@@ -1,8 +1,8 @@
-import {put, select} from "../Effects";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
-import Actions from "@common/actions/Main";
 import {StateGetters} from "@common/getters/State";
+import {changePlayerEnergy, message} from "@common/Actions";
 
+import {put, select} from "../Effects";
 
 export function* collectEnergy() {
     const state = yield* select();
@@ -14,11 +14,9 @@ export function* collectEnergy() {
     );
     const energyIncrease = newEnergy - currentPlayer.energy;
 
-    yield* put(
-        Actions.changePlayerEnergy(currentPlayer, newEnergy - currentPlayer.energy, "before turn")
-    );
+    yield* put(changePlayerEnergy(currentPlayer.id, newEnergy - currentPlayer.energy, "before turn"));
 
     if (energyIncrease > 0) {
-        yield* put(Actions.message(currentPlayer, `получил +${energyIncrease}⚡ перед ходом`));
+        yield* put(message(currentPlayer.id, `получил +${energyIncrease}⚡ перед ходом`));
     }
 }

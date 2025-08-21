@@ -1,14 +1,10 @@
-import ModuleCard from "@common/modules/ModuleCard";
-import {EventCard} from "@common/events/EventCard";
-import Player from "@common/Player";
-import Actions from "@common/actions/Main";
+import {Card, Player} from "@common/Types";
+import {showCardsInfo, showCardsToPlayersRequest} from "@common/Actions";
 
 import {request} from "./Request";
 import {put, select} from "../Effects";
 
-const {showCardsToPlayersRequest, showCardsInfo} = Actions;
-
-export function* showCards(player: Player, cards: (ModuleCard | EventCard)[], showToOthers: boolean) {
+export function* showCards(player: Player, cards: Card[], showToOthers: boolean) {
     const state = yield* select();
 
     if (showToOthers) {
@@ -17,12 +13,12 @@ export function* showCards(player: Player, cards: (ModuleCard | EventCard)[], sh
                 continue;
             }
 
-            yield* put(showCardsInfo(otherPlayer, player, cards));
+            yield* put(showCardsInfo(otherPlayer.id, player.id, cards));
         }
     }
 
     yield* request(
-        showCardsToPlayersRequest(player, player, cards),
+        showCardsToPlayersRequest(player.id, player.id, cards),
         'showCardsToPlayersResponse'
     );
 }

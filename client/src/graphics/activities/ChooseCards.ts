@@ -1,12 +1,10 @@
-import {EventCard} from "@common/events/EventCard";
-import Vector2 from "@common/Vector2";
-import ModuleCard from "@common/modules/ModuleCard";
+import {Card} from "@common/Types";
 
 import {Group} from "../engine/Group";
 import {Rectangle} from "../engine/shapes/Rectangle";
 import {Text} from "../engine/shapes/Text";
 import Color from "../Color";
-import {Card} from "../shapes/Card";
+import {CardShape} from "../shapes/CardShape";
 import Controls from "../scenes/Controls";
 import {Activity} from "./Activity";
 import {COLORS} from "../constants";
@@ -19,7 +17,7 @@ export class ChooseCardsActivity extends Activity {
 
     private selected: number[] = [];
 
-    constructor(private scene: Controls, private title: string, private count: CountBoundary, private cards: (EventCard | ModuleCard)[]) {
+    constructor(private scene: Controls, private title: string, private count: CountBoundary, private cards: Card[]) {
         super();
     }
 
@@ -102,14 +100,14 @@ export class ChooseCardsActivity extends Activity {
                 });
             this.updateButton();
 
-            const backgroundPosition1 = new Vector2(
-                Math.min(cardShapes.getClientRect().left, titleShape.getClientRect().left) - offset,
-                titleShape.getClientRect().top - offset
-            );
-            const backgroundPosition2 = new Vector2(
-                Math.max(cardShapes.getClientRect().right, titleShape.getClientRect().right) + offset,
-                this.buttonShape.getClientRect().bottom + offset
-            );
+            const backgroundPosition1 = {
+                x: Math.min(cardShapes.getClientRect().left, titleShape.getClientRect().left) - offset,
+                y: titleShape.getClientRect().top - offset
+            };
+            const backgroundPosition2 = {
+                x: Math.max(cardShapes.getClientRect().right, titleShape.getClientRect().right) + offset,
+                y: this.buttonShape.getClientRect().bottom + offset
+            };
 
             const backgroundShape = new Rectangle({
                 x: backgroundPosition1.x,
@@ -122,7 +120,7 @@ export class ChooseCardsActivity extends Activity {
             });
 
             cardShapes.children.forEach((shape, index) => {
-                const card = shape as Card;
+                const card = shape as CardShape;
                 this.updateCard(card, index);
 
                 card.on('click', () => {
@@ -202,7 +200,7 @@ export class ChooseCardsActivity extends Activity {
         }
     }
 
-    private updateCard(card: Card, index: number) {
+    private updateCard(card: CardShape, index: number) {
         if (this.selected.includes(index)) {
             card.setStrokeWidth(5).setStroke(Color.fromHex('#FF9F1C').toString());
         } else {

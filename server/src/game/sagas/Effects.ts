@@ -1,7 +1,6 @@
-import {Action} from "@common/actions/Action";
-import GameState from "../InitGameState";
-
-import Actions from "@common/actions/Main";
+import {Action} from "@common/ActionsHelpers";
+import {GameState} from "@common/Types";
+import * as Actions from "@common/Actions"
 
 export type EmptyObject = Record<string, never>;
 

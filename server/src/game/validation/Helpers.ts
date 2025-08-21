@@ -1,9 +1,7 @@
-// ===== Base schemas without state =====
-
-import GameState from "../InitGameState";
 import * as z from "zod";
-import Vector2 from "@common/Vector2";
+
 import {StateGetters} from "@common/getters/State";
+import {GameState} from "@common/Types";
 
 export const vector2Schema = z.object(
     {
@@ -11,7 +9,7 @@ export const vector2Schema = z.object(
         y: z.number({message: "Координата Y должна быть числом"}).int({message: "Координата Y должна быть целым числом"}),
     },
     {message: "Неправильный объект передан в качестве координат"}
-).transform(({x, y}) => new Vector2(x, y));
+);
 
 export const vector2ArraySchema = z.array(vector2Schema, {message: "Ожидался массив координат"});
 

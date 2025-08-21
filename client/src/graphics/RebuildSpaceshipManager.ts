@@ -1,14 +1,13 @@
+import {SpaceshipGetters} from "@common/getters/Spaceship";
+import {SpaceshipModifiers} from "@common/modifiers/Spaceship";
+import {Card, ModuleCard, Player, Spaceship} from "@common/Types";
+import {ModuleGetters} from "@common/getters/Module";
+
 import Spaceships from "./scenes/Spaceships";
 import Controls from "./scenes/Controls";
-import ModuleCard, {isMainModule} from "@common/modules/ModuleCard";
-import Spaceship from "../../../common/Spaceship";
-import {EventCard} from "@common/events/EventCard";
-import Game from "../Game";
-import Player from "../../../common/Player";
 import {DD} from "./engine/Drag";
 import {Spaceship as SpaceshipShape} from "./shapes/Spaceship";
-import {SpaceshipGetters} from "../../../common/getters/Spaceship";
-import {SpaceshipModifiers} from "../../../common/modifiers/Spaceship";
+import Game from "Game";
 
 export default class RebuildSpaceshipManager {
     gameManager: Game;
@@ -34,9 +33,9 @@ export default class RebuildSpaceshipManager {
         let spaceshipCardSize = this.spaceshipShape.cardSize();
 
         for (let shape of this.spaceshipShape.getModules()) {
-            const module = shape.card() as ModuleCard;
+            const module = (shape.card() as { cardType: "module", module: ModuleCard }).module;
 
-            if (isMainModule(module))
+            if (ModuleGetters.isMain(module))
                 continue;
 
             shape.on('click.rebuild', () => {
@@ -100,7 +99,7 @@ export default class RebuildSpaceshipManager {
 
                     this.spaceshipShape.setSpaceship(this.spaceship);
 
-                    this.hand.push(...unconnected);
+                    this.hand.push(...unconnected.map(ModuleGetters.asCard));
 
                     this.controlsScene.handDrawer.setHandData(this.hand);
                     this.controlsScene.handDrawer.redraw();
@@ -120,7 +119,8 @@ export default class RebuildSpaceshipManager {
                 this.spaceshipShape.setSpaceship(this.spaceship);
 
                 // add to hand cards
-                this.hand.push(module, ...unconnected);
+                unconnected.push(module);
+                this.hand.push(...unconnected.map(ModuleGetters.asCard));
 
                 // add to hand shapes
                 this.controlsScene.handDrawer.setHandData(this.hand);
@@ -134,7 +134,7 @@ export default class RebuildSpaceshipManager {
             if (shape.isEvent)
                 continue;
 
-            let module = shape.card() as ModuleCard;
+            let module = (shape.card() as { cardType: "module", module: ModuleCard }).module;
             let dragStartPos;
 
             shape.on('dragstart.rebuild', () => {
@@ -167,7 +167,7 @@ export default class RebuildSpaceshipManager {
                     SpaceshipModifiers.addModule(this.spaceship, module, localPosition.x, localPosition.y);
 
                     // remove from hand cards
-                    this.hand.splice(this.hand.indexOf(module), 1);
+                    this.hand.splice(this.hand.indexOf(shape.card()), 1);
 
                     // add to spaceship modules
                     // add to spaceship shapes
@@ -206,10 +206,6 @@ export default class RebuildSpaceshipManager {
         return this.gameManager.currentPlayer;
     }
 
-    private get spaceshipsScene(): Spaceships {
-        return this.gameManager.spaceshipsScene;
-    }
-
     private get controlsScene(): Controls {
         return this.gameManager.controlsScene;
     }
@@ -218,7 +214,7 @@ export default class RebuildSpaceshipManager {
         return this.gameManager.spaceshipsScene.spaceshipShapes[this.player.id];
     }
 
-    private get hand(): (EventCard | ModuleCard)[] {
+    private get hand(): Card[] {
         return this.player.hand;
     }
 

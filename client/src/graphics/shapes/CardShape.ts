@@ -1,5 +1,4 @@
-import {isEvent, EventCard} from "@common/events/EventCard";
-import ModuleCard, {isMainModule, isModule} from "@common/modules/ModuleCard";
+import {Card} from "@common/Types";
 
 import {Group} from "../engine/Group";
 import {ShapeConfig} from "../engine/Shape";
@@ -14,7 +13,7 @@ export type ModuleStates = 'DEFAULT' | 'ENABLED' | 'DISABLED' | 'PROTECTED' | 'S
 
 export interface CardConfig extends ShapeConfig {
     size: number;
-    card: (ModuleCard | EventCard);
+    card: Card;
     stroke?: string;
     strokeWidth?: number;
     state?: ModuleStates,
@@ -38,7 +37,7 @@ function getModuleColor(health: number, maxHealth: number): Color {
     return Color.interpolate(start, end, 1 - ratio);
 }
 
-export class Card extends Group<CardConfig> {
+export class CardShape extends Group<CardConfig> {
     _rotationGroup: Group;
     _background: Rectangle;
     _strokeRect: Rectangle;
@@ -53,9 +52,9 @@ export class Card extends Group<CardConfig> {
         const size = this.size(),
             card = this.card(),
             scale = this.size() / 256,
-            title = isModule(card)
-                ? card.name.replaceAll(' ', '\n')
-                : card.description,
+            title = card.cardType === "module"
+                ? card.module.name.replaceAll(' ', '\n')
+                : card.event.description,
             baseConnectorWidth = 100,
             baseConnectorHeight = 20;
 
@@ -64,8 +63,8 @@ export class Card extends Group<CardConfig> {
 
         let color: Color;
 
-        if (isModule(card)) {
-            color = getModuleColor(card.health, card.totalHealth);
+        if (card.cardType === "module") {
+            color = getModuleColor(card.module.health, card.module.totalHealth);
             // if (isMainModule(card)) {
             //     color = Color.fromHex('#155745');
             // } else {
@@ -121,9 +120,7 @@ export class Card extends Group<CardConfig> {
 
         this.add(this._rotationGroup);
 
-        if (isModule(card)) {
-            let module = card as ModuleCard;
-
+        if (card.cardType === "module") {
             this._values = new Text({
                 x: size / 2,
                 y: size * 3 / 4,
@@ -135,31 +132,31 @@ export class Card extends Group<CardConfig> {
                 text: this.getCharacteristicsString()
             });
 
-            if (module.connectors.top) {
+            if (card.module.connectors.top) {
                 this._connectors.push(new Rectangle({
                     x: size / 2,
                     y: -1,
                     originX: 0.5,
                     width: baseConnectorWidth * scale,
                     height: baseConnectorHeight * scale + 1,
-                    fill: module.connectors.top === 1 ? blueColor : redColor,
+                    fill: card.module.connectors.top === 1 ? blueColor : redColor,
                     cornerRadius: [0, 0, 10 * scale, 10 * scale]
                 }));
             }
 
-            if (module.connectors.left) {
+            if (card.module.connectors.left) {
                 this._connectors.push(new Rectangle({
                     x: -1,
                     y: size / 2,
                     originY: 0.5,
                     width: baseConnectorHeight * scale + 1,
                     height: baseConnectorWidth * scale,
-                    fill: module.connectors.left === 1 ? blueColor : redColor,
+                    fill: card.module.connectors.left === 1 ? blueColor : redColor,
                     cornerRadius: [0, 10 * scale, 10 * scale, 0]
                 }));
             }
 
-            if (module.connectors.bottom) {
+            if (card.module.connectors.bottom) {
                 this._connectors.push(new Rectangle({
                     x: size / 2,
                     y: size + 1,
@@ -167,12 +164,12 @@ export class Card extends Group<CardConfig> {
                     originX: 0.5,
                     width: baseConnectorWidth * scale,
                     height: baseConnectorHeight * scale + 1,
-                    fill: module.connectors.bottom === 1 ? blueColor : redColor,
+                    fill: card.module.connectors.bottom === 1 ? blueColor : redColor,
                     cornerRadius: [10 * scale, 10 * scale, 0, 0]
                 }));
             }
 
-            if (module.connectors.right) {
+            if (card.module.connectors.right) {
                 this._connectors.push(new Rectangle({
                     x: size + 1,
                     y: size / 2,
@@ -180,14 +177,14 @@ export class Card extends Group<CardConfig> {
                     originY: 0.5,
                     width: baseConnectorHeight * scale + 1,
                     height: baseConnectorWidth * scale,
-                    fill: module.connectors.right === 1 ? blueColor : redColor,
+                    fill: card.module.connectors.right === 1 ? blueColor : redColor,
                     cornerRadius: [10 * scale, 0, 0, 10 * scale]
                 }));
             }
 
             this._rotationGroup.add(...this._connectors);
 
-            this._rotationGroup.rotation(module.rotation * (Math.PI / 2));
+            this._rotationGroup.rotation(card.module.rotation * (Math.PI / 2));
 
             this.add(this._values);
         }
@@ -219,22 +216,21 @@ export class Card extends Group<CardConfig> {
     }
 
     get isModule(): boolean {
-        return isModule(this.card());
+        return this.card().cardType === "module";
     }
 
     get isEvent(): boolean {
-        return isEvent(this.card());
+        return this.card().cardType === "event";
     }
 
     private getCharacteristicsString(): string {
         const card = this.card();
 
-        if (!card || !isModule(card))
+        if (!card || card.cardType === "event")
             return "";
 
-        const module = card as ModuleCard;
-
         let values = '';
+        const module = card.module;
 
         values += module.health + '/' + module.totalHealth + '❤️';
 
@@ -253,7 +249,7 @@ export class Card extends Group<CardConfig> {
         return values;
     }
 
-    setStroke(color: string): Card {
+    setStroke(color: string): CardShape {
         this._strokeRect.stroke(color);
 
         return this;
@@ -263,7 +259,7 @@ export class Card extends Group<CardConfig> {
         return this._strokeRect.stroke();
     }
 
-    setStrokeWidth(width: number): Card {
+    setStrokeWidth(width: number): CardShape {
         this._strokeRect.strokeWidth(width);
 
         return this;
@@ -273,7 +269,7 @@ export class Card extends Group<CardConfig> {
         return this._strokeRect.strokeWidth();
     }
 
-    setState(state: ModuleStates): Card {
+    setState(state: ModuleStates): CardShape {
         const currState = this.state();
 
         if (currState === 'ENABLED' && state === 'DISABLED')
@@ -288,7 +284,7 @@ export class Card extends Group<CardConfig> {
         return this;
     }
 
-    setDisabledColor(color: string): Card {
+    setDisabledColor(color: string): CardShape {
         this.setAttr('disabledColor', color);
 
         this.updateStateColor();
@@ -305,7 +301,7 @@ export class Card extends Group<CardConfig> {
     }
 
     size: GetSet<number, this>;
-    card: GetSet<ModuleCard | EventCard, this>;
+    card: GetSet<Card, this>;
     stroke: GetSet<string, this>;
     strokeWidth: GetSet<number, this>;
     state: GetSet<ModuleStates, this>;
@@ -314,13 +310,13 @@ export class Card extends Group<CardConfig> {
     disabledColor: GetSet<string, this>;
 }
 
-Factory.addGetterSetter(Card, 'size', 100);
-Factory.addGetterSetter(Card, 'card');
+Factory.addGetterSetter(CardShape, 'size', 100);
+Factory.addGetterSetter(CardShape, 'card');
 
-Factory.addGetterSetter(Card, 'stroke');
-Factory.addGetterSetter(Card, 'strokeWidth');
+Factory.addGetterSetter(CardShape, 'stroke');
+Factory.addGetterSetter(CardShape, 'strokeWidth');
 
-Factory.addGetterSetter(Card, 'state', 'DEFAULT');
-Factory.addGetterSetter(Card, 'connectorsState');
+Factory.addGetterSetter(CardShape, 'state', 'DEFAULT');
+Factory.addGetterSetter(CardShape, 'connectorsState');
 
-Factory.addGetterSetter(Card, 'disabledColor', Color.fromHex('#000000', 0.5).toString());
+Factory.addGetterSetter(CardShape, 'disabledColor', Color.fromHex('#000000', 0.5).toString());

@@ -11,7 +11,6 @@ export function initGameState(state: Types.GameState) {
     return constructAction(
         'initGameState',
         {state},
-        {}  // meta
     );
 }
 
@@ -20,34 +19,23 @@ export function playerRebuiltSpaceship(player: Types.PlayerId, newSpaceship: Typ
     return constructAction(
         'playerRebuiltSpaceship',
         {player, newSpaceship, newHand},
-        {}  // meta
     );
 }
 
 
-export function disposeCardsFromPlayerHand(player: Types.PlayerId, indices: number[]) {
-    return constructAction(
-        'disposeCardsFromPlayerHand',
-        {player, indices},
-        {}  // meta
-    );
-}
-
-
-export function beginFight(attacker: Types.PlayerId, victim: Types.PlayerId) {
+export function beginFight(attacker: Types.PlayerId, victim: Types.PlayerId, reason: string) {
     return constructAction(
         'beginFight',
         {attacker, victim},
-        {}  // meta
+        {reason}
     );
 }
 
 
-export function popCardFromHeap(type: Types.CardType) {
+export function popCardFromStack(type: Types.CardType) {
     return constructAction(
-        'popCardFromHeap',
+        'popCardFromStack',
         {type},
-        {}  // meta
     );
 }
 
@@ -56,25 +44,23 @@ export function setCurrentPlayer(player: Types.PlayerId) {
     return constructAction(
         'setCurrentPlayer',
         {player},
-        {}  // meta
     );
 }
 
 
-export function changePlayerEnergy(player: Types.PlayerId, delta: number) {
+export function changePlayerEnergy(player: Types.PlayerId, delta: number, reason: string) {
     return constructAction(
         'changePlayerEnergy',
         {player, delta},
-        {}  // meta
+        {reason}
     );
 }
 
 
-export function returnDiscardsToStack(type: Types.CardType, discards: Types.Card[]) {
+export function clearDiscard(type: Types.CardType) {
     return constructAction(
-        'returnDiscardsToStack',
-        {type, discards},
-        {}  // meta
+        'clearDiscard',
+        {type},
     );
 }
 
@@ -83,7 +69,6 @@ export function playerSkipNextTurn(player: Types.PlayerId) {
     return constructAction(
         'playerSkipNextTurn',
         {player},
-        {}  // meta
     );
 }
 
@@ -92,16 +77,14 @@ export function destructSpaceshipModules(player: Types.PlayerId, positions: Type
     return constructAction(
         'destructSpaceshipModules',
         {player, positions, destructedCardsDestiny, detachedCardsDestiny},
-        {}  // meta
     );
 }
 
 
-export function pushCardsToStack(type: Types.CardType, cards: Types.Card[]) {
+export function pushCardsToStack(cards: Types.Card[]) {
     return constructAction(
         'pushCardsToStack',
-        {type, cards},
-        {}  // meta
+        {cards},
     );
 }
 
@@ -110,25 +93,24 @@ export function pushCardsToHand(player: Types.PlayerId, cards: Types.Card[]) {
     return constructAction(
         'pushCardsToHand',
         {player, cards},
-        {}  // meta
     );
 }
 
 
-export function changeModuleHealth(player: Types.PlayerId, position: Types.Vector2, delta: number) {
+export function changeModuleHealth(player: Types.PlayerId, position: Types.Vector2, delta: number, reason: string) {
     return constructAction(
         'changeModuleHealth',
         {player, position, delta},
-        {}  // meta
+        {reason}
     );
 }
 
 
-export function popCardFromPlayerHand(player: Types.PlayerId, index: number) {
+export function popCardsFromHand(player: Types.PlayerId, indexes: number[], reason: string) {
     return constructAction(
-        'popCardFromPlayerHand',
-        {player, index},
-        {}  // meta
+        'popCardsFromHand',
+        {player, indexes},
+        {reason}
     );
 }
 
@@ -137,7 +119,6 @@ export function deactivateProtectorIfActive(player: Types.PlayerId) {
     return constructAction(
         'deactivateProtectorIfActive',
         {player},
-        {}  // meta
     );
 }
 
@@ -146,16 +127,14 @@ export function removeSpaceshipModules(player: Types.PlayerId, positions: Types.
     return constructAction(
         'removeSpaceshipModules',
         {player, positions},
-        {}  // meta
     );
 }
 
 
-export function pushCardsToDiscard(type: Types.CardType, cards: Types.Card[]) {
+export function pushCardsToDiscard(cards: Types.Card[]) {
     return constructAction(
         'pushCardsToDiscard',
-        {type, cards},
-        {}  // meta
+        {cards},
     );
 }
 
@@ -164,7 +143,6 @@ export function playerLost(player: Types.PlayerId) {
     return constructAction(
         'playerLost',
         {player},
-        {}  // meta
     );
 }
 
@@ -173,7 +151,6 @@ export function endFight() {
     return constructAction(
         'endFight',
         {},
-        {}  // meta
     );
 }
 
@@ -182,7 +159,6 @@ export function activateProtector(player: Types.PlayerId, position: Types.Vector
     return constructAction(
         'activateProtector',
         {player, position},
-        {}  // meta
     );
 }
 
@@ -191,7 +167,6 @@ export function shiftFightTurnToNextPlayer() {
     return constructAction(
         'shiftFightTurnToNextPlayer',
         {},
-        {}  // meta
     );
 }
 
@@ -200,7 +175,6 @@ export function playerUseModuleSecondTime(player: Types.PlayerId) {
     return constructAction(
         'playerUseModuleSecondTime',
         {player},
-        {}  // meta
     );
 }
 
@@ -209,7 +183,6 @@ export function addTimeRecord(player: Types.PlayerId, type: Types.TimeRecordType
     return constructAction(
         'addTimeRecord',
         {player, type, time},
-        {}  // meta
     );
 }
 
@@ -218,7 +191,6 @@ export function changePlayerTime(player: Types.PlayerId, delta: number) {
     return constructAction(
         'changePlayerTime',
         {player, delta},
-        {}  // meta
     );
 }
 
@@ -227,7 +199,6 @@ export function insertPause(from: number, to: number) {
     return constructAction(
         'insertPause',
         {from, to},
-        {}  // meta
     );
 }
 
@@ -236,16 +207,14 @@ export function choosePlayerForAttackRequest(player: Types.PlayerId, reason: Typ
     return constructAction(
         'choosePlayerForAttackRequest',
         {player, reason, required},
-        {}  // meta
     );
 }
 
 
-export function choosePlayerForAttackResponse(victim: Types.PlayerId) {
+export function choosePlayerForAttackResponse(victim?: Types.PlayerId) {
     return constructAction(
         'choosePlayerForAttackResponse',
         {victim},
-        {}  // meta
     );
 }
 
@@ -254,7 +223,6 @@ export function rebuildSpaceshipRequest(player: Types.PlayerId) {
     return constructAction(
         'rebuildSpaceshipRequest',
         {player},
-        {}  // meta
     );
 }
 
@@ -263,7 +231,6 @@ export function rebuildSpaceshipResponse(newSpaceship: { id: Types.ModuleId, pos
     return constructAction(
         'rebuildSpaceshipResponse',
         {newSpaceship},
-        {}  // meta
     );
 }
 
@@ -272,7 +239,6 @@ export function chooseCardTypeRequest(player: Types.PlayerId) {
     return constructAction(
         'chooseCardTypeRequest',
         {player},
-        {}  // meta
     );
 }
 
@@ -281,7 +247,6 @@ export function chooseCardTypeResponse(chosenType: Types.CardType) {
     return constructAction(
         'chooseCardTypeResponse',
         {chosenType},
-        {}  // meta
     );
 }
 
@@ -290,7 +255,6 @@ export function showCardsToPlayersRequest(player: Types.PlayerId, cardsReceiver:
     return constructAction(
         'showCardsToPlayersRequest',
         {player, cardsReceiver, cards},
-        {}  // meta
     );
 }
 
@@ -299,7 +263,6 @@ export function showCardsToPlayersResponse() {
     return constructAction(
         'showCardsToPlayersResponse',
         {},
-        {}  // meta
     );
 }
 
@@ -308,7 +271,6 @@ export function drawAdditionalModuleCardRequest(player: Types.PlayerId) {
     return constructAction(
         'drawAdditionalModuleCardRequest',
         {player},
-        {}  // meta
     );
 }
 
@@ -317,7 +279,6 @@ export function drawAdditionalModuleCardResponse(draw: boolean) {
     return constructAction(
         'drawAdditionalModuleCardResponse',
         {draw},
-        {}  // meta
     );
 }
 
@@ -326,7 +287,6 @@ export function drawAnotherEventCardRequest(player: Types.PlayerId) {
     return constructAction(
         'drawAnotherEventCardRequest',
         {player},
-        {}  // meta
     );
 }
 
@@ -335,7 +295,6 @@ export function drawAnotherEventCardResponse(draw: boolean) {
     return constructAction(
         'drawAnotherEventCardResponse',
         {draw},
-        {}  // meta
     );
 }
 
@@ -344,7 +303,6 @@ export function discardCardsRequest(player: Types.PlayerId) {
     return constructAction(
         'discardCardsRequest',
         {player},
-        {}  // meta
     );
 }
 
@@ -353,7 +311,6 @@ export function discardCardsResponse(indexes: number[]) {
     return constructAction(
         'discardCardsResponse',
         {indexes},
-        {}  // meta
     );
 }
 
@@ -362,16 +319,14 @@ export function chooseProtectorRequest(player: Types.PlayerId) {
     return constructAction(
         'chooseProtectorRequest',
         {player},
-        {}  // meta
     );
 }
 
 
-export function chooseProtectorResponse(position: Types.Vector2) {
+export function chooseProtectorResponse(position?: Types.Vector2) {
     return constructAction(
         'chooseProtectorResponse',
         {position},
-        {}  // meta
     );
 }
 
@@ -380,7 +335,6 @@ export function chooseWeaponAndTargetRequest(player: Types.PlayerId, victim: Typ
     return constructAction(
         'chooseWeaponAndTargetRequest',
         {player, victim},
-        {}  // meta
     );
 }
 
@@ -389,7 +343,6 @@ export function chooseWeaponAndTargetResponse(targetPosition: Types.Vector2, wea
     return constructAction(
         'chooseWeaponAndTargetResponse',
         {targetPosition, weaponPosition},
-        {}  // meta
     );
 }
 
@@ -398,7 +351,6 @@ export function useModuleSecondTimeRequest(player: Types.PlayerId, moduleType: T
     return constructAction(
         'useModuleSecondTimeRequest',
         {player, moduleType},
-        {}  // meta
     );
 }
 
@@ -407,7 +359,6 @@ export function useModuleSecondTimeResponse(use: boolean) {
     return constructAction(
         'useModuleSecondTimeResponse',
         {use},
-        {}  // meta
     );
 }
 
@@ -416,7 +367,6 @@ export function chooseTargetRequest(player: Types.PlayerId, victim: Types.Player
     return constructAction(
         'chooseTargetRequest',
         {player, victim},
-        {}  // meta
     );
 }
 
@@ -425,7 +375,6 @@ export function chooseTargetResponse(position: Types.Vector2) {
     return constructAction(
         'chooseTargetResponse',
         {position},
-        {}  // meta
     );
 }
 
@@ -434,16 +383,14 @@ export function chooseModuleToRepairRequest(player: Types.PlayerId) {
     return constructAction(
         'chooseModuleToRepairRequest',
         {player},
-        {}  // meta
     );
 }
 
 
-export function chooseModuleToRepairResponse(position: Types.Vector2) {
+export function chooseModuleToRepairResponse(position?: Types.Vector2) {
     return constructAction(
         'chooseModuleToRepairResponse',
         {position},
-        {}  // meta
     );
 }
 
@@ -452,7 +399,6 @@ export function reducerUpdatedState(delta: any) {
     return constructAction(
         'reducerUpdatedState',
         {delta},
-        {}  // meta
     );
 }
 
@@ -461,7 +407,6 @@ export function showCardsInfo(player: Types.PlayerId, cardsReceiver: Types.Playe
     return constructAction(
         'showCardsInfo',
         {player, cardsReceiver, cards},
-        {}  // meta
     );
 }
 
@@ -470,7 +415,6 @@ export function sendPlayerLostInfo(player: Types.PlayerId) {
     return constructAction(
         'sendPlayerLostInfo',
         {player},
-        {}  // meta
     );
 }
 
@@ -479,7 +423,6 @@ export function permuteTopThreeEventCardsRequest(player: Types.PlayerId, cards: 
     return constructAction(
         'permuteTopThreeEventCardsRequest',
         {player, cards},
-        {}  // meta
     );
 }
 
@@ -488,7 +431,6 @@ export function permuteTopThreeEventCardsResponse(order: number[]) {
     return constructAction(
         'permuteTopThreeEventCardsResponse',
         {order},
-        {}  // meta
     );
 }
 
@@ -497,7 +439,6 @@ export function chooseModuleToDestroyRequest(player: Types.PlayerId) {
     return constructAction(
         'chooseModuleToDestroyRequest',
         {player},
-        {}  // meta
     );
 }
 
@@ -506,7 +447,6 @@ export function chooseModuleToDestroyResponse(position: Types.Vector2) {
     return constructAction(
         'chooseModuleToDestroyResponse',
         {position},
-        {}  // meta
     );
 }
 
@@ -515,7 +455,6 @@ export function chooseCardsForRepairSpaceshipRequest(player: Types.PlayerId) {
     return constructAction(
         'chooseCardsForRepairSpaceshipRequest',
         {player},
-        {}  // meta
     );
 }
 
@@ -524,7 +463,6 @@ export function chooseCardsForRepairSpaceshipResponse(indexes: number[]) {
     return constructAction(
         'chooseCardsForRepairSpaceshipResponse',
         {indexes},
-        {}  // meta
     );
 }
 
@@ -533,7 +471,6 @@ export function chooseModulesToRepairByDiscardedCardsRequest(player: Types.Playe
     return constructAction(
         'chooseModulesToRepairByDiscardedCardsRequest',
         {player, count},
-        {}  // meta
     );
 }
 
@@ -542,7 +479,6 @@ export function chooseModulesToRepairByDiscardedCardsResponse(positions: Types.V
     return constructAction(
         'chooseModulesToRepairByDiscardedCardsResponse',
         {positions},
-        {}  // meta
     );
 }
 
@@ -551,7 +487,6 @@ export function chooseSolarPanelsToDestroyRequest(player: Types.PlayerId, count:
     return constructAction(
         'chooseSolarPanelsToDestroyRequest',
         {player, count},
-        {}  // meta
     );
 }
 
@@ -560,7 +495,6 @@ export function chooseSolarPanelsToDestroyResponse(positions: Types.Vector2[]) {
     return constructAction(
         'chooseSolarPanelsToDestroyResponse',
         {positions},
-        {}  // meta
     );
 }
 
@@ -569,16 +503,14 @@ export function chooseModuleToRepairByDiceRequest(player: Types.PlayerId, amount
     return constructAction(
         'chooseModuleToRepairByDiceRequest',
         {player, amount},
-        {}  // meta
     );
 }
 
 
-export function chooseModuleToRepairByDiceResponse(position: Types.Vector2) {
+export function chooseModuleToRepairByDiceResponse(position?: Types.Vector2) {
     return constructAction(
         'chooseModuleToRepairByDiceResponse',
         {position},
-        {}  // meta
     );
 }
 
@@ -587,7 +519,6 @@ export function chooseCardsToDiscardAndTakeAnotherRequest(player: Types.PlayerId
     return constructAction(
         'chooseCardsToDiscardAndTakeAnotherRequest',
         {player},
-        {}  // meta
     );
 }
 
@@ -596,7 +527,6 @@ export function chooseCardsToDiscardAndTakeAnotherResponse(indexes: number[]) {
     return constructAction(
         'chooseCardsToDiscardAndTakeAnotherResponse',
         {indexes},
-        {}  // meta
     );
 }
 
@@ -605,16 +535,14 @@ export function chooseModuleToMoveDamageRequest(player: Types.PlayerId, reason: 
     return constructAction(
         'chooseModuleToMoveDamageRequest',
         {player, reason},
-        {}  // meta
     );
 }
 
 
-export function chooseModuleToMoveDamageResponse(move: { from: Types.Vector2, to: Types.Vector2 }) {
+export function chooseModuleToMoveDamageResponse(move?: { from: Types.Vector2, to: Types.Vector2 }) {
     return constructAction(
         'chooseModuleToMoveDamageResponse',
         {move},
-        {}  // meta
     );
 }
 
@@ -623,16 +551,14 @@ export function chooseModuleToDamageByDiceRequest(player: Types.PlayerId, damage
     return constructAction(
         'chooseModuleToDamageByDiceRequest',
         {player, damage},
-        {}  // meta
     );
 }
 
 
-export function chooseModuleToDamageByDiceResponse(info: { victimId: Types.PlayerId, victimModulePosition: Types.Vector2 }) {
+export function chooseModuleToDamageByDiceResponse(info?: { victimId: Types.PlayerId, victimModulePosition: Types.Vector2 }) {
     return constructAction(
         'chooseModuleToDamageByDiceResponse',
         {info},
-        {}  // meta
     );
 }
 
@@ -641,7 +567,6 @@ export function choosePlayerToStealCardRequest(player: Types.PlayerId, options: 
     return constructAction(
         'choosePlayerToStealCardRequest',
         {player, options},
-        {}  // meta
     );
 }
 
@@ -650,7 +575,6 @@ export function choosePlayerToStealCardResponse(target: Types.PlayerId) {
     return constructAction(
         'choosePlayerToStealCardResponse',
         {target},
-        {}  // meta
     );
 }
 
@@ -659,7 +583,6 @@ export function chooseCardToStealRequest(player: Types.PlayerId, cards: Types.Ca
     return constructAction(
         'chooseCardToStealRequest',
         {player, cards},
-        {}  // meta
     );
 }
 
@@ -668,7 +591,6 @@ export function chooseCardToStealResponse(chosenCardIndex: number) {
     return constructAction(
         'chooseCardToStealResponse',
         {chosenCardIndex},
-        {}  // meta
     );
 }
 
@@ -677,7 +599,6 @@ export function useEventCardToDealDamageRequest(player: Types.PlayerId) {
     return constructAction(
         'useEventCardToDealDamageRequest',
         {player},
-        {}  // meta
     );
 }
 
@@ -686,7 +607,6 @@ export function useEventCardToDealDamageResponse(useEventCard: boolean) {
     return constructAction(
         'useEventCardToDealDamageResponse',
         {useEventCard},
-        {}  // meta
     );
 }
 
@@ -695,7 +615,6 @@ export function chooseModuleToDamageByEventCardRequest(player: Types.PlayerId, v
     return constructAction(
         'chooseModuleToDamageByEventCardRequest',
         {player, victim},
-        {}  // meta
     );
 }
 
@@ -704,7 +623,6 @@ export function chooseModuleToDamageByEventCardResponse(position: Types.Vector2)
     return constructAction(
         'chooseModuleToDamageByEventCardResponse',
         {position},
-        {}  // meta
     );
 }
 
@@ -713,7 +631,6 @@ export function tryToRunawayRequest(player: Types.PlayerId, type: Types.RunawayT
     return constructAction(
         'tryToRunawayRequest',
         {player, type},
-        {}  // meta
     );
 }
 
@@ -722,7 +639,6 @@ export function tryToRunawayResponse(willRunaway: boolean) {
     return constructAction(
         'tryToRunawayResponse',
         {willRunaway},
-        {}  // meta
     );
 }
 
@@ -731,7 +647,6 @@ export function throwDice(player: Types.PlayerId) {
     return constructAction(
         'throwDice',
         {player},
-        {}  // meta
     );
 }
 
@@ -740,7 +655,6 @@ export function throwDiceResult(result: number) {
     return constructAction(
         'throwDiceResult',
         {result},
-        {}  // meta
     );
 }
 
@@ -749,7 +663,6 @@ export function shuffle(length: number) {
     return constructAction(
         'shuffle',
         {length},
-        {}  // meta
     );
 }
 
@@ -758,7 +671,6 @@ export function shuffleResult(order: number[]) {
     return constructAction(
         'shuffleResult',
         {order},
-        {}  // meta
     );
 }
 
@@ -767,7 +679,6 @@ export function time() {
     return constructAction(
         'time',
         {},
-        {}  // meta
     );
 }
 
@@ -776,16 +687,14 @@ export function timeResult(result: number) {
     return constructAction(
         'timeResult',
         {result},
-        {}  // meta
     );
 }
 
 
-export function message(text: string, player: Types.PlayerId) {
+export function message(player: Types.PlayerId, text: string) {
     return constructAction(
         'message',
-        {text, player},
-        {}  // meta
+        {player, text},
     );
 }
 

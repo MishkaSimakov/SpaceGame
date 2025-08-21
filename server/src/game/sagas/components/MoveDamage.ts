@@ -1,12 +1,11 @@
 import {MoveDamageReason} from "@common/Types";
-import {put, select} from "../Effects";
-import {SpaceshipGetters} from "@common/getters/Spaceship";
-import {request} from "./Request";
-import Actions from "@common/actions/Main"
-import {damageModule} from "./DamageModule";
 import {StateGetters} from "@common/getters/State";
+import {SpaceshipGetters} from "@common/getters/Spaceship";
+import {changeModuleHealth, changePlayerEnergy, chooseModuleToMoveDamageRequest} from "@common/Actions";
 
-const {chooseModuleToMoveDamageRequest, changePlayerEnergy, changeModuleHealth} = Actions;
+import {put, select} from "../Effects";
+import {request} from "./Request";
+import {damageModule} from "./DamageModule";
 
 const reasonDescription = {
     [MoveDamageReason.MainModule]: "move damage by main module",
@@ -21,8 +20,8 @@ export function* moveDamage(reason: MoveDamageReason, energyCost: number, movedD
         return;
     }
 
-    const move = yield* request(
-        chooseModuleToMoveDamageRequest(currentPlayer, reason),
+    const {move} = yield* request(
+        chooseModuleToMoveDamageRequest(currentPlayer.id, reason),
         'chooseModuleToMoveDamageResponse'
     );
 
@@ -30,8 +29,8 @@ export function* moveDamage(reason: MoveDamageReason, energyCost: number, movedD
         return;
     }
 
-    yield* put(changePlayerEnergy(currentPlayer, -energyCost, reasonDescription[reason]));
+    yield* put(changePlayerEnergy(currentPlayer.id, -energyCost, reasonDescription[reason]));
 
-    yield* put(changeModuleHealth(currentPlayer, move.from, movedDamage, reasonDescription[reason]));
+    yield* put(changeModuleHealth(currentPlayer.id, move.from, movedDamage, reasonDescription[reason]));
     yield* damageModule(currentPlayer, move.to, movedDamage, {type: "EventCard"});
 }

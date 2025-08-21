@@ -1,10 +1,10 @@
-import Game from "../Game";
 import {GameForPlayerDTO} from "@common/GameForPlayerDTO";
-import Player from "@common/Player";
 import {PlayerGetters} from "@common/getters/Player";
 import {StateGetters} from "@common/getters/State";
+import {GameState, Player} from "@common/Types";
+
+import Game from "../Game";
 import {getTimeDecreasingPlayerId} from "../sagas/components/Time";
-import GameState from "../InitGameState";
 
 function getPlayersTime(state: GameState): Record<number, number> {
     let playersTime = Object.fromEntries(state.players.map(p => [p.id, p.time]));

@@ -1,6 +1,8 @@
 import {Request, Response} from "express";
+
+import {GameSettings} from "@common/Types";
+
 import {User} from "../../../database/entity/user";
-import {GameSettings} from "@common/GameSettings";
 import App from "../../../App";
 import {Game as GameDBEntity} from "../../../database/entity/game";
 import {Logger} from "../../../game/Logger";

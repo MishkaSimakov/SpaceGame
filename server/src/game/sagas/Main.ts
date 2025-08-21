@@ -1,5 +1,6 @@
-import Actions from "@common/actions/Main";
 import {StateGetters} from "@common/getters/State";
+import {TimeRecordType} from "@common/Types";
+import {setCurrentPlayer} from "@common/Actions";
 
 import {newTask, put, select} from "./Effects";
 import {beforeTurn} from "./phases/BeforeTurn";
@@ -11,10 +12,6 @@ import {attack} from "./phases/Attack";
 import {fixSpaceship} from "./phases/FixSpaceship";
 import {init} from "./components/Init";
 import {addTimeRecord} from "./components/Time";
-
-import {TimeRecordType} from "../InitGameState";
-
-const {setCurrentPlayer} = Actions;
 
 function* isGameEnded() {
     return (yield* select()).players.filter(p => !p.lose).length === 1;
@@ -42,7 +39,7 @@ function* shiftTurn() {
         break;
     }
 
-    yield* put(setCurrentPlayer(state.players[currentPlayerIndex]));
+    yield* put(setCurrentPlayer(state.players[currentPlayerIndex].id));
 }
 
 function* playerTurn() {

@@ -1,5 +1,5 @@
 import ActionsBus, {ActionDescriptor, ActionListener} from "../ActionsBus";
-import {Action} from "@common/actions/Action";
+import {Action} from "@common/ActionsHelpers";
 
 export class ActionsBusProxy {
     private emitStorage: Action<string, any, any>[] = [];

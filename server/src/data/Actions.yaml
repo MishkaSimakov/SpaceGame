@@ -20,20 +20,6 @@
         elements:
           ref: Card
 
-- name: disposeCardsFromPlayerHand
-  payload:
-    - name: player
-      type:
-        ref: PlayerId
-    - name: indices
-      type:
-        elements:
-          type: int32
-  meta:
-    - name: reason
-      type:
-        type: string
-
 - name: beginFight
   payload:
     - name: attacker
@@ -47,7 +33,7 @@
       type:
         type: string
 
-- name: popCardFromHeap
+- name: popCardFromStack
   payload:
     - name: type
       type:
@@ -72,15 +58,11 @@
       type:
         type: string
 
-- name: returnDiscardsToStack
+- name: clearDiscard
   payload:
     - name: type
       type:
         ref: CardType
-    - name: discards
-      type:
-        elements:
-          ref: Card
 
 - name: playerSkipNextTurn
   payload:
@@ -106,9 +88,6 @@
 
 - name: pushCardsToStack
   payload:
-    - name: type
-      type:
-        ref: CardType
     - name: cards
       type:
         elements:
@@ -140,14 +119,19 @@
       type:
         type: string
 
-- name: popCardFromPlayerHand
+- name: popCardsFromHand
   payload:
     - name: player
       type:
         ref: PlayerId
-    - name: index
+    - name: indexes
       type:
-        type: int32
+        elements:
+          type: int32
+  meta:
+    - name: reason
+      type:
+        type: string
 
 - name: deactivateProtectorIfActive
   payload:
@@ -167,9 +151,6 @@
 
 - name: pushCardsToDiscard
   payload:
-    - name: type
-      type:
-        ref: CardType
     - name: cards
       type:
         elements:
@@ -704,14 +685,9 @@
 # -----------------------------
 - name: message
   payload:
-    - name: text
-      type:
-        type: string
     - name: player
       type:
         ref: PlayerId
-
-# -----------------------------
-# From Info.ts (already above) — kept for completeness
-# -----------------------------
-# (showCardsInfo, sendPlayerLostInfo)
+    - name: text
+      type:
+        type: string

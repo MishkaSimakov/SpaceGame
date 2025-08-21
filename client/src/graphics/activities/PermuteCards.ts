@@ -1,5 +1,4 @@
-import {EventCard} from "@common/events/EventCard";
-import ModuleCard from "@common/modules/ModuleCard";
+import {Card} from "@common/Types";
 
 import Controls from "../scenes/Controls";
 import {Group} from "../engine/Group";
@@ -7,9 +6,8 @@ import {COLORS} from "../constants";
 import {Rectangle} from "../engine/shapes/Rectangle";
 import Color from "../Color";
 import {Text} from "../engine/shapes/Text";
-import Vector2 from "@common/Vector2";
 import {Activity} from "./Activity";
-import {Card} from "../shapes/Card";
+import {CardShape} from "../shapes/CardShape";
 
 export class PermuteCardsActivity extends Activity {
     private modalGroup?: Group = undefined;
@@ -17,7 +15,7 @@ export class PermuteCardsActivity extends Activity {
 
     private resolveModal: Function | undefined = undefined;
 
-    constructor(private scene: Controls, private cards: (EventCard | ModuleCard)[]) {
+    constructor(private scene: Controls, private cards: Card[]) {
         super();
 
         for (let i = 0; i < cards.length; ++i) {
@@ -107,14 +105,14 @@ export class PermuteCardsActivity extends Activity {
                     resolve(this.order);
                 });
 
-            const backgroundPosition1 = new Vector2(
-                Math.min(cardShapes.getClientRect().left, titleShape.getClientRect().left) - offset,
-                titleShape.getClientRect().top - offset
-            );
-            const backgroundPosition2 = new Vector2(
-                Math.max(cardShapes.getClientRect().right, titleShape.getClientRect().right) + offset,
-                buttonShape.getClientRect().bottom + offset
-            );
+            const backgroundPosition1 = {
+                x: Math.min(cardShapes.getClientRect().left, titleShape.getClientRect().left) - offset,
+                y: titleShape.getClientRect().top - offset
+            };
+            const backgroundPosition2 = {
+                x: Math.max(cardShapes.getClientRect().right, titleShape.getClientRect().right) + offset,
+                y: buttonShape.getClientRect().bottom + offset
+            };
             const backgroundShape = new Rectangle({
                 x: backgroundPosition1.x,
                 y: backgroundPosition1.y,
@@ -127,11 +125,11 @@ export class PermuteCardsActivity extends Activity {
 
             //
 
-            const cardShapesInOrder: Card[] = [];
+            const cardShapesInOrder: CardShape[] = [];
 
             for (let i = 0; i < this.cards.length; ++i) {
                 const cardShape = cardShapes.children[i];
-                cardShapesInOrder.push(cardShape as Card);
+                cardShapesInOrder.push(cardShape as CardShape);
 
                 cardShape.draggable(true);
                 cardShape.on('dragstart', () => {

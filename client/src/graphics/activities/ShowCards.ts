@@ -1,5 +1,4 @@
-import ModuleCard from "@common/modules/ModuleCard";
-import {EventCard} from "@common/events/EventCard";
+import {Card} from "@common/Types";
 
 import Controls from "../scenes/Controls";
 import Color from "../Color";
@@ -13,7 +12,7 @@ export class ShowCardsActivity extends Activity {
     private titleShape?: Text;
     private fadeShape?: Rectangle;
 
-    constructor(private scene: Controls, private cards: (ModuleCard | EventCard)[], private title?: string) {
+    constructor(private scene: Controls, private cards: Card[], private title?: string) {
         super();
     }
 

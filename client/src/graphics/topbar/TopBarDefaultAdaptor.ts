@@ -29,7 +29,7 @@ export default class TopBarDefaultAdaptor extends TopBarAdaptor {
                     isHisTurn: drawer.scene.gameManager.currentTurnPlayerId === player.id
                 },
                 withName: true,
-                withTimeControl: drawer.scene.gameManager.settings.withTimeControl,
+                withTimeControl: drawer.scene.gameManager.settings.timeControlSettings !== undefined,
                 time: drawer.playerTime[player.id],
             }).onClick(() => {
                 drawer.scene.gameManager.spaceshipsScene.panToPlayerWithId(player.id);

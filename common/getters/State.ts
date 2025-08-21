@@ -1,5 +1,4 @@
-import Player, {PlayerId} from "../Player";
-import GameState from "../../server/src/game/InitGameState";
+import {GameState, Player, PlayerId} from "../Types";
 
 export const StateGetters = {
     playerById(state: GameState, id: PlayerId): Player | undefined {

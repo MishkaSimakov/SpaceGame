@@ -1,4 +1,4 @@
-import Actions from "@common/actions/Main";
+import * as Actions from "@common/Actions";
 
 import Game from "../../Game";
 import SocketManager from "../SocketManager";

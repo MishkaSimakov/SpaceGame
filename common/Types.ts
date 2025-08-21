@@ -57,6 +57,14 @@ export enum EventType {
     DiscardCardsAndTakeBuildingCards = "DiscardCardsAndTakeBuildingCards",
 }
 
+export enum MainModuleType {
+    DrawAnotherEventCard = "DrawAnotherEventCard",
+    DrawAdditionalModuleCard = "DrawAdditionalModuleCard",
+    MoveDamage = "MoveDamage",
+    UseModuleSecondTime = "UseModuleSecondTime",
+    AttackOrRunaway = "AttackOrRunaway",
+}
+
 export type ModuleCard = {
     id: ModuleId,
     name: string,
@@ -71,7 +79,7 @@ export type ModuleCard = {
     x: number,
     y: number,
     rotation: number,
-    mainModuleType?: number,
+    mainModuleType?: MainModuleType,
 };
 
 export type EventCard = {
@@ -95,6 +103,7 @@ export type TimeControlSettings = {
 
 export type GameSettings = {
     seed: string,
+    isPublic: boolean,
     startCardsCount: number,
     mainModuleRunawayEnergyCost: number,
     energyToAttackByMainModule: number,
@@ -151,6 +160,7 @@ export type Player = {
 export type GameState = {
     stack: { module: ModuleCard[], event: EventCard[] },
     discards: { module: ModuleCard[], event: EventCard[] },
+    mainModulesStack: ModuleCard[],
     players: Player[],
     currentPlayerId: PlayerId,
     settings: GameSettings,
@@ -159,10 +169,8 @@ export type GameState = {
 };
 
 export type Message = {
-    id: number,
-    playerId: PlayerId,
-    time: number,
     text: string,
+    payload?: any,
 };
 
 export enum MoveDamageReason {

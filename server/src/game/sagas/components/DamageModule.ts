@@ -1,18 +1,15 @@
-import Player from "@common/Player";
-import {ModuleType} from "@common/modules/ModuleCard";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
 import {StateGetters} from "@common/getters/State";
-import Actions from "@common/actions/Reducer";
-import Vector2 from "@common/Vector2";
-
-import {put, select} from "../Effects";
-
-const {
-    changeModuleHealth, changePlayerEnergy, deactivateProtectorIfActive,
-    playerLost,
+import {ModuleType, Player, Vector2} from "@common/Types";
+import {
+    changeModuleHealth, changePlayerEnergy,
+    deactivateProtectorIfActive, playerLost,
     pushCardsToDiscard, pushCardsToHand,
     removeSpaceshipModules
-} = Actions;
+} from "@common/Actions";
+import {ModuleGetters} from "@common/getters/Module";
+
+import {put, select} from "../Effects";
 
 type DamageType =
     | { type: "EventCard" }
@@ -34,22 +31,22 @@ export function* damageModule(victim: Player, position: Vector2, damage: number,
     }
 
     if (isMainModuleDestroyed || info.shouldDeactivateProtector) {
-        yield* put(deactivateProtectorIfActive(victim));
+        yield* put(deactivateProtectorIfActive(victim.id));
     }
 
     for (let damaged of info.damaged) {
-        yield* put(changeModuleHealth(victim, damaged.position, -damaged.damage, "damage module"));
+        yield* put(changeModuleHealth(victim.id, damaged.position, -damaged.damage, "damage module"));
     }
 
     for (let destroyed of info.destroyed) {
         const destroyedModule = SpaceshipGetters.getModuleByPosition(victim.spaceship, destroyed.position)!;
 
-        yield* put(removeSpaceshipModules(victim, [destroyed.position]));
+        yield* put(removeSpaceshipModules(victim.id, [destroyed.position]));
 
         if (destroyed.byNuclearReactor || type.type === "EventCard") {
-            yield* put(pushCardsToDiscard("module", [destroyedModule]));
+            yield* put(pushCardsToDiscard([ModuleGetters.asCard(destroyedModule)]));
         } else {
-            yield* put(pushCardsToHand(type.attacker, [destroyedModule]));
+            yield* put(pushCardsToHand(type.attacker.id, [ModuleGetters.asCard(destroyedModule)]));
         }
     }
 
@@ -60,8 +57,8 @@ export function* damageModule(victim: Player, position: Vector2, damage: number,
         const unconnectedModules = SpaceshipGetters.getUnconnectedModules(victim.spaceship);
 
         if (unconnectedModules.length !== 0) {
-            yield* put(removeSpaceshipModules(victim, unconnectedModules.map(m => new Vector2(m.x, m.y))));
-            yield* put(pushCardsToHand(victim, unconnectedModules))
+            yield* put(removeSpaceshipModules(victim.id, unconnectedModules.map(ModuleGetters.position)));
+            yield* put(pushCardsToHand(victim.id, unconnectedModules.map(ModuleGetters.asCard)))
         }
     }
 
@@ -69,8 +66,8 @@ export function* damageModule(victim: Player, position: Vector2, damage: number,
         const modulesExceptMain = victim.spaceship.modules.filter(m => m.type !== ModuleType.MainModule);
 
         if (modulesExceptMain.length !== 0) {
-            yield* put(removeSpaceshipModules(victim, modulesExceptMain.map(m => new Vector2(m.x, m.y))));
-            yield* put(pushCardsToHand(victim, modulesExceptMain));
+            yield* put(removeSpaceshipModules(victim.id, modulesExceptMain.map(ModuleGetters.position)));
+            yield* put(pushCardsToHand(victim.id, modulesExceptMain.map(ModuleGetters.asCard)));
         }
     }
 
@@ -79,13 +76,13 @@ export function* damageModule(victim: Player, position: Vector2, damage: number,
 
     if (victim.energy > SpaceshipGetters.getTotalCapacity(victim.spaceship)) {
         yield* put(changePlayerEnergy(
-            victim,
+            victim.id,
             victim.energy - SpaceshipGetters.getTotalCapacity(victim.spaceship),
             "battery destroyed"
         ));
     }
 
     if (isMainModuleDestroyed) {
-        yield* put(playerLost(victim));
+        yield* put(playerLost(victim.id));
     }
 }

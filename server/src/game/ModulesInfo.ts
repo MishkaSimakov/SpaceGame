@@ -1,6 +1,6 @@
-import {ModuleType} from "@common/Types";
+import {MainModuleType, ModuleType} from "@common/Types";
 
-type ModuleInfo = {
+export type ModuleInfo = {
     configurations: {
         left: 0 | 1 | 2,
         top: 0 | 1 | 2,
@@ -17,7 +17,55 @@ type ModuleInfo = {
     energyIncrease?: number
 };
 
-export default {
+export const mainModulesInfo: Record<MainModuleType, ModuleInfo> = {
+    [MainModuleType.DrawAnotherEventCard]: {
+        name: "Командный модуль I",
+        health: 13,
+        energyIncrease: 1,
+        capacity: 5,
+        configurations: [
+            {top: 1, right: 1, bottom: 1, left: 2}
+        ]
+    },
+    [MainModuleType.DrawAdditionalModuleCard]: {
+        name: "Командный модуль II",
+        health: 13,
+        energyIncrease: 1,
+        capacity: 5,
+        configurations: [
+            {top: 2, right: 1, bottom: 2, left: 2}
+        ]
+    },
+    [MainModuleType.MoveDamage]: {
+        name: "Командный модуль III",
+        health: 13,
+        energyIncrease: 1,
+        capacity: 5,
+        configurations: [
+            {top: 2, right: 2, bottom: 1, left: 1}
+        ]
+    },
+    [MainModuleType.UseModuleSecondTime]: {
+        name: "Командный модуль IV",
+        health: 13,
+        energyIncrease: 1,
+        capacity: 5,
+        configurations: [
+            {top: 2, right: 2, bottom: 2, left: 2}
+        ]
+    },
+    [MainModuleType.AttackOrRunaway]: {
+        name: "Командный модуль V",
+        health: 13,
+        energyIncrease: 1,
+        capacity: 5,
+        configurations: [
+            {top: 1, right: 1, bottom: 1, left: 1}
+        ]
+    },
+}
+
+export const modulesInfo = {
     [ModuleType.DarkMatterGenerator]: {
         name: "Генератор тёмной материи",
         health: 3,

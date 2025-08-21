@@ -3,9 +3,9 @@ import yaml from "js-yaml";
 import {basePath} from "../helpers/Paths";
 import * as jtd from "jtd";
 import Handlebars from 'handlebars';
-import {generateArgumentType} from "./typescript/GenerateArgumentType";
+import {generateArgument} from "./typescript/GenerateArgumentType";
 import {generateDefinitions} from "./typescript/GenerateDefinitionsType";
-import {Definition} from "./typescript/Types";
+import {Definition} from "./typescript/AST";
 
 function loadYaml(path: string): any {
     const text = fs.readFileSync(path, "utf8");
@@ -17,7 +17,11 @@ type Action = {
     description?: string;
     payload: {
         name: string,
-        type: string
+        typedName: string
+    }[],
+    meta: {
+        name: string,
+        typedName: string
     }[]
 };
 
@@ -41,7 +45,8 @@ async function main() {
         const parsedAction: Action = {
             name: action.name,
             description: action.description,
-            payload: []
+            payload: [],
+            meta: []
         };
 
         for (const argument of action.payload) {
@@ -56,7 +61,23 @@ async function main() {
 
             parsedAction.payload.push({
                 name: argument.name,
-                type: generateArgumentType(typeSchema, typescriptDefinitions)
+                typedName: generateArgument(argument.name, typeSchema, typescriptDefinitions)
+            });
+        }
+
+        for (const metaArgument of action.meta ?? []) {
+            const typeSchema = {
+                ...metaArgument.type,
+                definitions: typesData
+            };
+
+            if (!jtd.isSchema(typeSchema) || !jtd.isValidSchema(typeSchema)) {
+                throw new Error(`${action.name}:${metaArgument.name} - invalid type schema`);
+            }
+
+            parsedAction.meta.push({
+                name: metaArgument.name,
+                typedName: generateArgument(metaArgument.name, typeSchema, typescriptDefinitions)
             });
         }
 
@@ -64,9 +85,11 @@ async function main() {
     }
 
     // template rendering
-    Handlebars.registerHelper('renderArguments', function (args: Action["payload"]) {
+    Handlebars.registerHelper('renderArguments', function (payload: Action["payload"], meta: Action["meta"]) {
+        const args = payload.concat(meta);
+
         return args
-            .map(arg => `${arg.name}: ${arg.type}`)
+            .map(arg => arg.typedName)
             .join(', ');
     });
 

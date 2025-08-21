@@ -1,12 +1,12 @@
-import {isMainModule} from "@common/modules/ModuleCard";
-import SpaceshipData from "@common/Spaceship";
+import {ModuleCard, Spaceship as SpaceshipData} from "@common/Types"
 
 import {Group} from "../engine/Group";
 import {NodeConfig} from "../engine/Node";
 import {GetSet, Vector2} from "../engine/types";
 import {Factory} from "../engine/Factory";
-import {Card} from "./Card";
+import {CardShape} from "./CardShape";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
+import {ModuleGetters} from "@common/getters/Module";
 
 export interface SpaceshipConfig extends NodeConfig {
     id: string,
@@ -38,8 +38,8 @@ export class Spaceship extends Group<SpaceshipConfig> {
         for (let module of spaceship.modules) {
             const connected = SpaceshipGetters.getModulesConnectedTo(spaceship, module);
 
-            let shape = new Card({
-                card: module,
+            let shape = new CardShape({
+                card: ModuleGetters.asCard(module),
                 size: cardSize,
                 x: module.x * cardSize,
                 y: module.y * cardSize,
@@ -55,7 +55,7 @@ export class Spaceship extends Group<SpaceshipConfig> {
 
             this.add(shape);
 
-            if (isMainModule(module)) {
+            if (ModuleGetters.isMain(module)) {
                 shape.draggable(true).dragDistance(5);
 
                 shape.on('dragstart', () => {
@@ -81,7 +81,7 @@ export class Spaceship extends Group<SpaceshipConfig> {
     }
 
     getModules() {
-        return (this.children ?? []) as Card[];
+        return (this.children ?? []) as CardShape[];
     }
 
     transformToCardPosition(pos: Vector2): Vector2 {
@@ -95,7 +95,7 @@ export class Spaceship extends Group<SpaceshipConfig> {
 
     setModulesDraggable(draggable: boolean) {
         this.getModules().forEach(card => {
-            if (!isMainModule(card.card())) {
+            if (!ModuleGetters.isMain((card.card() as { cardType: "module", module: ModuleCard }).module)) {
                 card.draggable(draggable);
             }
         });

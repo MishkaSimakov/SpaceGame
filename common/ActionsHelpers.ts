@@ -11,13 +11,27 @@ export interface Action<T extends string, P, M = unknown> {
     meta?: M;
 }
 
+type UndefinedToOptional<T> = {
+    [K in keyof T as undefined extends T[K] ? K : never]?: T[K];
+} & {
+    [K in keyof T as undefined extends T[K] ? never : K]: T[K];
+};
 
-export function constructAction<T extends string, P, M>(type: T, payload: P, meta: M): Action<T, P, M> {
+export function constructAction<T extends string, P, M>(type: T, payload: P, meta?: M):
+    Action<T, UndefinedToOptional<P>, M> {
+    // remove properties with "undefined" value in payload
+    const cleanPayload = Object.fromEntries(
+        Object.entries(payload as Record<string, unknown>)
+            .filter(([_, v]) => v !== undefined)
+    ) as UndefinedToOptional<P>;
+
     return {
         uuid: uuidv4() as string,
         time: Date.now(),
 
-        type, payload, meta
+        type,
+        payload: cleanPayload,
+        meta
     };
 }
 

@@ -1,4 +1,5 @@
-import GameState from "../InitGameState";
+import {GameState} from "@common/Types";
+
 import {ActionsBusProxy} from "./ActionsBusProxy";
 import {
     AllEffect,
@@ -10,7 +11,6 @@ import {
     SelectEffect,
     TakeEffect
 } from "./Effects";
-import {Action} from "@common/actions/Action";
 
 type Callback<R> = {
     (result: R): void,

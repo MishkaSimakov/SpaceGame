@@ -1,9 +1,9 @@
 import * as assert from "node:assert";
 
-import ActionsBus from "../ActionsBus";
+import {GameState} from "@common/Types";
 
+import ActionsBus from "../ActionsBus";
 import {Effect, SagaGenerator} from "./Effects";
-import GameState from "../InitGameState";
 import {ActionsBusProxy} from "./ActionsBusProxy";
 import {effectPerformers} from "./EffectsPerformers";
 

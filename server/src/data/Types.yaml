@@ -58,6 +58,14 @@ EventType:
     - MoveDamage
     - DiscardCardsAndTakeBuildingCards
 
+MainModuleType:
+  enum:
+    - DrawAnotherEventCard
+    - DrawAdditionalModuleCard
+    - MoveDamage
+    - UseModuleSecondTime
+    - AttackOrRunaway
+
 ModuleCard:
   properties:
     id:
@@ -96,8 +104,7 @@ ModuleCard:
       type: int32
   optionalProperties:
     mainModuleType:
-      type:
-        int32
+      ref: MainModuleType
 
 EventCard:
   properties:
@@ -136,6 +143,9 @@ GameSettings:
   properties:
     seed:
       type: string
+    isPublic:
+      type: boolean
+
     startCardsCount:
       type: int32
     mainModuleRunawayEnergyCost:
@@ -242,6 +252,10 @@ GameState:
         event:
           elements:
             ref: EventCard
+    
+    mainModulesStack:
+      elements:
+        ref: ModuleCard
 
     players:
       elements:
@@ -263,14 +277,10 @@ GameState:
 
 Message:
   properties:
-    id:
-      type: int32
-    playerId:
-      ref: PlayerId
-    time:
-      type: int32
     text:
       type: string
+  optionalProperties:
+    payload: { }
 
 # Enums for Actions
 MoveDamageReason:

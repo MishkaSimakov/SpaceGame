@@ -1,6 +1,5 @@
-import Spaceship from "../Spaceship";
-import ModuleCard, {ModuleType} from "../modules/ModuleCard";
 import {SpaceshipGetters} from "../getters/Spaceship";
+import {ModuleCard, ModuleType, Spaceship} from "../Types";
 
 function addModule(ship: Spaceship, module: ModuleCard, x: number, y: number): boolean {
     if (!SpaceshipGetters.canConnectModule(ship, module, x, y)) {

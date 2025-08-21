@@ -1,16 +1,16 @@
-import ModuleCard, {isModule, ModuleType} from "@common/modules/ModuleCard";
-import {EventCard} from "@common/events/EventCard";
-import GameState, {TimeRecordType} from "../InitGameState";
 import * as assert from "node:assert";
-import {areCardSetsEqual} from "@common/Utils";
-import {SpaceshipGetters} from "@common/getters/Spaceship";
-import ReducerActions from '@common/actions/Reducer';
+
+import * as Actions from "@common/Actions"
 import {StateGetters} from "@common/getters/State";
+import {CardType, GameState, TimeRecordType} from "@common/Types";
+import {SpaceshipGetters} from "@common/getters/Spaceship";
 import {SpaceshipModifiers} from "@common/modifiers/Spaceship";
+import {ModuleGetters} from "@common/getters/Module";
+
 
 type ReducersType = {
-    [Key in keyof typeof ReducerActions]:
-    typeof ReducerActions[Key] extends (...args: any[]) => { type: string, payload: infer P }
+    [Key in keyof typeof Actions]?:
+    typeof Actions[Key] extends (...args: any[]) => { type: string, payload: infer P }
         ? (state: GameState, payload: P) => void
         : never
 };
@@ -30,26 +30,6 @@ export const reducers: ReducersType = {
             SpaceshipGetters.getTotalCapacity(currentPlayer.spaceship)
         );
     },
-    disposeCardsFromPlayerHand(state: GameState, payload) {
-        const player = StateGetters.playerById(state, payload.player);
-
-        assert.ok(player);
-        assert.ok(player.hand.length > Math.max(...payload.indices));
-
-        player.hand = player.hand.filter((card, index) => {
-            if (payload.indices.indexOf(index) === -1) {
-                return true;
-            }
-
-            if (isModule(card)) {
-                state.discards.module.push(card);
-            } else {
-                state.discards.event.push(card);
-            }
-
-            return false;
-        });
-    },
     beginFight(state: GameState, payload) {
         assert.equal(state.fight, undefined);
 
@@ -59,13 +39,6 @@ export const reducers: ReducersType = {
             isFirstPlayerTurn: true,
             isFightEnded: false
         };
-    },
-    popCardFromHeap(state: GameState, {type}) {
-        const stack = state.stack[type];
-
-        assert.ok(stack.length > 0);
-
-        stack.pop();
     },
 
     setCurrentPlayer(state: GameState, payload) {
@@ -78,16 +51,6 @@ export const reducers: ReducersType = {
 
         player.energy += payload.delta;
         player.energy = Math.max(0, Math.min(player.energy, capacity));
-    },
-
-    returnDiscardsToStack(state: GameState, {type, discards}) {
-        if (type === "module") {
-            state.stack.module = discards as ModuleCard[];
-            state.discards.module = [];
-        } else {
-            state.stack.event = discards as EventCard[];
-            state.discards.event = [];
-        }
     },
 
     playerSkipNextTurn(state: GameState, payload) {
@@ -105,38 +68,15 @@ export const reducers: ReducersType = {
         SpaceshipModifiers.removeModule(player.spaceship, detached);
 
         if (payload.destructedCardsDestiny === "hand") {
-            player.hand.push(...destructed);
+            player.hand.push(...destructed.map(module => ({cardType: "module" as const, module})));
         } else {
             state.discards.module.push(...destructed);
         }
 
         if (payload.detachedCardsDestiny === "hand") {
-            player.hand.push(...detached);
+            player.hand.push(...detached.map(module => ({cardType: "module" as const, module})));
         } else {
             state.discards.module.push(...detached);
-        }
-    },
-
-    pushCardsToStack(state: GameState, {type, cards}) {
-        if (type === "module") {
-            state.stack.module.push(...(cards as ModuleCard[]));
-        } else {
-            state.stack.event.push(...(cards) as EventCard[]);
-        }
-    },
-
-    pushCardsToHand(state: GameState, payload) {
-        const player = StateGetters.playerById(state, payload.player)!;
-
-        player.hand.push(...payload.cards);
-    },
-
-    pushCardsToDiscard(state: GameState, {type, cards}) {
-        if (type === "module") {
-            (cards as ModuleCard[]).forEach(card => card.health = card.totalHealth);
-            state.discards.module.push(...cards as ModuleCard[]);
-        } else {
-            state.discards.event.push(...cards as EventCard[])
         }
     },
 
@@ -145,14 +85,6 @@ export const reducers: ReducersType = {
         const module = SpaceshipGetters.getModuleByPosition(player.spaceship, payload.position)!;
 
         module.health = Math.min(module.health + payload.delta, module.totalHealth);
-    },
-
-    popCardFromPlayerHand(state: GameState, payload) {
-        const player = StateGetters.playerById(state, payload.player)!;
-
-        assert.ok(player.hand.length > payload.index);
-
-        player.hand.splice(payload.index, 1);
     },
 
     deactivateProtectorIfActive(state: GameState, payload) {
@@ -173,9 +105,9 @@ export const reducers: ReducersType = {
 
         assert.ok(player.spaceship.activatedProtector === undefined);
         assert.ok(protector);
-        assert.ok(protector.type === ModuleType.SmallQuantumProtector || protector.type === ModuleType.QuantumProtector);
+        assert.ok(ModuleGetters.isProtector(protector));
 
-        player.spaceship.activatedProtector = protector;
+        player.spaceship.activatedProtector = payload.position;
     },
 
     shiftFightTurnToNextPlayer(state: GameState) {
@@ -203,7 +135,7 @@ export const reducers: ReducersType = {
     },
 
     addTimeRecord(state: GameState, payload) {
-        assert.ok(state.settings.withTimeControl);
+        assert.ok(state.settings.timeControlSettings);
 
         state.timeRecords.push({
             playerId: payload.player,
@@ -213,7 +145,7 @@ export const reducers: ReducersType = {
     },
 
     changePlayerTime(state: GameState, payload) {
-        assert.ok(state.settings.withTimeControl);
+        assert.ok(state.settings.timeControlSettings);
 
         const player = StateGetters.playerById(state, payload.player)!;
         player.time += payload.delta;
@@ -234,7 +166,64 @@ export const reducers: ReducersType = {
             {type: TimeRecordType.PAUSE_STARTED, playerId: currentPlayer.id, time: from},
             {type: TimeRecordType.PAUSE_ENDED, playerId: currentPlayer.id, time: to},
         );
-    }
+    },
+
+    // # Cards manipulations
+    // ## hand
+    popCardsFromHand(state: GameState, payload) {
+        const player = StateGetters.playerById(state, payload.player);
+
+        assert.ok(player);
+        assert.ok(player.hand.length > Math.max(...payload.indexes));
+
+        player.hand = player.hand.filter((card, index) => {
+            return payload.indexes.indexOf(index) === -1;
+        });
+    },
+    pushCardsToHand(state: GameState, payload) {
+        const player = StateGetters.playerById(state, payload.player)!;
+
+        player.hand.push(...payload.cards);
+    },
+
+    // ## stack
+    popCardFromStack(state: GameState, {type}) {
+        const stack = type === CardType.Module
+            ? state.stack.module
+            : state.stack.event;
+
+        assert.ok(stack.length > 0);
+
+        stack.pop();
+    },
+    pushCardsToStack(state: GameState, {cards}) {
+        for (const card of cards) {
+            if (card.cardType === "module") {
+                state.stack.module.push(card.module);
+            } else {
+                state.stack.event.push(card.event);
+            }
+        }
+    },
+
+    // ## discards
+    pushCardsToDiscard(state: GameState, {cards}) {
+        for (const card of cards) {
+            if (card.cardType === "module") {
+                card.module.health = card.module.totalHealth;
+                state.discards.module.push(card.module);
+            } else {
+                state.discards.event.push(card.event);
+            }
+        }
+    },
+    clearDiscard(state: GameState, {type}) {
+        if (type === CardType.Module) {
+            state.discards.module = [];
+        } else {
+            state.discards.event = [];
+        }
+    },
 }
 
 export function isReducerName(name: string): name is keyof ReducersType {

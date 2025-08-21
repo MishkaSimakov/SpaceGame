@@ -1,17 +1,16 @@
 import {
-    Card,
     EventCard,
     EventType,
     GameSettings,
     GameState,
+    MainModuleType,
     ModuleCard,
-    ModuleType, Player,
-    PlayerId,
-    Spaceship
+    ModuleType,
+    Player,
 } from "@common/Types";
 
 import {User} from "../database/entity/user";
-import modulesInfo from "./ModulesInfo";
+import {mainModulesInfo, ModuleInfo, modulesInfo} from "./ModulesInfo";
 
 function addEvents(type: EventType, description: string, count: number): EventCard[] {
     let events: EventCard[] = [];
@@ -74,28 +73,29 @@ function getInitialEventsStack(): EventCard[] {
     ];
 }
 
-function getInitialModulesStack(): ModuleCard[] {
-    let idCounter = 0;
+function getModulesFromConfig(idCounterRef: { value: number }, type: ModuleType, config: ModuleInfo): ModuleCard[] {
+    return config.configurations.map(connectors => ({
+        id: idCounterRef.value++,
+        name: config.name,
+        connectors: connectors,
+        strength: config.strength ?? 0,
+        capacity: config.capacity ?? 0,
+        energyCost: config.energyCost ?? 0,
+        energyIncrease: config.energyIncrease ?? 0,
+        type: type as ModuleType,
+        totalHealth: config.health,
+        health: config.health,
+        x: 0,
+        y: 0,
+        rotation: 0,
+    }));
+}
+
+function getInitialModulesStack(idCounterRef: { value: number }): ModuleCard[] {
     const modules: ModuleCard[] = [];
 
     for (let [type, info] of Object.entries(modulesInfo)) {
-        for (let configuration of info.configurations) {
-            modules.push({
-                id: idCounter++,
-                name: info.name,
-                connectors: configuration,
-                strength: info.strength ?? 0,
-                capacity: info.capacity ?? 0,
-                energyCost: info.energyCost ?? 0,
-                energyIncrease: info.energyIncrease ?? 0,
-                type: type as ModuleType,
-                totalHealth: info.health,
-                health: info.health,
-                x: 0,
-                y: 0,
-                rotation: 0,
-            });
-        }
+        modules.push(...getModulesFromConfig(idCounterRef, type as ModuleType, info))
     }
 
     return modules;
@@ -117,16 +117,32 @@ function initPlayers(users: User[]): Player[] {
     }))
 }
 
+function getInitialMainModulesStack(idCounterRef: { value: number }) {
+    const modules: ModuleCard[] = [];
+
+    for (let [type, info] of Object.entries(mainModulesInfo)) {
+        const module = getModulesFromConfig(idCounterRef, ModuleType.MainModule, info)[0];
+        module.mainModuleType = type as MainModuleType;
+
+        modules.push(module);
+    }
+
+    return modules;
+}
+
 export function getInitialGameState(users: User[], settings: GameSettings): GameState {
+    let idCounter = 0;
+
     return {
         stack: {
-            module: getInitialModulesStack(),
+            module: getInitialModulesStack({value: idCounter}),
             event: getInitialEventsStack()
         },
         discards: {
             module: [],
             event: []
         },
+        mainModulesStack: getInitialMainModulesStack({value: idCounter}),
         players: initPlayers(users),
         currentPlayerId: users[0].id,
         settings,

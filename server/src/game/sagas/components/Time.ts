@@ -1,16 +1,12 @@
-import {PlayerId} from "@common/Player";
-import Actions from "@common/actions/Main"
-
-import GameState, {TimeRecord, TimeRecordType} from "../../InitGameState";
 import {all, put, select, take} from "../Effects";
 import * as assert from "node:assert";
 import {StateGetters} from "@common/getters/State";
-
-const {
-    time: timeAction,
-    addTimeRecord: addTimeRecordAction,
-    changePlayerTime: changePlayerTimeAction
-} = Actions;
+import {GameState, PlayerId, TimeRecord, TimeRecordType} from "@common/Types";
+import {
+    changePlayerTime as changePlayerTimeAction,
+    addTimeRecord as addTimeRecordAction,
+    time as timeAction
+} from "@common/Actions";
 
 function* getTime() {
     const {res} = yield* all({
@@ -18,7 +14,7 @@ function* getTime() {
         res: take('timeResult')
     });
 
-    return res.payload as number;
+    return res.payload.result as number;
 }
 
 function getLastRecordByType(records: TimeRecord[], type: TimeRecordType) {

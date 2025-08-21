@@ -1,23 +1,21 @@
-import {put, select} from "../Effects";
-import Actions from "@common/actions/Main";
-import GameState from "../../InitGameState";
 import {StateGetters} from "@common/getters/State";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
-import {MainModuleType} from "@common/modules/MainModule";
-import {request} from "../components/Request";
-import {popOneCard} from "../components/PopCards";
-import {showCards} from "../components/ShowCards";
-import {EventCard} from "@common/events/EventCard";
-import {performEvent} from "../components/PerformEvent";
-
-const {
+import {CardType, EventCard, MainModuleType} from "@common/Types";
+import {
     changePlayerEnergy,
     chooseCardTypeRequest,
     drawAdditionalModuleCardRequest,
     drawAnotherEventCardRequest,
+    message,
     pushCardsToDiscard,
-    pushCardsToHand,
-} = Actions;
+    pushCardsToHand
+} from "@common/Actions";
+
+import {put, select} from "../Effects";
+import {request} from "../components/Request";
+import {popOneCard} from "../components/PopCards";
+import {showCards} from "../components/ShowCards";
+import {performEvent} from "../components/PerformEvent";
 
 export function* canDrawAnotherEventCard() {
     const state = yield* select();
@@ -39,68 +37,72 @@ export function* drawCards() {
     const state = yield* select();
     const currentPlayer = StateGetters.currentPlayer(state);
 
-    const chosenType = yield* request(chooseCardTypeRequest(currentPlayer.id), 'chooseCardTypeResponse');
-    yield* put(Actions.message(currentPlayer, `тянет карточку ${chosenType === "module" ? "строительства" : "действия"}`));
+    const {chosenType} = yield* request(
+        chooseCardTypeRequest(currentPlayer.id),
+        'chooseCardTypeResponse'
+    );
+    yield* put(message(currentPlayer.id, `тянет карточку ${chosenType === CardType.Module ? "строительства" : "действия"}`));
 
-    if (chosenType === "module") {
-        let drawAdditionalCard = false;
-
-        do {
-            const card = yield* popOneCard("module");
-            yield* put(pushCardsToHand(currentPlayer, [card]));
+    if (chosenType === CardType.Module) {
+        while (true) {
+            const card = yield* popOneCard(CardType.Module);
+            yield* put(pushCardsToHand(currentPlayer.id, [card]));
 
             yield* showCards(currentPlayer, [card], true);
 
             if (yield* canDrawAdditionalModuleCard()) {
-                drawAdditionalCard = yield* request(
-                    drawAdditionalModuleCardRequest(currentPlayer),
+                const response = yield* request(
+                    drawAdditionalModuleCardRequest(currentPlayer.id),
                     'drawAdditionalModuleCardResponse'
                 );
 
-                if (drawAdditionalCard) {
+                if (response.draw) {
                     yield* put(changePlayerEnergy(
-                        currentPlayer,
+                        currentPlayer.id,
                         -state.settings.energyToDragAdditionalCardByMainModule,
                         "draw additional module card by main module"
                     ));
 
-                    yield* put(Actions.message(currentPlayer, `использует командный модуль, чтобы взять дополнительную карточку строительства (-${state.settings.energyToDragAdditionalCardByMainModule}⚡)`));
+                    yield* put(message(currentPlayer.id, `использует командный модуль, чтобы взять дополнительную карточку строительства (-${state.settings.energyToDragAdditionalCardByMainModule}⚡)`));
+                } else {
+                    break;
                 }
             } else {
-                drawAdditionalCard = false;
+                break;
             }
-        } while (drawAdditionalCard);
+        }
     } else {
-        let drawAnotherCard = false;
-        let card: EventCard;
+        let card: { cardType: "event", event: EventCard };
 
-        do {
-            card = yield* popOneCard("event");
+        while (true) {
+            card = yield* popOneCard(CardType.Event);
 
             yield* showCards(currentPlayer, [card], true);
 
             if (yield* canDrawAnotherEventCard()) {
-                drawAnotherCard = yield* request(
+                const response = yield* request(
                     drawAnotherEventCardRequest(currentPlayer.id),
                     'drawAnotherEventCardResponse'
                 );
 
-                if (drawAnotherCard) {
+                if (response.draw) {
                     yield* put(changePlayerEnergy(
-                        currentPlayer,
+                        currentPlayer.id,
                         -state.settings.energyToDragAnotherEventCardByMainModule,
                         "draw another event card by main module"
                     ));
 
-                    yield* put(pushCardsToDiscard("event", [card]));
+                    yield* put(pushCardsToDiscard([card]));
 
-                    yield* put(Actions.message(currentPlayer, `использует командный модуль, чтобы взять другую карточку действия (-${state.settings.energyToDragAnotherEventCardByMainModule}⚡)`));
+                    yield* put(message(currentPlayer.id, `использует командный модуль, чтобы взять другую карточку действия (-${state.settings.energyToDragAnotherEventCardByMainModule}⚡)`));
+                } else {
+                    break;
                 }
             } else {
-                drawAnotherCard = false;
+                break;
             }
-        } while (drawAnotherCard);
+        }
 
-        yield* performEvent(card);
+        yield* performEvent(card.event);
     }
 }

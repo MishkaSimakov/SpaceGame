@@ -1,22 +1,15 @@
-import {EventCard, EventTypes} from "@common/events/EventCard";
-import Actions from "@common/actions/Main";
-import {StateGetters} from "@common/getters/State";
-import {SpaceshipGetters} from "@common/getters/Spaceship";
-import ModuleCard, {ModuleType} from "@common/modules/ModuleCard";
-import Vector2 from "@common/Vector2";
-import {AttackReason, MoveDamageReason} from "@common/Types";
-
-import {put, select} from "../Effects";
-import GameState from "../../InitGameState";
-import {request} from "./Request";
-import {fight} from "./Fight";
-import {damageModule} from "./DamageModule";
-import {popCards, popOneCard} from "./PopCards";
-import {showCards} from "./ShowCards";
-import {dice} from "./Random";
-import {moveDamage} from "./MoveDamage";
-
-const {
+import {
+    AttackReason,
+    Card,
+    CardDestination,
+    CardType,
+    EventCard,
+    EventType,
+    GameState,
+    ModuleType,
+    MoveDamageReason
+} from "@common/Types";
+import {
     beginFight,
     changeModuleHealth,
     changePlayerEnergy,
@@ -31,89 +24,102 @@ const {
     choosePlayerToStealCardRequest,
     chooseSolarPanelsToDestroyRequest,
     destructSpaceshipModules,
-    disposeCardsFromPlayerHand,
     permuteTopThreeEventCardsRequest,
     playerSkipNextTurn,
-    popCardFromPlayerHand,
+    popCardsFromHand,
     pushCardsToDiscard,
     pushCardsToHand,
-    pushCardsToStack,
-} = Actions;
+    pushCardsToStack
+} from "@common/Actions";
+import {StateGetters} from "@common/getters/State";
+import {SpaceshipGetters} from "@common/getters/Spaceship";
+
+import {put, select} from "../Effects";
+import {request} from "./Request";
+import {fight} from "./Fight";
+import {damageModule} from "./DamageModule";
+import {popCards, popOneCard} from "./PopCards";
+import {showCards} from "./ShowCards";
+import {dice} from "./Random";
+import {moveDamage} from "./MoveDamage";
 
 function* putTopThreeCardsInAnyOrder(state: GameState) {
-    const topThreeCards = yield* popCards("event", 3);
+    const topThreeCards = yield* popCards(CardType.Event, 3);
 
-    const order = yield* request(
-        permuteTopThreeEventCardsRequest(StateGetters.currentPlayer(state), topThreeCards),
+    const {order} = yield* request(
+        permuteTopThreeEventCardsRequest(
+            StateGetters.currentPlayer(state).id,
+            topThreeCards.map(card => card.event)
+        ),
         'permuteTopThreeEventCardsResponse'
     );
 
-    let newOrderedCards: EventCard[] = [];
+    let newOrderedCards: Card[] = [];
     for (let i = 0; i < 3; ++i) {
         newOrderedCards.push(topThreeCards[order[i]]);
     }
 
-    yield* put(pushCardsToStack("event", newOrderedCards.reverse()));
+    yield* put(pushCardsToStack(newOrderedCards.reverse()));
 }
 
 function* takeBuildingCards(state: GameState, count: number) {
     const player = StateGetters.currentPlayer(state);
-    const cards = yield* popCards("module", count);
+    const cards = (yield* popCards(CardType.Module, count));
 
-    yield* put(pushCardsToHand(player, cards));
+    yield* put(pushCardsToHand(player.id, cards));
 
     yield* showCards(player, cards, false);
 }
 
-let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: EventCard) => Generator> = {
-    [EventTypes.PutTopThreeCardsInAnyOrder]: putTopThreeCardsInAnyOrder,
-    [EventTypes.PutTopThreeCardsInAnyOrderAndTakeTop]: function* (state: GameState, event: EventCard) {
+let eventsPerformFunctions: Record<EventType, (state: GameState, event: EventCard) => Generator> = {
+    [EventType.PutTopThreeCardsInAnyOrder]: putTopThreeCardsInAnyOrder,
+    [EventType.PutTopThreeCardsInAnyOrderAndTakeTop]: function* (state: GameState, event: EventCard) {
         yield* putTopThreeCardsInAnyOrder(state);
 
-        const topEvent = yield* popOneCard("event");
+        const topEvent = yield* popOneCard(CardType.Event);
 
-        yield* put(pushCardsToDiscard("event", [event]));
+        yield* put(pushCardsToDiscard([{cardType: "event", event}]));
 
-        yield* performEvent(topEvent);
+        yield* performEvent(topEvent.event);
     },
-    [EventTypes.TakeOneBuildingCard]: function* (state: GameState) {
+    [EventType.TakeOneBuildingCard]: function* (state: GameState) {
         yield* takeBuildingCards(state, 1);
     },
-    [EventTypes.TakeTwoBuildingCards]: function* (state: GameState) {
+    [EventType.TakeTwoBuildingCards]: function* (state: GameState) {
         yield* takeBuildingCards(state, 2);
     },
-    [EventTypes.LooseFiveEnergy]: function* (state: GameState) {
-        yield* put(changePlayerEnergy(StateGetters.currentPlayer(state), -1, "event card (loose 5 energy)"));
+    [EventType.LooseFiveEnergy]: function* (state: GameState) {
+        yield* put(changePlayerEnergy(StateGetters.currentPlayer(state).id, -1, "event card (loose 5 energy)"));
     },
-    [EventTypes.TakeFiveEnergy]: function* (state: GameState) {
-        yield* put(changePlayerEnergy(StateGetters.currentPlayer(state), 1, "event card (take 5 energy)"));
+    [EventType.TakeFiveEnergy]: function* (state: GameState) {
+        yield* put(changePlayerEnergy(StateGetters.currentPlayer(state).id, 1, "event card (take 5 energy)"));
     },
-    [EventTypes.SkipNextTurn]: function* (state: GameState) {
+    [EventType.SkipNextTurn]: function* (state: GameState) {
         yield* put(playerSkipNextTurn(StateGetters.currentPlayer(state).id));
     },
-    [EventTypes.LooseAllYourCards]: function* (state: GameState) {
+    [EventType.LooseAllYourCards]: function* (state: GameState) {
         const player = StateGetters.currentPlayer(state);
 
-        yield* put(disposeCardsFromPlayerHand(
-            player,
+        yield* put(popCardsFromHand(
+            player.id,
             [...Array(player.hand.length).keys()],
             "event card (loose all your cards)"
         ));
     },
-    [EventTypes.DestroyAnyModuleOnYourSpaceship]: function* (state: GameState) {
+    [EventType.DestroyAnyModuleOnYourSpaceship]: function* (state: GameState) {
         const currentPlayer = StateGetters.currentPlayer(state);
         if (currentPlayer.spaceship.modules.length === 1) {
             return;
         }
 
-        const position = yield* request(
-            chooseModuleToDestroyRequest(currentPlayer),
+        const {position} = yield* request(
+            chooseModuleToDestroyRequest(currentPlayer.id),
             'chooseModuleToDestroyResponse'
         );
 
-        yield* put(destructSpaceshipModules(currentPlayer, [position], "discard", "hand"));
+        yield* put(destructSpaceshipModules(currentPlayer.id, [position], CardDestination.discard, CardDestination.hand));
     },
-    [EventTypes.DestroyTwoSolarPanelsOnYourSpaceship]: function* (state: GameState) {
+    [EventType.DestroyTwoSolarPanelsOnYourSpaceship]: function* (state: GameState) {
         const player = StateGetters.currentPlayer(state);
 
         const solarPanelsCount = SpaceshipGetters.getModulesByType(player.spaceship, ModuleType.SolarPanel).length;
@@ -121,62 +127,62 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: EventCa
             return;
         }
 
-        const positions: Vector2[] = yield* request(
-            chooseSolarPanelsToDestroyRequest(player, Math.min(2, solarPanelsCount)),
+        const {positions} = yield* request(
+            chooseSolarPanelsToDestroyRequest(player.id, Math.min(2, solarPanelsCount)),
             'chooseSolarPanelsToDestroyResponse'
         );
 
-        yield* put(destructSpaceshipModules(player, positions, "discard", "hand"));
+        yield* put(destructSpaceshipModules(player.id, positions, CardDestination.discard, CardDestination.hand));
     },
-    [EventTypes.AttackRight]: function* (state: GameState) {
+    [EventType.AttackRight]: function* (state: GameState) {
         const victim = StateGetters.getPlayerIndexByOffset(state, 1);
 
         yield* put(beginFight(StateGetters.currentPlayer(state).id, state.players[victim].id, "event card (attack right)"));
         yield* fight();
     },
-    [EventTypes.AttackLeft]: function* (state: GameState) {
+    [EventType.AttackLeft]: function* (state: GameState) {
         const victim = StateGetters.getPlayerIndexByOffset(state, -1);
 
         yield* put(beginFight(StateGetters.currentPlayer(state).id, state.players[victim].id, "event card (attack left)"));
         yield* fight();
     },
-    [EventTypes.AttackNextToRight]: function* (state: GameState) {
+    [EventType.AttackNextToRight]: function* (state: GameState) {
         const offset = state.players.length > 2 ? 2 : 1;
         const victim = StateGetters.getPlayerIndexByOffset(state, offset);
 
         yield* put(beginFight(StateGetters.currentPlayer(state).id, state.players[victim].id, "event card (attack next to right)"));
         yield* fight();
     },
-    [EventTypes.AttackNextToLeft]: function* (state: GameState) {
+    [EventType.AttackNextToLeft]: function* (state: GameState) {
         const offset = state.players.length > 2 ? -2 : -1;
         const victim = StateGetters.getPlayerIndexByOffset(state, offset);
 
         yield* put(beginFight(StateGetters.currentPlayer(state).id, state.players[victim].id, "event card (attack next to left)"));
         yield* fight();
     },
-    [EventTypes.AttackAny]: function* (state: GameState) {
+    [EventType.AttackAny]: function* (state: GameState) {
         const {victim} = yield* request(
-            choosePlayerForAttackRequest(StateGetters.currentPlayer(state), AttackReason.AttackAnyEventCard, true),
+            choosePlayerForAttackRequest(StateGetters.currentPlayer(state).id, AttackReason.AttackAnyEventCard, true),
             'choosePlayerForAttackResponse'
         );
 
         yield* put(beginFight(StateGetters.currentPlayer(state).id, victim!, "event card (attack any)"));
         yield* fight();
     },
-    [EventTypes.TossDiceAndTakeBuildingCards]: function* (state: GameState) {
+    [EventType.TossDiceAndTakeBuildingCards]: function* (state: GameState) {
         const currentPlayer = StateGetters.currentPlayer(state);
         const cardsCount = (yield* dice(currentPlayer)) <= 4 ? 1 : 2;
 
-        const cards = yield* popCards("module", cardsCount);
+        const cards = yield* popCards(CardType.Module, cardsCount);
 
         yield* showCards(StateGetters.currentPlayer(state), cards, false);
     },
-    [EventTypes.TossDiceAndDealDamage]: function* (state: GameState) {
+    [EventType.TossDiceAndDealDamage]: function* (state: GameState) {
         const currentPlayer = StateGetters.currentPlayer(state);
         const damage = (yield* dice(currentPlayer)) <= 4 ? 1 : 2;
 
-        const info = yield* request(
-            chooseModuleToDamageByDiceRequest(currentPlayer, damage),
+        const {info} = yield* request(
+            chooseModuleToDamageByDiceRequest(currentPlayer.id, damage),
             'chooseModuleToDamageByDiceResponse'
         );
 
@@ -187,13 +193,13 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: EventCa
         const victim = StateGetters.playerById(state, info.victimId)!;
         yield* damageModule(victim, info.victimModulePosition, damage, {type: "EventCard"});
     },
-    [EventTypes.TossDiceAndGetEnergy]: function* (state: GameState) {
+    [EventType.TossDiceAndGetEnergy]: function* (state: GameState) {
         const currentPlayer = StateGetters.currentPlayer(state);
         const energyCount = (yield* dice(currentPlayer)) <= 4 ? 1 : 2;
 
-        yield* put(changePlayerEnergy(StateGetters.currentPlayer(state), energyCount, "event card (toss dice & get energy)"));
+        yield* put(changePlayerEnergy(currentPlayer.id, energyCount, "event card (toss dice & get energy)"));
     },
-    [EventTypes.TossDiceAndRepairYourModule]: function* (state: GameState) {
+    [EventType.TossDiceAndRepairYourModule]: function* (state: GameState) {
         const currentPlayer = StateGetters.currentPlayer(state);
 
         if (!SpaceshipGetters.hasDamagedModules(currentPlayer.spaceship)) {
@@ -202,46 +208,46 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: EventCa
 
         const repairAmount = (yield* dice(currentPlayer)) <= 4 ? 1 : 2;
 
-        const moduleToRepairPosition = yield* request(
-            chooseModuleToRepairByDiceRequest(currentPlayer, repairAmount),
+        const {position} = yield* request(
+            chooseModuleToRepairByDiceRequest(currentPlayer.id, repairAmount),
             'chooseModuleToRepairByDiceResponse'
         );
 
-        if (moduleToRepairPosition === undefined) {
+        if (!position) {
             return;
         }
 
-        yield* put(changeModuleHealth(currentPlayer, moduleToRepairPosition, repairAmount, "event card (toss dice & repair)"));
+        yield* put(changeModuleHealth(currentPlayer.id, position, repairAmount, "event card (toss dice & repair)"));
     },
-    [EventTypes.SaveCardAndThenAttack]: function* (state: GameState, event: EventCard) {
-        yield* put(pushCardsToHand(StateGetters.currentPlayer(state), [event]));
+    [EventType.SaveCardAndThenAttack]: function* (state: GameState, event: EventCard) {
+        yield* put(pushCardsToHand(StateGetters.currentPlayer(state).id, [{cardType: "event", event}]));
     },
-    [EventTypes.SaveCardAndThenDealDamage]: function* (state: GameState, event: EventCard) {
-        yield* put(pushCardsToHand(StateGetters.currentPlayer(state), [event]));
+    [EventType.SaveCardAndThenDealDamage]: function* (state: GameState, event: EventCard) {
+        yield* put(pushCardsToHand(StateGetters.currentPlayer(state).id, [{cardType: "event", event}]));
     },
-    [EventTypes.ChoosePlayerAndStealHisCard]: function* (state: GameState) {
+    [EventType.ChoosePlayerAndStealHisCard]: function* (state: GameState) {
         const currentPlayer = StateGetters.currentPlayer(state);
         const playersWithCards = state.players.filter(p => (p.hand.length !== 0) && (p.id !== currentPlayer.id));
 
         if (playersWithCards.length === 0) return;
 
-        const chosenPlayerId = yield* request(
-            choosePlayerToStealCardRequest(currentPlayer, playersWithCards.map(p => p.id)),
+        const {target} = yield* request(
+            choosePlayerToStealCardRequest(currentPlayer.id, playersWithCards.map(p => p.id)),
             'choosePlayerToStealCardResponse'
         );
 
-        const chosenPlayer = StateGetters.playerById(state, chosenPlayerId)!;
+        const chosenPlayer = StateGetters.playerById(state, target)!;
 
-        const chosenCardIndex = yield* request(
-            chooseCardToStealRequest(currentPlayer, chosenPlayer.hand),
+        const {chosenCardIndex} = yield* request(
+            chooseCardToStealRequest(currentPlayer.id, chosenPlayer.hand),
             'chooseCardToStealResponse'
         );
 
         const chosenCard = chosenPlayer.hand[chosenCardIndex];
-        yield* put(popCardFromPlayerHand(chosenPlayer, chosenCardIndex));
-        yield* put(pushCardsToHand(currentPlayer, [chosenCard]));
+        yield* put(popCardsFromHand(chosenPlayer.id, [chosenCardIndex], "event card (choose player & steal his card)"));
+        yield* put(pushCardsToHand(currentPlayer.id, [chosenCard]));
     },
-    [EventTypes.DiscardCardAndRepairSpaceship]: function* (state: GameState) {
+    [EventType.DiscardCardAndRepairSpaceship]: function* (state: GameState) {
         // TODO: choose 1 or 2 cards
         // Вы можете, скинув до 2 карт с руки, восстановить по 1 урона с модулей вашего корабля за каждую скинутую карту
 
@@ -251,42 +257,50 @@ let eventsPerformFunctions: Record<EventTypes, (state: GameState, event: EventCa
             return;
         }
 
-        const discardedCardsIndexes = yield* request(
-            chooseCardsForRepairSpaceshipRequest(currentPlayer),
+        const {indexes} = yield* request(
+            chooseCardsForRepairSpaceshipRequest(currentPlayer.id),
             'chooseCardsForRepairSpaceshipResponse'
         );
 
-        if (discardedCardsIndexes.length === 0) return;
+        if (indexes.length === 0) {
+            return;
+        }
 
-        yield* put(disposeCardsFromPlayerHand(currentPlayer, discardedCardsIndexes, "event card (discard & repair)"))
+        const cards = currentPlayer.hand.filter((card, index) => indexes.includes(index));
 
-        const modulesToRepairPositions = yield* request(
-            chooseModulesToRepairByDiscardedCardsRequest(currentPlayer, discardedCardsIndexes.length),
+        yield* put(popCardsFromHand(currentPlayer.id, indexes, "event card (discard & repair)"));
+        yield* put(pushCardsToDiscard(cards));
+
+        const {positions} = yield* request(
+            chooseModulesToRepairByDiscardedCardsRequest(currentPlayer.id, indexes.length),
             'chooseModulesToRepairByDiscardedCardsResponse'
         );
 
-        for (let modulePosition of modulesToRepairPositions) {
-            yield* put(changeModuleHealth(currentPlayer, modulePosition, 2, "event card (discard & repair)"));
+        for (let modulePosition of positions) {
+            yield* put(changeModuleHealth(currentPlayer.id, modulePosition, 2, "event card (discard & repair)"));
         }
     },
-    [EventTypes.MoveDamage]: function* (state: GameState) {
+    [EventType.MoveDamage]: function* () {
         yield* moveDamage(MoveDamageReason.EventCard, 0, 1);
     },
-    [EventTypes.DiscardCardsAndTakeBuildingCards]: function* (state: GameState) {
+    [EventType.DiscardCardsAndTakeBuildingCards]: function* (state: GameState) {
         const currentPlayer = StateGetters.currentPlayer(state);
         if (currentPlayer.hand.length == 0) {
             return;
         }
 
-        const cardsToDiscardIndexes = yield* request(
-            chooseCardsToDiscardAndTakeAnotherRequest(currentPlayer),
+        const {indexes} = yield* request(
+            chooseCardsToDiscardAndTakeAnotherRequest(currentPlayer.id),
             'chooseCardsToDiscardAndTakeAnotherResponse'
         );
 
-        yield* put(disposeCardsFromPlayerHand(currentPlayer, cardsToDiscardIndexes, "event card (discard & take modules)"));
+        const discardedCards = currentPlayer.hand.filter((_, index) => indexes.includes(index));
 
-        const cards = yield* popCards("module", cardsToDiscardIndexes.length);
-        yield* put(pushCardsToHand(currentPlayer, cards));
+        yield* put(popCardsFromHand(currentPlayer.id, indexes, "event card (discard & take modules)"));
+        yield* put(pushCardsToDiscard(discardedCards));
+
+        const cards = yield* popCards(CardType.Module, indexes.length);
+        yield* put(pushCardsToHand(currentPlayer.id, cards));
 
         yield* showCards(currentPlayer, cards, false);
     }

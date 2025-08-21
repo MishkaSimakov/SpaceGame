@@ -12,14 +12,16 @@ import {
     isValuesForm,
     Schema,
 } from "jtd";
-import {ArrayType, Definition, ObjectType, PrimitiveType, RecordType, Type, UnionType} from "./Types";
+import {ArrayType, Definition, ObjectType, Parameter, PrimitiveType, RecordType, Type} from "./AST";
 import {typeMapping} from "./TypeMapping";
 
-export function generateArgumentType(schema: Schema, definitions: Record<string, Definition<any>>): string {
-    return generateArgumentTypeWithState(schema, {
+export function generateArgument(name: string, schema: Schema, definitions: Record<string, Definition<any>>): string {
+    const type = generateArgumentTypeWithState(schema, {
         path: [],
         definitions
-    }).emitInline();
+    });
+
+    return new Parameter(name, type, !!schema.nullable).emit();
 }
 
 type GenerationState = {
@@ -32,12 +34,16 @@ function generateArgumentTypeWithState(schema: Schema, state: GenerationState): 
         throw new Error(`Reached depth limit. Path: ${state.path.join('/')}`);
     }
 
+    if (schema.nullable && state.path.length > 0) {
+        throw new Error(`Nested nullable is not supported. Path: ${state.path.join('/')}`);
+    }
+
     const formNotAllowedError = (form: "discriminator" | "enum") => {
         throw new Error(`${form} form is allowed only inside "definitions" section. Use "ref" form instead. Path: ${state.path.join('/')}`);
     }
 
     if (isRefForm(schema)) {
-        const reference =  state.definitions[schema.ref].getReference();
+        const reference = state.definitions[schema.ref].getReference();
         reference.typeName = 'Types.' + reference.typeName;
 
         return reference;
@@ -58,20 +64,26 @@ function generateArgumentTypeWithState(schema: Schema, state: GenerationState): 
     } else if (isPropertiesForm(schema)) {
         state.path.push('properties');
 
-        const properties: Record<string, Type> = {};
+        const properties: Record<string, { type: Type, nullable: boolean }> = {};
 
         if (schema.properties) {
             for (const [name, property] of Object.entries(schema.properties)) {
                 state.path.push(name)
-                properties[name] = generateArgumentTypeWithState(property, state);
+                properties[name] = {
+                    type: generateArgumentTypeWithState(property, state),
+                    nullable: false
+                };
                 state.path.pop();
             }
         }
 
         if (schema.optionalProperties) {
             for (const [name, property] of Object.entries(schema.optionalProperties)) {
-                state.path.push(name + '?')
-                properties[name + '?'] = generateArgumentTypeWithState(property, state);
+                state.path.push(name)
+                properties[name] = {
+                    type: generateArgumentTypeWithState(property, state),
+                    nullable: true
+                };
                 state.path.pop();
             }
         }

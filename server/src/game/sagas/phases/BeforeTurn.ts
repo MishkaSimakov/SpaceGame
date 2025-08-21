@@ -1,42 +1,37 @@
-import {isModule} from "@common/modules/ModuleCard";
-import {EventTypes} from "@common/events/EventCard";
-import Actions from "@common/actions/Main";
-
-import {fight} from "../components/Fight";
-import {put, select} from "../Effects";
-import {AttackReason, MoveDamageReason} from "@common/Types";
-import {request} from "../components/Request";
+import {AttackReason, EventType, MainModuleType, MoveDamageReason} from "@common/Types";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
-import {MainModuleType} from "@common/modules/MainModule";
-import {moveDamage} from "../components/MoveDamage";
 import {StateGetters} from "@common/getters/State";
-
-const {
+import {
     beginFight,
     changePlayerEnergy,
-    choosePlayerForAttackRequest,
-    disposeCardsFromPlayerHand,
-} = Actions;
+    choosePlayerForAttackRequest, popCardsFromHand, pushCardsToDiscard,
+} from "@common/Actions";
+
+import {moveDamage} from "../components/MoveDamage";
+import {request} from "../components/Request";
+import {fight} from "../components/Fight";
+import {put, select} from "../Effects";
 
 function* tryAttackByEventCard() {
     const state = yield* select();
     const currentPlayer = StateGetters.currentPlayer(state);
 
     const attackLaterCardIndex = currentPlayer.hand
-        .findIndex((c) => {
-            if (isModule(c)) return false;
-
-            return c.type === EventTypes.SaveCardAndThenAttack;
+        .findIndex(card => {
+            return card.cardType === "event" && card.event.type === EventType.SaveCardAndThenAttack;
         });
 
     if (attackLaterCardIndex !== -1) {
         const {victim} = yield* request(
-            choosePlayerForAttackRequest(currentPlayer, AttackReason.AttackLaterEventCard, false),
+            choosePlayerForAttackRequest(currentPlayer.id, AttackReason.AttackLaterEventCard, false),
             'choosePlayerForAttackResponse'
         );
 
         if (victim) {
-            yield* put(disposeCardsFromPlayerHand(currentPlayer, [attackLaterCardIndex], "event card (attack later)"));
+            const attackLaterCard = currentPlayer.hand[attackLaterCardIndex];
+
+            yield* put(popCardsFromHand(currentPlayer.id, [attackLaterCardIndex], "event card (attack later)"));
+            yield* put(pushCardsToDiscard([attackLaterCard]));
             yield* put(beginFight(currentPlayer.id, victim, "event card (attack later)"));
             yield* fight();
         }
@@ -50,12 +45,12 @@ function* tryAttackByMainModule() {
     if (SpaceshipGetters.getMainModuleType(currentPlayer.spaceship) === MainModuleType.AttackOrRunaway
         && currentPlayer.energy >= state.settings.energyToAttackByMainModule) {
         const {victim} = yield* request(
-            choosePlayerForAttackRequest(currentPlayer, AttackReason.MainModule, false),
+            choosePlayerForAttackRequest(currentPlayer.id, AttackReason.MainModule, false),
             'choosePlayerForAttackResponse'
         );
 
         if (victim) {
-            yield* put(changePlayerEnergy(currentPlayer, -state.settings.energyToAttackByMainModule, "attack by main module"));
+            yield* put(changePlayerEnergy(currentPlayer.id, -state.settings.energyToAttackByMainModule, "attack by main module"));
             yield* put(beginFight(currentPlayer.id, victim, "attack by main module"));
             yield* fight();
         }

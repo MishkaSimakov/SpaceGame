@@ -1,19 +1,15 @@
 import io, {Socket} from "socket.io-client";
 
-import {EventCard} from "@common/events/EventCard";
-import {HAS_PLAYERS_DATA} from "@common/SocketsTypes";
 import {GameForPlayerDTO} from "@common/GameForPlayerDTO";
-import {Action, isAction} from "@common/actions/Action";
+import {Action} from "@common/ActionsHelpers";
+import {SocketInitPayload} from "@common/SocketsTypes";
 
 import Game from "../Game";
 import {ListenersContainer} from "./listeners/ListenersContainer";
-
 import {mainListeners} from "./listeners/MainListeners";
 import {infoListeners} from "./listeners/InfoListeners";
 import {eventCardsListeners} from "./listeners/EventCardsListeners";
 import {fightListeners} from "./listeners/FightListeners";
-import {SocketInitPayload} from "@common/Types";
-import Color from "../graphics/Color";
 import {COLORS} from "../graphics/constants";
 import {ShowHugeMessageActivity} from "../graphics/activities/ShowHugeMessage";
 
@@ -68,17 +64,7 @@ export default class SocketManager {
     }
 
     on(ev: string, listener: (...args) => any) {
-        let newListener = (...args) => {
-            if (args[0] === HAS_PLAYERS_DATA) {
-                this.game.setGameData(args[1]);
-
-                args = args.slice(2);
-            }
-
-            listener(...args);
-        };
-
-        this.socket.on(ev, newListener);
+        this.socket.on(ev, listener);
     }
 
     initSocket(uri: string) {
@@ -105,15 +91,6 @@ export default class SocketManager {
 
             this.exit();
         })
-    }
-
-    // return is event accepted
-    useEventCard(event: EventCard): Promise<boolean> {
-        return new Promise((resolve) => {
-            this.socket.emit('useEventCard', event, (isAccepted: boolean) => {
-                resolve(isAccepted);
-            });
-        });
     }
 
     private showErrors(errors: any) {

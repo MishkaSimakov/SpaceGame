@@ -1,6 +1,6 @@
 import {Server, Socket} from "socket.io";
 
-import {PlayerId} from "@common/Player";
+import {PlayerId} from "@common/Types";
 
 export type SocketPlayerInfo = {
     online: boolean;

@@ -1,6 +1,5 @@
 import {OtherPlayer} from "@common/GameForPlayerDTO";
-import Player, {PlayerId} from "@common/Player";
-import {Message} from "@common/Types";
+import {Message, Player, PlayerId} from "@common/Types";
 
 import Controls from "../scenes/Controls";
 import {ButtonColors, SIZES} from "../constants";
@@ -11,7 +10,6 @@ import {Button} from "../shapes/Button";
 import {PlayerDataLine} from "../shapes/PlayerDataLine";
 import TopBarDefaultAdaptor from "./TopBarDefaultAdaptor";
 import Color from "../Color";
-import message from "@common/actions/Message";
 
 export type ButtonData = {
     text: string,

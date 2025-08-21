@@ -9,13 +9,17 @@ import * as Types from "./Types";
 
 {{#each actions}}
 
-export function {{ name }}({{ renderArguments payload }}) {
+export function {{ name }}({{ renderArguments payload meta }}) {
     return constructAction(
         '{{ name }}',
         {
             {{~ renderPayload payload ~}}
         },
-        {}  // meta
+        {{#if meta.length }}
+        {
+            {{~ renderPayload meta ~}}
+        }
+        {{/if}}
     );
 }
 

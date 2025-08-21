@@ -1,7 +1,4 @@
-import ModuleCard from "@common/modules/ModuleCard";
-import Vector2 from "@common/Vector2";
-import {EventCard} from "@common/events/EventCard";
-import {Message} from "@common/Types";
+import {Card, Message, Vector2} from "@common/Types";
 
 import Game from "../../Game";
 import HandDrawer from "../HandDrawer";
@@ -9,7 +6,6 @@ import {COLORS} from "../constants";
 import TopBarDrawer from "../topbar/TopBarDrawer";
 import Scene from "../engine/Scene";
 import {Group} from "../engine/Group";
-import {Card} from "../shapes/Card";
 import Color from "../Color";
 import {Boundary, BoundaryType} from "../CountBoundary";
 
@@ -18,6 +14,8 @@ import {Activity} from "../activities/Activity";
 import {PermuteCardsActivity} from "../activities/PermuteCards";
 import {ChooseFromListActivity} from "../activities/ChooseFromList";
 import {ChooseCardsActivity} from "../activities/ChooseCards";
+import {ModuleGetters} from "@common/getters/Module";
+import {CardShape as CardShape} from "../shapes/CardShape";
 
 export default class Controls extends Scene {
     handDrawer: HandDrawer;
@@ -90,7 +88,7 @@ export default class Controls extends Scene {
         return result;
     }
 
-    async showCards(cards: (ModuleCard | EventCard)[], title?: string): Promise<void> {
+    async showCards(cards: Card[], title?: string): Promise<void> {
         return await this.enqueueActivity(new ShowCardsActivity(this, cards, title));
     }
 
@@ -133,7 +131,7 @@ export default class Controls extends Scene {
                 text: "Починить",
                 color: COLORS.BUTTON.PRIMARY,
                 onClick: () => {
-                    resolve(handle.get().map(i => Vector2.modulePosition(i.module)));
+                    resolve(handle.get().map(i => ModuleGetters.position(i.module)));
                 },
                 name: 'repair'
             }, {
@@ -154,11 +152,11 @@ export default class Controls extends Scene {
         return positions;
     }
 
-    drawCardsOnScreen(cards: (ModuleCard | EventCard)[]): Group {
+    drawCardsOnScreen(cards: Card[]): Group {
         let sceneWidth = this.width();
         let sceneHeight = this.height();
 
-        let offset = new Vector2(0, 0);
+        let offset = {x: 0, y: 0};
 
         let maxCardSize = Math.min(sceneWidth, sceneHeight) * 0.75;
         let spaceAvailable = Math.max(sceneWidth, sceneHeight) * 0.75;
@@ -174,11 +172,11 @@ export default class Controls extends Scene {
 
         let cardShapes = new Group();
 
-        let position = new Vector2(0, 0);
+        let position = {x: 0, y: 0};
 
         for (let card of cards) {
             cardShapes.add(
-                new Card({
+                new CardShape({
                     x: position.x,
                     y: position.y,
                     size: cardSize,
@@ -186,7 +184,8 @@ export default class Controls extends Scene {
                 })
             );
 
-            position.add(offset);
+            position.x += offset.x;
+            position.y += offset.y;
         }
 
         cardShapes
@@ -198,7 +197,7 @@ export default class Controls extends Scene {
         return cardShapes;
     }
 
-    async permuteCards(cards: (EventCard | ModuleCard)[]): Promise<number[]> {
+    async permuteCards(cards: Card[]): Promise<number[]> {
         return await this.enqueueActivity(new PermuteCardsActivity(this, cards));
     }
 

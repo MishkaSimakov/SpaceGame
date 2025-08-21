@@ -1,11 +1,11 @@
+import {ModuleCard, PlayerId, Vector2} from "@common/Types";
+import {ModuleGetters} from "@common/getters/Module";
+
 import Spaceships from "./scenes/Spaceships";
-import ModuleCard from "@common/modules/ModuleCard";
-import {PlayerId} from "@common/Player";
 import {BoundaryType, CountBoundary} from "./CountBoundary";
 import Color from "./Color";
-import {Card} from "./shapes/Card";
+import {CardShape} from "./shapes/CardShape";
 import {Observable} from "./Observable";
-import Vector2 from "@common/Vector2";
 
 type SelectedModuleInfo = {
     module: ModuleCard,
@@ -37,13 +37,17 @@ export class ChooseModuleManager {
             const playerId = parseInt(key);
 
             for (let shape of this.scene.spaceshipShapes[playerId].children) {
-                const card = shape as Card;
+                const card = shape as CardShape;
+                const module = (card.card() as {
+                    cardType: "module",
+                    module: ModuleCard
+                }).module;
                 const info = {
                     player: playerId,
-                    position: new Vector2((card.card() as ModuleCard).x, (card.card() as ModuleCard).y),
+                    position: ModuleGetters.position(module),
                 };
 
-                if (!this.check({player: playerId, module: card.card() as ModuleCard})) {
+                if (!this.check({player: playerId, module: module})) {
                     card.setState('DISABLED');
                     continue;
                 }
@@ -110,15 +114,21 @@ export class ChooseModuleManager {
         this.handle.set(this.selected.map(s => {
             return {
                 player: s.player,
-                module: this.getShape(s).card() as ModuleCard
+                module: (this.getShape(s).card() as {
+                    cardType: "module",
+                    module: ModuleCard
+                }).module
             };
         }))
     }
 
-    private getShape({player, position}: { player: PlayerId, position: Vector2 }): Card {
+    private getShape({player, position}: { player: PlayerId, position: Vector2 }): CardShape {
         const spaceship = this.scene.spaceshipShapes[player];
         return spaceship.getModules().find(card => {
-            const module = card.card() as ModuleCard;
+            const module = (card.card() as {
+                cardType: "module",
+                module: ModuleCard
+            }).module;
             return module.x === position.x && module.y === position.y;
         });
     }

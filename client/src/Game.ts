@@ -1,17 +1,14 @@
-import {GameSettings} from "@common/GameSettings";
 import {GameForPlayerDTO, OtherPlayer} from "@common/GameForPlayerDTO";
-import {Message} from "@common/Types";
+import {GameSettings, Message, Player, PlayerId} from "@common/Types";
 import {PlayerGetters} from "@common/getters/Player";
 
 import Spaceships from "./graphics/scenes/Spaceships";
 import Controls from "./graphics/scenes/Controls";
-import Player, {PlayerId} from "../../common/Player";
 import RebuildSpaceshipManager from "./graphics/RebuildSpaceshipManager";
 import SocketManager from "./sockets/SocketManager";
 import {Graphics} from "./graphics/engine/Graphics";
 import {DD} from "./graphics/engine/Drag";
 import PopupsScene from "./graphics/scenes/Popups";
-import {ShowHugeMessageActivity} from "./graphics/activities/ShowHugeMessage";
 
 export default class Game {
     currentTurnPlayerId: PlayerId;
@@ -104,7 +101,7 @@ export default class Game {
         }
 
         // time control
-        if (this.settings?.withTimeControl) {
+        if (this.settings.timeControlSettings) {
             this.timeDecreasingPlayerId = gameDTO.timeControl.timeDecreasingPlayerId;
 
             for (let player of this.getAllPlayers()) {
