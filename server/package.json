@@ -55,6 +55,6 @@
     "test": "uvu -r ts-node/register -r tsconfig-paths/register",
     "test:coverage": "c8 --include=src npm test",
     "test:report": "c8 report --reporter=html",
-    "actions": "ts-node -r tsconfig-paths/register src/tools/MapActions.ts"
+    "codegen": "ts-node -r tsconfig-paths/register src/tools/codegen/Codegen.ts"
   }
 }
