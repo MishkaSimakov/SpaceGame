@@ -1,22 +1,25 @@
 import {test} from "uvu";
-import ActionsBus from "../../../src/game/ActionsBus";
-import {SagaRunner} from "../../../src/game/sagas/SagaRunner";
-import {attachFakeRandomizer, attachReducers, fakeGameState} from "../Utils";
 import * as assert from "node:assert";
+
+import ActionsBus from "../../../src/game/ActionsBus";
+import {RunSaga} from "../../../src/game/sagas/runner/RunSaga";
+import {attachFakeRandomizer, attachReducers, fakeGameState} from "../Utils";
 import {popOneCard} from "../../../src/game/sagas/components/PopCards";
+import {CardType} from "@common/Types";
 
 test('drawOneCard', async () => {
-    for (const type of ["module", "event"] as ["module", "event"]) {
+    for (const type of ["module", "event"] as const) {
         const state = fakeGameState(2);
         const bus = new ActionsBus();
 
         attachReducers(bus, state);
 
         const modulesCount = state.stack[type].length;
-        const expectedCard = state.stack[type][modulesCount - 1];
+        let expectedCard: any = {cardType: type};
+        expectedCard[type] = state.stack[type][modulesCount - 1];
 
         const {diceCalls, shuffleCalls} = attachFakeRandomizer(bus);
-        const runner = new SagaRunner(state, bus, popOneCard, type as ("module" | "event"));
+        const runner = new RunSaga(state, bus, popOneCard, type === "module" ? CardType.Module : CardType.Event);
         const actualCard = await runner.run();
 
         assert.deepEqual(actualCard, expectedCard);
@@ -29,7 +32,7 @@ test('drawOneCard', async () => {
 });
 
 test('drawOneCardWithDiscards', async () => {
-    for (const type of ["module", "event"] as ["module", "event"]) {
+    for (const type of ["module", "event"] as const) {
         const state = fakeGameState(2);
         const bus = new ActionsBus();
 
@@ -41,11 +44,12 @@ test('drawOneCardWithDiscards', async () => {
         attachReducers(bus, state);
 
         const modulesCount = state.discards[type].length;
-        const expectedCard = state.discards[type][modulesCount - 1];
+        let expectedCard: any = {cardType: type};
+        expectedCard[type] = state.discards[type][modulesCount - 1];
 
         const {diceCalls, shuffleCalls} = attachFakeRandomizer(bus);
 
-        const runner = new SagaRunner(state, bus, popOneCard, type as ("module" | "event"));
+        const runner = new RunSaga(state, bus, popOneCard, type === "module" ? CardType.Module : CardType.Event);
         const actualCard = await runner.run();
 
         assert.deepEqual(actualCard, expectedCard);

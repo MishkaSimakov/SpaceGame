@@ -283,8 +283,6 @@ function damageInfoInternal(
     damaged.set(targetKey, targetDamage + damage);
     targetModule.health -= damage;
 
-    console.log(damaged, destroyed);
-
     if (targetModule.health <= 0) {
         damaged.delete(targetKey);
         destroyed.set(targetKey, byNuclearReactor);

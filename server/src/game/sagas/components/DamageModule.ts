@@ -9,7 +9,7 @@ import {
 } from "@common/Actions";
 import {ModuleGetters} from "@common/getters/Module";
 
-import {put, select} from "../Effects";
+import {put, select} from "../runner/Effects";
 
 type DamageType =
     | { type: "EventCard" }

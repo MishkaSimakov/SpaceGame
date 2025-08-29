@@ -1,7 +1,7 @@
 import {Player} from "@common/Types";
 import {shuffle, throwDice} from "@common/Actions";
 
-import {all, put, take} from "../Effects";
+import {all, put, take} from "../runner/Effects";
 
 export type DiceResult = 1 | 2 | 3 | 4 | 5 | 6;
 

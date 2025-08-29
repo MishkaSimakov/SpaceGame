@@ -4,13 +4,13 @@ import {playerLost} from "@common/Actions";
 import {GameState} from "@common/Types";
 
 import {Middleware} from "./ActionsBus";
-import {SagaRunner} from "./sagas/SagaRunner";
+import {RunSaga} from "./sagas/runner/RunSaga";
 import {getPlayerTime} from "./sagas/components/Time";
 
 export class LossMiddleware extends Middleware {
     constructor(
         private readonly stateRef: GameState,
-        private readonly sagaRunnerRef: SagaRunner<void>
+        private readonly sagaRunnerRef: RunSaga<void>
     ) {
         super();
     }

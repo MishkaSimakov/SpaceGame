@@ -1,62 +1,73 @@
 import {test} from "uvu";
 import * as assert from "node:assert";
 
-import Player from "@common/Player";
-import {EventTypes} from "@common/events/EventCard";
-import Actions from "@common/actions/Main";
+import {EventType} from "@common/Types";
 
-import GameState from "../../src/game/InitGameState";
 import ActionsBus from "../../src/game/ActionsBus";
-import {SagaRunner} from "../../src/game/sagas/SagaRunner";
+import {RunSaga} from "../../src/game/sagas/runner/RunSaga";
 import {beforeTurn} from "../../src/game/sagas/phases/BeforeTurn";
 import {fakeGameState} from "./Utils";
-
-const {choosePlayerForAttackResponse} = Actions;
+import {choosePlayerForAttackResponse} from "@common/Actions";
 
 test('attackLaterEventCard', async () => {
     const state = fakeGameState(2);
     const bus = new ActionsBus();
 
     // fake state
-    const cardIndex = state.stack.event.findIndex(card => card.type === EventTypes.SaveCardAndThenAttack);
+    const cardIndex = state.stack.event.findIndex(card => card.type === EventType.SaveCardAndThenAttack);
     const card = state.stack.event[cardIndex];
     state.stack.event.splice(cardIndex, 1);
 
     const [attacker, victim] = state.players;
 
     attacker.id = 0;
-    attacker.hand.push(card);
+    attacker.hand.push({cardType: "event", event: card});
 
     victim.id = 1;
 
-    const runner = new SagaRunner(state, bus, beforeTurn);
+    const runner = new RunSaga(state, bus, beforeTurn);
 
     enum TestPhase {
         INIT,
         CHOOSE_VICTIM_REQUESTED,
-        CARD_DISPOSED,
+        CARD_POPPED_FROM_HAND,
+        CARD_PUSHED_TO_DISCARDS,
         FIGHT_STARTED
     }
 
     let testPhase = TestPhase.INIT;
 
     bus.on("choosePlayerForAttackRequest", () => {
+        console.log(1);
         assert.equal(testPhase, TestPhase.INIT);
         testPhase = TestPhase.CHOOSE_VICTIM_REQUESTED;
 
-        bus.emit(choosePlayerForAttackResponse(1));
+        bus.postpone(choosePlayerForAttackResponse(1));
     });
 
-    bus.on("disposeCardsFromPlayerHand", (action) => {
+    bus.on("popCardsFromHand", (action) => {
+        console.log(2);
         assert.equal(testPhase, TestPhase.CHOOSE_VICTIM_REQUESTED);
-        testPhase = TestPhase.CARD_DISPOSED;
+        testPhase = TestPhase.CARD_POPPED_FROM_HAND;
 
         assert.equal(action.payload.player, 0);
-        assert.deepEqual(action.payload.indices, [0]);
+        assert.deepEqual(action.payload.indexes, [0]);
+    });
+
+    bus.on("pushCardsToDiscard", (action) => {
+        console.log(3);
+        assert.equal(testPhase, TestPhase.CHOOSE_VICTIM_REQUESTED);
+        testPhase = TestPhase.CARD_PUSHED_TO_DISCARDS;
+
+        assert.equal(action.payload.cards.length, 1);
+        const card = action.payload.cards[0];
+        assert.ok(card.cardType === "event");
+        assert.equal(card.event.type, EventType.SaveCardAndThenAttack);
     });
 
     bus.on("beginFight", (action) => {
-        assert.equal(testPhase, TestPhase.CARD_DISPOSED);
+        console.log(4);
+        assert.equal(testPhase, TestPhase.CARD_PUSHED_TO_DISCARDS);
         testPhase = TestPhase.FIGHT_STARTED;
 
         assert.equal(action.payload.attacker, 0);

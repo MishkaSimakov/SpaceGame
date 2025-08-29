@@ -2,7 +2,7 @@ import {initGameState} from "@common/Actions";
 import {GameState} from "@common/Types";
 
 import {shuffleArray} from "./Random";
-import {put, select} from "../Effects";
+import {put, select} from "../runner/Effects";
 
 export function* init() {
     const state: GameState = yield* select();

@@ -9,8 +9,12 @@ import {
     Player,
 } from "@common/Types";
 
-import {User} from "../database/entity/user";
 import {mainModulesInfo, ModuleInfo, modulesInfo} from "./ModulesInfo";
+
+type UserInfo = {
+    id: number,
+    login: string
+};
 
 function addEvents(type: EventType, description: string, count: number): EventCard[] {
     let events: EventCard[] = [];
@@ -101,7 +105,7 @@ function getInitialModulesStack(idCounterRef: { value: number }): ModuleCard[] {
     return modules;
 }
 
-function initPlayers(users: User[]): Player[] {
+function initPlayers(users: UserInfo[]): Player[] {
     return users.map(user => ({
         id: user.id,
         name: user.login,
@@ -114,7 +118,7 @@ function initPlayers(users: User[]): Player[] {
         usedModuleSecondTimeOnThisTurn: false,
         lose: false,
         time: 0,
-    }))
+    }));
 }
 
 function getInitialMainModulesStack(idCounterRef: { value: number }) {
@@ -130,7 +134,7 @@ function getInitialMainModulesStack(idCounterRef: { value: number }) {
     return modules;
 }
 
-export function getInitialGameState(users: User[], settings: GameSettings): GameState {
+export function getInitialGameState(users: UserInfo[], settings: GameSettings): GameState {
     let idCounter = 0;
 
     return {

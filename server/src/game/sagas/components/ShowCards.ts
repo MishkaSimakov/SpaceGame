@@ -2,7 +2,7 @@ import {Card, Player} from "@common/Types";
 import {showCardsInfo, showCardsToPlayersRequest} from "@common/Actions";
 
 import {request} from "./Request";
-import {put, select} from "../Effects";
+import {put, select} from "../runner/Effects";
 
 export function* showCards(player: Player, cards: Card[], showToOthers: boolean) {
     const state = yield* select();

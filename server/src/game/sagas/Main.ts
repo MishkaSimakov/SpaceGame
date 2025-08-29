@@ -2,7 +2,7 @@ import {StateGetters} from "@common/getters/State";
 import {TimeRecordType} from "@common/Types";
 import {setCurrentPlayer} from "@common/Actions";
 
-import {newTask, put, select} from "./Effects";
+import {newTask, put, select} from "./runner/Effects";
 import {beforeTurn} from "./phases/BeforeTurn";
 import {drawCards} from "./phases/DrawCards";
 import {rebuildSpaceship} from "./phases/RebuildSpaceship";

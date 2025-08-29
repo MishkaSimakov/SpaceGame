@@ -1,17 +1,21 @@
 import {Card, CardType, EventCard, ModuleCard} from "@common/Types";
 import {clearDiscard, popCardFromStack, pushCardsToStack} from "@common/Actions";
 
-import {put, select} from "../Effects";
+import {put, select} from "../runner/Effects";
 import {shuffleArray} from "./Random";
+import * as assert from "node:assert";
 
 type CardFromType<T extends CardType> = T extends CardType.Module
     ? { cardType: "module", module: ModuleCard }
     : { cardType: "event", event: EventCard };
 
 export function* popOneCard<T extends CardType>(type: T): Generator<any, CardFromType<T>> {
+    // temporary check, while transition to new types
+    assert.ok(type === CardType.Module || type === CardType.Event, "wrong card type passed into popOneCard or popCards");
+
     const state = yield* select();
 
-    const typeAsString = CardType.Module ? "module" : "event";
+    const typeAsString = type === CardType.Module ? "module" : "event";
 
     if (state.stack[typeAsString].length === 0) {
         const discards = type === CardType.Module

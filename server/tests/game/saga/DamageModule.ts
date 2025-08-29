@@ -2,17 +2,12 @@ import {test} from "uvu";
 import * as assert from "node:assert";
 
 import {SpaceshipGetters} from "@common/getters/Spaceship";
-import Vector2 from "@common/Vector2";
-import Battery from "@common/modules/Battery";
-import {ModuleType} from "@common/modules/ModuleCard";
+import {ModuleType} from "@common/Types";
 
-import {attachReducers, fakeGameState} from "../Utils";
+import {attachReducers, fakeGameState, fakeModule} from "../Utils";
 import ActionsBus from "../../../src/game/ActionsBus";
-import {SagaRunner} from "../../../src/game/sagas/SagaRunner";
+import {RunSaga} from "../../../src/game/sagas/runner/RunSaga";
 import {damageModule} from "../../../src/game/sagas/components/DamageModule";
-import NuclearReactor from "@common/modules/NuclearReactor";
-import SolarPanel from "@common/modules/SolarPanel";
-import QuantumProtector from "@common/modules/QuantumProtector";
 
 
 test('simple', async () => {
@@ -26,10 +21,10 @@ test('simple', async () => {
 
     attachReducers(bus, state);
 
-    const runner = new SagaRunner(
+    const runner = new RunSaga(
         state,
         bus,
-        damageModule, victim, new Vector2(0, 0), 1, {type: "Player", attacker}
+        damageModule, victim, {x: 0, y: 0}, 1, {type: "Player", attacker}
     );
 
     await runner.run();
@@ -51,11 +46,12 @@ test('damageModuleReducesEnergyWhenCapacityDecreases', async () => {
     mainModule.health = 10;
     mainModule.connectors = {top: 0, right: 1, bottom: 0, left: 0};
 
-    const battery = new Battery(0, 1, 0, 1);
-    battery.x = 1;
-    battery.y = 0;
-    battery.capacity = 10;
-    battery.health = 2;
+    const battery = fakeModule(ModuleType.Battery, {
+        x: 1,
+        y: 0,
+        health: 2,
+        capacity: 10
+    });
     victim.spaceship.modules.push(battery);
 
     victim.energy = 30;
@@ -63,10 +59,10 @@ test('damageModuleReducesEnergyWhenCapacityDecreases', async () => {
     attachReducers(bus, state);
 
     // Run
-    const runner = new SagaRunner(
+    const runner = new RunSaga(
         state,
         bus,
-        damageModule, victim, new Vector2(1, 0), battery.health, {type: 'Player', attacker}
+        damageModule, victim, {x: 1, y: 0}, battery.health, {type: 'Player', attacker}
     );
     await runner.run();
 
@@ -77,7 +73,8 @@ test('damageModuleReducesEnergyWhenCapacityDecreases', async () => {
     assert.equal(SpaceshipGetters.getTotalCapacity(victim.spaceship), 25);
     assert.equal(victim.energy, 25);
     assert.equal(attacker.hand.length, 1);
-    assert.equal(attacker.hand[0].type, ModuleType.Battery);
+    assert.ok(attacker.hand[0].cardType === "module");
+    assert.equal(attacker.hand[0].module.type, ModuleType.Battery);
     assert.equal(victim.hand.length, 0);
 });
 
@@ -94,11 +91,12 @@ test('damageModuleNoEnergyAdjustmentWhenWithinCapacity', async () => {
     mainModule.health = 10;
     mainModule.connectors = {top: 0, right: 1, bottom: 0, left: 0};
 
-    const battery = new Battery(0, 1, 0, 1);
-    battery.x = 1;
-    battery.y = 0;
-    battery.capacity = 10;
-    battery.health = 2;
+    const battery = fakeModule(ModuleType.Battery, {
+        x: 1,
+        y: 0,
+        capacity: 10,
+        health: 2
+    });
     victim.spaceship.modules.push(battery);
 
     victim.energy = 20;
@@ -106,10 +104,10 @@ test('damageModuleNoEnergyAdjustmentWhenWithinCapacity', async () => {
     attachReducers(bus, state);
 
     // Run
-    const runner = new SagaRunner(
+    const runner = new RunSaga(
         state,
         bus,
-        damageModule, victim, new Vector2(1, 0), battery.health, {type: 'Player', attacker}
+        damageModule, victim, {x: 1, y: 0}, battery.health, {type: 'Player', attacker}
     );
     await runner.run();
 
@@ -120,7 +118,8 @@ test('damageModuleNoEnergyAdjustmentWhenWithinCapacity', async () => {
     assert.equal(SpaceshipGetters.getTotalCapacity(victim.spaceship), 25);
     assert.equal(victim.energy, 20);
     assert.equal(attacker.hand.length, 1);
-    assert.equal(attacker.hand[0].type, ModuleType.Battery);
+    assert.ok(attacker.hand[0].cardType === "module");
+    assert.equal(attacker.hand[0].module.type, ModuleType.Battery);
     assert.equal(victim.hand.length, 0);
 });
 
@@ -137,11 +136,12 @@ test('damageModuleNoDestructionNoEnergyAdjustment', async () => {
     mainModule.health = 10;
     mainModule.connectors = {top: 0, right: 1, bottom: 0, left: 0};
 
-    const battery = new Battery(0, 1, 0, 1);
-    battery.x = 1;
-    battery.y = 0;
-    battery.capacity = 10;
-    battery.health = 2;
+    const battery = fakeModule(ModuleType.Battery, {
+        x: 1,
+        y: 0,
+        capacity: 10,
+        health: 2
+    });
     victim.spaceship.modules.push(battery);
 
     victim.energy = 30;
@@ -149,10 +149,10 @@ test('damageModuleNoDestructionNoEnergyAdjustment', async () => {
     attachReducers(bus, state);
 
     // Run
-    const runner = new SagaRunner(
+    const runner = new RunSaga(
         state,
         bus,
-        damageModule, victim, new Vector2(1, 0), 1, {type: 'Player', attacker}
+        damageModule, victim, {x: 1, y: 0}, 1, {type: 'Player', attacker}
     );
     await runner.run();
 
@@ -164,7 +164,7 @@ test('damageModuleNoDestructionNoEnergyAdjustment', async () => {
     assert.equal(victim.energy, 30);
     assert.equal(attacker.hand.length, 0);
     assert.equal(victim.hand.length, 0);
-    assert.equal(SpaceshipGetters.getModuleByPosition(victim.spaceship, new Vector2(1, 0)).health, 1);
+    assert.equal(SpaceshipGetters.getModuleByPosition(victim.spaceship, {x: 1, y: 0})!.health, 1);
 });
 
 test('damageFromNuclearReactor', async () => {
@@ -178,18 +178,19 @@ test('damageFromNuclearReactor', async () => {
     const mainModule = SpaceshipGetters.getMainModule(victim.spaceship)!;
     mainModule.connectors = {top: 1, right: 1, bottom: 1, left: 1};
 
-    const reactor = new NuclearReactor(1, 1, 1, 1);
-    reactor.x = 1;
-    reactor.y = 0;
+    const reactor = fakeModule(ModuleType.NuclearReactor, {
+        x: 1,
+        y: 0
+    });
     victim.spaceship.modules.push(reactor);
 
     attachReducers(bus, state);
 
     // Run
-    const runner = new SagaRunner(
+    const runner = new RunSaga(
         state,
         bus,
-        damageModule, victim, new Vector2(1, 0), reactor.health, {type: 'Player', attacker}
+        damageModule, victim, {x: 1, y: 0}, reactor.health, {type: 'Player', attacker}
     );
     await runner.run();
 
@@ -213,31 +214,34 @@ test('damageFromNuclearReactorChain', async () => {
     const mainModule = SpaceshipGetters.getMainModule(victim.spaceship)!;
     mainModule.connectors = {top: 1, right: 1, bottom: 1, left: 1};
 
-    const firstReactor = new NuclearReactor(1, 1, 1, 1);
-    firstReactor.x = 1;
-    firstReactor.y = 0;
-    firstReactor.health = 1;
+    const firstReactor = fakeModule(ModuleType.NuclearReactor, {
+        x: 1,
+        y: 0,
+        health: 1
+    });
     victim.spaceship.modules.push(firstReactor);
 
-    const secondReactor = new NuclearReactor(1, 1, 1, 1);
-    secondReactor.x = 2;
-    secondReactor.y = 0;
-    secondReactor.health = 1;
+    const secondReactor = fakeModule(ModuleType.NuclearReactor, {
+        x: 2,
+        y: 0,
+        health: 1
+    });
     victim.spaceship.modules.push(secondReactor);
 
-    const thirdReactor = new NuclearReactor(1, 1, 1, 1);
-    thirdReactor.x = 3;
-    thirdReactor.y = 0;
-    thirdReactor.health = 1;
+    const thirdReactor = fakeModule(ModuleType.NuclearReactor, {
+        x: 3,
+        y: 0,
+        health: 1
+    });
     victim.spaceship.modules.push(thirdReactor);
 
     attachReducers(bus, state);
 
     // Run
-    const runner = new SagaRunner(
+    const runner = new RunSaga(
         state,
         bus,
-        damageModule, victim, new Vector2(3, 0), 1, {type: 'Player', attacker}
+        damageModule, victim, {x: 3, y: 0}, 1, {type: 'Player', attacker}
     );
     await runner.run();
 
@@ -265,19 +269,20 @@ test('healthIsRestoredWhenGoesToDiscards', async () => {
     const mainModule = SpaceshipGetters.getMainModule(victim.spaceship)!;
     mainModule.connectors = {top: 1, right: 1, bottom: 1, left: 1};
 
-    const protector = new QuantumProtector(1, 1, 1, 1);
-    protector.x = 1;
-    protector.y = 0;
-    protector.health = 1;
+    const protector = fakeModule(ModuleType.QuantumProtector, {
+        x: 1,
+        y: 0,
+        health: 1
+    });
     victim.spaceship.modules.push(protector);
 
     attachReducers(bus, state);
 
     // Run
-    const runner = new SagaRunner(
+    const runner = new RunSaga(
         state,
         bus,
-        damageModule, victim, new Vector2(1, 0), 1, {type: 'EventCard'}
+        damageModule, victim, {x: 1, y: 0}, 1, {type: 'EventCard'}
     );
     await runner.run();
 

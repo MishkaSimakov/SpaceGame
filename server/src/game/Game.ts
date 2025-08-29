@@ -14,7 +14,7 @@ import SocketsManager from "./io/SocketsManager";
 import {gameSaga} from "./sagas/Main";
 import {Logger} from "./Logger";
 import {isReducerName, reducers} from "./reducers/Main";
-import {SagaRunner} from "./sagas/SagaRunner";
+import {RunSaga} from "./sagas/runner/RunSaga";
 import {Randomizer} from "./Randomizer";
 import {LossMiddleware} from "./LossMiddleware";
 import {validators} from "./validation/ResponseValidators";
@@ -28,7 +28,7 @@ export default class Game {
     randomizer: Randomizer;
     state: GameState;
     bus: ActionsBus;
-    sagaRunner: SagaRunner<void>;
+    sagaRunner: RunSaga<void>;
     sockets: SocketsManager;
     logger: Logger;
     playerGameLog: PlayerGameLogListener;
@@ -42,7 +42,7 @@ export default class Game {
 
         this.randomizer = new Randomizer(settings.seed);
         this.bus = new ActionsBus();
-        this.sagaRunner = new SagaRunner(this.state, this.bus, gameSaga);
+        this.sagaRunner = new RunSaga(this.state, this.bus, gameSaga);
         this.sockets = sockets;
         this.logger = logger;
 

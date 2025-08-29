@@ -11,7 +11,7 @@ import {
     pushCardsToHand
 } from "@common/Actions";
 
-import {put, select} from "../Effects";
+import {put, select} from "../runner/Effects";
 import {request} from "../components/Request";
 import {popOneCard} from "../components/PopCards";
 import {showCards} from "../components/ShowCards";

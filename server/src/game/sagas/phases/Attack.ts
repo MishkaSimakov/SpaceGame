@@ -10,7 +10,7 @@ import {
     useModuleSecondTimeRequest
 } from "@common/Actions";
 
-import {put, select} from "../Effects";
+import {put, select} from "../runner/Effects";
 import {request} from "../components/Request";
 import {fight} from "../components/Fight";
 

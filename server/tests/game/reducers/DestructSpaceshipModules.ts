@@ -1,25 +1,25 @@
 import {test} from "uvu";
 import * as assert from "node:assert";
-import {reducers} from "../../../src/game/reducers/Main";
-import {fakeGameState} from "../Utils";
-import {ModuleType} from "@common/modules/ModuleCard";
-import SolarPanel from "@common/modules/SolarPanel";
-import QuantumProtector from "@common/modules/QuantumProtector";
-import Vector2 from "@common/Vector2";
+
+import {CardDestination, ModuleType, Spaceship} from "@common/Types";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
-import Spaceship from "@common/Spaceship";
+
+import {reducers} from "../../../src/game/reducers/Main";
+import {fakeGameState, fakeModule} from "../Utils";
 
 function initSpaceship(spaceship: Spaceship) {
     const mainModule = spaceship.modules[0];
     mainModule.connectors.left = 1;
 
-    const firstModule = new SolarPanel(1, 1, 1, 1);
-    firstModule.x = -1;
-    firstModule.y = 0;
+    const firstModule = fakeModule(ModuleType.SolarPanel, {
+        x: -1,
+        y: 0
+    });
 
-    const secondModule = new QuantumProtector(1, 1, 1, 1);
-    secondModule.x = -2;
-    secondModule.y = 0;
+    const secondModule = fakeModule(ModuleType.QuantumProtector, {
+        x: -2,
+        y: 0
+    });
 
     spaceship.modules.push(firstModule, secondModule);
 }
@@ -31,11 +31,11 @@ test('destructOneSpaceshipModule', async () => {
     initSpaceship(player.spaceship);
 
     // destruct module
-    reducers.destructSpaceshipModules(state, {
+    reducers.destructSpaceshipModules!(state, {
         player: player.id,
-        positions: [new Vector2(-2, 0)],
-        destructedCardsDestiny: "hand",
-        detachedCardsDestiny: "hand"
+        positions: [{x: -2, y: 0}],
+        destructedCardsDestiny: CardDestination.hand,
+        detachedCardsDestiny: CardDestination.hand
     });
 
     // check state
@@ -43,7 +43,8 @@ test('destructOneSpaceshipModule', async () => {
     assert.equal(SpaceshipGetters.getModulesByType(player.spaceship, ModuleType.QuantumProtector).length, 0);
 
     assert.equal(player.hand.length, 1);
-    assert.equal(player.hand[0].type, ModuleType.QuantumProtector);
+    assert.ok(player.hand[0].cardType === "module");
+    assert.equal(player.hand[0].module.type, ModuleType.QuantumProtector);
 });
 
 test('destructOneSpaceshipModuleWithChainDestruction', async () => {
@@ -53,11 +54,11 @@ test('destructOneSpaceshipModuleWithChainDestruction', async () => {
     initSpaceship(player.spaceship);
 
     // destruct module
-    reducers.destructSpaceshipModules(state, {
+    reducers.destructSpaceshipModules!(state, {
         player: player.id,
-        positions: [new Vector2(-1, 0)],
-        destructedCardsDestiny: "discard",
-        detachedCardsDestiny: "discard"
+        positions: [{x: -1, y: 0}],
+        destructedCardsDestiny: CardDestination.discard,
+        detachedCardsDestiny: CardDestination.discard
     });
 
     // check state

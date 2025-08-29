@@ -12,6 +12,9 @@ export abstract class Middleware {
     abstract apply(action: Action<string, any, any>): Action<string, any, any> | undefined;
 }
 
+const noop = () => {
+};
+
 export default class ActionsBus {
     private listeners = new Map<string, ActionListener<any>[]>();
     private listenersQueue: (() => void)[] = [];
@@ -19,7 +22,7 @@ export default class ActionsBus {
 
     private middlewares: Middleware[] = [];
 
-    emit<A extends Action<string, any, any>>(action: A) {
+    emit<A extends Action<string, any, any>>(action: A, afterPerformCb: () => void = noop) {
         for (const middleware of this.middlewares) {
             action = middleware.apply(action) as A;
 
@@ -33,7 +36,7 @@ export default class ActionsBus {
         const wildcardListeners = Array.from(this.listeners.get('*') ?? []);
         listeners.push(...wildcardListeners);
 
-        this.listenersQueue.push(...listeners.map(l => l.bind(this, action)));
+        this.listenersQueue.push(...listeners.map(l => l.bind(this, action)), afterPerformCb);
 
         this.#tryProcessQueue();
     }
@@ -52,15 +55,6 @@ export default class ActionsBus {
         if (listeners && listeners.indexOf(listener) != -1) {
             listeners.splice(listeners.indexOf(listener), 1);
         }
-    }
-
-    once<T extends ActionDescriptor>(actionDescriptor: T, listener: ActionListener<T>) {
-        const onceListener: ActionListener<T> = (payload) => {
-            listener(payload);
-            this.off(actionDescriptor, onceListener);
-        };
-
-        this.on(actionDescriptor, onceListener);
     }
 
     registerMiddleware<T extends Middleware>(middleware: T) {

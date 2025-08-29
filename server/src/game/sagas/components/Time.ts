@@ -1,4 +1,4 @@
-import {all, put, select, take} from "../Effects";
+import {all, put, select, take} from "../runner/Effects";
 import * as assert from "node:assert";
 import {StateGetters} from "@common/getters/State";
 import {GameState, PlayerId, TimeRecord, TimeRecordType} from "@common/Types";

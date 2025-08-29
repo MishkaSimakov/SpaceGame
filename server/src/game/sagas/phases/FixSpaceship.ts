@@ -9,7 +9,7 @@ import {
 } from "@common/Actions";
 import {MainModuleType, ModuleType} from "@common/Types";
 
-import {put, select} from "../Effects";
+import {put, select} from "../runner/Effects";
 import {request} from "../components/Request";
 
 function* useRepairModule(repairModuleCost: number, secondTime: boolean): Generator<any, boolean, any> {

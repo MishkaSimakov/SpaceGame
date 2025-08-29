@@ -10,7 +10,7 @@ import {
 import {moveDamage} from "../components/MoveDamage";
 import {request} from "../components/Request";
 import {fight} from "../components/Fight";
-import {put, select} from "../Effects";
+import {put, select} from "../runner/Effects";
 
 function* tryAttackByEventCard() {
     const state = yield* select();
@@ -33,6 +33,7 @@ function* tryAttackByEventCard() {
             yield* put(popCardsFromHand(currentPlayer.id, [attackLaterCardIndex], "event card (attack later)"));
             yield* put(pushCardsToDiscard([attackLaterCard]));
             yield* put(beginFight(currentPlayer.id, victim, "event card (attack later)"));
+            console.log("starting fight");
             yield* fight();
         }
     }

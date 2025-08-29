@@ -2,7 +2,7 @@ import {SpaceshipGetters} from "@common/getters/Spaceship";
 import {StateGetters} from "@common/getters/State";
 import {changePlayerEnergy, message} from "@common/Actions";
 
-import {put, select} from "../Effects";
+import {put, select} from "../runner/Effects";
 
 export function* collectEnergy() {
     const state = yield* select();

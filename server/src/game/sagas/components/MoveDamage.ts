@@ -3,7 +3,7 @@ import {StateGetters} from "@common/getters/State";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
 import {changeModuleHealth, changePlayerEnergy, chooseModuleToMoveDamageRequest} from "@common/Actions";
 
-import {put, select} from "../Effects";
+import {put, select} from "../runner/Effects";
 import {request} from "./Request";
 import {damageModule} from "./DamageModule";
 

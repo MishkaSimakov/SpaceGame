@@ -1,7 +1,7 @@
 import {StateGetters} from "@common/getters/State";
 import {discardCardsRequest, message, popCardsFromHand, pushCardsToDiscard} from "@common/Actions";
 
-import {put, select} from "../Effects";
+import {put, select} from "../runner/Effects";
 import {request} from "../components/Request";
 
 export function* discardCards() {

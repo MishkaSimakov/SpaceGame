@@ -3,10 +3,10 @@ import * as assert from "node:assert";
 
 import {attachReducers, fakeGameState} from "../../Utils";
 import ActionsBus from "../../../../src/game/ActionsBus";
-import {SagaRunner} from "../../../../src/game/sagas/SagaRunner";
-import {EventTypes} from "@common/events/EventCard";
+import {RunSaga} from "../../../../src/game/sagas/runner/RunSaga";
 import {performEvent} from "../../../../src/game/sagas/components/PerformEvent";
-import Actions from "@common/actions/Main"
+import {EventType} from "@common/Types";
+import {permuteTopThreeEventCardsResponse} from "@common/Actions";
 
 
 test('basicTest', async () => {
@@ -15,7 +15,7 @@ test('basicTest', async () => {
 
     attachReducers(bus, state);
 
-    const event = state.stack.event.find(c => c.type === EventTypes.PutTopThreeCardsInAnyOrder);
+    const event = state.stack.event.find(c => c.type === EventType.PutTopThreeCardsInAnyOrder);
     state.stack.event = state.stack.event.filter(c => c !== event);
 
     const topThreeCards = state.stack.event.slice(-3);
@@ -25,10 +25,10 @@ test('basicTest', async () => {
         assert.deepEqual(action.payload.cards[1], topThreeCards[1]);
         assert.deepEqual(action.payload.cards[2], topThreeCards[0]);
 
-        bus.emit(Actions.permuteTopThreeEventCardsResponse([2, 0, 1]));
+        bus.emit(permuteTopThreeEventCardsResponse([2, 0, 1]));
     });
 
-    const runner = new SagaRunner(state, bus, performEvent, event);
+    const runner = new RunSaga(state, bus, performEvent, event);
     await runner.run();
 
     const newTopThreeCards = state.stack.event.slice(-3);

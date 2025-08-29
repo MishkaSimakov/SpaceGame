@@ -15,7 +15,7 @@ import {
 } from "@common/Actions";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
 
-import {put, select} from "../Effects";
+import {put, select} from "../runner/Effects";
 import {damageModule} from "./DamageModule";
 import {dice} from "./Random";
 import {addTimeRecord} from "./Time";

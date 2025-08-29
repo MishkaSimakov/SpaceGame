@@ -40,9 +40,8 @@ export default class SocketManager {
                     game: this.game,
                     socket: this.socket
                 }).then((action: Action<string, any, any>) => {
-                    if (actionType.endsWith('Request')) {
-                        callback(action);
-                    }
+                    // type of this action is checked in compile-time via TypeScript
+                    callback(action);
                 });
             });
         }
