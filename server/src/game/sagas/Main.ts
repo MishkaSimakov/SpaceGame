@@ -2,7 +2,7 @@ import {StateGetters} from "@common/getters/State";
 import {TimeRecordType} from "@common/Types";
 import {setCurrentPlayer} from "@common/Actions";
 
-import {newTask, put, select} from "./runner/Effects";
+import {put, select} from "./runner/Effects";
 import {beforeTurn} from "./phases/BeforeTurn";
 import {drawCards} from "./phases/DrawCards";
 import {rebuildSpaceship} from "./phases/RebuildSpaceship";
@@ -12,6 +12,7 @@ import {attack} from "./phases/Attack";
 import {fixSpaceship} from "./phases/FixSpaceship";
 import {init} from "./components/Init";
 import {addTimeRecord} from "./components/Time";
+import {LossSignal} from "../middlewares/LossSignal";
 
 function* isGameEnded() {
     return (yield* select()).players.filter(p => !p.lose).length === 1;
@@ -64,7 +65,14 @@ export function* gameSaga() {
     while (true) {
         yield* shiftTurn();
 
-        yield* newTask(playerTurn);
+        try {
+            yield* playerTurn();
+        } catch (error) {
+            // LossSignal indicates that current turn must be cancelled due to player loss
+            if (!(error instanceof LossSignal)) {
+                throw error;
+            }
+        }
 
         if (yield* isGameEnded()) {
             return;

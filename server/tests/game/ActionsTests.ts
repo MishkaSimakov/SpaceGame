@@ -1,13 +1,14 @@
 import {test} from "uvu";
-import * as assert from "node:assert";
+import * as assert from "uvu/assert";
 
 import {EventType} from "@common/Types";
 
 import ActionsBus from "../../src/game/ActionsBus";
-import {RunSaga} from "../../src/game/sagas/runner/RunSaga";
-import {beforeTurn} from "../../src/game/sagas/phases/BeforeTurn";
+import {beforeTurn} from "@src/game/sagas/phases/BeforeTurn";
 import {fakeGameState} from "./Utils";
 import {choosePlayerForAttackResponse} from "@common/Actions";
+import {runSaga} from "@src/game/sagas/runner/RunSaga";
+import {DeactivateSignal} from "@src/game/middlewares/DeactivateSignal";
 
 test('attackLaterEventCard', async () => {
     const state = fakeGameState(2);
@@ -25,39 +26,24 @@ test('attackLaterEventCard', async () => {
 
     victim.id = 1;
 
-    const runner = new RunSaga(state, bus, beforeTurn);
 
-    enum TestPhase {
-        INIT,
-        CHOOSE_VICTIM_REQUESTED,
-        CARD_POPPED_FROM_HAND,
-        CARD_PUSHED_TO_DISCARDS,
-        FIGHT_STARTED
-    }
-
-    let testPhase = TestPhase.INIT;
+    const sequence = [];
 
     bus.on("choosePlayerForAttackRequest", () => {
-        console.log(1);
-        assert.equal(testPhase, TestPhase.INIT);
-        testPhase = TestPhase.CHOOSE_VICTIM_REQUESTED;
+        sequence.push("choose victim");
 
-        bus.postpone(choosePlayerForAttackResponse(1));
+        bus.emit(choosePlayerForAttackResponse(1));
     });
 
     bus.on("popCardsFromHand", (action) => {
-        console.log(2);
-        assert.equal(testPhase, TestPhase.CHOOSE_VICTIM_REQUESTED);
-        testPhase = TestPhase.CARD_POPPED_FROM_HAND;
+        sequence.push("pop card");
 
         assert.equal(action.payload.player, 0);
-        assert.deepEqual(action.payload.indexes, [0]);
+        assert.equal(action.payload.indexes, [0]);
     });
 
     bus.on("pushCardsToDiscard", (action) => {
-        console.log(3);
-        assert.equal(testPhase, TestPhase.CHOOSE_VICTIM_REQUESTED);
-        testPhase = TestPhase.CARD_PUSHED_TO_DISCARDS;
+        sequence.push("discard card");
 
         assert.equal(action.payload.cards.length, 1);
         const card = action.payload.cards[0];
@@ -66,19 +52,21 @@ test('attackLaterEventCard', async () => {
     });
 
     bus.on("beginFight", (action) => {
-        console.log(4);
-        assert.equal(testPhase, TestPhase.CARD_PUSHED_TO_DISCARDS);
-        testPhase = TestPhase.FIGHT_STARTED;
+        sequence.push("begin fight");
 
         assert.equal(action.payload.attacker, 0);
         assert.equal(action.payload.victim, 1);
 
-        runner.cancel("beforeTurn");
+        throw new DeactivateSignal();
     });
 
-    await runner.run();
+    try {
+        await runSaga({state, bus}, beforeTurn);
+    } catch (error) {
+        assert.ok(error instanceof DeactivateSignal);
+    }
 
-    assert.equal(testPhase, TestPhase.FIGHT_STARTED);
+    assert.equal(sequence, ["choose victim", "pop card", "discard card", "begin fight"]);
 });
 
 test.run();

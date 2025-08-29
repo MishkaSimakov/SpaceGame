@@ -1,5 +1,5 @@
 import {test} from "uvu";
-import * as assert from "node:assert";
+import * as assert from "uvu/assert";
 
 import {MainModuleType, ModuleCard, ModuleType, Spaceship} from "@common/Types";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
@@ -42,7 +42,7 @@ test('simple', () => {
     assert.equal(info.destroyed.length, 0);
 
     assert.equal(info.damaged.length, 1);
-    assert.deepEqual(info.damaged[0].position, {x: 0, y: 0});
+    assert.equal(info.damaged[0].position, {x: 0, y: 0});
     assert.equal(info.damaged[0].damage, 1);
 });
 
@@ -65,7 +65,7 @@ test('simpleProtector', () => {
     assert.equal(info.destroyed.length, 0);
 
     assert.equal(info.damaged.length, 1);
-    assert.deepEqual(info.damaged[0].position, {x: -1, y: 0});
+    assert.equal(info.damaged[0].position, {x: -1, y: 0});
     assert.equal(info.damaged[0].damage, 1);
 });
 
@@ -87,11 +87,11 @@ test('destroyedProtector', () => {
     assert.equal(info.shouldDeactivateProtector, true);
 
     assert.equal(info.destroyed.length, 1);
-    assert.deepEqual(info.destroyed[0].position, {x: -1, y: 0});
+    assert.equal(info.destroyed[0].position, {x: -1, y: 0});
     assert.equal(info.destroyed[0].byNuclearReactor, false);
 
     assert.equal(info.damaged.length, 1);
-    assert.deepEqual(info.damaged[0].position, {x: 0, y: 0});
+    assert.equal(info.damaged[0].position, {x: 0, y: 0});
     assert.equal(info.damaged[0].damage, 5);
 });
 
@@ -119,7 +119,7 @@ test('destroyedProtectorAndModule', () => {
     assert.equal(info.shouldDeactivateProtector, true);
 
     assert.equal(info.destroyed.length, 2);
-    assert.deepEqual(
+    assert.equal(
         new Set(info.destroyed.map(d => d.position)),
         new Set([{x: -1, y: 0}, {x: -2, y: 0}])
     );

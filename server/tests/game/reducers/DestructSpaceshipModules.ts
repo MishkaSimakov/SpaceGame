@@ -1,10 +1,10 @@
 import {test} from "uvu";
-import * as assert from "node:assert";
+import * as assert from "uvu/assert";
 
 import {CardDestination, ModuleType, Spaceship} from "@common/Types";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
 
-import {reducers} from "../../../src/game/reducers/Main";
+import {reducers} from "@src/game/reducers/Main";
 import {fakeGameState, fakeModule} from "../Utils";
 
 function initSpaceship(spaceship: Spaceship) {

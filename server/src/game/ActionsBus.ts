@@ -34,16 +34,23 @@ export default class ActionsBus {
 
         this.isProcessingQueue = oldValue;
 
-        this.#tryProcessQueue();
+        this.tryProcessQueue();
     }
 
     emit<A extends Action<string, any, any>>(action: A): Promise<void> {
-        for (const middleware of this.middlewares) {
-            action = middleware.apply(action) as A;
+        const def = deferred<void>();
 
-            if (action === undefined) {
-                return;
+        try {
+            for (const middleware of this.middlewares) {
+                action = middleware.apply(action) as A;
+
+                if (action === undefined) {
+                    return;
+                }
             }
+        } catch (error) {
+            def.reject(error);
+            return def.promise;
         }
 
         const listeners = Array.from(this.listeners.get(action.type) ?? []);
@@ -51,13 +58,12 @@ export default class ActionsBus {
         const wildcardListeners = Array.from(this.listeners.get('*') ?? []);
         listeners.push(...wildcardListeners);
 
-        const def = deferred<void>();
         this.listenersQueue.push({
             listeners: listeners.map(l => l.bind(this, action)),
             deferred: def
         });
 
-        this.#tryProcessQueue();
+        this.tryProcessQueue();
 
         return def.promise;
     }
@@ -82,7 +88,7 @@ export default class ActionsBus {
         this.middlewares.push(middleware);
     }
 
-    #tryProcessQueue() {
+    private tryProcessQueue() {
         if (this.isProcessingQueue) {
             return;
         }

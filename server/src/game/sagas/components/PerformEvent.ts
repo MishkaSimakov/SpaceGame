@@ -174,8 +174,9 @@ let eventsPerformFunctions: Record<EventType, (state: GameState, event: EventCar
         const cardsCount = (yield* dice(currentPlayer)) <= 4 ? 1 : 2;
 
         const cards = yield* popCards(CardType.Module, cardsCount);
+        yield* put(pushCardsToHand(currentPlayer.id, cards));
 
-        yield* showCards(StateGetters.currentPlayer(state), cards, false);
+        yield* showCards(currentPlayer, cards, false);
     },
     [EventType.TossDiceAndDealDamage]: function* (state: GameState) {
         const currentPlayer = StateGetters.currentPlayer(state);

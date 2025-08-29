@@ -59,10 +59,7 @@ export default class GamesManager {
             return;
         }
 
-        game.sagaRunner.cancel('gameSaga');
-        game.sockets.disconnectEveryone();
-
-        delete this.activeGames[gameId];
+        game.deactivate();
     }
 
     isActive(gameId: string): boolean {
@@ -169,12 +166,14 @@ export default class GamesManager {
             );
 
             game.activate()
-                .then(async (result) => {
+                .then(async (status) => {
                     game.sockets.disconnectEveryone();
 
-                    if (result.status === "finished") {
+                    if (status === "finished") {
                         await this.storeGameResult(gameEntity.id, game);
                     }
+
+                    delete this.activeGames[gameEntity.id];
                 })
                 .catch(err => this.reportGameError(gameEntity, err));
 

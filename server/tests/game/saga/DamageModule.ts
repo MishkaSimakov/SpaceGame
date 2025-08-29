@@ -1,13 +1,13 @@
 import {test} from "uvu";
-import * as assert from "node:assert";
+import * as assert from "uvu/assert";
 
 import {SpaceshipGetters} from "@common/getters/Spaceship";
 import {ModuleType} from "@common/Types";
 
 import {attachReducers, fakeGameState, fakeModule} from "../Utils";
 import ActionsBus from "../../../src/game/ActionsBus";
-import {RunSaga} from "../../../src/game/sagas/runner/RunSaga";
-import {damageModule} from "../../../src/game/sagas/components/DamageModule";
+import {damageModule} from "@src/game/sagas/components/DamageModule";
+import {runSaga} from "@src/game/sagas/runner/RunSaga";
 
 
 test('simple', async () => {
@@ -21,13 +21,10 @@ test('simple', async () => {
 
     attachReducers(bus, state);
 
-    const runner = new RunSaga(
-        state,
-        bus,
+    await runSaga(
+        {state, bus},
         damageModule, victim, {x: 0, y: 0}, 1, {type: "Player", attacker}
     );
-
-    await runner.run();
 
     // test
     assert.equal(SpaceshipGetters.getMainModule(state.players[1].spaceship)!.health, expectedHealth);
@@ -59,12 +56,10 @@ test('damageModuleReducesEnergyWhenCapacityDecreases', async () => {
     attachReducers(bus, state);
 
     // Run
-    const runner = new RunSaga(
-        state,
-        bus,
+    await runSaga(
+        {state, bus},
         damageModule, victim, {x: 1, y: 0}, battery.health, {type: 'Player', attacker}
     );
-    await runner.run();
 
     // Test
     attacker = state.players[0];
@@ -104,12 +99,10 @@ test('damageModuleNoEnergyAdjustmentWhenWithinCapacity', async () => {
     attachReducers(bus, state);
 
     // Run
-    const runner = new RunSaga(
-        state,
-        bus,
+    await runSaga(
+        {state, bus},
         damageModule, victim, {x: 1, y: 0}, battery.health, {type: 'Player', attacker}
     );
-    await runner.run();
 
     // Test
     attacker = state.players[0];
@@ -149,12 +142,10 @@ test('damageModuleNoDestructionNoEnergyAdjustment', async () => {
     attachReducers(bus, state);
 
     // Run
-    const runner = new RunSaga(
-        state,
-        bus,
+    await runSaga(
+        {state, bus},
         damageModule, victim, {x: 1, y: 0}, 1, {type: 'Player', attacker}
     );
-    await runner.run();
 
     // Test
     attacker = state.players[0];
@@ -187,12 +178,10 @@ test('damageFromNuclearReactor', async () => {
     attachReducers(bus, state);
 
     // Run
-    const runner = new RunSaga(
-        state,
-        bus,
+    await runSaga(
+        {state, bus},
         damageModule, victim, {x: 1, y: 0}, reactor.health, {type: 'Player', attacker}
     );
-    await runner.run();
 
     // Test
     attacker = state.players[0];
@@ -238,12 +227,10 @@ test('damageFromNuclearReactorChain', async () => {
     attachReducers(bus, state);
 
     // Run
-    const runner = new RunSaga(
-        state,
-        bus,
+    await runSaga(
+        {state, bus},
         damageModule, victim, {x: 3, y: 0}, 1, {type: 'Player', attacker}
     );
-    await runner.run();
 
     // Test
     attacker = state.players[0];
@@ -279,12 +266,10 @@ test('healthIsRestoredWhenGoesToDiscards', async () => {
     attachReducers(bus, state);
 
     // Run
-    const runner = new RunSaga(
-        state,
-        bus,
+    await runSaga(
+        {state, bus},
         damageModule, victim, {x: 1, y: 0}, 1, {type: 'EventCard'}
     );
-    await runner.run();
 
     // Test
     attacker = state.players[0];

@@ -5,7 +5,7 @@ import Spaceships from "./scenes/Spaceships";
 import {BoundaryType, CountBoundary} from "./CountBoundary";
 import Color from "./Color";
 import {CardShape} from "./shapes/CardShape";
-import {Observable} from "./Observable";
+import {Observable} from "@common/Observable";
 
 type SelectedModuleInfo = {
     module: ModuleCard,

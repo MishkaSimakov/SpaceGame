@@ -1,11 +1,11 @@
 import {test} from "uvu";
-import * as assert from "node:assert";
+import * as assert from "uvu/assert";
 
 import ActionsBus from "../../../src/game/ActionsBus";
-import {RunSaga} from "../../../src/game/sagas/runner/RunSaga";
-import {attachFakeRandomizer, attachReducers, fakeGameState} from "../Utils";
-import {popOneCard} from "../../../src/game/sagas/components/PopCards";
+import {attachFakeRandomizer, attachReducers, attachTerminalLogger, fakeGameState} from "../Utils";
+import {popOneCard} from "@src/game/sagas/components/PopCards";
 import {CardType} from "@common/Types";
+import {runSaga} from "@src/game/sagas/runner/RunSaga";
 
 test('drawOneCard', async () => {
     for (const type of ["module", "event"] as const) {
@@ -19,11 +19,16 @@ test('drawOneCard', async () => {
         expectedCard[type] = state.stack[type][modulesCount - 1];
 
         const {diceCalls, shuffleCalls} = attachFakeRandomizer(bus);
-        const runner = new RunSaga(state, bus, popOneCard, type === "module" ? CardType.Module : CardType.Event);
-        const actualCard = await runner.run();
+        attachTerminalLogger(bus);
 
-        assert.deepEqual(actualCard, expectedCard);
+        const actualCard = await runSaga(
+            {state, bus},
+            popOneCard, type === "module" ? CardType.Module : CardType.Event
+        );
 
+        assert.equal(actualCard, expectedCard);
+
+        console.log(modulesCount);
         assert.equal(state.stack[type].length, modulesCount - 1);
 
         assert.equal(diceCalls.value, 0);
@@ -49,10 +54,12 @@ test('drawOneCardWithDiscards', async () => {
 
         const {diceCalls, shuffleCalls} = attachFakeRandomizer(bus);
 
-        const runner = new RunSaga(state, bus, popOneCard, type === "module" ? CardType.Module : CardType.Event);
-        const actualCard = await runner.run();
+        const actualCard = await runSaga(
+            {state, bus},
+            popOneCard, type === "module" ? CardType.Module : CardType.Event
+        );
 
-        assert.deepEqual(actualCard, expectedCard);
+        assert.equal(actualCard, expectedCard);
 
         assert.equal(state.stack[type].length, modulesCount - 1);
 

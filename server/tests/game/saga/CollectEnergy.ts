@@ -1,12 +1,12 @@
-import {test} from 'uvu';
-import * as assert from "node:assert";
+import {test} from "uvu";
+import * as assert from "uvu/assert";
 
 import {GameState, ModuleType} from "@common/Types";
 
 import {attachReducers, fakeGameState, fakeModule} from '../Utils';
 import ActionsBus from '../../../src/game/ActionsBus';
-import {RunSaga} from '../../../src/game/sagas/runner/RunSaga';
-import {collectEnergy} from '../../../src/game/sagas/phases/CollectEnergy';
+import {collectEnergy} from '@src/game/sagas/phases/CollectEnergy';
+import {runSaga} from "@src/game/sagas/runner/RunSaga";
 
 test('collectEnergyWithIncomeLessThanCapacity', async () => {
     // Setup: Create a game state with one player, Command Module, and Solar Panel
@@ -26,8 +26,7 @@ test('collectEnergyWithIncomeLessThanCapacity', async () => {
     attachReducers(bus, state);
 
     // Run the collectEnergy saga
-    const runner = new RunSaga(state, bus, collectEnergy);
-    await runner.run();
+    await runSaga({state, bus}, collectEnergy);
 
     // test
     player = state.players[0];
@@ -60,8 +59,7 @@ test('collectEnergyWithIncomeGreaterThanCapacity', async () => {
     attachReducers(bus, state);
 
     // Run the collectEnergy saga
-    const runner = new RunSaga(state, bus, collectEnergy);
-    await runner.run();
+    await runSaga({state, bus}, collectEnergy);
 
     // test
     player = state.players[0];
@@ -88,8 +86,7 @@ test('collectEnergyWithSumGreaterThanCapacity', async () => {
     attachReducers(bus, state);
 
     // Run the collectEnergy saga
-    const runner = new RunSaga(state, bus, collectEnergy);
-    await runner.run();
+    await runSaga({state, bus}, collectEnergy);
 
     // test
     // 2 (initial) + 3 (dark matter generator) + 1 (main module) > 5 (main module capacity)

@@ -14,12 +14,14 @@ import SocketsManager from "./io/SocketsManager";
 import {gameSaga} from "./sagas/Main";
 import {Logger} from "./Logger";
 import {isReducerName, reducers} from "./reducers/Main";
-import {RunSaga} from "./sagas/runner/RunSaga";
 import {Randomizer} from "./Randomizer";
-import {LossMiddleware} from "./LossMiddleware";
+import {LossMiddleware} from "./middlewares/LossMiddleware";
 import {validators} from "./validation/ResponseValidators";
 import {PlayerGameLogListener} from "./PlayerGameLogListener";
 import {getInitialGameState} from "./InitGameState";
+import {runSaga} from "./sagas/runner/RunSaga";
+import {DeactivateMiddleware} from "./middlewares/DeactivateMiddleware";
+import {DeactivateSignal} from "./middlewares/DeactivateSignal";
 
 
 export default class Game {
@@ -28,12 +30,13 @@ export default class Game {
     randomizer: Randomizer;
     state: GameState;
     bus: ActionsBus;
-    sagaRunner: RunSaga<void>;
     sockets: SocketsManager;
     logger: Logger;
     playerGameLog: PlayerGameLogListener;
 
     inReplay: boolean = false;
+
+    stopToken: { shouldStop: boolean } = {shouldStop: false};
 
     constructor(users: User[], settings: GameSettings, sockets: SocketsManager, logger: Logger) {
         this.users = users;
@@ -42,7 +45,6 @@ export default class Game {
 
         this.randomizer = new Randomizer(settings.seed);
         this.bus = new ActionsBus();
-        this.sagaRunner = new RunSaga(this.state, this.bus, gameSaga);
         this.sockets = sockets;
         this.logger = logger;
 
@@ -55,20 +57,24 @@ export default class Game {
         this.registerIOListeners();
         this.registerTimeListeners();
 
-        this.registerLossMiddleware();
+        this.registerMiddlewares();
 
         this.bus.on('playerLost', (action) => {
             this.bus.emit(sendPlayerLostInfo(action.payload.player));
         });
     }
 
-    async activate(): Promise<{ status: "cancelled" | "finished" }> {
+    async activate(): Promise<"deactivated" | "finished"> {
         await this.replay(this.logger.getPastActions());
 
-        const result = await this.sagaRunner.run();
-
-        if (result === "cancel") {
-            return {status: "cancelled"};
+        try {
+            await runSaga({bus: this.bus, state: this.state}, gameSaga);
+        } catch (error) {
+            if (error instanceof DeactivateSignal) {
+                return "deactivated";
+            } else {
+                throw error;
+            }
         }
 
         // game has finished
@@ -79,7 +85,7 @@ export default class Game {
             socket?.disconnect();
         }
 
-        return {status: "finished"};
+        return "finished";
     }
 
     private async replay(actions: Action<string, any, any>[]) {
@@ -117,9 +123,9 @@ export default class Game {
                 return;
             }
 
-            console.log("⏪ replay: ", pastAction.uuid, action.type, pastAction.type, "remaining: ", actions.length);
-
-            assert.equal(pastAction.type, action.type);
+            if (pastAction.type !== action.type) {
+                throw new Error(`Error during game replay: unexpected action type (in a log file ${pastAction.type} (${pastAction.uuid}), received ${action.type} (${action.uuid})). This is possibly due to changes in gameSaga code.`);
+            }
 
             if (action.type.endsWith("Request") || action.type === "time") {
                 if (actions.length === 0) {
@@ -136,8 +142,11 @@ export default class Game {
         this.bus.on('*', actionsReplayListener);
     }
 
-    registerLossMiddleware() {
-        const loss = new LossMiddleware(this.state, this.sagaRunner);
+    registerMiddlewares() {
+        const deactivate = new DeactivateMiddleware(this.stopToken);
+        this.bus.registerMiddleware(deactivate);
+
+        const loss = new LossMiddleware(this.state);
         this.bus.registerMiddleware(loss);
     }
 
@@ -272,5 +281,11 @@ export default class Game {
         };
 
         requestAttempt([]);
+    }
+
+    deactivate() {
+        // TODO: this doesn't work
+        this.stopToken.shouldStop = true;
+        this.sockets.disconnectEveryone();
     }
 }

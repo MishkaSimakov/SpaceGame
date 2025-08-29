@@ -1,13 +1,13 @@
 import {test} from "uvu";
-import * as assert from "node:assert";
+import * as assert from "uvu/assert";
 
 import {ModuleGetters} from "@common/getters/Module";
 import {discardCardsResponse} from "@common/Actions";
 
 import {attachReducers, fakeGameState} from "../Utils";
-import {RunSaga} from "../../../src/game/sagas/runner/RunSaga";
 import ActionsBus from "../../../src/game/ActionsBus";
-import {discardCards} from "../../../src/game/sagas/phases/DiscardCards";
+import {discardCards} from "@src/game/sagas/phases/DiscardCards";
+import {runSaga} from "@src/game/sagas/runner/RunSaga";
 
 
 test('doesntDiscardWhenNotEnoughCards', async () => {
@@ -23,12 +23,10 @@ test('doesntDiscardWhenNotEnoughCards', async () => {
     const bus = new ActionsBus();
 
     bus.on('discardCardsRequest', () => {
-        assert.fail("player must not be asked to discard cards");
+        assert.unreachable("player must not be asked to discard cards");
     });
 
-    const runner = new RunSaga(state, bus, discardCards);
-
-    await runner.run();
+    await runSaga({state, bus}, discardCards);
 
     // test
     player = state.players[0];
@@ -56,16 +54,14 @@ test('discardCardsWhenThereAreTooMany', async () => {
         bus.emit(discardCardsResponse([1, 2, 3, 4]));
     });
 
-    const runner = new RunSaga(state, bus, discardCards);
-
-    await runner.run();
+    await runSaga({state, bus}, discardCards);
 
     // test
     player = state.players[0];
 
     assert.equal(player.hand.length, 2);
-    assert.deepEqual(player.hand[0], expectedCards[0]);
-    assert.deepEqual(player.hand[1], expectedCards[1]);
+    assert.equal(player.hand[0], expectedCards[0]);
+    assert.equal(player.hand[1], expectedCards[1]);
 });
 
 test.run();

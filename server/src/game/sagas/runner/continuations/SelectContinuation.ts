@@ -11,6 +11,6 @@ export class SelectContinuation implements Continuation<SelectEffect["input"]> {
     }
 
     continue(effect: SelectEffect["input"]): void {
-        this.consumer.continue(ok(this.env.state));
+        this.consumer.continue(ok(structuredClone(this.env.state)));
     }
 }
