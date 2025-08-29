@@ -27,20 +27,11 @@ export type TakeEffect<T extends keyof typeof Actions> = {
     output: ReturnType<(typeof Actions)[T]>
 };
 
-export type CallEffect<R> = {
-    input: {
-        type: "call",
-        task: () => SagaGenerator
-    },
-    output: R | "cancel"
-};
-
 // all effect
 type EffectUnion =
     | SelectEffect
     | PutEffect
-    | TakeEffect<keyof typeof Actions>
-    | CallEffect<any>;
+    | TakeEffect<keyof typeof Actions>;
 
 export type GeneratorReturnValue<T> = T extends Generator<any, infer R, any> ? R : never;
 
@@ -82,13 +73,6 @@ export function* take<T extends keyof typeof Actions>(actionDescriptor: T): Gene
     return yield {
         type: "take",
         name: actionDescriptor
-    };
-}
-
-export function* call<R>(task: () => SagaGenerator): GeneratorForEffect<CallEffect<R>> {
-    return yield {
-        type: "call",
-        task: task
     };
 }
 

@@ -3,11 +3,10 @@ import * as assert from "uvu/assert";
 
 import {setCurrentPlayer, throwDice, throwDiceResult} from "@common/Actions";
 
-import {all, call, put, SagaGenerator, select, take} from "../../../../src/game/sagas/runner/Effects";
+import {all, put, SagaGenerator, select, take} from "../../../../src/game/sagas/runner/Effects";
 import ActionsBus from "../../../../src/game/ActionsBus";
 import {fakeGameState} from "../../Utils";
 import {runSaga} from "../../../../src/game/sagas/runner/RunSaga";
-import {TASK_CANCEL} from "../../../../src/game/sagas/runner/Task";
 
 test('select', async () => {
     const state = fakeGameState(2);
@@ -21,9 +20,7 @@ test('select', async () => {
         assert.equal(state.currentPlayerId, 42);
     }
 
-    const task = runSaga({state, bus}, testSaga);
-    task.continue();
-    await task.promise;
+    await runSaga({state, bus}, testSaga);
 });
 
 test('put', async () => {
@@ -40,9 +37,7 @@ test('put', async () => {
         receivedAction = true;
     })
 
-    const task = runSaga({state, bus}, testSaga);
-    task.continue();
-    await task.promise;
+    await runSaga({state, bus}, testSaga);
 
     assert.ok(receivedAction);
 });
@@ -65,9 +60,7 @@ test('putAndTake', async () => {
         bus.emit(throwDiceResult(5));
     });
 
-    const task = runSaga({state, bus}, testSaga);
-    task.continue();
-    await task.promise;
+    await runSaga({state, bus}, testSaga);
 });
 
 test('putAndPut', async () => {
@@ -95,9 +88,7 @@ test('putAndPut', async () => {
         }
     });
 
-    const task = runSaga({state, bus}, testSaga);
-    task.continue();
-    await task.promise;
+    await runSaga({state, bus}, testSaga);
 
     assert.equal(actions, ["first", "second", "finished saga"])
 });
@@ -119,9 +110,7 @@ test('putReturnsOnlyWhenListenersAreExecuted', async () => {
         performedListener = true;
     });
 
-    const task = runSaga({state, bus}, testSaga);
-    task.continue();
-    await task.promise;
+    await runSaga({state, bus}, testSaga);
 
     assert.ok(performedListener);
 });
@@ -148,9 +137,7 @@ test('multiStepSaga', async () => {
         received = true;
     });
 
-    const task = runSaga({state, bus}, testSaga);
-    task.continue();
-    await task.promise;
+    await runSaga({state, bus}, testSaga);
 
     assert.ok(received);
 });
@@ -171,9 +158,7 @@ test('exceptionTest', async () => {
         throw 123;
     }
 
-    const task = runSaga({state, bus}, parent);
-    task.continue();
-    await task.promise;
+    await runSaga({state, bus}, parent);
 });
 
 test('throwDuringPut', async () => {
@@ -195,9 +180,7 @@ test('throwDuringPut', async () => {
         throw 123;
     });
 
-    const task = runSaga({state, bus}, parent);
-    task.continue();
-    await task.promise;
+    await runSaga({state, bus}, parent);
 });
 
 test('throwDuringAll', async () => {
@@ -222,9 +205,7 @@ test('throwDuringAll', async () => {
         throw 123;
     });
 
-    const task = runSaga({state, bus}, saga);
-    task.continue();
-    await task.promise;
+    await runSaga({state, bus}, saga);
 });
 
 test('throwInAllCancelsAllOtherEffects', async () => {
@@ -249,9 +230,37 @@ test('throwInAllCancelsAllOtherEffects', async () => {
         throw 123;
     });
 
-    const task = runSaga({state, bus}, saga);
-    task.continue();
-    await task.promise;
+    await runSaga({state, bus}, saga);
+});
+
+test('uncaughtException', async () => {
+    const state = fakeGameState(2);
+    const bus = new ActionsBus();
+
+    function* saga(): SagaGenerator {
+        throw 123;
+    }
+
+    try {
+        await runSaga({state, bus}, saga);
+
+        assert.unreachable("exception should have been thrown");
+    } catch (err) {
+        assert.equal(err, 123);
+    }
+});
+
+test('returnValue', async () => {
+    const state = fakeGameState(2);
+    const bus = new ActionsBus();
+
+    function* saga(): SagaGenerator {
+        return 321;
+    }
+
+    const result = await runSaga({state, bus}, saga);
+
+    assert.equal(result, 321);
 });
 
 test.run();

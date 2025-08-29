@@ -1,6 +1,6 @@
 import {Continuation} from "../Continuation";
 import {deferred, Deferred} from "../../../../helpers/Deferred";
-import {TASK_CANCEL} from "../Task";
+import {Result} from "../../../../helpers/Result";
 
 export class DeferredContinuation implements Continuation<any> {
     private deferred: Deferred<any>;
@@ -9,12 +9,12 @@ export class DeferredContinuation implements Continuation<any> {
         this.deferred = deferred();
     }
 
-    continue(value: any): void {
-        this.deferred.resolve(value);
-    }
-
-    cancel(): void {
-        this.deferred.resolve(TASK_CANCEL);
+    continue(value: Result<any, any>): void {
+        if (value._tag === "ok") {
+            this.deferred.resolve(value.value);
+        } else {
+            this.deferred.reject(value.error);
+        }
     }
 
     getPromise(): Promise<any> {

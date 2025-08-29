@@ -11,9 +11,7 @@ export function runSaga<Args extends any[]>(env: Environment, saga: (...args: Ar
         def
     );
 
-    return {
-        continue: continuation.continue.bind(continuation),
-        cancel: continuation.cancel.bind(continuation),
-        promise: def.getPromise()
-    };
+    continuation.continue();
+
+    return def.getPromise();
 }

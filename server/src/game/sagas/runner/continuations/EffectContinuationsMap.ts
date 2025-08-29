@@ -4,7 +4,6 @@ import {SelectContinuation} from "./SelectContinuation";
 import {PutContinuation} from "./PutContinuation";
 import {TakeContinuation} from "./TakeContinuation";
 import {AllContinuation} from "./AllContinuation";
-import {CallContinuation} from "./CallContinuation";
 
 type EffectContinuationConstructor = new (...args: any[]) => Continuation<any>;
 
@@ -13,5 +12,4 @@ export const effectContinuationsMap: Record<Effect["input"]["type"], EffectConti
     put: PutContinuation,
     take: TakeContinuation,
     all: AllContinuation,
-    call: CallContinuation
 }

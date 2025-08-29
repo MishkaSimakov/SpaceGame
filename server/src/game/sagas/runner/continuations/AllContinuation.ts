@@ -19,9 +19,6 @@ export class AllContinuation implements Continuation<AllEffect<any>["input"]> {
         })
     }
 
-    cancel(): void {
-    }
-
     private setupEffects(effects: any) {
         const result = {};
 
