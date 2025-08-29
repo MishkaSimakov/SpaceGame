@@ -1,6 +1,6 @@
 import {isEffect, SagaGenerator} from "../Effects";
 import {TASK_CANCEL} from "../Task";
-import {ok, Result} from "../../../../helpers/Result";
+import {err, ok, Result} from "../../../../helpers/Result";
 import {Environment} from "../Environment";
 import {Continuation} from "../Continuation";
 import {effectContinuationsMap} from "./EffectContinuationsMap";
@@ -36,7 +36,7 @@ export class SagaContinuation<V> implements Continuation<Result<V, any> | void> 
         }
 
         if (result.done) {
-            this.consumer.continue(ok(result.value));
+            this.consumer.continue(err(result.value));
         } else {
             if (isEffect(result.value)) {
                 const effect = result.value;
