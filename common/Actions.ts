@@ -7,6 +7,9 @@ import {constructAction} from "./ActionsHelpers";
 import * as Types from "./Types";
 
 
+/**
+ * @param  state  
+ */
 export function initGameState(state: Types.GameState) {
     return constructAction(
         'initGameState',
@@ -15,6 +18,11 @@ export function initGameState(state: Types.GameState) {
 }
 
 
+/**
+ * @param  player  
+ * @param  newSpaceship  
+ * @param  newHand  
+ */
 export function playerRebuiltSpaceship(player: Types.PlayerId, newSpaceship: Types.Spaceship, newHand: Types.Card[]) {
     return constructAction(
         'playerRebuiltSpaceship',
@@ -23,6 +31,13 @@ export function playerRebuiltSpaceship(player: Types.PlayerId, newSpaceship: Typ
 }
 
 
+/**
+ * @param  attacker  
+ * @param  victim  
+ *
+ * Мета-параметры события:
+* @param  reason  
+ */
 export function beginFight(attacker: Types.PlayerId, victim: Types.PlayerId, reason: string) {
     return constructAction(
         'beginFight',
@@ -32,6 +47,9 @@ export function beginFight(attacker: Types.PlayerId, victim: Types.PlayerId, rea
 }
 
 
+/**
+ * @param  type  
+ */
 export function popCardFromStack(type: Types.CardType) {
     return constructAction(
         'popCardFromStack',
@@ -40,6 +58,9 @@ export function popCardFromStack(type: Types.CardType) {
 }
 
 
+/**
+ * @param  player  
+ */
 export function setCurrentPlayer(player: Types.PlayerId) {
     return constructAction(
         'setCurrentPlayer',
@@ -48,6 +69,13 @@ export function setCurrentPlayer(player: Types.PlayerId) {
 }
 
 
+/**
+ * @param  player  
+ * @param  delta  
+ *
+ * Мета-параметры события:
+* @param  reason  
+ */
 export function changePlayerEnergy(player: Types.PlayerId, delta: number, reason: string) {
     return constructAction(
         'changePlayerEnergy',
@@ -57,6 +85,9 @@ export function changePlayerEnergy(player: Types.PlayerId, delta: number, reason
 }
 
 
+/**
+ * @param  type  
+ */
 export function clearDiscard(type: Types.CardType) {
     return constructAction(
         'clearDiscard',
@@ -65,6 +96,9 @@ export function clearDiscard(type: Types.CardType) {
 }
 
 
+/**
+ * @param  player  
+ */
 export function playerSkipNextTurn(player: Types.PlayerId) {
     return constructAction(
         'playerSkipNextTurn',
@@ -73,6 +107,12 @@ export function playerSkipNextTurn(player: Types.PlayerId) {
 }
 
 
+/**
+ * @param  player  
+ * @param  positions  
+ * @param  destructedCardsDestiny  
+ * @param  detachedCardsDestiny  
+ */
 export function destructSpaceshipModules(player: Types.PlayerId, positions: Types.Vector2[], destructedCardsDestiny: Types.CardDestination, detachedCardsDestiny: Types.CardDestination) {
     return constructAction(
         'destructSpaceshipModules',
@@ -81,6 +121,9 @@ export function destructSpaceshipModules(player: Types.PlayerId, positions: Type
 }
 
 
+/**
+ * @param  cards  
+ */
 export function pushCardsToStack(cards: Types.Card[]) {
     return constructAction(
         'pushCardsToStack',
@@ -89,6 +132,10 @@ export function pushCardsToStack(cards: Types.Card[]) {
 }
 
 
+/**
+ * @param  player  
+ * @param  cards  
+ */
 export function pushCardsToHand(player: Types.PlayerId, cards: Types.Card[]) {
     return constructAction(
         'pushCardsToHand',
@@ -97,6 +144,14 @@ export function pushCardsToHand(player: Types.PlayerId, cards: Types.Card[]) {
 }
 
 
+/**
+ * @param  player  
+ * @param  position  
+ * @param  delta  
+ *
+ * Мета-параметры события:
+* @param  reason  
+ */
 export function changeModuleHealth(player: Types.PlayerId, position: Types.Vector2, delta: number, reason: string) {
     return constructAction(
         'changeModuleHealth',
@@ -106,6 +161,13 @@ export function changeModuleHealth(player: Types.PlayerId, position: Types.Vecto
 }
 
 
+/**
+ * @param  player  
+ * @param  indexes  
+ *
+ * Мета-параметры события:
+* @param  reason  
+ */
 export function popCardsFromHand(player: Types.PlayerId, indexes: number[], reason: string) {
     return constructAction(
         'popCardsFromHand',
@@ -115,6 +177,9 @@ export function popCardsFromHand(player: Types.PlayerId, indexes: number[], reas
 }
 
 
+/**
+ * @param  player  
+ */
 export function deactivateProtectorIfActive(player: Types.PlayerId) {
     return constructAction(
         'deactivateProtectorIfActive',
@@ -123,6 +188,10 @@ export function deactivateProtectorIfActive(player: Types.PlayerId) {
 }
 
 
+/**
+ * @param  player  
+ * @param  positions  
+ */
 export function removeSpaceshipModules(player: Types.PlayerId, positions: Types.Vector2[]) {
     return constructAction(
         'removeSpaceshipModules',
@@ -131,6 +200,9 @@ export function removeSpaceshipModules(player: Types.PlayerId, positions: Types.
 }
 
 
+/**
+ * @param  cards  
+ */
 export function pushCardsToDiscard(cards: Types.Card[]) {
     return constructAction(
         'pushCardsToDiscard',
@@ -139,6 +211,9 @@ export function pushCardsToDiscard(cards: Types.Card[]) {
 }
 
 
+/**
+ * @param  player  
+ */
 export function playerLost(player: Types.PlayerId) {
     return constructAction(
         'playerLost',
@@ -147,6 +222,8 @@ export function playerLost(player: Types.PlayerId) {
 }
 
 
+/**
+ */
 export function endFight() {
     return constructAction(
         'endFight',
@@ -155,6 +232,10 @@ export function endFight() {
 }
 
 
+/**
+ * @param  player  
+ * @param  position  
+ */
 export function activateProtector(player: Types.PlayerId, position: Types.Vector2) {
     return constructAction(
         'activateProtector',
@@ -163,6 +244,8 @@ export function activateProtector(player: Types.PlayerId, position: Types.Vector
 }
 
 
+/**
+ */
 export function shiftFightTurnToNextPlayer() {
     return constructAction(
         'shiftFightTurnToNextPlayer',
@@ -171,6 +254,9 @@ export function shiftFightTurnToNextPlayer() {
 }
 
 
+/**
+ * @param  player  
+ */
 export function playerUseModuleSecondTime(player: Types.PlayerId) {
     return constructAction(
         'playerUseModuleSecondTime',
@@ -179,6 +265,11 @@ export function playerUseModuleSecondTime(player: Types.PlayerId) {
 }
 
 
+/**
+ * @param  player  
+ * @param  type  
+ * @param  time  
+ */
 export function addTimeRecord(player: Types.PlayerId, type: Types.TimeRecordType, time: number) {
     return constructAction(
         'addTimeRecord',
@@ -187,6 +278,10 @@ export function addTimeRecord(player: Types.PlayerId, type: Types.TimeRecordType
 }
 
 
+/**
+ * @param  player  
+ * @param  delta  
+ */
 export function changePlayerTime(player: Types.PlayerId, delta: number) {
     return constructAction(
         'changePlayerTime',
@@ -195,6 +290,10 @@ export function changePlayerTime(player: Types.PlayerId, delta: number) {
 }
 
 
+/**
+ * @param  begin  
+ * @param  end  
+ */
 export function insertPause(begin: number, end: number) {
     return constructAction(
         'insertPause',
@@ -203,6 +302,12 @@ export function insertPause(begin: number, end: number) {
 }
 
 
+/**
+ * Выбор игрока для атаки. Это действие может вызываться в разных ситуациях (в бою, для карточки действия и т.п.)
+ * @param  player  
+ * @param  reason  
+ * @param  required  
+ */
 export function choosePlayerForAttackRequest(player: Types.PlayerId, reason: Types.AttackReason, required: boolean) {
     return constructAction(
         'choosePlayerForAttackRequest',
@@ -211,6 +316,9 @@ export function choosePlayerForAttackRequest(player: Types.PlayerId, reason: Typ
 }
 
 
+/**
+ * @param  victim  
+ */
 export function choosePlayerForAttackResponse(victim?: Types.PlayerId) {
     return constructAction(
         'choosePlayerForAttackResponse',
@@ -219,6 +327,10 @@ export function choosePlayerForAttackResponse(victim?: Types.PlayerId) {
 }
 
 
+/**
+ * Запрос на перестройку корабля. Используется только во время фазы перестройки корабля.
+ * @param  player  
+ */
 export function rebuildSpaceshipRequest(player: Types.PlayerId) {
     return constructAction(
         'rebuildSpaceshipRequest',
@@ -227,6 +339,9 @@ export function rebuildSpaceshipRequest(player: Types.PlayerId) {
 }
 
 
+/**
+ * @param  newSpaceship  
+ */
 export function rebuildSpaceshipResponse(newSpaceship: { id: Types.ModuleId, position: Types.Vector2, rotation: number }[]) {
     return constructAction(
         'rebuildSpaceshipResponse',
@@ -235,6 +350,10 @@ export function rebuildSpaceshipResponse(newSpaceship: { id: Types.ModuleId, pos
 }
 
 
+/**
+ * Используется во время фазы вытягивания карт, когда нужно тянуть либо карточку действия, либо карточку строительства
+ * @param  player  
+ */
 export function chooseCardTypeRequest(player: Types.PlayerId) {
     return constructAction(
         'chooseCardTypeRequest',
@@ -243,6 +362,9 @@ export function chooseCardTypeRequest(player: Types.PlayerId) {
 }
 
 
+/**
+ * @param  chosenType  
+ */
 export function chooseCardTypeResponse(chosenType: Types.CardType) {
     return constructAction(
         'chooseCardTypeResponse',
@@ -251,6 +373,13 @@ export function chooseCardTypeResponse(chosenType: Types.CardType) {
 }
 
 
+/**
+ * Отображение карт у пользователя на экране. 
+ * Используется, например, когда игрок вытягивает какую-то карточку и нужно её всем показать
+ * @param  player  
+ * @param  cardsReceiver  
+ * @param  cards  
+ */
 export function showCardsToPlayersRequest(player: Types.PlayerId, cardsReceiver: Types.PlayerId, cards: Types.Card[]) {
     return constructAction(
         'showCardsToPlayersRequest',
@@ -259,6 +388,9 @@ export function showCardsToPlayersRequest(player: Types.PlayerId, cardsReceiver:
 }
 
 
+/**
+ * Используется, чтобы показать, что игрок увидел вытянутые карты и готов продолжать игру
+ */
 export function showCardsToPlayersResponse() {
     return constructAction(
         'showCardsToPlayersResponse',
@@ -267,6 +399,12 @@ export function showCardsToPlayersResponse() {
 }
 
 
+/**
+ * Используется во время фазы вытягивания карт, 
+ * если у игрока командный модуль позволяет тянуть дополнительные карточки строительства.
+ * Игрок может использовать эту способность или отказаться от неё.
+ * @param  player  
+ */
 export function drawAdditionalModuleCardRequest(player: Types.PlayerId) {
     return constructAction(
         'drawAdditionalModuleCardRequest',
@@ -275,6 +413,9 @@ export function drawAdditionalModuleCardRequest(player: Types.PlayerId) {
 }
 
 
+/**
+ * @param  draw  
+ */
 export function drawAdditionalModuleCardResponse(draw: boolean) {
     return constructAction(
         'drawAdditionalModuleCardResponse',
@@ -283,6 +424,12 @@ export function drawAdditionalModuleCardResponse(draw: boolean) {
 }
 
 
+/**
+ * Используется во время фазы вытягивания карт, 
+ * если у игрока командный модуль позволяет вытянуть другую карточку действия.
+ * Игрок может использовать эту способность или отказаться от неё.
+ * @param  player  
+ */
 export function drawAnotherEventCardRequest(player: Types.PlayerId) {
     return constructAction(
         'drawAnotherEventCardRequest',
@@ -291,6 +438,9 @@ export function drawAnotherEventCardRequest(player: Types.PlayerId) {
 }
 
 
+/**
+ * @param  draw  
+ */
 export function drawAnotherEventCardResponse(draw: boolean) {
     return constructAction(
         'drawAnotherEventCardResponse',
@@ -299,6 +449,10 @@ export function drawAnotherEventCardResponse(draw: boolean) {
 }
 
 
+/**
+ * Если у игрока больше n карт на руке в конце хода, то ему приходит это действие, чтобы он их сбросил
+ * @param  player  
+ */
 export function discardCardsRequest(player: Types.PlayerId) {
     return constructAction(
         'discardCardsRequest',
@@ -307,6 +461,9 @@ export function discardCardsRequest(player: Types.PlayerId) {
 }
 
 
+/**
+ * @param  indexes  
+ */
 export function discardCardsResponse(indexes: number[]) {
     return constructAction(
         'discardCardsResponse',
@@ -315,6 +472,10 @@ export function discardCardsResponse(indexes: number[]) {
 }
 
 
+/**
+ * Используется в бою, когда игрок может использовать протектор
+ * @param  player  
+ */
 export function chooseProtectorRequest(player: Types.PlayerId) {
     return constructAction(
         'chooseProtectorRequest',
@@ -323,6 +484,9 @@ export function chooseProtectorRequest(player: Types.PlayerId) {
 }
 
 
+/**
+ * @param  position  
+ */
 export function chooseProtectorResponse(position?: Types.Vector2) {
     return constructAction(
         'chooseProtectorResponse',
@@ -331,6 +495,11 @@ export function chooseProtectorResponse(position?: Types.Vector2) {
 }
 
 
+/**
+ * Используется в бою, когда атакующий может атаковать модуль соперника.
+ * @param  player  
+ * @param  victim  
+ */
 export function chooseWeaponAndTargetRequest(player: Types.PlayerId, victim: Types.PlayerId) {
     return constructAction(
         'chooseWeaponAndTargetRequest',
@@ -339,6 +508,10 @@ export function chooseWeaponAndTargetRequest(player: Types.PlayerId, victim: Typ
 }
 
 
+/**
+ * @param  targetPosition  
+ * @param  weaponPosition  
+ */
 export function chooseWeaponAndTargetResponse(targetPosition: Types.Vector2, weaponPosition: Types.Vector2) {
     return constructAction(
         'chooseWeaponAndTargetResponse',
@@ -347,6 +520,14 @@ export function chooseWeaponAndTargetResponse(targetPosition: Types.Vector2, wea
 }
 
 
+/**
+ * Приходит игроку, когда он может использовать модуль второй раз за счёт способности командного модуля.
+ * Это может быть в бою (тогда moduleType - это один из типов оружия), 
+ * при починке (тогда moduleType - это RepairModule),
+ * при нападении (тогда moduleType - это AttackModule)
+ * @param  player  
+ * @param  moduleType  
+ */
 export function useModuleSecondTimeRequest(player: Types.PlayerId, moduleType: Types.ModuleType) {
     return constructAction(
         'useModuleSecondTimeRequest',
@@ -355,6 +536,9 @@ export function useModuleSecondTimeRequest(player: Types.PlayerId, moduleType: T
 }
 
 
+/**
+ * @param  use  
+ */
 export function useModuleSecondTimeResponse(use: boolean) {
     return constructAction(
         'useModuleSecondTimeResponse',
@@ -363,6 +547,12 @@ export function useModuleSecondTimeResponse(use: boolean) {
 }
 
 
+/**
+ * Если игрок использует оружие второй раз, то ему остаётся выбрать только цель (так как оружие уже фиксированно).
+ * Для этого используется это действие.
+ * @param  player  
+ * @param  victim  
+ */
 export function chooseTargetRequest(player: Types.PlayerId, victim: Types.PlayerId) {
     return constructAction(
         'chooseTargetRequest',
@@ -371,6 +561,9 @@ export function chooseTargetRequest(player: Types.PlayerId, victim: Types.Player
 }
 
 
+/**
+ * @param  position  
+ */
 export function chooseTargetResponse(position: Types.Vector2) {
     return constructAction(
         'chooseTargetResponse',
@@ -379,6 +572,10 @@ export function chooseTargetResponse(position: Types.Vector2) {
 }
 
 
+/**
+ * Используется при починки корабля с помощью ремонтного модуля.
+ * @param  player  
+ */
 export function chooseModuleToRepairRequest(player: Types.PlayerId) {
     return constructAction(
         'chooseModuleToRepairRequest',
@@ -387,6 +584,9 @@ export function chooseModuleToRepairRequest(player: Types.PlayerId) {
 }
 
 
+/**
+ * @param  position  
+ */
 export function chooseModuleToRepairResponse(position?: Types.Vector2) {
     return constructAction(
         'chooseModuleToRepairResponse',
@@ -395,6 +595,10 @@ export function chooseModuleToRepairResponse(position?: Types.Vector2) {
 }
 
 
+/**
+ * Используется, чтобы логировать все изменения состояния игры
+ * @param  delta  
+ */
 export function reducerUpdatedState(delta: any) {
     return constructAction(
         'reducerUpdatedState',
@@ -403,6 +607,13 @@ export function reducerUpdatedState(delta: any) {
 }
 
 
+/**
+ * Показывает карты игроку. Отличие от showCardsToPlayersRequest в том, 
+ * что не ожидается подтверждение от игрока - игра продолжается мгновенно после отправки.
+ * @param  player  
+ * @param  cardsReceiver  
+ * @param  cards  
+ */
 export function showCardsInfo(player: Types.PlayerId, cardsReceiver: Types.PlayerId, cards: Types.Card[]) {
     return constructAction(
         'showCardsInfo',
@@ -411,6 +622,11 @@ export function showCardsInfo(player: Types.PlayerId, cardsReceiver: Types.Playe
 }
 
 
+/**
+ * Сообщение о том, что игрок проиграл. 
+ * Не ожидает подтверждения от игрока - игра продолжается мгновенно после отправки.
+ * @param  player  
+ */
 export function sendPlayerLostInfo(player: Types.PlayerId) {
     return constructAction(
         'sendPlayerLostInfo',
@@ -419,6 +635,13 @@ export function sendPlayerLostInfo(player: Types.PlayerId) {
 }
 
 
+/**
+ * Используется для карточки действия: 
+ * "Положите верхние 3 карточки действия в произвольном порядке"
+ * и "Положите верхние 3 карточки действия в произвольном порядке. Возьмите верхнюю из них".
+ * @param  player  
+ * @param  cards  
+ */
 export function permuteTopThreeEventCardsRequest(player: Types.PlayerId, cards: Types.EventCard[]) {
     return constructAction(
         'permuteTopThreeEventCardsRequest',
@@ -427,6 +650,9 @@ export function permuteTopThreeEventCardsRequest(player: Types.PlayerId, cards: 
 }
 
 
+/**
+ * @param  order  
+ */
 export function permuteTopThreeEventCardsResponse(order: number[]) {
     return constructAction(
         'permuteTopThreeEventCardsResponse',
@@ -435,6 +661,10 @@ export function permuteTopThreeEventCardsResponse(order: number[]) {
 }
 
 
+/**
+ * Используется для карточки действия "Уничтожьте любой модуль вашего корабля на ваш выбор"
+ * @param  player  
+ */
 export function chooseModuleToDestroyRequest(player: Types.PlayerId) {
     return constructAction(
         'chooseModuleToDestroyRequest',
@@ -443,6 +673,9 @@ export function chooseModuleToDestroyRequest(player: Types.PlayerId) {
 }
 
 
+/**
+ * @param  position  
+ */
 export function chooseModuleToDestroyResponse(position: Types.Vector2) {
     return constructAction(
         'chooseModuleToDestroyResponse',
@@ -451,6 +684,11 @@ export function chooseModuleToDestroyResponse(position: Types.Vector2) {
 }
 
 
+/**
+ * Используется для карточки действия 
+ * "Вы можете, скинув до 2 карт с руки, восстановить по 1 урона с модулей вашего корабля за каждую скинутую карту".
+ * @param  player  
+ */
 export function chooseCardsForRepairSpaceshipRequest(player: Types.PlayerId) {
     return constructAction(
         'chooseCardsForRepairSpaceshipRequest',
@@ -459,6 +697,9 @@ export function chooseCardsForRepairSpaceshipRequest(player: Types.PlayerId) {
 }
 
 
+/**
+ * @param  indexes  
+ */
 export function chooseCardsForRepairSpaceshipResponse(indexes: number[]) {
     return constructAction(
         'chooseCardsForRepairSpaceshipResponse',
@@ -467,6 +708,14 @@ export function chooseCardsForRepairSpaceshipResponse(indexes: number[]) {
 }
 
 
+/**
+ * Используется для карточки действия 
+ * "Вы можете, скинув до 2 карт с руки, восстановить по 1 урона с модулей вашего корабля за каждую скинутую карту".
+ * Сначала посылается событие chooseCardsForRepairSpaceshipRequest. После получения ответа посылается это событие,
+ * чтобы выбрать модули, которые нужно починить.
+ * @param  player  
+ * @param  count  
+ */
 export function chooseModulesToRepairByDiscardedCardsRequest(player: Types.PlayerId, count: number) {
     return constructAction(
         'chooseModulesToRepairByDiscardedCardsRequest',
@@ -475,6 +724,9 @@ export function chooseModulesToRepairByDiscardedCardsRequest(player: Types.Playe
 }
 
 
+/**
+ * @param  positions  
+ */
 export function chooseModulesToRepairByDiscardedCardsResponse(positions: Types.Vector2[]) {
     return constructAction(
         'chooseModulesToRepairByDiscardedCardsResponse',
@@ -483,6 +735,12 @@ export function chooseModulesToRepairByDiscardedCardsResponse(positions: Types.V
 }
 
 
+/**
+ * Используется для карточки действия "Уничтожьте 2 солнечные батареи вашего корабля". 
+ * Если у игрока на корабле меньше 2-х солнечных батарей, то он уничтожает столько, сколько у него есть.
+ * @param  player  
+ * @param  count  
+ */
 export function chooseSolarPanelsToDestroyRequest(player: Types.PlayerId, count: number) {
     return constructAction(
         'chooseSolarPanelsToDestroyRequest',
@@ -491,6 +749,9 @@ export function chooseSolarPanelsToDestroyRequest(player: Types.PlayerId, count:
 }
 
 
+/**
+ * @param  positions  
+ */
 export function chooseSolarPanelsToDestroyResponse(positions: Types.Vector2[]) {
     return constructAction(
         'chooseSolarPanelsToDestroyResponse',
@@ -499,6 +760,12 @@ export function chooseSolarPanelsToDestroyResponse(positions: Types.Vector2[]) {
 }
 
 
+/**
+ * Используется для карточки действия
+ * "Киньте кубик. Можете восстановить один модуль вашего корабля на 1 урон при выпадении ≤4, а иначе - на 2 урона".
+ * @param  player  
+ * @param  amount  
+ */
 export function chooseModuleToRepairByDiceRequest(player: Types.PlayerId, amount: number) {
     return constructAction(
         'chooseModuleToRepairByDiceRequest',
@@ -507,6 +774,9 @@ export function chooseModuleToRepairByDiceRequest(player: Types.PlayerId, amount
 }
 
 
+/**
+ * @param  position  
+ */
 export function chooseModuleToRepairByDiceResponse(position?: Types.Vector2) {
     return constructAction(
         'chooseModuleToRepairByDiceResponse',
@@ -515,6 +785,12 @@ export function chooseModuleToRepairByDiceResponse(position?: Types.Vector2) {
 }
 
 
+/**
+ * Используется для карточки действия
+ * "Если у вас есть карты на руках, скиньте в сброс до 2 из них на ваш выбор, 
+ * а затем возьмите столько же карт строительства".
+ * @param  player  
+ */
 export function chooseCardsToDiscardAndTakeAnotherRequest(player: Types.PlayerId) {
     return constructAction(
         'chooseCardsToDiscardAndTakeAnotherRequest',
@@ -523,6 +799,9 @@ export function chooseCardsToDiscardAndTakeAnotherRequest(player: Types.PlayerId
 }
 
 
+/**
+ * @param  indexes  
+ */
 export function chooseCardsToDiscardAndTakeAnotherResponse(indexes: number[]) {
     return constructAction(
         'chooseCardsToDiscardAndTakeAnotherResponse',
@@ -531,6 +810,12 @@ export function chooseCardsToDiscardAndTakeAnotherResponse(indexes: number[]) {
 }
 
 
+/**
+ * Используется либо для карточки действия "Можете перенести 1 урон с одного вашего модуля на другой",
+ * либо для способности командного модуля, которая позволяет переносить урон.
+ * @param  player  
+ * @param  reason  
+ */
 export function chooseModuleToMoveDamageRequest(player: Types.PlayerId, reason: Types.MoveDamageReason) {
     return constructAction(
         'chooseModuleToMoveDamageRequest',
@@ -539,6 +824,9 @@ export function chooseModuleToMoveDamageRequest(player: Types.PlayerId, reason: 
 }
 
 
+/**
+ * @param  move  
+ */
 export function chooseModuleToMoveDamageResponse(move?: { source: Types.Vector2, destination: Types.Vector2 }) {
     return constructAction(
         'chooseModuleToMoveDamageResponse',
@@ -547,6 +835,12 @@ export function chooseModuleToMoveDamageResponse(move?: { source: Types.Vector2,
 }
 
 
+/**
+ * Используется для карточки действия
+ * "Киньте кубик. Нанесите любому модулю соперника (кроме командного) 1 урон при выпадении ≤4, а иначе - 2 урона".
+ * @param  player  
+ * @param  damage  
+ */
 export function chooseModuleToDamageByDiceRequest(player: Types.PlayerId, damage: number) {
     return constructAction(
         'chooseModuleToDamageByDiceRequest',
@@ -555,6 +849,9 @@ export function chooseModuleToDamageByDiceRequest(player: Types.PlayerId, damage
 }
 
 
+/**
+ * @param  info  
+ */
 export function chooseModuleToDamageByDiceResponse(info?: { victimId: Types.PlayerId, victimModulePosition: Types.Vector2 }) {
     return constructAction(
         'chooseModuleToDamageByDiceResponse',
@@ -563,6 +860,13 @@ export function chooseModuleToDamageByDiceResponse(info?: { victimId: Types.Play
 }
 
 
+/**
+ * Используется для карточки действия
+ * "Выберите любого игрока, у которого на руках есть карточки. Посмотрите его карты и возьмите себе одну из них на ваш выбор".
+ * Это действие запрашивает игрока, у которого нужно своровать карточку
+ * @param  player  
+ * @param  options  
+ */
 export function choosePlayerToStealCardRequest(player: Types.PlayerId, options: Types.PlayerId[]) {
     return constructAction(
         'choosePlayerToStealCardRequest',
@@ -571,6 +875,9 @@ export function choosePlayerToStealCardRequest(player: Types.PlayerId, options: 
 }
 
 
+/**
+ * @param  target  
+ */
 export function choosePlayerToStealCardResponse(target: Types.PlayerId) {
     return constructAction(
         'choosePlayerToStealCardResponse',
@@ -579,6 +886,10 @@ export function choosePlayerToStealCardResponse(target: Types.PlayerId) {
 }
 
 
+/**
+ * @param  player  
+ * @param  cards  
+ */
 export function chooseCardToStealRequest(player: Types.PlayerId, cards: Types.Card[]) {
     return constructAction(
         'chooseCardToStealRequest',
@@ -587,6 +898,9 @@ export function chooseCardToStealRequest(player: Types.PlayerId, cards: Types.Ca
 }
 
 
+/**
+ * @param  chosenCardIndex  
+ */
 export function chooseCardToStealResponse(chosenCardIndex: number) {
     return constructAction(
         'chooseCardToStealResponse',
@@ -595,6 +909,9 @@ export function chooseCardToStealResponse(chosenCardIndex: number) {
 }
 
 
+/**
+ * @param  player  
+ */
 export function useEventCardToDealDamageRequest(player: Types.PlayerId) {
     return constructAction(
         'useEventCardToDealDamageRequest',
@@ -603,6 +920,9 @@ export function useEventCardToDealDamageRequest(player: Types.PlayerId) {
 }
 
 
+/**
+ * @param  useEventCard  
+ */
 export function useEventCardToDealDamageResponse(useEventCard: boolean) {
     return constructAction(
         'useEventCardToDealDamageResponse',
@@ -611,6 +931,10 @@ export function useEventCardToDealDamageResponse(useEventCard: boolean) {
 }
 
 
+/**
+ * @param  player  
+ * @param  victim  
+ */
 export function chooseModuleToDamageByEventCardRequest(player: Types.PlayerId, victim: Types.PlayerId) {
     return constructAction(
         'chooseModuleToDamageByEventCardRequest',
@@ -619,6 +943,9 @@ export function chooseModuleToDamageByEventCardRequest(player: Types.PlayerId, v
 }
 
 
+/**
+ * @param  position  
+ */
 export function chooseModuleToDamageByEventCardResponse(position: Types.Vector2) {
     return constructAction(
         'chooseModuleToDamageByEventCardResponse',
@@ -627,6 +954,10 @@ export function chooseModuleToDamageByEventCardResponse(position: Types.Vector2)
 }
 
 
+/**
+ * @param  player  
+ * @param  type  
+ */
 export function tryToRunawayRequest(player: Types.PlayerId, type: Types.RunawayType) {
     return constructAction(
         'tryToRunawayRequest',
@@ -635,6 +966,9 @@ export function tryToRunawayRequest(player: Types.PlayerId, type: Types.RunawayT
 }
 
 
+/**
+ * @param  willRunaway  
+ */
 export function tryToRunawayResponse(willRunaway: boolean) {
     return constructAction(
         'tryToRunawayResponse',
@@ -643,6 +977,9 @@ export function tryToRunawayResponse(willRunaway: boolean) {
 }
 
 
+/**
+ * @param  player  
+ */
 export function throwDice(player: Types.PlayerId) {
     return constructAction(
         'throwDice',
@@ -651,6 +988,9 @@ export function throwDice(player: Types.PlayerId) {
 }
 
 
+/**
+ * @param  result  
+ */
 export function throwDiceResult(result: number) {
     return constructAction(
         'throwDiceResult',
@@ -659,6 +999,9 @@ export function throwDiceResult(result: number) {
 }
 
 
+/**
+ * @param  length  
+ */
 export function shuffle(length: number) {
     return constructAction(
         'shuffle',
@@ -667,6 +1010,9 @@ export function shuffle(length: number) {
 }
 
 
+/**
+ * @param  order  
+ */
 export function shuffleResult(order: number[]) {
     return constructAction(
         'shuffleResult',
@@ -675,6 +1021,8 @@ export function shuffleResult(order: number[]) {
 }
 
 
+/**
+ */
 export function time() {
     return constructAction(
         'time',
@@ -683,6 +1031,9 @@ export function time() {
 }
 
 
+/**
+ * @param  result  
+ */
 export function timeResult(result: number) {
     return constructAction(
         'timeResult',
@@ -691,6 +1042,10 @@ export function timeResult(result: number) {
 }
 
 
+/**
+ * @param  player  
+ * @param  text  
+ */
 export function message(player: Types.PlayerId, text: string) {
     return constructAction(
         'message',

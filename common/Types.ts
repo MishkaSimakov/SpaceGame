@@ -65,10 +65,17 @@ export enum MainModuleType {
     AttackOrRunaway = "AttackOrRunaway",
 }
 
+export type ModuleConnectors = {
+    top: number,
+    right: number,
+    bottom: number,
+    left: number,
+};
+
 export type ModuleCard = {
     id: ModuleId,
     name: string,
-    connectors: { top: number, right: number, bottom: number, left: number },
+    connectors: ModuleConnectors,
     strength: number,
     capacity: number,
     energyCost: number,

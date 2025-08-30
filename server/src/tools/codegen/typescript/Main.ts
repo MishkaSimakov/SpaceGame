@@ -13,11 +13,13 @@ type Action = {
     description?: string;
     payload: {
         name: string,
-        typedName: string
+        typedName: string,
+        description?: string
     }[],
     meta: {
         name: string,
-        typedName: string
+        typedName: string,
+        description?: string
     }[]
 };
 
@@ -51,6 +53,12 @@ function registerHandlebarsHelpers() {
     Handlebars.registerHelper('renderDefinitions', function (args: Record<string, Definition<any>>) {
         return Object.values(args).map(def => def.emit()).join('\n\n');
     });
+
+    Handlebars.registerHelper('formatForDocstring', function (description: string) {
+        return description?.split('\n')
+            .filter(part => part.length > 0)
+            .join('\n * ');
+    });
 }
 
 export async function typescript() {
@@ -72,7 +80,8 @@ export async function typescript() {
                 typedName: generateArgument(argument.name, {
                     ...argument.type,
                     definitions: types
-                }, typescriptDefinitions)
+                }, typescriptDefinitions),
+                description: argument.description
             });
         }
 
@@ -82,7 +91,8 @@ export async function typescript() {
                 typedName: generateArgument(metaArgument.name, {
                     ...metaArgument.type,
                     definitions: types
-                }, typescriptDefinitions)
+                }, typescriptDefinitions),
+                description: metaArgument.description
             });
         }
 

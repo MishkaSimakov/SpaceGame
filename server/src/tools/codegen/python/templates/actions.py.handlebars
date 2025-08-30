@@ -36,6 +36,16 @@ class {{ capitalize name }}:
 
 def {{ name }}({{ renderArguments payload }}) \
         -> {{ capitalize name }}:
+    """
+{{#if description }}
+{{{ descriptionDocstring description }}}
+{{/if}}
+{{#each payload }}
+{{{ argumentDocstring name description }}}
+{{/each}}
+    :return: Сконструированное действие
+    """
+
     return {{ capitalize name }}(
         uuid=str(uuid.uuid4()),
         time=int(time.time()),

@@ -9,6 +9,21 @@ import * as Types from "./Types";
 
 {{#each actions}}
 
+/**
+{{#if description}}
+ * {{{ formatForDocstring description }}}
+{{/if}}
+{{#each payload }}
+ * @param  {{ name }}  {{{ formatForDocstring description }}}
+{{/each}}
+{{#if meta.length }}
+ *
+ * Мета-параметры события:
+{{#each meta }}
+* @param  {{ name }}  {{{ formatForDocstring description }}}
+{{/each}}
+{{/if}}
+ */
 export function {{ name }}({{ renderArguments payload meta }}) {
     return constructAction(
         '{{ name }}',

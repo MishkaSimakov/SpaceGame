@@ -13,7 +13,8 @@ type Action = {
     description?: string;
     payload: {
         name: string,
-        typedName: string
+        typedName: string,
+        description?: string
     }[]
 };
 
@@ -31,6 +32,19 @@ function renderPythonTemplate(name: string, data: any) {
         basePath(`common/python/${name}.py`),
         template(data)
     );
+}
+
+function generateDocstring(info: { type: "argument", name: string } | { type: "description" }, description?: string) {
+    let result = info.type === "argument" ? `    :param ${info.name}: ` : `    `;
+    if (!description) {
+        return result;
+    }
+
+    const indent = " ".repeat(result.length);
+    const lines = description.split('\n').filter(part => part.length > 0);
+    result += lines.join("\n" + indent);
+
+    return result;
 }
 
 function registerHandlebarsHelpers() {
@@ -69,6 +83,14 @@ function registerHandlebarsHelpers() {
 
         return result;
     });
+
+    Handlebars.registerHelper("argumentDocstring", function (name: string, description?: string) {
+        return generateDocstring({type: "argument", name}, description);
+    });
+
+    Handlebars.registerHelper("descriptionDocstring", function (description: string) {
+        return generateDocstring({type: "description"}, description);
+    });
 }
 
 export async function python() {
@@ -99,7 +121,8 @@ export async function python() {
                         argument.name,
                         {...argument.type, definitions: types},
                         pythonDefinitions
-                    ).emit()
+                    ).emit(),
+                    description: argument.description
                 });
             }
 
