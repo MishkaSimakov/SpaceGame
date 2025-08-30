@@ -26,7 +26,7 @@ export class SagaContinuation<V> implements Continuation<Result<V, any> | void> 
                 result = this.iterator.next();
             } else if (value._tag === "ok") {
                 result = this.iterator.next(value.value);
-            } else if (value._tag === "err") {
+            } else {
                 result = this.iterator.throw(value.error);
             }
         } catch (error) {

@@ -196,7 +196,7 @@ export type GameForPlayerDTO = {
     otherPlayers: OtherPlayer[],
     onlineMap: { player: PlayerId, online: boolean }[],
     messages: Message[],
-    timeControl?: { timeDecreasingPlayerId: PlayerId, playersTime: { player: PlayerId, time: number }[] },
+    timeControl?: { playersTime: { player: PlayerId, time: number }[], timeDecreasingPlayerId?: PlayerId },
 };
 
 export enum MoveDamageReason {

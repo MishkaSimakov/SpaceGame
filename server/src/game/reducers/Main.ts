@@ -53,9 +53,9 @@ export const reducers: ReducersType = {
         player.energy = Math.max(0, Math.min(player.energy, capacity));
     },
 
-    playerSkipNextTurn(state: GameState, payload) {
+    setPlayerSkipNextTurn(state: GameState, payload) {
         const player = StateGetters.playerById(state, payload.player)!;
-        player.skipNextTurn = true;
+        player.skipNextTurn = payload.skip;
     },
 
     destructSpaceshipModules(state: GameState, payload) {

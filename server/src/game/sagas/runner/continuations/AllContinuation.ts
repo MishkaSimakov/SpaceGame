@@ -20,7 +20,7 @@ export class AllContinuation implements Continuation<AllEffect<any>["input"]> {
     }
 
     private setupEffects(effects: any) {
-        const result = {};
+        const result: Record<string, any> = {};
 
         for (const key of Object.keys(effects)) {
             if (this.errorOccurred) {
@@ -47,8 +47,6 @@ export class AllContinuation implements Continuation<AllEffect<any>["input"]> {
                         // propagate error
                         this.consumer.continue(childResult);
                     }
-                },
-                cancel: () => {
                 }
             });
 

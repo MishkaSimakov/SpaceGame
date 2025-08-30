@@ -1,6 +1,6 @@
 import {StateGetters} from "@common/getters/State";
 import {TimeRecordType} from "@common/Types";
-import {setCurrentPlayer} from "@common/Actions";
+import {setCurrentPlayer, setPlayerSkipNextTurn} from "@common/Actions";
 
 import {put, select} from "./runner/Effects";
 import {beforeTurn} from "./phases/BeforeTurn";
@@ -19,7 +19,7 @@ function* isGameEnded() {
 }
 
 function* shiftTurn() {
-    const state = yield* select();
+    let state = yield* select();
     let currentPlayerIndex = state.players.findIndex(p => p.id === state.currentPlayerId);
 
     while (true) {
@@ -29,7 +29,8 @@ function* shiftTurn() {
         const player = state.players[currentPlayerIndex];
 
         if (player.skipNextTurn) {
-            player.skipNextTurn = false;
+            yield* put(setPlayerSkipNextTurn(player.id, false));
+            state = yield* select(); // update state
             continue;
         }
 

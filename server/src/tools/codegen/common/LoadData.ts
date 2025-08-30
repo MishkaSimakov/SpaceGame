@@ -20,7 +20,7 @@ function validateSchema(type: any, definitions: any, message: string) {
     }
 }
 
-type TypesData = jtd.Schema["definitions"];
+type TypesData = NonNullable<jtd.Schema["definitions"]>;
 type ActionsData = {
     name: string,
     description?: string,

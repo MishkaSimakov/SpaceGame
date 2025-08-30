@@ -19,7 +19,7 @@ function getPlayersTime(state: GameState) {
     const lastRecord = state.timeRecords[state.timeRecords.length - 1];
     const currentTime = (new Date()).getTime();
 
-    const record = playersTime.find(v => v.player === lastRecord.playerId);
+    const record = playersTime.find(v => v.player === lastRecord.playerId)!;
     record.time -= (currentTime - lastRecord.time)
 
     return playersTime;

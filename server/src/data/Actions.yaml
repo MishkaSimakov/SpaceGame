@@ -64,11 +64,19 @@
       type:
         ref: CardType
 
-- name: playerSkipNextTurn
+- name: setPlayerSkipNextTurn
+  description: |
+    Устанавливает, будет ли игрок пропускать ход. Используется для карточки действия "Пропустите ход".
+    Если установить true, то игрок пропустит свой следующий ход, после чего это значение будет установлено
+    в положение false и игрок больше не будет пропускать ходы (происходит в shiftTurn)
   payload:
     - name: player
       type:
         ref: PlayerId
+    - name: skip
+      description: будет ли игрок пропускать следующий ход
+      type:
+        type: boolean
 
 - name: destructSpaceshipModules
   payload:

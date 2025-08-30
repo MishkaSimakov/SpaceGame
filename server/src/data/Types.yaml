@@ -327,9 +327,6 @@ GameForPlayerDTO:
   optionalProperties:
     timeControl:
       properties:
-        timeDecreasingPlayerId:
-          ref: PlayerId
-          nullable: true
         playersTime:
           elements:
             properties:
@@ -337,6 +334,9 @@ GameForPlayerDTO:
                 ref: PlayerId
               time:
                 type: int32
+      optionalProperties:
+        timeDecreasingPlayerId:
+          ref: PlayerId
 
 # Enums for Actions
 MoveDamageReason:

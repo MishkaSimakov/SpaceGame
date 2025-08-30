@@ -16,10 +16,10 @@ export function deferred<T>(): Deferred<T> {
 }
 
 export function arrayOfDeferred<T>(length: number): Deferred<T>[] {
-    const arr = [];
+    const arr: Deferred<T>[] = [];
 
     for (let i = 0; i < length; i++) {
-        arr.push(deferred());
+        arr.push(deferred<T>());
     }
 
     return arr;

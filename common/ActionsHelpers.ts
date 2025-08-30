@@ -11,6 +11,7 @@ export interface Action<T extends string, P, M = unknown> {
     meta?: M;
 }
 
+// this thing works only in strict Typescript mode!
 type UndefinedToOptional<T> = {
     [K in keyof T as undefined extends T[K] ? K : never]?: T[K];
 } & {

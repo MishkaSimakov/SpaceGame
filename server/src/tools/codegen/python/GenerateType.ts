@@ -70,7 +70,7 @@ function generateWithState(schema: Schema, state: GenerationState): ASTNode {
     if (isRefForm(schema)) {
         if (!(schema.ref in generatedDefinitions)) {
             generateDefinition(schema.ref, {
-                ...rootSchema.definitions[schema.ref],
+                ...rootSchema.definitions![schema.ref],
                 definitions: rootSchema.definitions
             }, generatedDefinitions);
         }

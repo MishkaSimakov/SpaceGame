@@ -45,7 +45,8 @@ export default class ActionsBus {
                 action = middleware.apply(action) as A;
 
                 if (action === undefined) {
-                    return;
+                    def.resolve();
+                    return def.promise;
                 }
             }
         } catch (error) {

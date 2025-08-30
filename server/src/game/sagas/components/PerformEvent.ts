@@ -25,11 +25,10 @@ import {
     chooseSolarPanelsToDestroyRequest,
     destructSpaceshipModules,
     permuteTopThreeEventCardsRequest,
-    playerSkipNextTurn,
     popCardsFromHand,
     pushCardsToDiscard,
     pushCardsToHand,
-    pushCardsToStack
+    pushCardsToStack, setPlayerSkipNextTurn
 } from "@common/Actions";
 import {StateGetters} from "@common/getters/State";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
@@ -95,7 +94,7 @@ let eventsPerformFunctions: Record<EventType, (state: GameState, event: EventCar
         yield* put(changePlayerEnergy(StateGetters.currentPlayer(state).id, 1, "event card (take 5 energy)"));
     },
     [EventType.SkipNextTurn]: function* (state: GameState) {
-        yield* put(playerSkipNextTurn(StateGetters.currentPlayer(state).id));
+        yield* put(setPlayerSkipNextTurn(StateGetters.currentPlayer(state).id, true));
     },
     [EventType.LooseAllYourCards]: function* (state: GameState) {
         const player = StateGetters.currentPlayer(state);
