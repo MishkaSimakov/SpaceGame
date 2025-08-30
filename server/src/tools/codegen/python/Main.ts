@@ -6,6 +6,7 @@ import {loadData} from "@src/tools/codegen/common/LoadData";
 import {codegenPath} from "@src/tools/codegen/common/Path";
 import {Assign, ASTNode} from "@src/tools/codegen/python/AST";
 import {generateArgument, generateDefinition} from "@src/tools/codegen/python/GenerateType";
+import {capitalize} from "@src/helpers/Str";
 
 type Action = {
     name: string;
@@ -29,6 +30,12 @@ function renderPythonTemplate(name: string, data: any) {
 }
 
 function registerHandlebarsHelpers() {
+    Handlebars.registerHelper('capitalize', capitalize);
+
+    Handlebars.registerHelper('getResponseType', function (request: string) {
+        return request.replace('Request', 'Response');
+    });
+
     Handlebars.registerHelper('renderArguments', function (payload: Action["payload"]) {
         return payload
             .map(arg => arg.typedName)
@@ -74,31 +81,34 @@ export async function python() {
         }, pythonDefinitions);
     }
 
-    const parsedActions = actions.map<Action>(action => {
-        const parsedAction: Action = {
-            name: action.name,
-            description: action.description,
-            payload: [],
-        };
+    const parsedRequests = actions
+        .filter(action => action.name.includes('Request'))
+        .map<Action>(action => {
+            const parsedAction: Action = {
+                name: action.name,
+                description: action.description,
+                payload: [],
+            };
 
-        for (const argument of action.payload) {
-            parsedAction.payload.push({
-                name: argument.name,
-                typedName: generateArgument(
-                    [action.name, argument.name],
-                    argument.name,
-                    {...argument.type, definitions: types},
-                    pythonDefinitions
-                ).emit()
-            });
-        }
+            for (const argument of action.payload) {
+                parsedAction.payload.push({
+                    name: argument.name,
+                    typedName: generateArgument(
+                        [action.name, argument.name],
+                        argument.name,
+                        {...argument.type, definitions: types},
+                        pythonDefinitions
+                    ).emit()
+                });
+            }
 
-        return parsedAction;
-    });
+            return parsedAction;
+        });
 
     // template rendering
     registerHandlebarsHelpers();
 
     // renderPythonTemplate("BaseClient", {});
+    renderPythonTemplate("BaseClient", {requests: parsedRequests});
     renderPythonTemplate("Types", {definitions: pythonDefinitions});
 }

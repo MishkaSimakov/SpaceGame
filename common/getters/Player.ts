@@ -1,5 +1,4 @@
-import {OtherPlayer} from "../GameForPlayerDTO";
-import {ModuleType, Player} from "../Types";
+import {ModuleType, OtherPlayer, Player} from "../Types";
 import {SpaceshipGetters} from "./Spaceship";
 
 export const PlayerGetters = {

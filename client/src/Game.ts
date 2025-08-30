@@ -1,5 +1,4 @@
-import {GameForPlayerDTO, OtherPlayer} from "@common/GameForPlayerDTO";
-import {GameSettings, Message, Player, PlayerId} from "@common/Types";
+import {GameForPlayerDTO, GameSettings, Message, OtherPlayer, Player, PlayerId} from "@common/Types";
 import {PlayerGetters} from "@common/getters/Player";
 
 import Spaceships from "./graphics/scenes/Spaceships";
@@ -15,7 +14,7 @@ export default class Game {
 
     currentPlayer: Player;
     otherPlayers: OtherPlayer[];
-    onlineMap: Record<PlayerId, boolean> = {};
+    onlineMap: GameForPlayerDTO["onlineMap"] = [];
 
     socketManager: SocketManager;
 
@@ -27,7 +26,7 @@ export default class Game {
 
     settings: GameSettings;
 
-    playerTime: Record<number, number> = {};
+    playerTime: GameForPlayerDTO["timeControl"]["playersTime"] = [];
     timeDecreasingPlayerId: number;
 
     messages: Message[] = [];
@@ -64,7 +63,10 @@ export default class Game {
             }
 
             const currTime = (new Date()).getTime();
-            this.playerTime[this.timeDecreasingPlayerId] -= (currTime - prevTime);
+            const record = this.playerTime.find(v => v.player === this.timeDecreasingPlayerId);
+            if (record) {
+                record.time -= (currTime - prevTime);
+            }
             prevTime = currTime;
 
             this.controlsScene.topBarDrawer.updateTime(this.playerTime);

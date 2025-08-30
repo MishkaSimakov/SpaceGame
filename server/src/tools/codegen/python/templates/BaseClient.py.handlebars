@@ -8,6 +8,8 @@ from abc import ABC, abstractmethod
 
 import socketio
 
+from Types import *
+from Action import construct_action
 
 class BaseClient(ABC):
 
@@ -18,6 +20,7 @@ class BaseClient(ABC):
 
 {{#each requests}}
     @abstractmethod
-    def rebuildSpaceshipRequest(self, {{ renderArguments payload }}) -> {{ capitalize getResponseType name }}:
+    def {{ name }}(self, {{ renderArguments payload }}) -> {{ capitalize (getResponseType name) }}:
         ...
+
 {{/each}}

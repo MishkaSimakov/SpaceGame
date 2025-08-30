@@ -1,5 +1,4 @@
-import {OtherPlayer} from "@common/GameForPlayerDTO";
-import {Message, Player, PlayerId} from "@common/Types";
+import {Message, OtherPlayer, Player, PlayerId} from "@common/Types";
 
 import Controls from "../scenes/Controls";
 import {ButtonColors, SIZES} from "../constants";
@@ -31,8 +30,8 @@ export default class TopBarDrawer {
     playersCard?: Group;
     otherPlayers: OtherPlayer[] = [];
     currentPlayer: Player;
-    onlineMap: Record<PlayerId, boolean> = {};
-    playerTime: Record<PlayerId, number> = {};
+    onlineMap: { player: PlayerId, online: boolean }[] = [];
+    playerTime: { player: PlayerId, time: number }[] = [];
 
     // status
     statusCard?: Group;
@@ -69,7 +68,10 @@ export default class TopBarDrawer {
         this.redraw();
     }
 
-    setPlayersData(currentPlayer: Player, otherPlayers: OtherPlayer[], onlineMap: Record<PlayerId, boolean>, playerTime: Record<number, number>, newMessages: Message[]) {
+    setPlayersData(currentPlayer: Player, otherPlayers: OtherPlayer[], onlineMap: {
+        player: PlayerId,
+        online: boolean
+    }[], playerTime: { player: PlayerId, time: number }[], newMessages: Message[]) {
         this.currentPlayer = currentPlayer;
         this.otherPlayers = otherPlayers;
         this.onlineMap = onlineMap;
@@ -187,14 +189,14 @@ export default class TopBarDrawer {
     togglePlayerCharacteristics() { /* no-op */
     }
 
-    updateTime(playerTime: Record<PlayerId, number>) {
+    updateTime(playerTime: { player: PlayerId, time: number }[]) {
         this.playerTime = playerTime;
 
-        for (const playerId in playerTime) {
-            const playerDataLine = this.playersCard.findOne(`.${playerId}`) as PlayerDataLine;
+        for (const {player, time} of playerTime) {
+            const playerDataLine = this.playersCard.findOne(`.${player}`) as PlayerDataLine;
 
-            if (playerDataLine && playerDataLine.time() != this.playerTime[playerId]) {
-                playerDataLine.time(this.playerTime[playerId]);
+            if (playerDataLine && playerDataLine.time() != time) {
+                playerDataLine.time(time);
             }
         }
     }

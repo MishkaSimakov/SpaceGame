@@ -173,6 +173,25 @@ export type Message = {
     payload?: any,
 };
 
+export type OtherPlayer = {
+    id: PlayerId,
+    name: string,
+    energy: number,
+    spaceship: Spaceship,
+    handSize: number,
+    lose: boolean,
+};
+
+export type GameForPlayerDTO = {
+    currentTurnPlayerId: PlayerId,
+    settings: GameSettings,
+    player: Player,
+    otherPlayers: OtherPlayer[],
+    onlineMap: { player: PlayerId, online: boolean }[],
+    messages: Message[],
+    timeControl?: { timeDecreasingPlayerId: PlayerId, playersTime: { player: PlayerId, time: number }[] },
+};
+
 export enum MoveDamageReason {
     MainModule = "MainModule",
     EventCard = "EventCard",

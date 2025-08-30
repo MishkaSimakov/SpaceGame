@@ -1,8 +1,7 @@
-import {OtherPlayer} from "@common/GameForPlayerDTO";
+import {AttackReason, OtherPlayer, PlayerId} from "@common/Types";
 
 import Modal from "../Modal";
 import Controls from "../scenes/Controls";
-import {AttackReason, PlayerId} from "@common/Types";
 import {COLORS} from "../constants";
 import {Activity} from "./Activity";
 

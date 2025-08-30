@@ -159,12 +159,12 @@ export const reducers: ReducersType = {
         player.usedModuleSecondTimeOnThisTurn = true;
     },
 
-    insertPause(state: GameState, {from, to}) {
+    insertPause(state: GameState, {begin, end}) {
         const currentPlayer = StateGetters.currentPlayer(state);
 
         state.timeRecords.push(
-            {type: TimeRecordType.PAUSE_STARTED, playerId: currentPlayer.id, time: from},
-            {type: TimeRecordType.PAUSE_ENDED, playerId: currentPlayer.id, time: to},
+            {type: TimeRecordType.PAUSE_STARTED, playerId: currentPlayer.id, time: begin},
+            {type: TimeRecordType.PAUSE_ENDED, playerId: currentPlayer.id, time: end},
         );
     },
 

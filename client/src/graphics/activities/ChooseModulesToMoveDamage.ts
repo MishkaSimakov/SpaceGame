@@ -8,7 +8,7 @@ import Color from "../Color";
 import {COLORS} from "../constants";
 import {ModuleGetters} from "@common/getters/Module";
 
-type MoveDamageResult = { from: Vector2, to: Vector2 } | undefined;
+type MoveDamageResult = { source: Vector2, destination: Vector2 } | undefined;
 
 const reasonStatus: Record<MoveDamageReason, string> = {
     [MoveDamageReason.MainModule]: "выберите, откуда переместить урон",
@@ -50,7 +50,7 @@ export class ChooseModulesToMoveDamage extends Activity {
                     this.controlsScene.topBarDrawer.clearStatus();
 
                     this.chooseDestination().then(to => {
-                        resolve({from, to});
+                        resolve({source: from, destination: to});
                     });
                 },
                 name: 'continue'

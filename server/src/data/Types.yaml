@@ -66,6 +66,17 @@ MainModuleType:
     - UseModuleSecondTime
     - AttackOrRunaway
 
+ModuleConnectors:
+  properties:
+    top:
+      type: int32
+    right:
+      type: int32
+    bottom:
+      type: int32
+    left:
+      type: int32
+
 ModuleCard:
   properties:
     id:
@@ -73,15 +84,7 @@ ModuleCard:
     name:
       type: string
     connectors:
-      properties:
-        top:
-          type: int32
-        right:
-          type: int32
-        bottom:
-          type: int32
-        left:
-          type: int32
+      ref: ModuleConnectors
     strength:
       type: int32
     capacity:
@@ -281,6 +284,59 @@ Message:
       type: string
   optionalProperties:
     payload: { }
+
+# Game for player DTO
+# used to send current game state to player
+OtherPlayer:
+  properties:
+    id:
+      ref: PlayerId
+    name:
+      type: string
+    energy:
+      type: int32
+    spaceship:
+      ref: Spaceship
+    handSize:
+      type: int32
+    lose:
+      type: boolean
+
+GameForPlayerDTO:
+  properties:
+    currentTurnPlayerId:
+      ref: PlayerId
+    settings:
+      ref: GameSettings
+    player:
+      ref: Player
+    otherPlayers:
+      elements:
+        ref: OtherPlayer
+    onlineMap:
+      elements:
+        properties:
+          player:
+            ref: PlayerId
+          online:
+            type: boolean
+    messages:
+      elements:
+        ref: Message
+
+  optionalProperties:
+    timeControl:
+      properties:
+        timeDecreasingPlayerId:
+          ref: PlayerId
+          nullable: true
+        playersTime:
+          elements:
+            properties:
+              player:
+                ref: PlayerId
+              time:
+                type: int32
 
 # Enums for Actions
 MoveDamageReason:

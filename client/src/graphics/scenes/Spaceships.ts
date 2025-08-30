@@ -1,5 +1,4 @@
-import {OtherPlayer} from "@common/GameForPlayerDTO";
-import {ModuleCard, PlayerId, Vector2} from "@common/Types";
+import {ModuleCard, OtherPlayer, PlayerId, Vector2} from "@common/Types";
 
 import Game from "../../Game";
 import Scene from "../engine/Scene";

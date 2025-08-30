@@ -9,7 +9,7 @@ import {
     Schema
 } from "jtd";
 
-import {AnnAssign, ASTNode, ClassDef, Name, Union} from "@src/tools/codegen/python/AST";
+import {AnnAssign, Assign, ASTNode, ClassDef, Constant, Name, Union} from "@src/tools/codegen/python/AST";
 import {arrayOf, dictOf, getEnum, literal, optional, wrapInDefinition} from "@src/tools/codegen/python/Components";
 import {typeMapping} from "@src/tools/codegen/python/TypeMapping";
 import {capitalize} from "@src/helpers/Str";
@@ -115,9 +115,12 @@ function generateWithState(schema: Schema, state: GenerationState): ASTNode {
             if (schema.optionalProperties) {
                 for (const [name, property] of Object.entries(schema.optionalProperties)) {
                     path.push(name);
-                    body.push(new AnnAssign(
-                        new Name(name),
-                        optional(generateWithState(property, inlineState(state)))
+                    body.push(new Assign(
+                        new AnnAssign(
+                            new Name(name),
+                            optional(generateWithState(property, inlineState(state)))
+                        ),
+                        Constant.none()
                     ));
                     path.pop();
                 }

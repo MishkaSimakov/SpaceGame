@@ -1,26 +1,31 @@
-import {GameForPlayerDTO} from "@common/GameForPlayerDTO";
 import {PlayerGetters} from "@common/getters/Player";
 import {StateGetters} from "@common/getters/State";
-import {GameState, Player} from "@common/Types";
+import {GameForPlayerDTO, GameState, Player} from "@common/Types";
 
 import Game from "../Game";
 import {getTimeDecreasingPlayerId} from "../sagas/components/Time";
 
-function getPlayersTime(state: GameState): Record<number, number> {
-    let playersTime = Object.fromEntries(state.players.map(p => [p.id, p.time]));
+function getPlayersTime(state: GameState) {
+    let playersTime = state.players
+        .map(p => ({
+            player: p.id,
+            time: p.time
+        }));
 
-    if (state.timeRecords.length === 0)
+    if (state.timeRecords.length === 0) {
         return playersTime;
+    }
 
     const lastRecord = state.timeRecords[state.timeRecords.length - 1];
     const currentTime = (new Date()).getTime();
 
-    playersTime[lastRecord.playerId] -= (currentTime - lastRecord.time)
+    const record = playersTime.find(v => v.player === lastRecord.playerId);
+    record.time -= (currentTime - lastRecord.time)
 
     return playersTime;
 }
 
-export const getDTO = (game: Game, forPlayer: Player): GameForPlayerDTO => {
+export function getDTO(game: Game, forPlayer: Player): GameForPlayerDTO {
     return {
         currentTurnPlayerId: StateGetters.currentPlayer(game.state).id,
         player: game.getPlayerById(forPlayer.id),
@@ -29,10 +34,11 @@ export const getDTO = (game: Game, forPlayer: Player): GameForPlayerDTO => {
             .filter(p => p.id !== forPlayer.id)
             .map(PlayerGetters.forOtherPlayer),
 
-        onlineMap: Object.fromEntries(
-            game.state.players
-                .map(p => [p.id, game.sockets.isOnline(p.id)])
-        ),
+        onlineMap: game.state.players
+            .map(p => ({
+                player: p.id,
+                online: game.sockets.isOnline(p.id)
+            })),
 
         settings: game.state.settings,
 

@@ -1,6 +1,5 @@
 import io, {Socket} from "socket.io-client";
 
-import {GameForPlayerDTO} from "@common/GameForPlayerDTO";
 import {Action} from "@common/ActionsHelpers";
 import {SocketInitPayload} from "@common/SocketsTypes";
 
@@ -12,6 +11,7 @@ import {eventCardsListeners} from "./listeners/EventCardsListeners";
 import {fightListeners} from "./listeners/FightListeners";
 import {COLORS} from "../graphics/constants";
 import {ShowHugeMessageActivity} from "../graphics/activities/ShowHugeMessage";
+import {GameForPlayerDTO} from "@common/Types";
 
 const listeners: ListenersContainer = {
     ...mainListeners,
