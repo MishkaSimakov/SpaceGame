@@ -616,7 +616,9 @@
 - name: chooseModuleToRepairByDiceResponse
   payload:
     - name: position
-      description: Позиция модуля на корабле игрока, который нужно починить.
+      description: |
+        Позиция модуля на корабле игрока, который нужно починить.
+        Если игрок не хочет чинить модули, то это поле остаётся пустым.
       type:
         ref: Vector2
         nullable: true
@@ -687,6 +689,7 @@
       description: |
         Информация о модуле, по которому нужно нанести урон.
         victimId - id игрока, victimModulePosition - позиция модуля на его корабле, по которому нужно ударить.
+        Если игрок не хочет наносить урон, то это поле остаётся пустым.
       type:
         properties:
           victimId:
@@ -720,11 +723,17 @@
         ref: PlayerId
 
 - name: chooseCardToStealRequest
+  description: |
+    Используется для карточки действия
+    "Выберите любого игрока, у которого на руках есть карточки. Посмотрите его карты и возьмите себе одну из них на ваш выбор".
+    Сначала с помощью choosePlayerToStealCardRequest запрашивается id игрока, у которого надо украсть карточку.
+    Затем с помощью этого действия запрашивается карточка, которую нужно украсть.
   payload:
     - name: player
       type:
         ref: PlayerId
     - name: cards
+      description: Список карт, которые можно украсть
       type:
         elements:
           ref: Card
@@ -732,10 +741,14 @@
 - name: chooseCardToStealResponse
   payload:
     - name: chosenCardIndex
+      description: Индекс карты из chooseCardToStealRequest::cards, которую нужно украсть
       type:
         type: int32
 
 - name: useEventCardToDealDamageRequest
+  description: |
+    Используется для карточки действия
+    "Сохраните эту кар у себя на руке. В свой бой вы можете скинуть её, нанося 1 урон любому модулю корабля соперника (кроме командного)".
   payload:
     - name: player
       type:
@@ -744,36 +757,53 @@
 - name: useEventCardToDealDamageResponse
   payload:
     - name: useEventCard
+      description: Хочет ли игрок использовать карточку действия с руки, чтобы нанести урон сопернику.
       type:
         type: boolean
 
 - name: chooseModuleToDamageByEventCardRequest
+  description: |
+    Используется для карточки действия
+    "Сохраните эту кар у себя на руке. В свой бой вы можете скинуть её, нанося 1 урон любому модулю корабля соперника (кроме командного)".
+    Сначала у пользователя запрашивается, хочет ли он воспользоваться этой карточкой, с помощью действия useEventCardToDealDamageRequest.
+    Затем с помощью этого действия запрашивается модуль, по которому нужно ударить.
   payload:
     - name: player
       type:
         ref: PlayerId
     - name: victim
+      description: id игрока, по модулю которого нужно нанести урон.
       type:
         ref: PlayerId
 
 - name: chooseModuleToDamageByEventCardResponse
   payload:
     - name: position
+      description: |
+        Позиция модуля на корабле игрока chooseModuleToDamageByEventCardRequest::victim, по которому нужно нанести урон.
       type:
         ref: Vector2
 
 - name: tryToRunawayRequest
+  description: |
+    Используется в бою, чтобы узнать, будет ли игрок пытаться сбежать.
+    Он может это сделать двумя способами:
+    Dice - с помощью кубика - тогда он сбегает или нет в зависимости от кубика
+    MainModule - с помощью командного модуля - тогда он гарантированно сбегает
   payload:
     - name: player
       type:
         ref: PlayerId
     - name: type
+      description: |
+        Способ сбегания: кубик или командный модуль
       type:
         ref: RunawayType
 
 - name: tryToRunawayResponse
   payload:
     - name: willRunaway
+      description: Хочет ли игрок попытаться сбежать
       type:
         type: boolean
 

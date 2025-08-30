@@ -295,6 +295,10 @@ let eventsPerformFunctions: Record<EventType, (state: GameState, event: EventCar
             'chooseCardsToDiscardAndTakeAnotherResponse'
         );
 
+        if (indexes.length === 0) {
+            return;
+        }
+
         const discardedCards = currentPlayer.hand.filter((_, index) => indexes.includes(index));
 
         yield* put(popCardsFromHand(currentPlayer.id, indexes, "event card (discard & take modules)"));

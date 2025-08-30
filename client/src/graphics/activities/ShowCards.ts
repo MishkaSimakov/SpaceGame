@@ -17,6 +17,10 @@ export class ShowCardsActivity extends Activity {
     }
 
     activate() {
+        if (this.cards.length === 0) {
+            return Promise.resolve();
+        }
+
         return new Promise<void>(resolve => {
             this.fadeShape = this.scene.createAndAdd.rectangle({
                 fill: Color.fromHex('#000000', 0.75).toString()

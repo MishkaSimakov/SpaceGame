@@ -107,7 +107,13 @@ function generateWithState(schema: Schema, state: GenerationState): ASTNode {
                 ...schema,
                 definitions: rootSchema.definitions
             }, generatedDefinitions);
-            return new Name(name);
+
+            let result: ASTNode = new Name(name);
+            if (schema.nullable) {
+                result = optional(result);
+            }
+
+            return result;
         } else {
             const body: ASTNode[] = [];
 

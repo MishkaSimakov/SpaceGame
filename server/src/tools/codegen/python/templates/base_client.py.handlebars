@@ -32,9 +32,12 @@ class BaseClient(ABC):
         self.on_action("{{ name }}", payload)
 
         decoded = TypeAdapter({{ capitalize name }}Payload).validate_python(payload)
-        result = self.{{ name }}(**dataclasses.asdict(decoded))
+        result = dataclasses.asdict(self.{{ name }}(**dataclasses.asdict(decoded)))
 
-        return dataclasses.asdict(result)
+        # remove all properties that are None
+        result["payload"] = {k: v for k, v in result["payload"].items() if v is not None}
+
+        return result
 
 {{/each}}
 {{#each requests}}
