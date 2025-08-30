@@ -75,9 +75,19 @@ function generateWithState(schema: Schema, state: GenerationState): ASTNode {
             }, generatedDefinitions);
         }
 
-        return wrapInDefinition(info, new Name(schema.ref));
+        let result: ASTNode = new Name(schema.ref);
+        if (schema.nullable) {
+            result = optional(result);
+        }
+
+        return wrapInDefinition(info, result);
     } else if (isTypeForm(schema)) {
-        return wrapInDefinition(info, typeMapping[schema.type]);
+        let result: ASTNode = typeMapping[schema.type];
+        if (schema.nullable) {
+            result = optional(result);
+        }
+
+        return wrapInDefinition(info, result);
     } else if (isValuesForm(schema)) {
         path.push('values');
         const child = arrayOf(generateWithState(schema.values, inlineState(state)));
@@ -124,6 +134,10 @@ function generateWithState(schema: Schema, state: GenerationState): ASTNode {
                     ));
                     path.pop();
                 }
+            }
+
+            if (body.length === 0) {
+                body.push(new Name("pass"));
             }
 
             return new ClassDef(info.name, body, [], [new Name("dataclass")]);

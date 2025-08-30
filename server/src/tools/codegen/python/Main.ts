@@ -17,6 +17,10 @@ type Action = {
     }[]
 };
 
+function getResponseType(requestType: string) {
+    return requestType.replace('Request', 'Response');
+}
+
 function renderPythonTemplate(name: string, data: any) {
     const templateFile = fs.readFileSync(
         codegenPath(`python/templates/${name}.py.handlebars`)
@@ -32,9 +36,7 @@ function renderPythonTemplate(name: string, data: any) {
 function registerHandlebarsHelpers() {
     Handlebars.registerHelper('capitalize', capitalize);
 
-    Handlebars.registerHelper('getResponseType', function (request: string) {
-        return request.replace('Request', 'Response');
-    });
+    Handlebars.registerHelper('getResponseType', getResponseType);
 
     Handlebars.registerHelper('renderArguments', function (payload: Action["payload"]) {
         return payload
@@ -81,8 +83,7 @@ export async function python() {
         }, pythonDefinitions);
     }
 
-    const parsedRequests = actions
-        .filter(action => action.name.includes('Request'))
+    const parsedActions = actions
         .map<Action>(action => {
             const parsedAction: Action = {
                 name: action.name,
@@ -105,10 +106,17 @@ export async function python() {
             return parsedAction;
         });
 
+    const requests = parsedActions.filter(action => action.name.endsWith('Request'));
+
     // template rendering
     registerHandlebarsHelpers();
 
-    // renderPythonTemplate("BaseClient", {});
-    renderPythonTemplate("BaseClient", {requests: parsedRequests});
-    renderPythonTemplate("Types", {definitions: pythonDefinitions});
+    renderPythonTemplate("actions", {
+        actions: requests.flatMap(request => [
+            request,
+            parsedActions.find(action => action.name === getResponseType(request.name))
+        ])
+    });
+    renderPythonTemplate("base_client", {requests});
+    renderPythonTemplate("types", {definitions: pythonDefinitions});
 }

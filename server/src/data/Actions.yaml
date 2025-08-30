@@ -217,25 +217,34 @@
 # From Main.ts (requests + misc)
 # -----------------------------
 - name: choosePlayerForAttackRequest
+  description: |
+    Выбор игрока для атаки. Этот действие может вызываться в разных ситуациях (в бою, для карточки действия и т.п.)
   payload:
     - name: player
       type:
         ref: PlayerId
     - name: reason
+      description: |
+        Причина, по которой нужно выбирать игрока для атаки
       type:
         ref: AttackReason
     - name: required
+      description: |
+        Обязательно ли нужно выбрать кого-то. Если это значение false, то в ответе можно не отправлять выбранного игрока
       type:
         type: boolean
 
 - name: choosePlayerForAttackResponse
   payload:
     - name: victim
+      description: Выбранный игрок. Может быть undefined, если в запросе required == false
       type:
         ref: PlayerId
         nullable: true
 
 - name: rebuildSpaceshipRequest
+  description: |
+    Запрос на перестройку корабля. Используется только во время фазы перестройки корабля.
   payload:
     - name: player
       type:
@@ -244,6 +253,7 @@
 - name: rebuildSpaceshipResponse
   payload:
     - name: newSpaceship
+      description: Информация о модулях в перестроенном корабле
       type:
         elements:
           properties:
@@ -255,6 +265,8 @@
               type: int32
 
 - name: chooseCardTypeRequest
+  description: |
+    Используется во время фазы вытягивания карт, когда нужно тянут либо карточку действия, либо карточку строительства
   payload:
     - name: player
       type:
@@ -263,26 +275,38 @@
 - name: chooseCardTypeResponse
   payload:
     - name: chosenType
+      description: Выбранный тип карты - строительства или действия
       type:
         ref: CardType
 
 - name: showCardsToPlayersRequest
+  description: |
+    Отображение карт у пользователя на экране. 
+    Используется, например, когда игрок вытягивает какую-то карточку и нужно её всем показать
   payload:
     - name: player
       type:
         ref: PlayerId
     - name: cardsReceiver
+      description: Игрок, который получил отображаемые карточки
       type:
         ref: PlayerId
     - name: cards
+      description: Карточки, которые нужно показать
       type:
         elements:
           ref: Card
 
 - name: showCardsToPlayersResponse
+  description: |
+    Используется, чтобы показать, что игрок увидел вытянутые карты и готов продолжать игру
   payload: [ ]
 
 - name: drawAdditionalModuleCardRequest
+  description: |
+    Используется во время фазы вытягивания карт, 
+    если у игрока командный модуль позволяет тянуть дополнительные карточки строительства.
+    Игрок может использовать эту способность или отказаться от неё.
   payload:
     - name: player
       type:
@@ -291,10 +315,16 @@
 - name: drawAdditionalModuleCardResponse
   payload:
     - name: draw
+      description: |
+        Хочет ли игрок вытягивать дополнительную карточку строительства с помощью способности командного модуля
       type:
         type: boolean
 
 - name: drawAnotherEventCardRequest
+  description: |
+    Используется во время фазы вытягивания карт, 
+    если у игрока командный модуль позволяет вытянуть другую карточку действия.
+    Игрок может использовать эту способность или отказаться от неё.
   payload:
     - name: player
       type:
@@ -303,10 +333,14 @@
 - name: drawAnotherEventCardResponse
   payload:
     - name: draw
+      description: |
+        Хочет ли игрок вытягивать другую карточку действия с помощью способности командного модуля
       type:
         type: boolean
 
 - name: discardCardsRequest
+  description: |
+    Если у игрока больше n карт на руке в конце хода, то ему приходит это действие, чтобы он их сбросил
   payload:
     - name: player
       type:
@@ -315,11 +349,13 @@
 - name: discardCardsResponse
   payload:
     - name: indexes
+      description: Индексы карт на руке, которые нужно сбросить
       type:
         elements:
           type: int32
 
 - name: chooseProtectorRequest
+  description: Используется в бою, когда игрок может использовать протектор
   payload:
     - name: player
       type:
@@ -328,29 +364,41 @@
 - name: chooseProtectorResponse
   payload:
     - name: position
+      description: |
+        Позиция протектора, который игрок хочет активировать. 
+        Если игрок не хочет активировать протектор, это поле остаётся пустым
       type:
         ref: Vector2
         nullable: true
 
 - name: chooseWeaponAndTargetRequest
+  description: Используется в бою, когда атакующий может атаковать модуль соперника.
   payload:
     - name: player
       type:
         ref: PlayerId
     - name: victim
+      description: id игрока, которого нужно атаковать
       type:
         ref: PlayerId
 
 - name: chooseWeaponAndTargetResponse
   payload:
     - name: targetPosition
+      description: Позиция модуля на корабле соперника, который нужно атаковать
       type:
         ref: Vector2
     - name: weaponPosition
+      description: Позиция оружия на корабле атакующего, из которого он будет атаковать
       type:
         ref: Vector2
 
 - name: useModuleSecondTimeRequest
+  description: |
+    Приходит игроку, когда он может использовать модуль второй раз за счёт способности командного модуля.
+    Это может быть в бою (тогда moduleType - это один из типов оружия), 
+    при починке (тогда moduleType - это RepairModule),
+    при нападении (тогда moduleType - это AttackModule)
   payload:
     - name: player
       type:
@@ -362,10 +410,14 @@
 - name: useModuleSecondTimeResponse
   payload:
     - name: use
+      description: Хочет ли игрок использовать модуль второй раз за счёт способности командного модуля
       type:
         type: boolean
 
 - name: chooseTargetRequest
+  description: |
+    Если игрок использует оружие второй раз, то ему остаётся выбрать только цель (так как оружие уже фиксированно).
+    Для этого используется это действие.
   payload:
     - name: player
       type:
@@ -377,10 +429,12 @@
 - name: chooseTargetResponse
   payload:
     - name: position
+      description: Позиция модуля на корабле соперника, который нужно атаковать
       type:
         ref: Vector2
 
 - name: chooseModuleToRepairRequest
+  description: Используется при починки корабля с помощью ремонтного модуля.
   payload:
     - name: player
       type:
@@ -389,19 +443,30 @@
 - name: chooseModuleToRepairResponse
   payload:
     - name: position
+      description: |
+        Позиция модуля на корабле игрока, который он хочет починить с помощью ремонтного модуля.
+        Если игрок не хочет чинить ничего, то этот параметр нужно оставить пустым.
       type:
         ref: Vector2
         nullable: true
 
 - name: reducerUpdatedState
+  description: |
+    Используется, чтобы логировать все изменения состояния игры
   payload:
     - name: delta
+      description: |
+        Изменение состояния игры. Состояние игры можно представить в виде JSON. 
+        Тогда delta - это изменение этого JSON, закодированное в формате RFC 6902
       type: { }
 
 # -----------------------------
 # From Info.ts
 # -----------------------------
 - name: showCardsInfo
+  description: |
+    Показывает карты игроку. Отличие от showCardsToPlayersRequest в том, 
+    что не ожидается подтверждение от игрока - игра продолжается мгновенно после отправки.
   payload:
     - name: player
       type:
@@ -415,6 +480,9 @@
           ref: Card
 
 - name: sendPlayerLostInfo
+  description: |
+    Сообщение о том, что игрок проиграл. 
+    Не ожидает подтверждения от игрока - игра продолжается мгновенно после отправки.
   payload:
     - name: player
       type:
@@ -424,11 +492,16 @@
 # From EventCards.ts (requests)
 # -----------------------------
 - name: permuteTopThreeEventCardsRequest
+  description: |
+    Используется для карточки действия: 
+    "Положите верхние 3 карточки действия в произвольном порядке"
+    и "Положите верхние 3 карточки действия в произвольном порядке. Возьмите верхнюю из них".
   payload:
     - name: player
       type:
         ref: PlayerId
     - name: cards
+      description: Карточки, порядок которых нужно выбрать
       type:
         elements:
           ref: EventCard
@@ -436,11 +509,18 @@
 - name: permuteTopThreeEventCardsResponse
   payload:
     - name: order
+      description: |
+        Новый порядок для верхних 3-x карт. 
+        order[0] - индекс карты из permuteTopThreeEventCardsRequest::cards, которая окажется вверху колоды
+        order[1] - индекс карты из permuteTopThreeEventCardsRequest::cards, которая окажется предпоследней сверху
+        и т.д.
       type:
         elements:
           type: int32
 
 - name: chooseModuleToDestroyRequest
+  description: |
+    Используется для карточки действия "Уничтожьте любой модуль вашего корабля на ваш выбор"
   payload:
     - name: player
       type:
@@ -449,10 +529,14 @@
 - name: chooseModuleToDestroyResponse
   payload:
     - name: position
+      description: Позиция модуля на корабле игрока, который нужно уничтожить
       type:
         ref: Vector2
 
 - name: chooseCardsForRepairSpaceshipRequest
+  description: |
+    Используется для карточки действия 
+    "Вы можете, скинув до 2 карт с руки, восстановить по 1 урона с модулей вашего корабля за каждую скинутую карту".
   payload:
     - name: player
       type:
@@ -461,59 +545,87 @@
 - name: chooseCardsForRepairSpaceshipResponse
   payload:
     - name: indexes
+      description: Индексы карт на руке игрока, которые нужно скинуть (не больше 2)
       type:
         elements:
           type: int32
 
 - name: chooseModulesToRepairByDiscardedCardsRequest
+  description: |
+    Используется для карточки действия 
+    "Вы можете, скинув до 2 карт с руки, восстановить по 1 урона с модулей вашего корабля за каждую скинутую карту".
+    Сначала посылается событие chooseCardsForRepairSpaceshipRequest. После получения ответа посылается это событие,
+    чтобы выбрать модули, которые нужно починить.
   payload:
     - name: player
       type:
         ref: PlayerId
     - name: count
+      description: |
+        Количество модулей, которые нужно выбрать для починки. 
+        Совпадает с количеством карт, скинутых в chooseCardsForRepairSpaceshipResponse.
       type:
         type: int32
 
 - name: chooseModulesToRepairByDiscardedCardsResponse
   payload:
     - name: positions
+      description: |
+        Позиции модулей на корабле игрока, которые нужно починить. 
+        Их количество должно совпадать с chooseModulesToRepairByDiscardedCardsRequest::count.
       type:
         elements:
           ref: Vector2
 
 - name: chooseSolarPanelsToDestroyRequest
+  description: |
+    Используется для карточки действия "Уничтожьте 2 солнечные батареи вашего корабля". 
+    Если у игрока на корабле меньше 2-х солнечных батарей, то он уничтожает столько, сколько у него есть.
   payload:
     - name: player
       type:
         ref: PlayerId
     - name: count
+      description: Количество солнечных батарей, которые надо уничтожить
       type:
         type: int32
 
 - name: chooseSolarPanelsToDestroyResponse
   payload:
     - name: positions
+      description: |
+        Позиции солнечных батарей на корабле игрока, которые надо уничтожить.
+        Ровно chooseSolarPanelsToDestroyRequest::count штук.
       type:
         elements:
           ref: Vector2
 
 - name: chooseModuleToRepairByDiceRequest
+  description: |
+    Используется для карточки действия
+    "Киньте кубик. Можете восстановить один модуль вашего корабля на 1 урон при выпадении ≤4, а иначе - на 2 урона".
   payload:
     - name: player
       type:
         ref: PlayerId
     - name: amount
+      description: Количество урона, которое можно убрать с модуля. Зависит от результата броска кубика.
       type:
         type: int32
 
 - name: chooseModuleToRepairByDiceResponse
   payload:
     - name: position
+      description: Позиция модуля на корабле игрока, который нужно починить.
       type:
         ref: Vector2
         nullable: true
 
 - name: chooseCardsToDiscardAndTakeAnotherRequest
+  description: |
+    Используется для карточки действия
+    "Если у вас есть карты на руках, скиньте в сброс до 2 из них на ваш выбор, 
+    а затем возьмите столько же карт строительства".
   payload:
     - name: player
       type:
@@ -522,22 +634,32 @@
 - name: chooseCardsToDiscardAndTakeAnotherResponse
   payload:
     - name: indexes
+      description: Индексы модулей на руке игрока, которые нужно скинуть в обмен на карточки строительства (не более 2)
       type:
         elements:
           type: int32
 
 - name: chooseModuleToMoveDamageRequest
+  description: |
+    Используется либо для карточки действия "Можете перенести 1 урон с одного вашего модуля на другой",
+    либо для способности командного модуля, которая позволяет переносить урон.
   payload:
     - name: player
       type:
         ref: PlayerId
     - name: reason
+      description: |
+        Причина, по которой игрок переносит урон: карточка действия или командный модуль
       type:
         ref: MoveDamageReason
 
 - name: chooseModuleToMoveDamageResponse
   payload:
     - name: move
+      description: |
+        Перемещение урона. source - позиция модуля на корабле игрока, откуда перенести урон,
+        destination - позиция модуля на корабле игрока, на который перенести урон.
+        Если игрок не хочет переносить урон, то это поле остаётся пустым.
       type:
         properties:
           source:
@@ -547,17 +669,24 @@
         nullable: true
 
 - name: chooseModuleToDamageByDiceRequest
+  description: |
+    Используется для карточки действия
+    "Киньте кубик. Нанесите любому модулю соперника (кроме командного) 1 урон при выпадении ≤4, а иначе - 2 урона".
   payload:
     - name: player
       type:
         ref: PlayerId
     - name: damage
+      description: Количество урона, который нужно нанести (зависит от броска кубика)
       type:
         type: int32
 
 - name: chooseModuleToDamageByDiceResponse
   payload:
     - name: info
+      description: |
+        Информация о модуле, по которому нужно нанести урон.
+        victimId - id игрока, victimModulePosition - позиция модуля на его корабле, по которому нужно ударить.
       type:
         properties:
           victimId:
@@ -567,11 +696,16 @@
         nullable: true
 
 - name: choosePlayerToStealCardRequest
+  description: |
+    Используется для карточки действия
+    "Выберите любого игрока, у которого на руках есть карточки. Посмотрите его карты и возьмите себе одну из них на ваш выбор".
+    Это действие запрашивает игрока, у которого нужно своровать карточку
   payload:
     - name: player
       type:
         ref: PlayerId
     - name: options
+      description: Список id игроков, у которых можно украсть карту.
       type:
         elements:
           ref: PlayerId
@@ -579,6 +713,9 @@
 - name: choosePlayerToStealCardResponse
   payload:
     - name: target
+      description: |
+        id игрока, у которого нужно будет своровать карту. 
+        Этот id должен содержаться в списке choosePlayerToStealCardRequest::options
       type:
         ref: PlayerId
 

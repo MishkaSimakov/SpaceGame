@@ -264,6 +264,8 @@ export default class Game {
                         return requestAttempt(["Ответ должен быть в формате действия."]);
                     }
 
+                    console.log(response)
+
                     try {
                         const validator = validators[responseType as keyof typeof validators] as (state: GameState, request: unknown) => ZodType;
                         const validationResult = validator(structuredClone(this.state), request).safeParse(response.payload);
