@@ -39,9 +39,11 @@ export default class SocketManager {
                 listeners[actionType](payload, {
                     game: this.game,
                     socket: this.socket
-                }).then((action: Action<string, any, any>) => {
+                }).then((action?: Action<string, any, any>) => {
                     // type of this action is checked in compile-time via TypeScript
-                    callback(action);
+                    if (callback && action) {
+                        callback(action);
+                    }
                 });
             });
         }
@@ -93,7 +95,11 @@ export default class SocketManager {
     }
 
     private showErrors(errors: any) {
-        if (!errors || !Array.isArray(errors)) {
+        if (!errors) {
+            return;
+        }
+
+        if (!Array.isArray(errors)) {
             console.error("Wrong value received in errors:", errors);
             return;
         }
