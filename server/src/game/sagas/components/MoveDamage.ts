@@ -31,6 +31,6 @@ export function* moveDamage(reason: MoveDamageReason, energyCost: number, movedD
 
     yield* put(changePlayerEnergy(currentPlayer.id, -energyCost, reasonDescription[reason]));
 
-    yield* put(changeModuleHealth(currentPlayer.id, move.from, movedDamage, reasonDescription[reason]));
-    yield* damageModule(currentPlayer, move.to, movedDamage, {type: "EventCard"});
+    yield* put(changeModuleHealth(currentPlayer.id, move.source, movedDamage, reasonDescription[reason]));
+    yield* damageModule(currentPlayer, move.destination, movedDamage, {type: "EventCard"});
 }

@@ -206,10 +206,10 @@
 
 - name: insertPause
   payload:
-    - name: from
+    - name: begin
       type:
         type: int32
-    - name: to
+    - name: end
       type:
         type: int32
 
@@ -540,9 +540,9 @@
     - name: move
       type:
         properties:
-          from:
+          source:
             ref: Vector2
-          to:
+          destination:
             ref: Vector2
         nullable: true
 

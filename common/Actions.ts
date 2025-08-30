@@ -195,10 +195,10 @@ export function changePlayerTime(player: Types.PlayerId, delta: number) {
 }
 
 
-export function insertPause(from: number, to: number) {
+export function insertPause(begin: number, end: number) {
     return constructAction(
         'insertPause',
-        {from, to},
+        {begin, end},
     );
 }
 
@@ -539,7 +539,7 @@ export function chooseModuleToMoveDamageRequest(player: Types.PlayerId, reason: 
 }
 
 
-export function chooseModuleToMoveDamageResponse(move?: { from: Types.Vector2, to: Types.Vector2 }) {
+export function chooseModuleToMoveDamageResponse(move?: { source: Types.Vector2, destination: Types.Vector2 }) {
     return constructAction(
         'chooseModuleToMoveDamageResponse',
         {move},

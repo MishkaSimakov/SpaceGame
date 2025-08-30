@@ -243,20 +243,20 @@ export const validators: ResponseValidatorsContainer = {
 
         return z.object({
             move: z.object({
-                from: vector2Schema,
-                to: vector2Schema,
+                source: vector2Schema,
+                destination: vector2Schema,
             })
                 .refine(
-                    ({from, to}) => !(from.x === to.x && from.y === to.y),
-                    {error: "Позиции `from` и `to` должны быть различными."}
+                    ({source, destination}) => !(source.x === destination.x && source.y === destination.y),
+                    {error: "Позиции `source` и `destination` должны быть различными."}
                 )
                 .refine(
-                    ({from, to}) => {
-                        const fromModule = SpaceshipGetters.getModuleByPosition(player.spaceship, from);
-                        const toModule = SpaceshipGetters.getModuleByPosition(player.spaceship, to);
+                    ({source, destination}) => {
+                        const fromModule = SpaceshipGetters.getModuleByPosition(player.spaceship, source);
+                        const toModule = SpaceshipGetters.getModuleByPosition(player.spaceship, destination);
                         return fromModule && toModule && fromModule.health !== fromModule.totalHealth;
                     },
-                    {error: "Позиция `from` должна указывать на повреждённый модуль вашего корабля, `to` - на любой другой модуль вашего корабля."}
+                    {error: "Позиция `source` должна указывать на повреждённый модуль вашего корабля, `destination` - на любой другой модуль вашего корабля."}
                 )
                 .optional()
         });
