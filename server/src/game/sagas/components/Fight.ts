@@ -20,6 +20,7 @@ import {damageModule} from "./DamageModule";
 import {dice} from "./Random";
 import {addTimeRecord} from "./Time";
 import {request} from "./Request";
+import {LossSignal} from "@src/game/middlewares/LossSignal";
 
 
 function* getCombatants() {
@@ -212,6 +213,17 @@ function* makeFightIteration() {
     return true;
 }
 
+function* cleanupAfterFight() {
+    yield* addTimeRecord(StateGetters.currentPlayer(yield* select()).id, TimeRecordType.DEFAULT_TURN_CONTINUED);
+
+    const {victim, attacker} = yield* getCombatants();
+
+    yield* put(endFight());
+
+    yield* put(deactivateProtectorIfActive(victim.id));
+    yield* put(deactivateProtectorIfActive(attacker.id));
+}
+
 export function* fight() {
     try {
         yield* addTimeRecord(StateGetters.currentPlayer(yield* select()).id, TimeRecordType.DEFAULT_TURN_INTERRUPTED);
@@ -232,14 +244,18 @@ export function* fight() {
             yield* put(shiftFightTurnToNextPlayer());
         }
 
-        // check that all protectors are disabled
-        yield* addTimeRecord(StateGetters.currentPlayer(yield* select()).id, TimeRecordType.DEFAULT_TURN_CONTINUED);
-    } finally {
-        const {victim, attacker} = yield* getCombatants();
+        yield* cleanupAfterFight();
+    } catch (error) {
+        if (error instanceof LossSignal) {
+            const state = yield* select();
 
-        yield* put(endFight());
-
-        yield* put(deactivateProtectorIfActive(victim.id));
-        yield* put(deactivateProtectorIfActive(attacker.id));
+            if (state.currentPlayerId !== error.player) {
+                yield* cleanupAfterFight();
+            } else {
+                throw error;
+            }
+        } else {
+            throw error;
+        }
     }
 }

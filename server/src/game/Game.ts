@@ -2,43 +2,60 @@ import * as assert from "node:assert";
 import jsonpatch from 'fast-json-patch'
 import {ZodType} from "zod";
 
-import {GameSettings, Player, GameState} from "@common/Types"
-import {reducerUpdatedState, sendPlayerLostInfo, shuffleResult, throwDiceResult, timeResult} from "@common/Actions";
+import {GameSettings, Player, GameState, PlayerId} from "@common/Types"
+import {
+    playerLost,
+    reducerUpdatedState,
+    shuffleResult,
+    throwDiceResult,
+    timeResult
+} from "@common/Actions";
 import * as Actions from "@common/Actions";
-import {Action, isAction} from "@common/ActionsHelpers";
+import {Action, constructAction, isAction} from "@common/ActionsHelpers";
 
 import ActionsBus from "./ActionsBus";
-import {User} from "../database/entity/user";
 import {getDTO} from "./mappers/GameToGameForPlayerMapper";
-import SocketsManager from "./io/SocketsManager";
 import {gameSaga} from "./sagas/Main";
-import {Logger} from "./Logger";
 import {isReducerName, reducers} from "./reducers/Main";
 import {Randomizer} from "./Randomizer";
-import {LossMiddleware} from "./middlewares/LossMiddleware";
+import {TimeControlMiddleware} from "./middlewares/TimeControlMiddleware";
 import {validators} from "./validation/ResponseValidators";
 import {PlayerGameLogListener} from "./PlayerGameLogListener";
 import {getInitialGameState} from "./InitGameState";
-import {runSaga} from "./sagas/runner/RunSaga";
-import {DeactivateMiddleware} from "./middlewares/DeactivateMiddleware";
-import {DeactivateSignal} from "./middlewares/DeactivateSignal";
+import {runSagaWithThrowHandle} from "./sagas/runner/RunSaga";
+import {IUser} from "@src/game/interfaces/IUser";
+import {ISocketsManager} from "@src/game/interfaces/ISocketsManager";
+import {IActionsStorage} from "@src/game/interfaces/IActionsStorage";
+import {Observable} from "@common/Observable";
+import {DeactivateSignal} from "@src/game/middlewares/DeactivateSignal";
+import {LossSignal} from "@src/game/middlewares/LossSignal";
+import {IClock} from "@src/game/interfaces/IClock";
 
+
+export type GameResult = { type: "deactivated" } | { type: "finished", winner: PlayerId };
 
 export default class Game {
-    users: User[];
+    users: IUser[];
 
     randomizer: Randomizer;
     state: GameState;
     bus: ActionsBus;
-    sockets: SocketsManager;
-    logger: Logger;
+    sockets: ISocketsManager;
+    storage: IActionsStorage;
     playerGameLog: PlayerGameLogListener;
 
-    inReplay: boolean = false;
+    clock: IClock;
 
-    stopToken: { shouldStop: boolean } = {shouldStop: false};
+    private inReplay: boolean = false;
+    private throwHandle = new Observable<any>(undefined);
 
-    constructor(users: User[], settings: GameSettings, sockets: SocketsManager, logger: Logger) {
+    constructor(
+        users: IUser[],
+        settings: GameSettings,
+        sockets: ISocketsManager,
+        storage: IActionsStorage,
+        clock: IClock
+    ) {
         this.users = users;
 
         this.state = getInitialGameState(users, settings);
@@ -46,7 +63,8 @@ export default class Game {
         this.randomizer = new Randomizer(settings.seed);
         this.bus = new ActionsBus();
         this.sockets = sockets;
-        this.logger = logger;
+        this.storage = storage;
+        this.clock = clock;
 
         this.playerGameLog = new PlayerGameLogListener(this.bus, this.users);
 
@@ -59,19 +77,29 @@ export default class Game {
 
         this.registerMiddlewares();
 
-        this.bus.on('playerLost', (action) => {
-            this.bus.emit(sendPlayerLostInfo(action.payload.player));
+        // this listener must be performed after reducer!
+        // reducers are attached to actions bus as * listeners
+        // they are executed after all non-* listeners have finished
+        // therefore this listener must be * listener
+        this.bus.on('*', (action) => {
+            if (action.type === "playerLost") {
+                const payload = action.payload as ReturnType<typeof playerLost>["payload"];
+                this.throwHandle.set(new LossSignal(payload.player));
+
+                // TODO: do not send this via bus, just call some game method
+                // this.bus.emit(sendPlayerLostInfo(payload.player));
+            }
         });
     }
 
-    async activate(): Promise<"deactivated" | "finished"> {
-        await this.replay(this.logger.getPastActions());
+    async activate(): Promise<GameResult> {
+        await this.replay(this.storage.getAllActions());
 
         try {
-            await runSaga({bus: this.bus, state: this.state}, gameSaga);
+            await runSagaWithThrowHandle({bus: this.bus, state: this.state}, this.throwHandle, gameSaga);
         } catch (error) {
             if (error instanceof DeactivateSignal) {
-                return "deactivated";
+                return {type: "deactivated"};
             } else {
                 throw error;
             }
@@ -80,12 +108,18 @@ export default class Game {
         // game has finished
         // notify players about it
         for (let player of this.state.players) {
-            const socket = this.sockets.getSocket(player.id);
-            socket?.emit('gameFinished');
-            socket?.disconnect();
+            await this.sockets.emit(player.id, {
+                withAcknowledgement: false,
+                ensureSending: false
+            }, 'gameFinished');
         }
 
-        return "finished";
+        this.sockets.disconnectEveryone();
+
+        return {
+            type: "finished",
+            winner: this.state.players.filter(p => !p.lose)[0].id
+        };
     }
 
     private async replay(actions: Action<string, any, any>[]) {
@@ -143,20 +177,15 @@ export default class Game {
     }
 
     registerMiddlewares() {
-        const deactivate = new DeactivateMiddleware(this.stopToken);
-        this.bus.registerMiddleware(deactivate);
-
-        const loss = new LossMiddleware(this.state);
+        const loss = new TimeControlMiddleware(this.state, this.clock, this.throwHandle);
         this.bus.registerMiddleware(loss);
     }
 
     registerLogListeners() {
         this.bus.on('*', (action) => {
-            if (this.inReplay) {
-                return;
+            if (!this.inReplay) {
+                this.storage.appendAction(action);
             }
-
-            this.logger.handleAction(action);
         });
     }
 
@@ -177,7 +206,7 @@ export default class Game {
     }
 
     registerIOListeners() {
-        this.bus.on('*', async (action) => {
+        this.bus.on('*', (action) => {
             if (this.inReplay) {
                 return;
             }
@@ -195,7 +224,11 @@ export default class Game {
 
             if (action.type.endsWith("Info")) {
                 assert.ok("player" in action.payload);
-                this.sockets.emitAndWait(action.payload.player, action.type, false, action.payload)
+
+                this.sockets.emit(action.payload.player, {
+                    withAcknowledgement: false,
+                    ensureSending: true
+                }, action.type, action.payload);
             }
         });
     }
@@ -220,12 +253,10 @@ export default class Game {
     }
 
     registerTimeListeners() {
-        this.bus.on('time', (action) => {
-            if (this.inReplay) {
-                return;
+        this.bus.on('time', () => {
+            if (!this.inReplay) {
+                this.bus.emit(timeResult(this.clock.getTime()));
             }
-
-            this.bus.emit(timeResult(action.time));
         });
     }
 
@@ -237,9 +268,10 @@ export default class Game {
         console.log("🔄 syncing player data");
 
         for (let player of this.state.players) {
-            const socket = this.sockets.getSocket(player.id);
-
-            socket?.emit('setGameData', getDTO(this, player));
+            this.sockets.emit(player.id, {
+                withAcknowledgement: false,
+                ensureSending: false
+            }, 'setGameData', getDTO(this, player));
         }
     }
 
@@ -255,16 +287,14 @@ export default class Game {
         const requestAttempt = (errors: string[]) => {
             ++currentAttempt;
 
-            this.sockets.emitAndWait(request.payload.player, request.type, true, {
-                ...request.payload,
-                errors
-            })
+            this.sockets.emit(request.payload.player, {
+                withAcknowledgement: true,
+                ensureSending: true
+            }, request.type, {...request.payload, errors})
                 .then((response: any) => {
                     if (!isAction(response)) {
                         return requestAttempt(["Ответ должен быть в формате действия."]);
                     }
-
-                    console.log(response)
 
                     try {
                         const validator = validators[responseType as keyof typeof validators] as (state: GameState, request: unknown) => ZodType;
@@ -274,7 +304,9 @@ export default class Game {
                             return requestAttempt(validationResult.error.issues.map(issue => issue.message));
                         }
 
-                        this.bus.emit(response);
+                        // action comes from a user, payload is validated, but time and uuid are untrusted
+                        const responseAction = constructAction(responseType, response.payload);
+                        this.bus.emit(responseAction);
                     } catch (err) {
                         console.error(err);
                         return requestAttempt(["Произошла ошибка при валидации вашего ответа."]);
@@ -286,8 +318,18 @@ export default class Game {
     }
 
     deactivate() {
-        // TODO: this doesn't work
-        this.stopToken.shouldStop = true;
-        this.sockets.disconnectEveryone();
+        // this will eventually deactivate the game
+        this.throwHandle.set(new DeactivateSignal());
+    }
+
+    onPlayerConnect(id: PlayerId, socket_id: string) {
+        this.sockets.onPlayerConnect(id, socket_id);
+        this.syncPlayersData();
+        this.sockets.tryToEmitEvent(id);
+    }
+
+    onPlayerDisconnect(id: PlayerId) {
+        this.sockets.onPlayerDisconnect(id);
+        this.syncPlayersData();
     }
 }

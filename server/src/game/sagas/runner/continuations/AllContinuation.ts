@@ -1,11 +1,12 @@
-import {Continuation} from "../Continuation";
+import {CancellableContinuation, Continuation} from "../Continuation";
 import {Environment} from "../Environment";
 import {AllEffect, Effect} from "../Effects";
 import {effectContinuationsMap} from "./EffectContinuationsMap";
 import {ok, Result} from "../../../../helpers/Result";
 
-export class AllContinuation implements Continuation<AllEffect<any>["input"]> {
+export class AllContinuation implements CancellableContinuation<AllEffect<any>["input"]> {
     private errorOccurred = false;
+    private cancelled = false;
 
     constructor(
         private readonly env: Environment,
@@ -37,7 +38,7 @@ export class AllContinuation implements Continuation<AllEffect<any>["input"]> {
                     if (childResult._tag === "ok") {
                         result[keyCopy] = childResult.value;
 
-                        if (Object.keys(result).length === Object.keys(effects).length) {
+                        if (Object.keys(result).length === Object.keys(effects).length && !this.cancelled) {
                             this.consumer.continue(ok(result));
                         }
                     } else {
@@ -45,12 +46,21 @@ export class AllContinuation implements Continuation<AllEffect<any>["input"]> {
                         this.errorOccurred = true;
 
                         // propagate error
-                        this.consumer.continue(childResult);
+                        // TODO: error escapes!
+                        if (!this.cancelled) {
+                            this.consumer.continue(childResult);
+                        } else {
+                            console.warn("💀 error escaped in PutContinuation:", childResult);
+                        }
                     }
                 }
             });
 
             cont.continue(child);
         }
+    }
+
+    cancel() {
+        this.cancelled = true;
     }
 }

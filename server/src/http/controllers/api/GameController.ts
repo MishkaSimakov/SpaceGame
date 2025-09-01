@@ -5,9 +5,9 @@ import {GameSettings} from "@common/Types";
 import {User} from "../../../database/entity/user";
 import App from "../../../App";
 import {Game as GameDBEntity} from "../../../database/entity/game";
-import {Logger} from "../../../game/Logger";
 import {AuthenticatedRequest} from "../../middleware/auth";
 import {gamePlayersValidator} from "../../validation/GamePlayersValidator";
+import {FileActionsStorage} from "@src/game/FileActionsStorage";
 
 
 export const create = async (req: AuthenticatedRequest, res: Response) => {
@@ -45,6 +45,6 @@ export const logs = async (req: Request, res: Response) => {
     }
 
     return res.status(200).json(
-        new Logger(gameEntity.logFilepath).getPastActions()
+        new FileActionsStorage(gameEntity.logFilepath).getAllActions()
     );
 };

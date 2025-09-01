@@ -26,7 +26,7 @@ export default class Game {
 
     settings: GameSettings;
 
-    playerTime: GameForPlayerDTO["timeControl"]["playersTime"] = [];
+    playerTime: Record<PlayerId, number> = {};
     timeDecreasingPlayerId: number;
 
     messages: Message[] = [];
@@ -63,9 +63,8 @@ export default class Game {
             }
 
             const currTime = (new Date()).getTime();
-            const record = this.playerTime.find(v => v.player === this.timeDecreasingPlayerId);
-            if (record) {
-                record.time -= (currTime - prevTime);
+            if (this.timeDecreasingPlayerId in this.playerTime) {
+                this.playerTime[this.timeDecreasingPlayerId] -= (currTime - prevTime);
             }
             prevTime = currTime;
 
@@ -107,10 +106,12 @@ export default class Game {
             this.timeDecreasingPlayerId = gameDTO.timeControl.timeDecreasingPlayerId;
 
             for (let player of this.getAllPlayers()) {
-                if (this.timeDecreasingPlayerId === player.id && this.playerTime[this.timeDecreasingPlayerId])
+                if (this.timeDecreasingPlayerId === player.id && this.playerTime[player.id]) {
                     continue;
+                }
 
-                this.playerTime[player.id] = gameDTO.timeControl.playersTime[player.id];
+                this.playerTime[player.id] = gameDTO.timeControl?.playersTime
+                    .find(v => v.player === player.id)?.time ?? 0;
             }
         }
 

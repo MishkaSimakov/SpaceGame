@@ -7,8 +7,8 @@ import {
     drawAnotherEventCardResponse,
     rebuildSpaceshipResponse, useModuleSecondTimeResponse
 } from "@common/Actions";
-import {ModuleGetters} from "@common/getters/Module";
 import {CardType, ModuleType} from "@common/Types";
+import {SpaceshipGetters} from "@common/getters/Spaceship";
 
 export const mainListeners: ListenersContainer = {
     async rebuildSpaceshipRequest({}, {game}) {
@@ -17,11 +17,7 @@ export const mainListeners: ListenersContainer = {
         await game.controlsScene.rebuildSpaceship();
         game.rebuildSpaceshipManager.setIsRebuildSpaceshipAllowed(false);
 
-        return rebuildSpaceshipResponse(game.currentPlayer.spaceship.modules.map(module => ({
-            id: module.id,
-            position: ModuleGetters.position(module),
-            rotation: module.rotation
-        })));
+        return rebuildSpaceshipResponse(SpaceshipGetters.mapForRebuildSpaceshipResponse(game.currentPlayer.spaceship));
     },
 
     async chooseCardTypeRequest({}, {game}) {

@@ -1,4 +1,9 @@
 // This class is thrown by LossMiddleware when player lost
-export class LossSignal {
+import {PlayerId} from "@common/Types";
 
+export class LossSignal {
+    constructor(
+        public readonly player: PlayerId
+    ) {
+    }
 }

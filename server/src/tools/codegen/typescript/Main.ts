@@ -61,7 +61,7 @@ function registerHandlebarsHelpers() {
     });
 }
 
-export async function typescript() {
+export function typescript() {
     const {actions, types} = loadData();
 
     const typescriptDefinitions: Record<string, Definition<any>> = generateDefinitions(types);

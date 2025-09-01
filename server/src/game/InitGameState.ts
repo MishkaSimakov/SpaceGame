@@ -10,11 +10,8 @@ import {
 } from "@common/Types";
 
 import {mainModulesInfo, ModuleInfo, modulesInfo} from "./ModulesInfo";
+import {IUser} from "@src/game/interfaces/IUser";
 
-type UserInfo = {
-    id: number,
-    login: string
-};
 
 function addEvents(type: EventType, description: string, count: number): EventCard[] {
     let events: EventCard[] = [];
@@ -105,7 +102,7 @@ function getInitialModulesStack(idCounterRef: { value: number }): ModuleCard[] {
     return modules;
 }
 
-function initPlayers(users: UserInfo[]): Player[] {
+function initPlayers(users: IUser[]): Player[] {
     return users.map(user => ({
         id: user.id,
         name: user.login,
@@ -134,7 +131,7 @@ function getInitialMainModulesStack(idCounterRef: { value: number }) {
     return modules;
 }
 
-export function getInitialGameState(users: UserInfo[], settings: GameSettings): GameState {
+export function getInitialGameState(users: IUser[], settings: GameSettings): GameState {
     let idCounter = 0;
 
     return {

@@ -7,9 +7,9 @@ import {User} from "../../database/entity/user";
 import {AuthenticatedRequest} from "../middleware/auth";
 import {AuthenticatedGameRequest} from "../middleware/GameOwner";
 import {Game as GameDBEntity, GameStatus} from "../../database/entity/game";
-import {Logger} from "../../game/Logger";
 import {gamePlayersValidator} from "../validation/GamePlayersValidator";
 import {defaultSettings} from "../../game/DefaultSettings";
+import {FileActionsStorage} from "@src/game/FileActionsStorage";
 
 export const create = async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -127,7 +127,7 @@ export const showStatusPage = async (req: AuthenticatedGameRequest, res: Respons
         game: {
             ...game,
             settings: game.settings,
-            actions: new Logger(game.logFilepath).getPastActions(),
+            actions: new FileActionsStorage(game.logFilepath).getAllActions(),
             isActive: App.getInstance().gamesManager!.isActive(game.id)
         }
     });

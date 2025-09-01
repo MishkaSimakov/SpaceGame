@@ -9,7 +9,7 @@ import ActionsBus from "../../src/game/ActionsBus";
 test("simpleEmit", () => {
     const bus = new ActionsBus();
 
-    let sequence = [];
+    let sequence: string[] = [];
 
     bus.on('throwDice', (action) => {
         assert.equal(action.payload.player, 42);
@@ -25,7 +25,7 @@ test("simpleEmit", () => {
 test("manyListeners", () => {
     const bus = new ActionsBus();
 
-    let sequence = [];
+    let sequence: string[] = [];
 
     bus.on('throwDice', () => {
         sequence.push("1");
@@ -47,7 +47,7 @@ test("manyListeners", () => {
 test("nested", () => {
     const bus = new ActionsBus();
 
-    let sequence = [];
+    let sequence: string[] = [];
 
     bus.on('throwDice', () => {
         sequence.push('throwDice');
@@ -67,7 +67,7 @@ test("nested", () => {
 test("recursive", () => {
     const bus = new ActionsBus();
 
-    let sequence = [];
+    let sequence: number[] = [];
     let counter = 0;
 
     bus.on('throwDice', (action) => {
@@ -142,8 +142,6 @@ test("middlewareChangeAction", () => {
 
 test("middlewareBlocksAction", () => {
     const bus = new ActionsBus();
-
-    let receivedAction = false;
 
     bus.registerMiddleware({
         apply(): Action<string, any, any> | undefined {

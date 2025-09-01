@@ -3,8 +3,8 @@ import * as assert from "node:assert";
 import {StateGetters} from "@common/getters/State";
 import {GameState, PlayerId, TimeRecord, TimeRecordType} from "@common/Types";
 import {
-    changePlayerTime as changePlayerTimeAction,
     addTimeRecord as addTimeRecordAction,
+    changePlayerTime as changePlayerTimeAction,
     time as timeAction
 } from "@common/Actions";
 
@@ -40,10 +40,13 @@ export function getTimeDecreasingPlayerId(state: GameState): PlayerId | undefine
 
     const lastRecord = state.timeRecords[state.timeRecords.length - 1];
 
-    if (lastRecord.type === TimeRecordType.FIGHT_TURN_ENDED) {
-        return getLastRecordByType(state.timeRecords, TimeRecordType.DEFAULT_TURN_STARTED)?.playerId;
-    } else {
+    if (
+        lastRecord.type === TimeRecordType.DEFAULT_TURN_STARTED
+        || lastRecord.type === TimeRecordType.DEFAULT_TURN_CONTINUED
+        || lastRecord.type === TimeRecordType.FIGHT_TURN_STARTED) {
         return lastRecord.playerId;
+    } else {
+        return undefined;
     }
 }
 

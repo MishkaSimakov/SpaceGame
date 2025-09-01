@@ -7,6 +7,7 @@ import {all, put, SagaGenerator, select, take} from "../../../../src/game/sagas/
 import ActionsBus from "../../../../src/game/ActionsBus";
 import {fakeGameState} from "../../Utils";
 import {runSaga} from "../../../../src/game/sagas/runner/RunSaga";
+import {Action} from "@common/ActionsHelpers";
 
 test('select', async () => {
     const state = fakeGameState(2);
@@ -67,7 +68,7 @@ test('putAndPut', async () => {
     const state = fakeGameState(2);
     const bus = new ActionsBus();
 
-    const actions = [];
+    const actions: string[] = [];
 
     function* testSaga(): SagaGenerator {
         yield* all({
@@ -226,7 +227,7 @@ test('throwInAllCancelsAllOtherEffects', async () => {
         assert.unreachable("exception should have been caught");
     }
 
-    bus.on('throwDice', (action) => {
+    bus.on('throwDice', () => {
         throw 123;
     });
 
@@ -245,6 +246,36 @@ test('uncaughtException', async () => {
         await runSaga({state, bus}, saga);
 
         assert.unreachable("exception should have been thrown");
+    } catch (err) {
+        assert.equal(err, 123);
+    }
+});
+
+test('throwInMiddleware', async () => {
+    const state = fakeGameState(2);
+    const bus = new ActionsBus();
+
+    function* saga(): SagaGenerator {
+        yield* all({
+            req: put(throwDice(0)),
+            res: take('throwDiceResult')
+        });
+    }
+
+    bus.registerMiddleware({
+        apply(action: Action<string, any, any>): Action<string, any, any> | undefined {
+            throw 123;
+        }
+    });
+
+    bus.on('throwDice', () => {
+        assert.unreachable("middleware should have thrown exception");
+    });
+
+    try {
+        await runSaga({state, bus}, saga);
+
+        assert.unreachable("middleware should have thrown exception");
     } catch (err) {
         assert.equal(err, 123);
     }

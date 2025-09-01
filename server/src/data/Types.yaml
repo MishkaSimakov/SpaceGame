@@ -148,6 +148,8 @@ GameSettings:
       type: string
     isPublic:
       type: boolean
+    isDebug:
+      type: boolean
 
     startCardsCount:
       type: int32

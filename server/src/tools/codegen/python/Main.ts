@@ -93,7 +93,7 @@ function registerHandlebarsHelpers() {
     });
 }
 
-export async function python() {
+export function python() {
     const {actions, types} = loadData();
 
     const pythonDefinitions: Record<string, ASTNode> = {};

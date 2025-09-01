@@ -16,7 +16,7 @@ test('basicTest', async () => {
 
     attachReducers(bus, state);
 
-    const event = state.stack.event.find(c => c.type === EventType.PutTopThreeCardsInAnyOrder);
+    const event = state.stack.event.find(c => c.type === EventType.PutTopThreeCardsInAnyOrder)!;
     state.stack.event = state.stack.event.filter(c => c !== event);
 
     const topThreeCards = state.stack.event.slice(-3);

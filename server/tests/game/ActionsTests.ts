@@ -27,7 +27,7 @@ test('attackLaterEventCard', async () => {
     victim.id = 1;
 
 
-    const sequence = [];
+    const sequence: string[] = [];
 
     bus.on("choosePlayerForAttackRequest", () => {
         sequence.push("choose victim");

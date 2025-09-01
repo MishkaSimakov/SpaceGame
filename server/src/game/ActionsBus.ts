@@ -9,8 +9,8 @@ export type ActionListener<T extends ActionDescriptor> = (action:
                                                               ? ReturnType<(typeof Actions)[T]>
                                                               : T extends "*" ? Action<string, any, any> : never) => void;
 
-export abstract class Middleware {
-    abstract apply(action: Action<string, any, any>): Action<string, any, any> | undefined;
+export interface IMiddleware {
+    apply(action: Action<string, any, any>): Action<string, any, any> | undefined;
 }
 
 type ListenersFrame = {
@@ -23,7 +23,7 @@ export default class ActionsBus {
     private listenersQueue: ListenersFrame[] = [];
     private isProcessingQueue: boolean = false;
 
-    private middlewares: Middleware[] = [];
+    private middlewares: IMiddleware[] = [];
 
     lock(lambda: () => void) {
         const oldValue = this.isProcessingQueue;
@@ -85,7 +85,7 @@ export default class ActionsBus {
         }
     }
 
-    registerMiddleware<T extends Middleware>(middleware: T) {
+    registerMiddleware<T extends IMiddleware>(middleware: T) {
         this.middlewares.push(middleware);
     }
 

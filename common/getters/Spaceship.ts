@@ -327,6 +327,14 @@ function damageInfo(ship: Spaceship, target: ModuleCard, damage: number) {
     );
 }
 
+function mapForRebuildSpaceshipResponse(ship: Spaceship) {
+    return ship.modules.map(module => ({
+        id: module.id,
+        position: {x: module.x, y: module.y},
+        rotation: module.rotation
+    }));
+}
+
 export const SpaceshipGetters = {
     getMainModule,
     getMainModuleType,
@@ -346,5 +354,6 @@ export const SpaceshipGetters = {
     getUnconnectedModules,
     hasRepairModule,
     checkConfiguration,
-    damageInfo
+    damageInfo,
+    mapForRebuildSpaceshipResponse
 };

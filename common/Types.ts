@@ -111,6 +111,7 @@ export type TimeControlSettings = {
 export type GameSettings = {
     seed: string,
     isPublic: boolean,
+    isDebug: boolean,
     startCardsCount: number,
     mainModuleRunawayEnergyCost: number,
     energyToAttackByMainModule: number,

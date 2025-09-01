@@ -14,14 +14,14 @@ import {StateGetters} from "@common/getters/State";
 test('basicTest', async () => {
     const diceResult = 1;
     const cardsCount = 1;
-    const sequence = [];
+    const sequence: string[] = [];
 
     const state = fakeGameState(2);
     const bus = new ActionsBus();
 
     attachReducers(bus, state);
 
-    const event = state.stack.event.find(c => c.type === EventType.TossDiceAndTakeBuildingCards);
+    const event = state.stack.event.find(c => c.type === EventType.TossDiceAndTakeBuildingCards)!;
     state.stack.event = state.stack.event.filter(c => c !== event);
 
     bus.on('throwDice', () => {

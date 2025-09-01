@@ -15,6 +15,7 @@ from core.actions import *
 
 from core.types import *
 
+
 class BaseClient(ABC):
 
     def registerListeners(self, sio_client: socketio.AsyncClient):
@@ -23,6 +24,14 @@ class BaseClient(ABC):
 {{/each}}
 
     def on_action(self, type: str, payload: Any):
+        """
+        Вызывается при получении любого действия.
+        Например, если приходит действие 'rebuildSpaceshipRequest', то:
+        1. Вызывается этот метод с type='rebuildSpaceshipRequest' и со всем содержимым действия в payload.
+        При этом payload - это dict, который получается после стандартной расшифровки JSON.
+        2. Содержимое payload валидируется и переделывается в правильные типы данных.
+        3. Вызывается 'self.rebuildSpaceshipRequest'
+        """
         pass
 
 {{#each requests}}

@@ -2,6 +2,7 @@ import {GameSettings} from "@common/Types";
 
 export const defaultSettings = {
     isPublic: false,
+    isDebug: false,
 
     startCardsCount: 4,
     mainModuleRunawayEnergyCost: 5,

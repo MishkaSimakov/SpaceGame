@@ -1,6 +1,6 @@
 import {StateGetters} from "@common/getters/State";
 import {TimeRecordType} from "@common/Types";
-import {setCurrentPlayer, setPlayerSkipNextTurn} from "@common/Actions";
+import {playerLost, setCurrentPlayer, setPlayerSkipNextTurn} from "@common/Actions";
 
 import {put, select} from "./runner/Effects";
 import {beforeTurn} from "./phases/BeforeTurn";
@@ -70,7 +70,14 @@ export function* gameSaga() {
             yield* playerTurn();
         } catch (error) {
             // LossSignal indicates that current turn must be cancelled due to player loss
-            if (!(error instanceof LossSignal)) {
+            if (error instanceof LossSignal) {
+                const currentPlayer = StateGetters.currentPlayer(yield* select());
+                yield* addTimeRecord(currentPlayer.id, TimeRecordType.DEFAULT_TURN_ENDED);
+
+                if (!currentPlayer.lose) {
+                    yield* put(playerLost(currentPlayer.id));
+                }
+            } else {
                 throw error;
             }
         }

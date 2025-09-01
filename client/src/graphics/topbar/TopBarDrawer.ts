@@ -31,7 +31,7 @@ export default class TopBarDrawer {
     otherPlayers: OtherPlayer[] = [];
     currentPlayer: Player;
     onlineMap: { player: PlayerId, online: boolean }[] = [];
-    playerTime: { player: PlayerId, time: number }[] = [];
+    playerTime: Record<PlayerId, number> = {};
 
     // status
     statusCard?: Group;
@@ -71,7 +71,7 @@ export default class TopBarDrawer {
     setPlayersData(currentPlayer: Player, otherPlayers: OtherPlayer[], onlineMap: {
         player: PlayerId,
         online: boolean
-    }[], playerTime: { player: PlayerId, time: number }[], newMessages: Message[]) {
+    }[], playerTime: Record<PlayerId, number>, newMessages: Message[]) {
         this.currentPlayer = currentPlayer;
         this.otherPlayers = otherPlayers;
         this.onlineMap = onlineMap;
@@ -189,10 +189,10 @@ export default class TopBarDrawer {
     togglePlayerCharacteristics() { /* no-op */
     }
 
-    updateTime(playerTime: { player: PlayerId, time: number }[]) {
+    updateTime(playerTime: Record<PlayerId, number>) {
         this.playerTime = playerTime;
 
-        for (const {player, time} of playerTime) {
+        for (const [player, time] of Object.entries(playerTime)) {
             const playerDataLine = this.playersCard.findOne(`.${player}`) as PlayerDataLine;
 
             if (playerDataLine && playerDataLine.time() != time) {
