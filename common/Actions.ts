@@ -1086,3 +1086,52 @@ export function message(player: Types.PlayerId, text: string) {
     );
 }
 
+
+/**
+ * @param  target  
+ * @param  delta  
+ */
+export function cheatChangeEnergy(target: Types.PlayerId, delta: number) {
+    return constructAction(
+        'cheatChangeEnergy',
+        {target, delta},
+    );
+}
+
+
+/**
+ * @param  target  
+ * @param  type  
+ */
+export function cheatSetMainModuleType(target: Types.PlayerId, type: Types.MainModuleType) {
+    return constructAction(
+        'cheatSetMainModuleType',
+        {target, type},
+    );
+}
+
+
+/**
+ * @param  target  
+ * @param  type  
+ * @param  connectors  
+ */
+export function cheatGetModuleCard(target: Types.PlayerId, type: Types.ModuleType, connectors: Types.ModuleConnectors) {
+    return constructAction(
+        'cheatGetModuleCard',
+        {target, type, connectors},
+    );
+}
+
+
+/**
+ * @param  target  
+ * @param  type  
+ */
+export function cheatGetEventCard(target: Types.PlayerId, type: Types.EventType) {
+    return constructAction(
+        'cheatGetEventCard',
+        {target, type},
+    );
+}
+

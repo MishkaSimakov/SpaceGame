@@ -856,7 +856,7 @@
         type: int32
 
 # -----------------------------
-# From Message.ts
+# Message
 # -----------------------------
 - name: message
   payload:
@@ -866,3 +866,45 @@
     - name: text
       type:
         type: string
+
+# -----------------------------
+# Debug
+# -----------------------------
+- name: cheatChangeEnergy
+  payload:
+    - name: target
+      type:
+        ref: PlayerId
+    - name: delta
+      type:
+        type: int32
+
+- name: cheatSetMainModuleType
+  payload:
+    - name: target
+      type:
+        ref: PlayerId
+    - name: type
+      type:
+        ref: MainModuleType
+
+- name: cheatGetModuleCard
+  payload:
+    - name: target
+      type:
+        ref: PlayerId
+    - name: type
+      type:
+        ref: ModuleType
+    - name: connectors
+      type:
+        ref: ModuleConnectors
+
+- name: cheatGetEventCard
+  payload:
+    - name: target
+      type:
+        ref: PlayerId
+    - name: type
+      type:
+        ref: EventType

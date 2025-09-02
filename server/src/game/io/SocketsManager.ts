@@ -19,12 +19,14 @@ export type EmitSettings = {
 };
 
 export default class SocketsManager implements ISocketsManager {
-    io: Server;
+    private io: Server;
 
-    currentEmitPlayerId?: PlayerId;
-    currentEmitFunction?: (socket: Socket) => void;
+    private currentEmitPlayerId?: PlayerId;
+    private currentEmitFunction?: (socket: Socket) => void;
 
-    players: Record<PlayerId, SocketPlayerInfo> = {};
+    private players: Record<PlayerId, SocketPlayerInfo> = {};
+
+    private listeners: { type: string, callback: (payload: any) => void }[] = [];
 
     constructor(io: Server, players: PlayerId[]) {
         this.io = io;
@@ -51,12 +53,14 @@ export default class SocketsManager implements ISocketsManager {
 
     onPlayerConnect(playerId: PlayerId, socketId: string) {
         if (!(playerId in this.players)) {
-            console.log(this.players, playerId);
             throw new Error("Unknown player id connected to the game");
         }
 
         this.players[playerId].online = true;
         this.players[playerId].socketId = socketId;
+
+        this.listeners.forEach(({type, callback}) =>
+            this.getSocket(playerId)?.on(type, callback));
     }
 
     onPlayerDisconnect(playerId: PlayerId) {
@@ -75,16 +79,20 @@ export default class SocketsManager implements ISocketsManager {
             const emitFunction = (socket: Socket) => {
                 if (settings.withAcknowledgement) {
                     const acknowledgment = async (result: any) => {
-                        this.currentEmitFunction = undefined;
-                        this.currentEmitPlayerId = undefined;
+                        if (settings.ensureSending) {
+                            this.currentEmitFunction = undefined;
+                            this.currentEmitPlayerId = undefined;
+                        }
 
                         resolve(result);
                     };
 
                     socket.emit(event, ...args, acknowledgment);
                 } else {
-                    this.currentEmitFunction = undefined;
-                    this.currentEmitPlayerId = undefined;
+                    if (settings.ensureSending) {
+                        this.currentEmitFunction = undefined;
+                        this.currentEmitPlayerId = undefined;
+                    }
 
                     socket.emit(event, ...args);
 
@@ -121,5 +129,9 @@ export default class SocketsManager implements ISocketsManager {
         for (let player_id of Object.keys(this.players)) {
             this.getSocket(player_id)?.disconnect(true);
         }
+    }
+
+    on(type: string, callback: (payload: any) => void) {
+        this.listeners.push({type, callback});
     }
 }

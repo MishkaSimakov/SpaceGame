@@ -116,4 +116,12 @@ export default class SocketManager {
     private exit() {
         window.location.href = window.location.origin;
     }
+
+    cheat(action: Action<any, any>) {
+        if (!action.type.startsWith("cheat")) {
+            throw new TypeError("cheat method must be used only for cheating!");
+        }
+
+        this.socket.emit(action.type, action.payload);
+    }
 }

@@ -20,6 +20,7 @@ import {isReducerName, reducers} from "./reducers/Main";
 import {Randomizer} from "./Randomizer";
 import {TimeControlMiddleware} from "./middlewares/TimeControlMiddleware";
 import {validators} from "./validation/ResponseValidators";
+import {validators as cheatsValidators} from "./validation/CheatsValidators";
 import {PlayerGameLogListener} from "./PlayerGameLogListener";
 import {getInitialGameState} from "./InitGameState";
 import {runSagaWithThrowHandle} from "./sagas/runner/RunSaga";
@@ -30,6 +31,7 @@ import {Observable} from "@common/Observable";
 import {DeactivateSignal} from "@src/game/middlewares/DeactivateSignal";
 import {LossSignal} from "@src/game/middlewares/LossSignal";
 import {IClock} from "@src/game/interfaces/IClock";
+import {cheatsPerformers} from "@src/game/CheatsPerformers";
 
 
 export type GameResult = { type: "deactivated" } | { type: "finished", winner: PlayerId };
@@ -206,7 +208,7 @@ export default class Game {
     }
 
     registerIOListeners() {
-        this.bus.on('*', (action) => {
+        this.bus.on('*', action => {
             if (this.inReplay) {
                 return;
             }
@@ -231,6 +233,24 @@ export default class Game {
                 }, action.type, action.payload);
             }
         });
+
+        // cheats listeners
+        for (const cheatName of Object.keys(Actions).filter(a => a.startsWith('cheat'))) {
+            this.sockets.on(cheatName, (payload: any) => {
+                const validator = cheatsValidators[cheatName as keyof typeof cheatsValidators] as (state: GameState) => ZodType;
+                const validationResult = validator(structuredClone(this.state)).safeParse(payload);
+
+                console.log(validationResult, payload);
+                if (validationResult.error) {
+                    return;
+                }
+
+                (cheatsPerformers[cheatName as keyof typeof cheatsPerformers] as any)(validationResult.data, structuredClone(this.state), this.bus)
+                    .then(() => {
+                        this.syncPlayersData();
+                    });
+            });
+        }
     }
 
     registerReduceListeners() {

@@ -6,7 +6,7 @@ import ActionsBus from "../../src/game/ActionsBus";
 import {defaultSettings} from "@src/game/DefaultSettings";
 import {isReducerName, reducers} from "@src/game/reducers/Main";
 import {getInitialGameState} from "@src/game/InitGameState";
-import {ModuleInfo, modulesInfo} from "@src/game/ModulesInfo";
+import {ModuleInfo, modulesInfo} from "@common/cards/Modules";
 
 export function fakeGameState(playersCount: number): GameState {
     const settings: GameSettings = {

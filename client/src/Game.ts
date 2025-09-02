@@ -8,6 +8,7 @@ import SocketManager from "./sockets/SocketManager";
 import {Graphics} from "./graphics/engine/Graphics";
 import {DD} from "./graphics/engine/Drag";
 import PopupsScene from "./graphics/scenes/Popups";
+import {Cheats} from "./Cheats";
 
 export default class Game {
     currentTurnPlayerId: PlayerId;
@@ -30,6 +31,7 @@ export default class Game {
     timeDecreasingPlayerId: number;
 
     messages: Message[] = [];
+    cheats: Cheats | undefined;
 
     isFirstDraw: boolean = true;
 
@@ -39,10 +41,6 @@ export default class Game {
             width: window.innerWidth,
             height: window.innerHeight
         });
-
-        window["graphics"] = graphics;
-        window["drag"] = DD;
-        window["errors"] = [];
 
         this.spaceshipsScene = new Spaceships(this);
         this.controlsScene = new Controls(this);
@@ -99,6 +97,12 @@ export default class Game {
 
         if (!this.rebuildSpaceshipManager.isRebuildingSpaceship) {
             this.currentPlayer = gameDTO.player;
+        }
+
+        // enable cheats for debug
+        if (this.settings.isDebug && !this.cheats) {
+            this.cheats = new Cheats(this, this.socketManager);
+            window["cheats"] = this.cheats;
         }
 
         // time control
