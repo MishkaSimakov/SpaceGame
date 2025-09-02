@@ -1,15 +1,14 @@
-import {MoveDamageReason} from "@common/Types";
-import Vector2 from "@common/Vector2";
+import {MoveDamageReason, Vector2} from "@common/Types";
 
 import {Activity} from "./Activity";
 import Controls from "../scenes/Controls";
 import Spaceships from "../scenes/Spaceships";
-import {Button} from "../shapes/Button";
 import {Boundary} from "../CountBoundary";
 import Color from "../Color";
 import {COLORS} from "../constants";
+import {ModuleGetters} from "@common/getters/Module";
 
-type MoveDamageResult = { from: Vector2, to: Vector2 } | undefined;
+type MoveDamageResult = { source: Vector2, destination: Vector2 } | undefined;
 
 const reasonStatus: Record<MoveDamageReason, string> = {
     [MoveDamageReason.MainModule]: "выберите, откуда переместить урон",
@@ -44,14 +43,14 @@ export class ChooseModulesToMoveDamage extends Activity {
                 text: "Далее",
                 color: COLORS.BUTTON.PRIMARY,
                 onClick: () => {
-                    const from = Vector2.modulePosition(fromHandle.get()[0].module);
+                    const from = ModuleGetters.position(fromHandle.get()[0].module);
 
                     this.spaceshipsScene.endChoosingModule();
                     this.controlsScene.topBarDrawer.removeButtons();
                     this.controlsScene.topBarDrawer.clearStatus();
 
                     this.chooseDestination().then(to => {
-                        resolve({from, to});
+                        resolve({source: from, destination: to});
                     });
                 },
                 name: 'continue'
@@ -90,7 +89,7 @@ export class ChooseModulesToMoveDamage extends Activity {
                 text: "Далее",
                 color: COLORS.BUTTON.PRIMARY,
                 onClick: () => {
-                    resolve(Vector2.modulePosition(toHandle.get()[0].module));
+                    resolve(ModuleGetters.position(toHandle.get()[0].module));
                 },
                 name: 'continue'
             }]);

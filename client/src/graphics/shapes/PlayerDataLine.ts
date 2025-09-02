@@ -1,4 +1,3 @@
-import {OtherPlayer} from "@common/GameForPlayerDTO";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
 
 import {NodeConfig} from "../engine/Node";
@@ -7,6 +6,7 @@ import {Text} from "../engine/shapes/Text";
 import {GetSet} from "../engine/types";
 import {Factory} from "../engine/Factory";
 import {Rectangle} from "../engine/shapes/Rectangle";
+import {OtherPlayer} from "@common/Types";
 
 export type PlayerStatus = {
     online: boolean,

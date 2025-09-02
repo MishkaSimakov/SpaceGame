@@ -1,17 +1,28 @@
 import {Server, Socket} from "socket.io";
 
-import {PlayerId} from "@common/Player";
+import {PlayerId} from "@common/Types";
 
-export type SocketPlayerInfo = {
+import {ISocketsManager} from "@src/game/interfaces/ISocketsManager";
+
+type SocketPlayerInfo = {
     online: boolean;
     socketId?: string;
 };
 
-export default class SocketsManager {
+export type EmitSettings = {
+    // if true, `emit` resolves only after acknowledgement from a recipient is received
+    withAcknowledgement: boolean,
+
+    // if true, message will be queued and sent only when user is connected
+    // if false and user is not connected, message will be discarded
+    ensureSending: boolean
+};
+
+export default class SocketsManager implements ISocketsManager {
     io: Server;
 
     currentEmitPlayerId?: PlayerId;
-    currentEmitFunction?: () => void;
+    currentEmitFunction?: (socket: Socket) => void;
 
     players: Record<PlayerId, SocketPlayerInfo> = {};
 
@@ -26,9 +37,9 @@ export default class SocketsManager {
         }
     }
 
-    getSocket(socketId: string): Socket | undefined;
-    getSocket(playerId: PlayerId): Socket | undefined;
-    getSocket(value: PlayerId | string): Socket | undefined {
+    private getSocket(socketId: string): Socket | undefined;
+    private getSocket(playerId: PlayerId): Socket | undefined;
+    private getSocket(value: PlayerId | string): Socket | undefined {
         const socketId = (typeof value === 'string') ? value : this.players[value].socketId;
 
         return socketId ? this.io.sockets.sockets.get(socketId) : undefined;
@@ -58,13 +69,11 @@ export default class SocketsManager {
         this.players[playerId].socketId = undefined;
     }
 
-    async emitAndWait(playerId: PlayerId, event: string, withAcknowledgment: boolean, ...args: any[]) {
-        return new Promise(resolve => {
+    async emit(playerId: PlayerId, settings: EmitSettings, event: string, ...args: any[]) {
+        return new Promise<any>(resolve => {
             // generate function that must be called when player connected
-            const emitFunction = () => {
-                const socket = this.getSocket(playerId);
-
-                if (withAcknowledgment) {
+            const emitFunction = (socket: Socket) => {
+                if (settings.withAcknowledgement) {
                     const acknowledgment = async (result: any) => {
                         this.currentEmitFunction = undefined;
                         this.currentEmitPlayerId = undefined;
@@ -72,22 +81,27 @@ export default class SocketsManager {
                         resolve(result);
                     };
 
-                    socket?.emit(event, ...args, acknowledgment);
+                    socket.emit(event, ...args, acknowledgment);
                 } else {
                     this.currentEmitFunction = undefined;
                     this.currentEmitPlayerId = undefined;
 
-                    socket?.emit(event, ...args);
+                    socket.emit(event, ...args);
 
                     resolve(undefined);
                 }
             };
 
-            this.currentEmitFunction = emitFunction;
-            this.currentEmitPlayerId = playerId;
+            if (settings.ensureSending) {
+                this.currentEmitFunction = emitFunction;
+                this.currentEmitPlayerId = playerId;
+            }
 
-            if (this.isPlayerConnected(playerId)) {
-                emitFunction();
+            const socket = this.getSocket(playerId);
+            if (socket && socket.connected) {
+                emitFunction(socket);
+            } else if (!settings.ensureSending) {
+                resolve(undefined);
             }
         });
     }
@@ -97,14 +111,10 @@ export default class SocketsManager {
             return;
         }
 
-        if (this.isPlayerConnected(this.currentEmitPlayerId) && this.currentEmitFunction) {
-            this.currentEmitFunction();
-        }
-    }
-
-    private isPlayerConnected(playerId: PlayerId): boolean {
         const socket = this.getSocket(playerId);
-        return socket !== undefined && socket.connected;
+        if (this.currentEmitFunction && socket && socket.connected) {
+            this.currentEmitFunction(socket);
+        }
     }
 
     disconnectEveryone() {

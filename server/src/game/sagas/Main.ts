@@ -1,7 +1,8 @@
-import Actions from "@common/actions/Main";
 import {StateGetters} from "@common/getters/State";
+import {TimeRecordType} from "@common/Types";
+import {playerLost, setCurrentPlayer, setPlayerSkipNextTurn} from "@common/Actions";
 
-import {newTask, put, select} from "./Effects";
+import {put, select} from "./runner/Effects";
 import {beforeTurn} from "./phases/BeforeTurn";
 import {drawCards} from "./phases/DrawCards";
 import {rebuildSpaceship} from "./phases/RebuildSpaceship";
@@ -11,17 +12,14 @@ import {attack} from "./phases/Attack";
 import {fixSpaceship} from "./phases/FixSpaceship";
 import {init} from "./components/Init";
 import {addTimeRecord} from "./components/Time";
-
-import {TimeRecordType} from "../GameState";
-
-const {setCurrentPlayer} = Actions;
+import {LossSignal} from "../middlewares/LossSignal";
 
 function* isGameEnded() {
     return (yield* select()).players.filter(p => !p.lose).length === 1;
 }
 
 function* shiftTurn() {
-    const state = yield* select();
+    let state = yield* select();
     let currentPlayerIndex = state.players.findIndex(p => p.id === state.currentPlayerId);
 
     while (true) {
@@ -31,7 +29,8 @@ function* shiftTurn() {
         const player = state.players[currentPlayerIndex];
 
         if (player.skipNextTurn) {
-            player.skipNextTurn = false;
+            yield* put(setPlayerSkipNextTurn(player.id, false));
+            state = yield* select(); // update state
             continue;
         }
 
@@ -42,7 +41,7 @@ function* shiftTurn() {
         break;
     }
 
-    yield* put(setCurrentPlayer(state.players[currentPlayerIndex]));
+    yield* put(setCurrentPlayer(state.players[currentPlayerIndex].id));
 }
 
 function* playerTurn() {
@@ -67,7 +66,21 @@ export function* gameSaga() {
     while (true) {
         yield* shiftTurn();
 
-        yield* newTask(playerTurn);
+        try {
+            yield* playerTurn();
+        } catch (error) {
+            // LossSignal indicates that current turn must be cancelled due to player loss
+            if (error instanceof LossSignal) {
+                const currentPlayer = StateGetters.currentPlayer(yield* select());
+                yield* addTimeRecord(currentPlayer.id, TimeRecordType.DEFAULT_TURN_ENDED);
+
+                if (!currentPlayer.lose) {
+                    yield* put(playerLost(currentPlayer.id));
+                }
+            } else {
+                throw error;
+            }
+        }
 
         if (yield* isGameEnded()) {
             return;

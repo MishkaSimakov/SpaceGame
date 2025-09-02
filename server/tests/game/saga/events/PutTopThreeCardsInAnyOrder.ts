@@ -1,12 +1,13 @@
 import {test} from "uvu";
-import * as assert from "node:assert";
+import * as assert from "uvu/assert";
+
+import {EventType} from "@common/Types";
+import {permuteTopThreeEventCardsResponse} from "@common/Actions";
 
 import {attachReducers, fakeGameState} from "../../Utils";
-import ActionsBus from "../../../../src/game/ActionsBus";
-import {SagaRunner} from "../../../../src/game/sagas/SagaRunner";
-import {EventTypes} from "@common/events/Event";
-import {performEvent} from "../../../../src/game/sagas/components/PerformEvent";
-import Actions from "@common/actions/Main"
+import ActionsBus from "@src/game/ActionsBus";
+import {performEvent} from "@src/game/sagas/components/PerformEvent";
+import {runSaga} from "@src/game/sagas/runner/RunSaga";
 
 
 test('basicTest', async () => {
@@ -15,27 +16,26 @@ test('basicTest', async () => {
 
     attachReducers(bus, state);
 
-    const event = state.stack.event.find(c => c.type === EventTypes.PutTopThreeCardsInAnyOrder);
+    const event = state.stack.event.find(c => c.type === EventType.PutTopThreeCardsInAnyOrder)!;
     state.stack.event = state.stack.event.filter(c => c !== event);
 
     const topThreeCards = state.stack.event.slice(-3);
 
     bus.on('permuteTopThreeEventCardsRequest', (action) => {
-        assert.deepEqual(action.payload.cards[0], topThreeCards[2]);
-        assert.deepEqual(action.payload.cards[1], topThreeCards[1]);
-        assert.deepEqual(action.payload.cards[2], topThreeCards[0]);
+        assert.equal(action.payload.cards[0], topThreeCards[2]);
+        assert.equal(action.payload.cards[1], topThreeCards[1]);
+        assert.equal(action.payload.cards[2], topThreeCards[0]);
 
-        bus.emit(Actions.permuteTopThreeEventCardsResponse([2, 0, 1]));
+        bus.emit(permuteTopThreeEventCardsResponse([2, 0, 1]));
     });
 
-    const runner = new SagaRunner(state, bus, performEvent, event);
-    await runner.run();
+    await runSaga({state, bus}, performEvent, event);
 
     const newTopThreeCards = state.stack.event.slice(-3);
 
-    assert.deepEqual(newTopThreeCards[0], topThreeCards[1]);
-    assert.deepEqual(newTopThreeCards[1], topThreeCards[2]);
-    assert.deepEqual(newTopThreeCards[2], topThreeCards[0]);
+    assert.equal(newTopThreeCards[0], topThreeCards[1]);
+    assert.equal(newTopThreeCards[1], topThreeCards[2]);
+    assert.equal(newTopThreeCards[2], topThreeCards[0]);
 });
 
 test.run();

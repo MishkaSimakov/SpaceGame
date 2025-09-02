@@ -1,16 +1,12 @@
-import {PlayerId} from "@common/Player";
-import Actions from "@common/actions/Main"
-
-import GameState, {TimeRecord, TimeRecordType} from "../../GameState";
-import {all, put, select, take} from "../Effects";
+import {all, put, select, take} from "../runner/Effects";
 import * as assert from "node:assert";
 import {StateGetters} from "@common/getters/State";
-
-const {
-    time: timeAction,
-    addTimeRecord: addTimeRecordAction,
-    changePlayerTime: changePlayerTimeAction
-} = Actions;
+import {GameState, PlayerId, TimeRecord, TimeRecordType} from "@common/Types";
+import {
+    addTimeRecord as addTimeRecordAction,
+    changePlayerTime as changePlayerTimeAction,
+    time as timeAction
+} from "@common/Actions";
 
 function* getTime() {
     const {res} = yield* all({
@@ -18,7 +14,7 @@ function* getTime() {
         res: take('timeResult')
     });
 
-    return res.payload as number;
+    return res.payload.result as number;
 }
 
 function getLastRecordByType(records: TimeRecord[], type: TimeRecordType) {
@@ -44,10 +40,13 @@ export function getTimeDecreasingPlayerId(state: GameState): PlayerId | undefine
 
     const lastRecord = state.timeRecords[state.timeRecords.length - 1];
 
-    if (lastRecord.type === TimeRecordType.FIGHT_TURN_ENDED) {
-        return getLastRecordByType(state.timeRecords, TimeRecordType.DEFAULT_TURN_STARTED)?.playerId;
-    } else {
+    if (
+        lastRecord.type === TimeRecordType.DEFAULT_TURN_STARTED
+        || lastRecord.type === TimeRecordType.DEFAULT_TURN_CONTINUED
+        || lastRecord.type === TimeRecordType.FIGHT_TURN_STARTED) {
         return lastRecord.playerId;
+    } else {
+        return undefined;
     }
 }
 

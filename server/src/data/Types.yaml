@@ -1,0 +1,354 @@
+# Game State Types
+PlayerId:
+  type: int32
+
+ModuleId:
+  type: int32
+
+Vector2:
+  properties:
+    x:
+      type: int32
+    y:
+      type: int32
+
+# Cards
+ModuleType:
+  enum:
+    - MainModule
+    - SpaceSolver
+    - IonDestroyer
+    - QuantumDestabilizer
+    - SolarPanel
+    - NuclearReactor
+    - DarkMatterGenerator
+    - SmallBattery
+    - Battery
+    - SmallQuantumProtector
+    - QuantumProtector
+    - AttackModule
+    - RepairModule
+    - StructureModule
+
+EventType:
+  enum:
+    - PutTopThreeCardsInAnyOrder
+    - PutTopThreeCardsInAnyOrderAndTakeTop
+    - TakeOneBuildingCard
+    - TakeTwoBuildingCards
+    - LooseFiveEnergy
+    - TakeFiveEnergy
+    - SkipNextTurn
+    - LooseAllYourCards
+    - DestroyAnyModuleOnYourSpaceship
+    - DestroyTwoSolarPanelsOnYourSpaceship
+    - AttackRight
+    - AttackLeft
+    - AttackNextToRight
+    - AttackNextToLeft
+    - AttackAny
+    - TossDiceAndTakeBuildingCards
+    - TossDiceAndDealDamage
+    - TossDiceAndGetEnergy
+    - TossDiceAndRepairYourModule
+    - SaveCardAndThenAttack
+    - SaveCardAndThenDealDamage
+    - ChoosePlayerAndStealHisCard
+    - DiscardCardAndRepairSpaceship
+    - MoveDamage
+    - DiscardCardsAndTakeBuildingCards
+
+MainModuleType:
+  enum:
+    - DrawAnotherEventCard
+    - DrawAdditionalModuleCard
+    - MoveDamage
+    - UseModuleSecondTime
+    - AttackOrRunaway
+
+ModuleConnectors:
+  properties:
+    top:
+      type: int32
+    right:
+      type: int32
+    bottom:
+      type: int32
+    left:
+      type: int32
+
+ModuleCard:
+  properties:
+    id:
+      ref: ModuleId
+    name:
+      type: string
+    connectors:
+      ref: ModuleConnectors
+    strength:
+      type: int32
+    capacity:
+      type: int32
+    energyCost:
+      type: int32
+    energyIncrease:
+      type: int32
+    type:
+      ref: ModuleType
+    totalHealth:
+      type: int32
+    health:
+      type: int32
+    x:
+      type: int32
+    y:
+      type: int32
+    rotation:
+      type: int32
+  optionalProperties:
+    mainModuleType:
+      ref: MainModuleType
+
+EventCard:
+  properties:
+    type:
+      ref: EventType
+    description:
+      type: string
+
+Card:
+  discriminator: cardType
+  mapping:
+    module:
+      properties:
+        module:
+          ref: ModuleCard
+    event:
+      properties:
+        event:
+          ref: EventCard
+
+CardType:
+  enum: [ "Module", "Event" ]
+
+TimeControlSettings:
+  properties:
+    startTime:
+      type: int32
+    defaultTimeIncrease:
+      type: int32
+    fightTimeIncrease:
+      type: int32
+    loseWhenTimeout:
+      type: boolean
+
+GameSettings:
+  properties:
+    seed:
+      type: string
+    isPublic:
+      type: boolean
+    isDebug:
+      type: boolean
+
+    startCardsCount:
+      type: int32
+    mainModuleRunawayEnergyCost:
+      type: int32
+    energyToAttackByMainModule:
+      type: int32
+    energyToMoveDamageByMainModule:
+      type: int32
+    damageMovedByMainModule:
+      type: int32
+    energyToDragAnotherEventCardByMainModule:
+      type: int32
+    energyToDragAdditionalCardByMainModule:
+      type: int32
+    maxCardsOnHand:
+      type: int32
+    diceResultToRunaway:
+      type: int32
+
+  optionalProperties:
+    timeControlSettings:
+      ref: TimeControlSettings
+
+FightState:
+  properties:
+    first:
+      ref: PlayerId
+    second:
+      ref: PlayerId
+    isFirstPlayerTurn:
+      type: boolean
+    isFightEnded:
+      type: boolean
+
+TimeRecordType:
+  enum:
+    - DEFAULT_TURN_STARTED
+    - DEFAULT_TURN_ENDED
+
+    - DEFAULT_TURN_INTERRUPTED
+    - DEFAULT_TURN_CONTINUED
+
+    - FIGHT_TURN_STARTED
+    - FIGHT_TURN_ENDED
+
+    - PAUSE_STARTED
+    - PAUSE_ENDED
+
+TimeRecord:
+  properties:
+    type:
+      ref: TimeRecordType
+    playerId:
+      ref: PlayerId
+    time:
+      type: int32
+
+Spaceship:
+  properties:
+    modules:
+      elements:
+        ref: ModuleCard
+  optionalProperties:
+    activatedProtector:
+      ref: Vector2
+
+Player:
+  properties:
+    id:
+      ref: PlayerId
+    name:
+      type: string
+    spaceship:
+      ref: Spaceship
+    hand:
+      elements:
+        ref: Card
+    energy:
+      type: int32
+    skipNextTurn:
+      type: boolean
+    usedModuleSecondTimeOnThisTurn:
+      type: boolean
+    lose:
+      type: boolean
+    time:
+      type: int32
+
+GameState:
+  properties:
+    stack:
+      properties:
+        module:
+          elements:
+            ref: ModuleCard
+        event:
+          elements:
+            ref: EventCard
+    discards:
+      properties:
+        module:
+          elements:
+            ref: ModuleCard
+        event:
+          elements:
+            ref: EventCard
+    
+    mainModulesStack:
+      elements:
+        ref: ModuleCard
+
+    players:
+      elements:
+        ref: Player
+
+    currentPlayerId:
+      ref: PlayerId
+
+    settings:
+      ref: GameSettings
+
+    timeRecords:
+      elements:
+        ref: TimeRecord
+
+  optionalProperties:
+    fight:
+      ref: FightState
+
+Message:
+  properties:
+    text:
+      type: string
+  optionalProperties:
+    payload: { }
+
+# Game for player DTO
+# used to send current game state to player
+OtherPlayer:
+  properties:
+    id:
+      ref: PlayerId
+    name:
+      type: string
+    energy:
+      type: int32
+    spaceship:
+      ref: Spaceship
+    handSize:
+      type: int32
+    lose:
+      type: boolean
+
+GameForPlayerDTO:
+  properties:
+    currentTurnPlayerId:
+      ref: PlayerId
+    settings:
+      ref: GameSettings
+    player:
+      ref: Player
+    otherPlayers:
+      elements:
+        ref: OtherPlayer
+    onlineMap:
+      elements:
+        properties:
+          player:
+            ref: PlayerId
+          online:
+            type: boolean
+    messages:
+      elements:
+        ref: Message
+
+  optionalProperties:
+    timeControl:
+      properties:
+        playersTime:
+          elements:
+            properties:
+              player:
+                ref: PlayerId
+              time:
+                type: int32
+      optionalProperties:
+        timeDecreasingPlayerId:
+          ref: PlayerId
+
+# Enums for Actions
+MoveDamageReason:
+  enum: [ "MainModule", "EventCard" ]
+
+RunawayType:
+  enum: [ "Dice", "MainModule" ]
+
+AttackReason:
+  enum: [ "MainModule", "AttackModule", "AttackAnyEventCard", "AttackLaterEventCard", "UsingAttackModuleSecondTime" ]
+
+CardDestination:
+  enum: [ "hand", "discard" ]

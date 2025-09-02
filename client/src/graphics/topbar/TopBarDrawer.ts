@@ -1,6 +1,4 @@
-import {OtherPlayer} from "@common/GameForPlayerDTO";
-import Player, {PlayerId} from "@common/Player";
-import {Message} from "@common/Types";
+import {Message, OtherPlayer, Player, PlayerId} from "@common/Types";
 
 import Controls from "../scenes/Controls";
 import {ButtonColors, SIZES} from "../constants";
@@ -11,7 +9,6 @@ import {Button} from "../shapes/Button";
 import {PlayerDataLine} from "../shapes/PlayerDataLine";
 import TopBarDefaultAdaptor from "./TopBarDefaultAdaptor";
 import Color from "../Color";
-import message from "@common/actions/Message";
 
 export type ButtonData = {
     text: string,
@@ -33,7 +30,7 @@ export default class TopBarDrawer {
     playersCard?: Group;
     otherPlayers: OtherPlayer[] = [];
     currentPlayer: Player;
-    onlineMap: Record<PlayerId, boolean> = {};
+    onlineMap: { player: PlayerId, online: boolean }[] = [];
     playerTime: Record<PlayerId, number> = {};
 
     // status
@@ -71,7 +68,10 @@ export default class TopBarDrawer {
         this.redraw();
     }
 
-    setPlayersData(currentPlayer: Player, otherPlayers: OtherPlayer[], onlineMap: Record<PlayerId, boolean>, playerTime: Record<number, number>, newMessages: Message[]) {
+    setPlayersData(currentPlayer: Player, otherPlayers: OtherPlayer[], onlineMap: {
+        player: PlayerId,
+        online: boolean
+    }[], playerTime: Record<PlayerId, number>, newMessages: Message[]) {
         this.currentPlayer = currentPlayer;
         this.otherPlayers = otherPlayers;
         this.onlineMap = onlineMap;
@@ -192,11 +192,11 @@ export default class TopBarDrawer {
     updateTime(playerTime: Record<PlayerId, number>) {
         this.playerTime = playerTime;
 
-        for (const playerId in playerTime) {
-            const playerDataLine = this.playersCard.findOne(`.${playerId}`) as PlayerDataLine;
+        for (const [player, time] of Object.entries(playerTime)) {
+            const playerDataLine = this.playersCard.findOne(`.${player}`) as PlayerDataLine;
 
-            if (playerDataLine && playerDataLine.time() != this.playerTime[playerId]) {
-                playerDataLine.time(this.playerTime[playerId]);
+            if (playerDataLine && playerDataLine.time() != time) {
+                playerDataLine.time(time);
             }
         }
     }

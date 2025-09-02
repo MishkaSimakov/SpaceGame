@@ -3,7 +3,6 @@ import Controls from "../scenes/Controls";
 import {Rectangle} from "../engine/shapes/Rectangle";
 import Color from "../Color";
 import {Text} from "../engine/shapes/Text";
-import Vector2 from "@common/Vector2";
 
 export class ShowHugeMessageActivity extends Activity {
     private textShape: Text;
@@ -67,20 +66,12 @@ export class ShowHugeMessageActivity extends Activity {
         });
 
         const offset = 20;
-        const backgroundPosition1 = new Vector2(
-            this.textShape.getClientRect().left - offset,
-            this.textShape.getClientRect().top - offset
-        );
-        const backgroundPosition2 = new Vector2(
-            this.textShape.getClientRect().right + offset,
-            this.textShape.getClientRect().bottom + offset
-        );
 
         this.backgroundShape.setAttrs({
-            x: backgroundPosition1.x,
-            y: backgroundPosition1.y,
-            width: backgroundPosition2.x - backgroundPosition1.x,
-            height: backgroundPosition2.y - backgroundPosition1.y,
+            x: this.textShape.getClientRect().left - offset,
+            y: this.textShape.getClientRect().top - offset,
+            width: this.textShape.getClientRect().right - this.textShape.getClientRect().left + 2 * offset,
+            height: this.textShape.getClientRect().bottom - this.textShape.getClientRect().top + 2 * offset,
         });
     }
 }

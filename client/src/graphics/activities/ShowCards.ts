@@ -1,5 +1,4 @@
-import Module from "@common/modules/Module";
-import {Event} from "@common/events/Event";
+import {Card} from "@common/Types";
 
 import Controls from "../scenes/Controls";
 import Color from "../Color";
@@ -13,11 +12,15 @@ export class ShowCardsActivity extends Activity {
     private titleShape?: Text;
     private fadeShape?: Rectangle;
 
-    constructor(private scene: Controls, private cards: (Module | Event)[], private title?: string) {
+    constructor(private scene: Controls, private cards: Card[], private title?: string) {
         super();
     }
 
     activate() {
+        if (this.cards.length === 0) {
+            return Promise.resolve();
+        }
+
         return new Promise<void>(resolve => {
             this.fadeShape = this.scene.createAndAdd.rectangle({
                 fill: Color.fromHex('#000000', 0.75).toString()

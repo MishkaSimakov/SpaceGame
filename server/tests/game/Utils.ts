@@ -1,30 +1,34 @@
-import {Action} from "@common/actions/Action";
-import Spaceship from "@common/Spaceship";
-import Player from "@common/Player";
-import {GameSettings} from "@common/GameSettings";
-import Actions from "@common/actions/Main"
+import {GameSettings, GameState, ModuleCard, ModuleType, Vector2} from "@common/Types";
+import {Action} from "@common/ActionsHelpers";
+import {shuffleResult, throwDiceResult} from "@common/Actions";
 
-import GameState from "../../src/game/GameState";
 import ActionsBus from "../../src/game/ActionsBus";
-import {isReducerName, reducers} from "../../src/game/reducers/Main";
-
-const {throwDiceResult, shuffleResult} = Actions;
+import {defaultSettings} from "@src/game/DefaultSettings";
+import {isReducerName, reducers} from "@src/game/reducers/Main";
+import {getInitialGameState} from "@src/game/InitGameState";
+import {ModuleInfo, modulesInfo} from "@src/game/ModulesInfo";
 
 export function fakeGameState(playersCount: number): GameState {
-    const settings = new GameSettings("abracadabra", playersCount, false, false, false);
-    const state = new GameState(settings, []);
+    const settings: GameSettings = {
+        seed: "abracadabra",
+        ...defaultSettings
+    };
 
-    state.currentPlayerIndex = 0;
-
+    const users = [];
     for (let i = 0; i < playersCount; ++i) {
-        const player = new Player(i, `player #${i}`, new Spaceship());
+        users.push({
+            id: i,
+            login: `player #${i}`
+        })
+    }
 
-        const mainModule = state.mainModules.pop()!;
+    const state = getInitialGameState(users, settings);
+
+    for (const player of state.players) {
+        const mainModule = state.mainModulesStack.pop()!;
         mainModule.x = 0;
         mainModule.y = 0;
         player.spaceship.modules.push(mainModule);
-
-        state.players.push(player);
     }
 
     return state;
@@ -72,4 +76,24 @@ export function attachFakeRandomizer(busRef: ActionsBus) {
     });
 
     return {diceCalls, shuffleCalls};
+}
+
+export function fakeModule(type: ModuleType, config: Partial<Omit<ModuleInfo, "configurations"> & Vector2>): ModuleCard {
+    const defaultConfig = modulesInfo[type];
+
+    return {
+        id: 0,
+        name: config.name ?? defaultConfig.name,
+        connectors: {left: 1, top: 1, right: 1, bottom: 1},
+        strength: config.strength ?? defaultConfig.strength ?? 0,
+        capacity: config.strength ?? defaultConfig.capacity ?? 0,
+        energyCost: config.energyCost ?? defaultConfig.energyCost ?? 0,
+        energyIncrease: config.energyIncrease ?? defaultConfig.energyIncrease ?? 0,
+        type: type,
+        totalHealth: config.health ?? defaultConfig.health,
+        health: config.health ?? defaultConfig.health,
+        x: config.x ?? 0,
+        y: config.y ?? 0,
+        rotation: 0,
+    }
 }

@@ -1,23 +1,9 @@
-import Actions from "@common/actions/Main";
-import {isMainModule, ModuleType} from "@common/modules/Module";
-import Vector2 from "@common/Vector2";
-import {PlayerId} from "@common/Player";
-
-import {ListenersContainer} from "./ListenersContainer";
-import Color from "../../graphics/Color";
-import {COLORS} from "../../graphics/constants";
-import {Button} from "../../graphics/shapes/Button";
-import {Boundary} from "../../graphics/CountBoundary";
-import {ChooseModulesToMoveDamage} from "../../graphics/activities/ChooseModulesToMoveDamage";
-import {ChooseCardsActivity} from "../../graphics/activities/ChooseCards";
-
-const {
+import {
     chooseCardsForRepairSpaceshipResponse,
     chooseCardsToDiscardAndTakeAnotherResponse,
     chooseCardToStealResponse,
     chooseModulesToRepairByDiscardedCardsResponse,
-    chooseModuleToDamageByDiceResponse,
-    chooseModuleToDamageByEventCardResponse,
+    chooseModuleToDamageByDiceResponse, chooseModuleToDamageByEventCardResponse,
     chooseModuleToDestroyResponse,
     chooseModuleToMoveDamageResponse,
     chooseModuleToRepairByDiceResponse,
@@ -25,7 +11,16 @@ const {
     chooseSolarPanelsToDestroyResponse,
     permuteTopThreeEventCardsResponse,
     useEventCardToDealDamageResponse
-} = Actions;
+} from "@common/Actions";
+import {ModuleGetters} from "@common/getters/Module";
+import {ModuleType, PlayerId, Vector2} from "@common/Types";
+
+import {ListenersContainer} from "./ListenersContainer";
+import Color from "../../graphics/Color";
+import {COLORS} from "../../graphics/constants";
+import {Boundary} from "../../graphics/CountBoundary";
+import {ChooseModulesToMoveDamage} from "../../graphics/activities/ChooseModulesToMoveDamage";
+import {ChooseCardsActivity} from "../../graphics/activities/ChooseCards";
 
 export const eventCardsListeners: ListenersContainer = {
     async choosePlayerToStealCardRequest({options}, {game}) {
@@ -105,7 +100,7 @@ export const eventCardsListeners: ListenersContainer = {
         game.controlsScene.topBarDrawer.setStatus(`выберите модуль, чтобы нанести урон (${damage})`);
 
         const handle = game.spaceshipsScene.chooseModules(
-            ({module, player}) => player !== game.getCurrentPlayer().id && !isMainModule(module),
+            ({module, player}) => player !== game.getCurrentPlayer().id && !ModuleGetters.isMain(module),
             Boundary.noMoreThan(1),
             Color.fromHex('#a3b18a')
         );
@@ -126,7 +121,7 @@ export const eventCardsListeners: ListenersContainer = {
                 onClick: () => {
                     resolve({
                         victimId: handle.get()[0].player,
-                        victimModulePosition: Vector2.modulePosition(handle.get()[0].module)
+                        victimModulePosition: ModuleGetters.position(handle.get()[0].module)
                     });
                 },
                 name: 'attack'
@@ -170,7 +165,7 @@ export const eventCardsListeners: ListenersContainer = {
                 text: "Уничтожить",
                 color: COLORS.BUTTON.DANGER,
                 onClick: () => {
-                    resolve(handle.get().map(i => Vector2.modulePosition(i.module)));
+                    resolve(handle.get().map(i => ModuleGetters.position(i.module)));
                 }
             }]);
 
@@ -188,7 +183,7 @@ export const eventCardsListeners: ListenersContainer = {
         game.controlsScene.topBarDrawer.setStatus(`уничтожьте модуль`);
 
         const handle = game.spaceshipsScene.chooseModules(
-            ({module, player}) => player === game.currentPlayer.id && !isMainModule(module),
+            ({module, player}) => player === game.currentPlayer.id && !ModuleGetters.isMain(module),
             Boundary.equal(1),
             Color.fromHex('#a3b18a')
         );
@@ -206,7 +201,7 @@ export const eventCardsListeners: ListenersContainer = {
                 text: "Уничтожить",
                 color: COLORS.BUTTON.DANGER,
                 onClick: () => {
-                    resolve(Vector2.modulePosition(handle.get()[0].module));
+                    resolve(ModuleGetters.position(handle.get()[0].module));
                 }
             }]);
 
@@ -223,7 +218,7 @@ export const eventCardsListeners: ListenersContainer = {
     async permuteTopThreeEventCardsRequest({cards}, {game}) {
         game.controlsScene.topBarDrawer.setStatus("переставьте карточки");
 
-        const order = await game.controlsScene.permuteCards(cards);
+        const order = await game.controlsScene.permuteCards(cards.map(event => ({cardType: "event", event})));
         game.controlsScene.topBarDrawer.clearStatus();
 
         return permuteTopThreeEventCardsResponse(order);
@@ -243,7 +238,7 @@ export const eventCardsListeners: ListenersContainer = {
         game.controlsScene.topBarDrawer.setStatus(`выберите модуль, чтобы нанести 1 урон`);
 
         const handle = game.spaceshipsScene.chooseModules(
-            ({module, player}) => player === victim && !isMainModule(module),
+            ({module, player}) => player === victim && !ModuleGetters.isMain(module),
             Boundary.equal(1),
             COLORS.DANGER_STROKE
         );
@@ -261,7 +256,7 @@ export const eventCardsListeners: ListenersContainer = {
                 text: "Атаковать",
                 color: COLORS.BUTTON.DANGER,
                 onClick: () => {
-                    resolve(Vector2.modulePosition(handle.get()[0].module));
+                    resolve(ModuleGetters.position(handle.get()[0].module));
                 }
             }]);
 

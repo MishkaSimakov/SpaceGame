@@ -1,42 +1,39 @@
-import {ModuleType} from "@common/modules/Module";
-import {MainModuleType} from "@common/modules/MainModule";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
 import {StateGetters} from "@common/getters/State";
-import Actions from "@common/actions/Main";
-
-import {put, select} from "../Effects";
-import {request} from "../components/Request";
-
-const {
+import {
     changeModuleHealth,
     changePlayerEnergy,
     chooseModuleToRepairRequest,
-    playerUseModuleSecondTime,
-    useModuleSecondTimeRequest,
-} = Actions;
+    message, playerUseModuleSecondTime,
+    useModuleSecondTimeRequest
+} from "@common/Actions";
+import {MainModuleType, ModuleType} from "@common/Types";
+
+import {put, select} from "../runner/Effects";
+import {request} from "../components/Request";
 
 function* useRepairModule(repairModuleCost: number, secondTime: boolean): Generator<any, boolean, any> {
     const state = yield* select();
     const currentPlayer = StateGetters.currentPlayer(state);
 
-    const modulePosition = yield* request(
-        chooseModuleToRepairRequest(currentPlayer),
+    const {position} = yield* request(
+        chooseModuleToRepairRequest(currentPlayer.id),
         'chooseModuleToRepairResponse'
     );
 
-    if (!modulePosition) {
+    if (!position) {
         return false;
     }
 
-    yield* put(changeModuleHealth(currentPlayer, modulePosition, 1, "used repair module"));
-    yield* put(changePlayerEnergy(currentPlayer, -repairModuleCost, "used repair module"));
+    yield* put(changeModuleHealth(currentPlayer.id, position, 1, "used repair module"));
+    yield* put(changePlayerEnergy(currentPlayer.id, -repairModuleCost, "used repair module"));
 
-    const module = SpaceshipGetters.getModuleByPosition(currentPlayer.spaceship, modulePosition)!;
+    const module = SpaceshipGetters.getModuleByPosition(currentPlayer.spaceship, position)!;
 
     if (!secondTime) {
-        yield* put(Actions.message(currentPlayer, `чинит ${module.name}, используя ремонтный модуль (-${repairModuleCost}⚡)`));
+        yield* put(message(currentPlayer.id, `чинит ${module.name}, используя ремонтный модуль (-${repairModuleCost}⚡)`));
     } else {
-        yield* put(Actions.message(currentPlayer, `чинит ${module.name}, используя ремонтный модуль второй раз (-${repairModuleCost}⚡)`));
+        yield* put(message(currentPlayer.id, `чинит ${module.name}, используя ремонтный модуль второй раз (-${repairModuleCost}⚡)`));
     }
 
     return true;
@@ -52,13 +49,13 @@ function* tryUseModuleSecondTime(repairModuleCost: number) {
         && currentPlayer.energy >= repairModuleCost * 2
     ) {
         const useSecondTime = yield* request(
-            useModuleSecondTimeRequest(currentPlayer, ModuleType.RepairModule),
+            useModuleSecondTimeRequest(currentPlayer.id, ModuleType.RepairModule),
             'useModuleSecondTimeResponse'
         );
 
         if (!useSecondTime) return;
 
-        yield* put(playerUseModuleSecondTime(currentPlayer));
+        yield* put(playerUseModuleSecondTime(currentPlayer.id));
 
         yield* useRepairModule(repairModuleCost * 2, true);
     }

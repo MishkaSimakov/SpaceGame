@@ -1,31 +1,25 @@
-import Actions from "@common/actions/Main";
-
-import {put, select} from "../Effects";
 import {StateGetters} from "@common/getters/State";
-import {request} from "../components/Request";
-import {isModule} from "@common/modules/Module";
-import Spaceship from "@common/Spaceship";
-import {isEvent} from "@common/events/Event";
+import {message, playerRebuiltSpaceship, rebuildSpaceshipRequest} from "@common/Actions";
 
-const {
-    rebuildSpaceshipRequest,
-    playerRebuiltSpaceship
-} = Actions;
+import {put, select} from "../runner/Effects";
+import {request} from "../components/Request";
 
 export function* rebuildSpaceship() {
     const currentPlayer = StateGetters.currentPlayer(yield* select());
 
-    const newPositions = yield* request(
-        rebuildSpaceshipRequest(currentPlayer),
+    const {newSpaceship} = yield* request(
+        rebuildSpaceshipRequest(currentPlayer.id),
         'rebuildSpaceshipResponse'
     );
 
-    const playerCards = [...currentPlayer.spaceship.modules, ...currentPlayer.hand]
-        .filter(card => isModule(card));
+    const handModules = currentPlayer.hand
+        .filter(card => card.cardType === "module")
+        .map(card => card.module);
 
-    const newSpaceship = new Spaceship();
-    newSpaceship.modules = newPositions.map(m => {
-        const playerModule = playerCards.find(c => c.id === m.id)!;
+    const playerModules = [...currentPlayer.spaceship.modules, ...handModules];
+
+    const newModules = newSpaceship.map(m => {
+        const playerModule = playerModules.find(c => c.id === m.id)!;
 
         playerModule.x = m.position.x;
         playerModule.y = m.position.y;
@@ -35,9 +29,9 @@ export function* rebuildSpaceship() {
     });
 
     const newHand = currentPlayer.hand
-        .filter(card => isEvent(card) || !newPositions.find(newCard => newCard.id === card.id))
+        .filter(card => card.cardType === "event" || !newSpaceship.find(newCard => newCard.id === card.module.id))
 
-    yield* put(playerRebuiltSpaceship(currentPlayer, newSpaceship, newHand));
+    yield* put(playerRebuiltSpaceship(currentPlayer.id, {modules: newModules}, newHand));
 
-    yield* put(Actions.message(currentPlayer, `перестроил свой корабль`));
+    yield* put(message(currentPlayer.id, `перестроил свой корабль`));
 }

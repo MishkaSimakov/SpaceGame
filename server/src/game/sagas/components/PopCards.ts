@@ -1,40 +1,47 @@
-import Module from "@common/modules/Module";
-import {Event} from "@common/events/Event";
-import Actions from "@common/actions/Main";
+import {Card, CardType, EventCard, ModuleCard} from "@common/Types";
+import {clearDiscard, popCardFromStack, pushCardsToStack} from "@common/Actions";
 
-import {put, select} from "../Effects";
+import {put, select} from "../runner/Effects";
 import {shuffleArray} from "./Random";
-import {CardTypeFromName} from "@common/Types";
+import * as assert from "node:assert";
 
-export function* popOneCard<T extends "module" | "event">(type: T): Generator<any, CardTypeFromName<T>, any> {
-    let state = yield* select();
+type CardFromType<T extends CardType> = T extends CardType.Module
+    ? { cardType: "module", module: ModuleCard }
+    : { cardType: "event", event: EventCard };
 
-    let discards = state.discards[type];
+export function* popOneCard<T extends CardType>(type: T): Generator<any, CardFromType<T>> {
+    // temporary check, while transition to new types
+    assert.ok(type === CardType.Module || type === CardType.Event, "wrong card type passed into popOneCard or popCards");
 
-    if (state.stack[type].length === 0) {
-        if (type === "module") {
-            yield* shuffleArray(discards as Module[]);
-        } else {
-            yield* shuffleArray(discards as Event[]);
-        }
+    const state = yield* select();
 
-        yield* put(Actions.returnDiscardsToStack(type, discards));
+    const typeAsString = type === CardType.Module ? "module" : "event";
 
-        // update state after reduce
-        state = yield* select();
+    if (state.stack[typeAsString].length === 0) {
+        const discards = type === CardType.Module
+            ? state.discards.module.map<Card>(module => ({cardType: "module", module}))
+            : state.discards.event.map<Card>(event => ({cardType: "event", event}))
+
+        yield* shuffleArray(discards);
+        yield* put(pushCardsToStack(discards))
+        yield* put(clearDiscard(type));
     }
 
-    const topCard = state.stack[type].pop() as CardTypeFromName<T>;
-    yield* put(Actions.popCardFromHeap(type));
+    const topCard = (yield* select()).stack[typeAsString].pop();
+    yield* put(popCardFromStack(type));
 
-    return topCard;
+    if (type === CardType.Module) {
+        return {cardType: "module", module: topCard as ModuleCard} as CardFromType<T>;
+    } else {
+        return {cardType: "event", event: topCard as EventCard} as CardFromType<T>;
+    }
 }
 
-export function* popCards<T extends "module" | "event">(type: T, count: number): Generator<any, CardTypeFromName<T>[], any> {
-    const result: CardTypeFromName<T>[] = [];
+export function* popCards<T extends CardType>(type: T, count: number): Generator<any, CardFromType<T>[], any> {
+    const result: CardFromType<T>[] = [];
 
     for (let i = 0; i < count; ++i) {
-        result.push(yield* popOneCard(type));
+        result.push((yield* popOneCard(type)) as CardFromType<T>);
     }
 
     return result;

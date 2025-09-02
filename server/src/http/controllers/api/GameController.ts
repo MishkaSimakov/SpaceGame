@@ -1,11 +1,13 @@
 import {Request, Response} from "express";
-import {User} from "../../../entity/user";
-import {GameSettings} from "@common/GameSettings";
+
+import {GameSettings} from "@common/Types";
+
+import {User} from "@src/database/entity/user";
 import App from "../../../App";
-import {Game as GameDBEntity} from "../../../entity/game";
-import {Logger} from "../../../game/Logger";
+import {Game as GameDBEntity} from "../../../database/entity/game";
 import {AuthenticatedRequest} from "../../middleware/auth";
-import {gamePlayersValidator} from "../../../validation/GamePlayersValidator";
+import {FileActionsStorage} from "@src/game/FileActionsStorage";
+import {gamePlayersValidator} from "@src/http/validation/CreateGameValidator";
 
 
 export const create = async (req: AuthenticatedRequest, res: Response) => {
@@ -43,6 +45,6 @@ export const logs = async (req: Request, res: Response) => {
     }
 
     return res.status(200).json(
-        new Logger(gameEntity.logFilepath).getPastActions()
+        new FileActionsStorage(gameEntity.logFilepath).getAllActions()
     );
 };

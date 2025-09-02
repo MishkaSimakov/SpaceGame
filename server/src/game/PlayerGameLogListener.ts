@@ -1,11 +1,12 @@
 import {Message} from "@common/Types";
+
 import ActionsBus from "./ActionsBus";
-import {User} from "../entity/user";
+import {IUser} from "@src/game/interfaces/IUser";
 
 export class PlayerGameLogListener {
     messages: Message[] = [];
 
-    constructor(private busRef: ActionsBus, private users: User[]) {
+    constructor(private busRef: ActionsBus, private users: IUser[]) {
     }
 
     registerListeners() {

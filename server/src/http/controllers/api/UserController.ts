@@ -1,5 +1,5 @@
 import {Request, Response} from "express";
-import {User} from "../../../entity/user";
+import {User} from "../../../database/entity/user";
 import bcrypt from "bcrypt";
 
 export const login = async (req: Request, res: Response) => {

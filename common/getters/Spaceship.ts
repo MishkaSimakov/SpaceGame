@@ -1,7 +1,5 @@
-import {MainModule, MainModuleType} from "../modules/MainModule";
-import Module, {isMainModule, ModuleType} from "../modules/Module";
-import Vector2 from "../Vector2";
-import Spaceship from "../Spaceship";
+import {MainModuleType, ModuleCard, ModuleType, Spaceship, Vector2} from "../Types";
+import {ModuleGetters} from "./Module";
 
 type Direction = "left" | "top" | "right" | "bottom";
 
@@ -19,18 +17,12 @@ const opposites: Record<string, string> = {
     'bottom': 'top'
 }
 
-function getMainModule(ship: Spaceship): MainModule | undefined {
-    let filtered = getModulesByType(ship, ModuleType.MainModule);
-
-    if (filtered.length === 0) {
-        return undefined;
-    }
-
-    return filtered[0] as unknown as MainModule;
+function getMainModule(ship: Spaceship): ModuleCard | undefined {
+    return getModulesByType(ship, ModuleType.MainModule)[0];
 }
 
-function getMainModuleType(ship: Spaceship): MainModuleType {
-    return (getMainModule(ship) as MainModule)?.mainModuleType;
+function getMainModuleType(ship: Spaceship): MainModuleType | undefined {
+    return getMainModule(ship)?.mainModuleType;
 }
 
 function getTotalCapacity(ship: Spaceship): number {
@@ -41,9 +33,9 @@ function getTotalEnergyIncrease(ship: Spaceship): number {
     return ship.modules.reduce((ps, card) => ps + card.energyIncrease, 0);
 }
 
-function canConnectModule(ship: Spaceship, module: Module, x: number, y: number): boolean;
-function canConnectModule(ship: Spaceship, module: Module): boolean;
-function canConnectModule(ship: Spaceship, module: Module, x?: number, y?: number): boolean {
+function canConnectModule(ship: Spaceship, module: ModuleCard, x: number, y: number): boolean;
+function canConnectModule(ship: Spaceship, module: ModuleCard): boolean;
+function canConnectModule(ship: Spaceship, module: ModuleCard, x?: number, y?: number): boolean {
     if (x === undefined || y === undefined) {
         x = module.x;
         y = module.y;
@@ -66,10 +58,10 @@ function canConnectModule(ship: Spaceship, module: Module, x?: number, y?: numbe
             hasConnection = true;
     }
 
-    return hasConnection || isMainModule(module);
+    return hasConnection || ModuleGetters.isMain(module);
 }
 
-function getConnectorInDirection(module: Module, direction: string): number {
+function getConnectorInDirection(module: ModuleCard, direction: string): number {
     const directions = ["right", "top", "left", "bottom"];
 
     let index = directions.indexOf(direction);
@@ -78,9 +70,9 @@ function getConnectorInDirection(module: Module, direction: string): number {
     return module.connectors[directions[index] as keyof typeof module.connectors];
 }
 
-function getModuleByPosition(ship: Spaceship, x: number, y: number): Module | undefined;
-function getModuleByPosition(ship: Spaceship, position: Vector2): Module | undefined;
-function getModuleByPosition(ship: Spaceship, x: (number | Vector2), y?: number): Module | undefined {
+function getModuleByPosition(ship: Spaceship, x: number, y: number): ModuleCard | undefined;
+function getModuleByPosition(ship: Spaceship, position: Vector2): ModuleCard | undefined;
+function getModuleByPosition(ship: Spaceship, x: (number | Vector2), y?: number): ModuleCard | undefined {
     if (typeof x == "number") {
         return ship.modules.filter(card => card.x === x && card.y === y)[0];
     } else if (x && x.x !== undefined && x.y !== undefined) {
@@ -88,7 +80,7 @@ function getModuleByPosition(ship: Spaceship, x: (number | Vector2), y?: number)
     }
 }
 
-function getPossibleConnectionsFor(ship: Spaceship, module: Module): number[][] {
+function getPossibleConnectionsFor(ship: Spaceship, module: ModuleCard): number[][] {
     let possible_connections = []
 
     for (let i in ship.modules) {
@@ -106,7 +98,7 @@ function getPossibleConnectionsFor(ship: Spaceship, module: Module): number[][] 
     return possible_connections;
 }
 
-function getPossibleRotationsFor(ship: Spaceship, module: Module, x: number, y: number): number[] {
+function getPossibleRotationsFor(ship: Spaceship, module: ModuleCard, x: number, y: number): number[] {
     const initRotation = module.rotation;
     let possibleRotations = [];
 
@@ -122,9 +114,9 @@ function getPossibleRotationsFor(ship: Spaceship, module: Module, x: number, y: 
     return possibleRotations;
 }
 
-function getModulesConnectedTo(ship: Spaceship, module: Module) {
+function getModulesConnectedTo(ship: Spaceship, module: ModuleCard) {
     let connectedModules: {
-        [Key in Direction]?: Module
+        [Key in Direction]?: ModuleCard
     } = {};
 
     for (let [index, direction] of Object.entries(directions)) {
@@ -142,7 +134,7 @@ function getModulesConnectedTo(ship: Spaceship, module: Module) {
     return connectedModules;
 }
 
-function isAdjacent(ship: Spaceship, first: Module, second: Module) {
+function isAdjacent(ship: Spaceship, first: ModuleCard, second: ModuleCard) {
     for (let module of Object.values(getModulesConnectedTo(ship, first))) {
         if (module === second) {
             return true;
@@ -152,7 +144,7 @@ function isAdjacent(ship: Spaceship, first: Module, second: Module) {
     return false;
 }
 
-function getModulesByType(ship: Spaceship, type: ModuleType): Module[] {
+function getModulesByType(ship: Spaceship, type: ModuleType): ModuleCard[] {
     return ship.modules.filter((m) => m.type === type);
 }
 
@@ -180,7 +172,7 @@ function hasDamagedModules(ship: Spaceship): boolean {
     return false;
 }
 
-function getUnconnectedModules(ship: Spaceship): Module[] {
+function getUnconnectedModules(ship: Spaceship): ModuleCard[] {
     let unconnectedModules = ship.modules;
     const mainModule = getMainModule(ship);
 
@@ -188,7 +180,7 @@ function getUnconnectedModules(ship: Spaceship): Module[] {
         return unconnectedModules;
     }
 
-    let addedModules: Module[] = [mainModule];
+    let addedModules: ModuleCard[] = [mainModule];
 
     do {
         let newAddedModules = [];
@@ -215,8 +207,7 @@ function hasRepairModule(ship: Spaceship): boolean {
 function checkConfiguration(ship: Spaceship): boolean {
     // check that all positions are different
     const positions = ship.modules
-        .map(module => new Vector2(module.x, module.y))
-        .map(position => `${position.x},${position.y}`);
+        .map(module => `${module.x},${module.y}`);
 
     if (new Set(positions).size !== positions.length) {
         return false;
@@ -260,23 +251,27 @@ function damageInfoInternal(
     let shouldDeactivateProtector = false;
 
     const targetModule = SpaceshipGetters.getModuleByPosition(shipCopy, target)!;
+    const activatedProtector = shipCopy.activatedProtector
+        ? SpaceshipGetters.getModuleByPosition(shipCopy, shipCopy.activatedProtector)
+        : undefined;
 
-    if (shipCopy.activatedProtector && SpaceshipGetters.isAdjacent(shipCopy, targetModule, shipCopy.activatedProtector)) {
-        const protectorPosition = new Vector2(shipCopy.activatedProtector.x, shipCopy.activatedProtector.y);
-
-        if (shipCopy.activatedProtector.health > damage) {
+    if (activatedProtector && SpaceshipGetters.isAdjacent(shipCopy, targetModule, activatedProtector)) {
+        if (activatedProtector.health > damage) {
             return {
                 damaged: [{
-                    position: protectorPosition,
+                    position: {
+                        x: activatedProtector.x,
+                        y: activatedProtector.y
+                    },
                     damage: damage,
                 }],
                 destroyed: [],
                 shouldDeactivateProtector: false
             };
         } else {
-            damage -= shipCopy.activatedProtector.health;
+            damage -= activatedProtector.health;
 
-            destroyed.set(`${shipCopy.activatedProtector.x},${shipCopy.activatedProtector.y}`, byNuclearReactor);
+            destroyed.set(`${activatedProtector.x},${activatedProtector.y}`, byNuclearReactor);
 
             shipCopy.activatedProtector = undefined;
             shouldDeactivateProtector = true;
@@ -288,15 +283,13 @@ function damageInfoInternal(
     damaged.set(targetKey, targetDamage + damage);
     targetModule.health -= damage;
 
-    console.log(damaged, destroyed);
-
     if (targetModule.health <= 0) {
         damaged.delete(targetKey);
         destroyed.set(targetKey, byNuclearReactor);
 
         if (targetModule.type === ModuleType.NuclearReactor) {
             for (let module of Object.values(SpaceshipGetters.getModulesConnectedTo(shipCopy, targetModule))) {
-                const position = new Vector2(module.x, module.y);
+                const position = {x: module.x, y: module.y};
                 // handle loop made of nuclear reactors (only one damage to all connected modules)
                 if (destroyed.has(`${position.x},${position.y}`))
                     continue;
@@ -310,28 +303,36 @@ function damageInfoInternal(
     return {
         destroyed: Array.from(destroyed).map(([p, b]) => {
             const [x, y] = p.split(',').map(Number);
-            return {position: new Vector2(x, y), byNuclearReactor: b};
+            return {position: {x, y}, byNuclearReactor: b};
         }),
 
         damaged: Array.from(damaged).map(([p, d]) => {
             const [x, y] = p.split(',').map(Number);
-            return {position: new Vector2(x, y), damage: d};
+            return {position: {x, y}, damage: d};
         }),
 
         shouldDeactivateProtector
     };
 }
 
-function damageInfo(ship: Spaceship, target: Module, damage: number) {
+function damageInfo(ship: Spaceship, target: ModuleCard, damage: number) {
     const shipCopy = structuredClone(ship);
     return damageInfoInternal(
         shipCopy,
-        new Vector2(target.x, target.y),
+        {x: target.x, y: target.y},
         damage,
         false,
         new Map<string, number>(),
         new Map<string, boolean>()
     );
+}
+
+function mapForRebuildSpaceshipResponse(ship: Spaceship) {
+    return ship.modules.map(module => ({
+        id: module.id,
+        position: {x: module.x, y: module.y},
+        rotation: module.rotation
+    }));
 }
 
 export const SpaceshipGetters = {
@@ -353,5 +354,6 @@ export const SpaceshipGetters = {
     getUnconnectedModules,
     hasRepairModule,
     checkConfiguration,
-    damageInfo
+    damageInfo,
+    mapForRebuildSpaceshipResponse
 };

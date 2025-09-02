@@ -1,7 +1,7 @@
-import {Action} from "@common/actions/Action";
-import Actions from "@common/actions/Main"
+import {Action} from "@common/ActionsHelpers";
+import * as Actions from "@common/Actions"
 
-import {all, Effect, put, take} from "../Effects";
+import {all, Effect, put, take} from "../runner/Effects";
 
 type ActionPayload<T extends keyof typeof Actions> = ReturnType<(typeof Actions)[T]>["payload"];
 

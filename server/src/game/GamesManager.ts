@@ -1,15 +1,17 @@
+import * as assert from "node:assert";
 import {Server, Socket} from "socket.io";
-import Player from "../../../common/Player";
-import {User} from "../entity/user";
+import path from "path";
 import jwt, {JwtPayload} from "jsonwebtoken";
-import {Game as GameDBEntity, GameStatus} from "../entity/game";
+
+import {GameSettings, Player, PlayerId} from "@common/Types";
+import {SocketInitPayload} from "@common/SocketsTypes";
+
+import {User} from "../database/entity/user";
+import {Game as GameDBEntity, GameStatus} from "../database/entity/game";
 import Game from "./Game";
 import SocketsManager from "./io/SocketsManager";
-import {GameSettings} from "@common/GameSettings";
-import {SocketInitPayload} from "@common/Types";
-import path from "path";
-import {Logger} from "./Logger";
-import * as assert from "node:assert";
+import {FileActionsStorage} from "@src/game/FileActionsStorage";
+import {JSClock} from "@src/game/JSClock";
 
 export default class GamesManager {
     io: Server;
@@ -33,9 +35,7 @@ export default class GamesManager {
                     game = result.game;
                     player = result.player;
 
-                    game.sockets.onPlayerConnect(player.id, socket.id);
-                    game.syncPlayersData();
-                    game.sockets.tryToEmitEvent(player.id);
+                    game.onPlayerConnect(player.id, socket.id);
                 }
             });
 
@@ -44,10 +44,7 @@ export default class GamesManager {
                     return;
                 }
 
-                console.log(`${player.name} disconnected`);
-
-                game.sockets.onPlayerDisconnect(player.id);
-                game.syncPlayersData();
+                game.onPlayerDisconnect(player.id);
             });
         });
     }
@@ -59,10 +56,7 @@ export default class GamesManager {
             return;
         }
 
-        game.sagaRunner.cancel('gameSaga');
-        game.sockets.disconnectEveryone();
-
-        delete this.activeGames[gameId];
+        game.deactivate();
     }
 
     isActive(gameId: string): boolean {
@@ -119,19 +113,16 @@ export default class GamesManager {
         return gameId;
     }
 
-    async storeGameResult(gameId: string, game: Game) {
+    async storeGameResult(gameId: string, winner: PlayerId) {
         const gameEntity = await GameDBEntity.findOneBy({
             id: gameId
         });
 
         assert.ok(gameEntity);
 
-        const winner = game.state.players.find(p => !p.lose);
-        assert.ok(winner);
-
         // TODO: strict typing for typeorm
         // @ts-ignore
-        gameEntity.winner = await User.findOneBy({id: winner.id});
+        gameEntity.winner = await User.findOneBy({id: winner});
         gameEntity.status = GameStatus.FINISHED;
         gameEntity.finishedAt = new Date();
 
@@ -165,16 +156,19 @@ export default class GamesManager {
                 gameEntity.players,
                 gameEntity.settings,
                 new SocketsManager(this.io, gameEntity.players.map(u => u.id)),
-                new Logger(gameEntity.logFilepath)
+                new FileActionsStorage(gameEntity.logFilepath),
+                new JSClock()
             );
 
             game.activate()
                 .then(async (result) => {
                     game.sockets.disconnectEveryone();
 
-                    if (result.status === "finished") {
-                        await this.storeGameResult(gameEntity.id, game);
+                    if (result.type === "finished") {
+                        await this.storeGameResult(gameEntity.id, result.winner);
                     }
+
+                    delete this.activeGames[gameEntity.id];
                 })
                 .catch(err => this.reportGameError(gameEntity, err));
 

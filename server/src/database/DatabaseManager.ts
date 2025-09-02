@@ -1,6 +1,6 @@
 import {DataSource} from "typeorm";
-import {User} from "../entity/user";
-import {Game} from "../entity/game";
+import {User} from "./entity/user";
+import {Game} from "./entity/game";
 import * as process from "node:process";
 
 export default class DatabaseManager {

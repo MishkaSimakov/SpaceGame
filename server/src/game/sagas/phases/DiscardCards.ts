@@ -1,7 +1,7 @@
 import {StateGetters} from "@common/getters/State";
-import Actions from "@common/actions/Main";
+import {discardCardsRequest, message, popCardsFromHand, pushCardsToDiscard} from "@common/Actions";
 
-import {put, select} from "../Effects";
+import {put, select} from "../runner/Effects";
 import {request} from "../components/Request";
 
 export function* discardCards() {
@@ -12,12 +12,15 @@ export function* discardCards() {
         return;
     }
 
-    const discardedCardsIndexes = yield* request(
-        Actions.discardCardsRequest(currentPlayer),
+    const {indexes} = yield* request(
+        discardCardsRequest(currentPlayer.id),
         'discardCardsResponse'
     );
 
-    yield* put(Actions.disposeCardsFromPlayerHand(currentPlayer, discardedCardsIndexes, "discard cards phase"));
+    const cards = currentPlayer.hand.filter((_, index) => indexes.includes(index));
 
-    yield* put(Actions.message(currentPlayer, `сбросил ${discardedCardsIndexes.length} карт в конце хода`));
+    yield* put(popCardsFromHand(currentPlayer.id, indexes, "discard cards phase"));
+    yield* put(pushCardsToDiscard(cards));
+
+    yield* put(message(currentPlayer.id, `сбросил ${indexes.length} карт в конце хода`));
 }

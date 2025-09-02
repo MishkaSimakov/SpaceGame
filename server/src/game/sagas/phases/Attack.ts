@@ -1,22 +1,18 @@
-import {AttackReason} from "@common/Types";
-import {ModuleType} from "@common/modules/Module";
-import {MainModuleType} from "@common/modules/MainModule";
-import {StateGetters} from "@common/getters/State";
-import {PlayerGetters} from "@common/getters/Player";
-import Actions from "@common/actions/Main";
+import {AttackReason, MainModuleType, ModuleType} from "@common/Types";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
-
-import {put, select} from "../Effects";
-import {request} from "../components/Request";
-import {fight} from "../components/Fight";
-
-const {
+import {PlayerGetters} from "@common/getters/Player";
+import {StateGetters} from "@common/getters/State";
+import {
     beginFight,
     changePlayerEnergy,
     choosePlayerForAttackRequest,
-    playerUseModuleSecondTime,
-    useModuleSecondTimeRequest,
-} = Actions;
+    message, playerUseModuleSecondTime,
+    useModuleSecondTimeRequest
+} from "@common/Actions";
+
+import {put, select} from "../runner/Effects";
+import {request} from "../components/Request";
+import {fight} from "../components/Fight";
 
 export function* attack() {
     let state = yield* select();
@@ -27,7 +23,7 @@ export function* attack() {
     }
 
     const {victim} = yield* request(
-        choosePlayerForAttackRequest(currentPlayer, AttackReason.AttackModule, false),
+        choosePlayerForAttackRequest(currentPlayer.id, AttackReason.AttackModule, false),
         'choosePlayerForAttackResponse'
     );
 
@@ -36,10 +32,10 @@ export function* attack() {
     }
 
     const energyCost = SpaceshipGetters.getModulesByType(currentPlayer.spaceship, ModuleType.AttackModule)[0].energyCost;
-    yield* put(changePlayerEnergy(currentPlayer, -energyCost, "use attack module"));
+    yield* put(changePlayerEnergy(currentPlayer.id, -energyCost, "use attack module"));
 
     yield* put(beginFight(currentPlayer.id, victim, "use attack module"));
-    yield* put(Actions.message(currentPlayer, `напал на ${StateGetters.playerById(state, victim)!.name}, используя абордажный модуль (-${energyCost}⚡)`));
+    yield* put(message(currentPlayer.id, `напал на ${StateGetters.playerById(state, victim)!.name}, используя абордажный модуль (-${energyCost}⚡)`));
     yield* fight();
 
     // update state
@@ -50,17 +46,17 @@ export function* attack() {
         && SpaceshipGetters.getMainModuleType(currentPlayer.spaceship) === MainModuleType.UseModuleSecondTime
         && currentPlayer.energy >= energyCost * 2) {
         const useSecondTime = yield* request(
-            useModuleSecondTimeRequest(currentPlayer, ModuleType.AttackModule),
+            useModuleSecondTimeRequest(currentPlayer.id, ModuleType.AttackModule),
             'useModuleSecondTimeResponse'
         );
 
         if (!useSecondTime) return;
 
-        yield* put(changePlayerEnergy(currentPlayer, -energyCost * 2, "use attack module second time"));
-        yield* put(playerUseModuleSecondTime(currentPlayer));
+        yield* put(changePlayerEnergy(currentPlayer.id, -energyCost * 2, "use attack module second time"));
+        yield* put(playerUseModuleSecondTime(currentPlayer.id));
 
         const {victim} = yield* request(
-            choosePlayerForAttackRequest(currentPlayer, AttackReason.UsingAttackModuleSecondTime, true),
+            choosePlayerForAttackRequest(currentPlayer.id, AttackReason.UsingAttackModuleSecondTime, true),
             'choosePlayerForAttackResponse'
         );
 
@@ -69,7 +65,7 @@ export function* attack() {
         }
 
         yield* put(beginFight(currentPlayer.id, victim, "use attack module second time"));
-        yield* put(Actions.message(currentPlayer, `напал на ${StateGetters.playerById(state, victim)!.name}, используя абордажный модуль второй раз (-${energyCost * 2}⚡)`));
+        yield* put(message(currentPlayer.id, `напал на ${StateGetters.playerById(state, victim)!.name}, используя абордажный модуль второй раз (-${energyCost * 2}⚡)`));
         yield* fight();
     }
 }

@@ -1,5 +1,6 @@
-import {Action} from "@common/actions/Action";
-import Actions from "@common/actions/Main"
+import {Action} from "@common/ActionsHelpers";
+import * as Actions from "@common/Actions"
+import {deferred, Deferred} from "../helpers/Deferred";
 
 export type ActionDescriptor = (keyof typeof Actions) | "*";
 
@@ -8,24 +9,49 @@ export type ActionListener<T extends ActionDescriptor> = (action:
                                                               ? ReturnType<(typeof Actions)[T]>
                                                               : T extends "*" ? Action<string, any, any> : never) => void;
 
-export abstract class Middleware {
-    abstract apply(action: Action<string, any, any>): Action<string, any, any> | undefined;
+export interface IMiddleware {
+    apply(action: Action<string, any, any>): Action<string, any, any> | undefined;
 }
+
+type ListenersFrame = {
+    listeners: (() => void)[]
+    deferred: Deferred<void>
+};
 
 export default class ActionsBus {
     private listeners = new Map<string, ActionListener<any>[]>();
-    private listenersQueue: (() => void)[] = [];
+    private listenersQueue: ListenersFrame[] = [];
     private isProcessingQueue: boolean = false;
 
-    private middlewares: Middleware[] = [];
+    private middlewares: IMiddleware[] = [];
 
-    emit<A extends Action<string, any, any>>(action: A) {
-        for (const middleware of this.middlewares) {
-            action = middleware.apply(action) as A;
+    lock(lambda: () => void) {
+        const oldValue = this.isProcessingQueue;
 
-            if (action === undefined) {
-                return;
+        this.isProcessingQueue = true;
+
+        lambda();
+
+        this.isProcessingQueue = oldValue;
+
+        this.tryProcessQueue();
+    }
+
+    emit<A extends Action<string, any, any>>(action: A): Promise<void> {
+        const def = deferred<void>();
+
+        try {
+            for (const middleware of this.middlewares) {
+                action = middleware.apply(action) as A;
+
+                if (action === undefined) {
+                    def.resolve();
+                    return def.promise;
+                }
             }
+        } catch (error) {
+            def.reject(error);
+            return def.promise;
         }
 
         const listeners = Array.from(this.listeners.get(action.type) ?? []);
@@ -33,9 +59,14 @@ export default class ActionsBus {
         const wildcardListeners = Array.from(this.listeners.get('*') ?? []);
         listeners.push(...wildcardListeners);
 
-        this.listenersQueue.push(...listeners.map(l => l.bind(this, action)));
+        this.listenersQueue.push({
+            listeners: listeners.map(l => l.bind(this, action)),
+            deferred: def
+        });
 
-        this.#tryProcessQueue();
+        this.tryProcessQueue();
+
+        return def.promise;
     }
 
     on<T extends ActionDescriptor>(actionDescriptor: T, listener: ActionListener<T>) {
@@ -54,30 +85,28 @@ export default class ActionsBus {
         }
     }
 
-    once<T extends ActionDescriptor>(actionDescriptor: T, listener: ActionListener<T>) {
-        const onceListener: ActionListener<T> = (payload) => {
-            listener(payload);
-            this.off(actionDescriptor, onceListener);
-        };
-
-        this.on(actionDescriptor, onceListener);
-    }
-
-    registerMiddleware<T extends Middleware>(middleware: T) {
+    registerMiddleware<T extends IMiddleware>(middleware: T) {
         this.middlewares.push(middleware);
     }
 
-    #tryProcessQueue() {
+    private tryProcessQueue() {
         if (this.isProcessingQueue) {
             return;
         }
 
         this.isProcessingQueue = true;
 
-        let listener: () => void;
+        let frame: ListenersFrame;
+        while ((frame = this.listenersQueue.shift()!)) {
+            try {
+                for (const listener of frame.listeners) {
+                    listener();
+                }
 
-        while ((listener = this.listenersQueue.shift()!)) {
-            listener();
+                frame.deferred.resolve();
+            } catch (err) {
+                frame.deferred.reject(err);
+            }
         }
 
         this.isProcessingQueue = false;

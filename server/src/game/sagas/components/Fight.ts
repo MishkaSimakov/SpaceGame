@@ -1,40 +1,31 @@
+import * as assert from "node:assert";
+
 import {PlayerGetters} from "@common/getters/Player";
 import {StateGetters} from "@common/getters/State";
-import {EventTypes, isEvent} from "@common/events/Event";
-import {MainModuleType} from "@common/modules/MainModule";
-import * as assert from "node:assert";
-import Vector2 from "@common/Vector2";
-import Player from "@common/Player";
-import {request} from "./Request";
-import Actions from "@common/actions/Main";
+import {EventType, MainModuleType, Player, RunawayType, TimeRecordType} from "@common/Types";
+import {
+    activateProtector,
+    changePlayerEnergy,
+    chooseModuleToDamageByEventCardRequest,
+    chooseProtectorRequest, chooseTargetRequest, chooseWeaponAndTargetRequest, deactivateProtectorIfActive, endFight,
+    message,
+    popCardsFromHand, shiftFightTurnToNextPlayer, tryToRunawayRequest,
+    useEventCardToDealDamageRequest,
+    useModuleSecondTimeRequest
+} from "@common/Actions";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
-import {RunawayType} from "@common/actions/EventCards";
 
-import {put, select} from "../Effects";
+import {put, select} from "../runner/Effects";
 import {damageModule} from "./DamageModule";
 import {dice} from "./Random";
 import {addTimeRecord} from "./Time";
-import {TimeRecordType} from "../../GameState";
+import {request} from "./Request";
+import {LossSignal} from "@src/game/middlewares/LossSignal";
 
-const {
-    chooseModuleToDamageByEventCardRequest,
-    chooseProtectorRequest,
-    chooseTargetRequest,
-    chooseWeaponAndTargetRequest,
-    tryToRunawayRequest,
-    useEventCardToDealDamageRequest,
-    useModuleSecondTimeRequest,
-    activateProtector,
-    changePlayerEnergy,
-    deactivateProtectorIfActive,
-    endFight,
-    popCardFromPlayerHand,
-    shiftFightTurnToNextPlayer
-} = Actions;
 
 function* getCombatants() {
     const state = yield* select();
-    assert.ok(state.fight !== undefined);
+    assert.ok(state.fight);
 
     const fight = state.fight;
 
@@ -48,18 +39,18 @@ function* getCombatants() {
 }
 
 function* chooseProtectors(victim: Player) {
-    const protectorPosition: Vector2 | undefined = yield* request(
-        chooseProtectorRequest(victim),
+    const {position} = yield* request(
+        chooseProtectorRequest(victim.id),
         'chooseProtectorResponse'
     );
 
-    if (protectorPosition) {
-        const protector = SpaceshipGetters.getModuleByPosition(victim.spaceship, protectorPosition)!;
+    if (position) {
+        const protector = SpaceshipGetters.getModuleByPosition(victim.spaceship, position)!;
 
-        yield* put(activateProtector(victim, protectorPosition));
-        yield* put(changePlayerEnergy(victim, -protector.energyCost, "use protector"));
+        yield* put(activateProtector(victim.id, position));
+        yield* put(changePlayerEnergy(victim.id, -protector.energyCost, "use protector"));
 
-        yield* put(Actions.message(victim, `активирует ${protector.name} (-${protector.energyCost}⚡)`));
+        yield* put(message(victim.id, `активирует ${protector.name} (-${protector.energyCost}⚡)`));
     }
 }
 
@@ -67,7 +58,7 @@ function* tryDamageByEventCard() {
     const {attacker, victim} = yield* getCombatants();
 
     const damageLaterCardIndex = attacker.hand.findIndex(
-        c => isEvent(c) && c.type === EventTypes.SaveCardAndThenDealDamage
+        c => c.cardType === "event" && c.event.type === EventType.SaveCardAndThenDealDamage
     );
 
     if (damageLaterCardIndex === -1) {
@@ -78,48 +69,48 @@ function* tryDamageByEventCard() {
         return;
     }
 
-    const willUse = yield* request(
-        useEventCardToDealDamageRequest(attacker),
+    const {useEventCard} = yield* request(
+        useEventCardToDealDamageRequest(attacker.id),
         'useEventCardToDealDamageResponse'
     );
 
-    if (!willUse) {
+    if (!useEventCard) {
         return;
     }
 
-    const position = yield* request(
-        chooseModuleToDamageByEventCardRequest(attacker, victim),
+    const {position} = yield* request(
+        chooseModuleToDamageByEventCardRequest(attacker.id, victim.id),
         'chooseModuleToDamageByEventCardResponse'
     );
 
-    yield* put(popCardFromPlayerHand(attacker, damageLaterCardIndex));
+    yield* put(popCardsFromHand(attacker.id, [damageLaterCardIndex], "use damage later event card"));
 
     yield* damageModule(victim, position, 1, {type: "EventCard"});
 
     const module = SpaceshipGetters.getModuleByPosition(victim.spaceship, position)!;
-    yield* put(Actions.message(attacker, `атакует ${module.name}, используя карточку действия (-1❤)`));
+    yield* put(message(attacker.id, `атакует ${module.name}, используя карточку действия (-1❤)`));
 }
 
 function* askForRunawayViaDice() {
     const state = yield* select();
     const {attacker} = yield* getCombatants();
 
-    const isTryingToRunaway = yield* request(
-        tryToRunawayRequest(attacker, RunawayType.DICE),
+    const {willRunaway} = yield* request(
+        tryToRunawayRequest(attacker.id, RunawayType.Dice),
         'tryToRunawayResponse'
     );
 
-    if (!isTryingToRunaway) {
+    if (!willRunaway) {
         return false;
     }
 
     const diceResult = yield* dice(attacker);
 
     if (diceResult >= state.settings.diceResultToRunaway) {
-        yield* put(Actions.message(attacker, `пытался сбежать, выпало ${diceResult} => сбежал`));
+        yield* put(message(attacker.id, `пытался сбежать, выпало ${diceResult} => сбежал`));
         return true;
     } else {
-        yield* put(Actions.message(attacker, `пытался сбежать, выпало ${diceResult} => не сбежал`));
+        yield* put(message(attacker.id, `пытался сбежать, выпало ${diceResult} => не сбежал`));
         return false;
     }
 }
@@ -132,17 +123,17 @@ function* askForRunawayViaMainModule() {
         return false;
     }
 
-    const isTryingToRunaway = yield* request(
-        tryToRunawayRequest(attacker, RunawayType.MAIN_MODULE),
+    const {willRunaway} = yield* request(
+        tryToRunawayRequest(attacker.id, RunawayType.MainModule),
         'tryToRunawayResponse'
     );
 
-    if (!isTryingToRunaway) {
+    if (!willRunaway) {
         return false;
     }
 
-    yield* put(changePlayerEnergy(attacker, -state.settings.mainModuleRunawayEnergyCost, "used main module to run away"));
-    yield* put(Actions.message(attacker, `сбежал, используя командный модуль (-${state.settings.mainModuleRunawayEnergyCost}⚡)`));
+    yield* put(changePlayerEnergy(attacker.id, -state.settings.mainModuleRunawayEnergyCost, "used main module to run away"));
+    yield* put(message(attacker.id, `сбежал, используя командный модуль (-${state.settings.mainModuleRunawayEnergyCost}⚡)`));
 
     return true;
 }
@@ -152,39 +143,39 @@ function* damageByWeapon() {
 
     if (PlayerGetters.canDamage(attacker)) {
         const {weaponPosition, targetPosition} = yield* request(
-            chooseWeaponAndTargetRequest(attacker, victim),
+            chooseWeaponAndTargetRequest(attacker.id, victim.id),
             'chooseWeaponAndTargetResponse'
         );
 
         const weapon = SpaceshipGetters.getModuleByPosition(attacker.spaceship, weaponPosition)!;
 
         const target = SpaceshipGetters.getModuleByPosition(victim.spaceship, targetPosition)!;
-        yield* put(Actions.message(attacker, `атаковал ${target.name} (-${weapon.energyCost}⚡ -${weapon.strength}❤️)`));
+        yield* put(message(attacker.id, `атаковал ${target.name} (-${weapon.energyCost}⚡ -${weapon.strength}❤️)`));
 
-        yield* put(changePlayerEnergy(attacker, -weapon.energyCost, "used weapon in fight"));
+        yield* put(changePlayerEnergy(attacker.id, -weapon.energyCost, "used weapon in fight"));
         yield* damageModule(victim, targetPosition, weapon.strength, {type: "Player", attacker});
 
         // update state
         ({attacker, victim} = yield* getCombatants());
 
         if (SpaceshipGetters.getMainModuleType(attacker.spaceship) === MainModuleType.UseModuleSecondTime && attacker.energy >= weapon.energyCost * 2) {
-            let useSecondTime = yield* request(
-                useModuleSecondTimeRequest(attacker, weapon.type),
+            let {use} = yield* request(
+                useModuleSecondTimeRequest(attacker.id, weapon.type),
                 'useModuleSecondTimeResponse'
             );
 
-            if (useSecondTime) {
-                const targetPosition = yield* request(
-                    chooseTargetRequest(attacker, victim),
+            if (use) {
+                const {position} = yield* request(
+                    chooseTargetRequest(attacker.id, victim.id),
                     'chooseTargetResponse'
                 );
 
-                const target = SpaceshipGetters.getModuleByPosition(victim.spaceship, targetPosition)!;
-                yield* put(Actions.message(attacker, `атаковал ${target.name}, используя оружие второй раз (-${weapon.energyCost * 2}⚡ -${weapon.strength}❤️)`));
+                const target = SpaceshipGetters.getModuleByPosition(victim.spaceship, position)!;
+                yield* put(message(attacker.id, `атаковал ${target.name}, используя оружие второй раз (-${weapon.energyCost * 2}⚡ -${weapon.strength}❤️)`));
 
-                yield* put(changePlayerEnergy(attacker, -weapon.energyCost * 2, "used weapon in fight second time"));
+                yield* put(changePlayerEnergy(attacker.id, -weapon.energyCost * 2, "used weapon in fight second time"));
 
-                yield* damageModule(victim, targetPosition, weapon.strength, {type: "Player", attacker});
+                yield* damageModule(victim, position, weapon.strength, {type: "Player", attacker});
             }
         }
     }
@@ -216,10 +207,21 @@ function* makeFightIteration() {
     }
 
     yield* damageByWeapon();
-    yield* put(deactivateProtectorIfActive(victim));
+    yield* put(deactivateProtectorIfActive(victim.id));
     yield* addTimeRecord(victim.id, TimeRecordType.FIGHT_TURN_ENDED);
 
     return true;
+}
+
+function* cleanupAfterFight() {
+    yield* addTimeRecord(StateGetters.currentPlayer(yield* select()).id, TimeRecordType.DEFAULT_TURN_CONTINUED);
+
+    const {victim, attacker} = yield* getCombatants();
+
+    yield* put(endFight());
+
+    yield* put(deactivateProtectorIfActive(victim.id));
+    yield* put(deactivateProtectorIfActive(attacker.id));
 }
 
 export function* fight() {
@@ -230,7 +232,7 @@ export function* fight() {
             const {victim, attacker} = yield* getCombatants();
 
             if (!PlayerGetters.canDamage(victim) && !PlayerGetters.canDamage(attacker)) {
-                yield* put(Actions.message(attacker, `никто не может атаковать => бой окончен`));
+                yield* put(message(attacker.id, `никто не может атаковать => бой окончен`));
                 break;
             }
 
@@ -242,14 +244,18 @@ export function* fight() {
             yield* put(shiftFightTurnToNextPlayer());
         }
 
-        // check that all protectors are disabled
-        yield* addTimeRecord(StateGetters.currentPlayer(yield* select()).id, TimeRecordType.DEFAULT_TURN_CONTINUED);
-    } finally {
-        const {victim, attacker} = yield* getCombatants();
+        yield* cleanupAfterFight();
+    } catch (error) {
+        if (error instanceof LossSignal) {
+            const state = yield* select();
 
-        yield* put(endFight());
-
-        yield* put(deactivateProtectorIfActive(victim));
-        yield* put(deactivateProtectorIfActive(attacker));
+            if (state.currentPlayerId !== error.player) {
+                yield* cleanupAfterFight();
+            } else {
+                throw error;
+            }
+        } else {
+            throw error;
+        }
     }
 }

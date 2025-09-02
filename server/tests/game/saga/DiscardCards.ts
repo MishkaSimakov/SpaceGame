@@ -1,10 +1,13 @@
 import {test} from "uvu";
-import * as assert from "node:assert";
+import * as assert from "uvu/assert";
+
+import {ModuleGetters} from "@common/getters/Module";
+import {discardCardsResponse} from "@common/Actions";
+
 import {attachReducers, fakeGameState} from "../Utils";
-import {SagaRunner} from "../../../src/game/sagas/SagaRunner";
 import ActionsBus from "../../../src/game/ActionsBus";
-import {discardCards} from "../../../src/game/sagas/phases/DiscardCards";
-import Actions from "@common/actions/Main";
+import {discardCards} from "@src/game/sagas/phases/DiscardCards";
+import {runSaga} from "@src/game/sagas/runner/RunSaga";
 
 
 test('doesntDiscardWhenNotEnoughCards', async () => {
@@ -14,18 +17,16 @@ test('doesntDiscardWhenNotEnoughCards', async () => {
     const cardsCount = 4;
 
     for (let i = 0; i < cardsCount; ++i) {
-        player.hand.push(state.stack.module.pop()!);
+        player.hand.push(ModuleGetters.asCard(state.stack.module.pop()!));
     }
 
     const bus = new ActionsBus();
 
     bus.on('discardCardsRequest', () => {
-        assert.fail("player must not be asked to discard cards");
+        assert.unreachable("player must not be asked to discard cards");
     });
 
-    const runner = new SagaRunner(state, bus, discardCards);
-
-    await runner.run();
+    await runSaga({state, bus}, discardCards);
 
     // test
     player = state.players[0];
@@ -41,7 +42,7 @@ test('discardCardsWhenThereAreTooMany', async () => {
     const cardsCount = 6;
 
     for (let i = 0; i < cardsCount; ++i) {
-        player.hand.push(state.stack.module.pop()!);
+        player.hand.push(ModuleGetters.asCard(state.stack.module.pop()!));
     }
 
     const expectedCards = [player.hand[0], player.hand[5]];
@@ -50,19 +51,17 @@ test('discardCardsWhenThereAreTooMany', async () => {
 
     attachReducers(bus, state);
     bus.on('discardCardsRequest', () => {
-        bus.emit(Actions.discardCardsResponse([1, 2, 3, 4]));
+        bus.emit(discardCardsResponse([1, 2, 3, 4]));
     });
 
-    const runner = new SagaRunner(state, bus, discardCards);
-
-    await runner.run();
+    await runSaga({state, bus}, discardCards);
 
     // test
     player = state.players[0];
 
     assert.equal(player.hand.length, 2);
-    assert.deepEqual(player.hand[0], expectedCards[0]);
-    assert.deepEqual(player.hand[1], expectedCards[1]);
+    assert.equal(player.hand[0], expectedCards[0]);
+    assert.equal(player.hand[1], expectedCards[1]);
 });
 
 test.run();

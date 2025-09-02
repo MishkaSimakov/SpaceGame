@@ -1,5 +1,5 @@
-import {OtherPlayer} from "@common/GameForPlayerDTO";
 import {PlayerGetters} from "@common/getters/Player";
+import {OtherPlayer} from "@common/Types";
 
 import TopBarDrawer from "./TopBarDrawer";
 import {Text} from "../engine/shapes/Text";
@@ -24,13 +24,13 @@ export default class TopBarDefaultAdaptor extends TopBarAdaptor {
                 width: drawer.sizes.width - drawer.sizes.padding * 2,
                 player: player,
                 status: {
-                    online: drawer.onlineMap[player.id],
+                    online: drawer.onlineMap.find(v => v.player === player.id)?.online ?? false,
                     lost: player.lose,
                     isHisTurn: drawer.scene.gameManager.currentTurnPlayerId === player.id
                 },
                 withName: true,
-                withTimeControl: drawer.scene.gameManager.settings.withTimeControl,
-                time: drawer.playerTime[player.id],
+                withTimeControl: drawer.scene.gameManager.settings.timeControlSettings !== undefined,
+                time: drawer.playerTime[player.id] ?? 0,
             }).onClick(() => {
                 drawer.scene.gameManager.spaceshipsScene.panToPlayerWithId(player.id);
             });

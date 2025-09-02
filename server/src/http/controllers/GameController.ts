@@ -1,57 +1,50 @@
 import {Request, Response} from "express";
+
+import {GameSettings} from "@common/Types";
+
 import App from "../../App";
-import {User} from "../../entity/user";
+import {User} from "../../database/entity/user";
 import {AuthenticatedRequest} from "../middleware/auth";
-import {GameSettings} from "@common/GameSettings";
 import {AuthenticatedGameRequest} from "../middleware/GameOwner";
-import {Game as GameDBEntity, GameStatus} from "../../entity/game";
-import {Logger} from "../../game/Logger";
-import {gamePlayersValidator} from "../../validation/GamePlayersValidator";
+import {Game as GameDBEntity, GameStatus} from "../../database/entity/game";
+import {defaultSettings, defaultTimeControlSettings} from "../../game/DefaultSettings";
+import {FileActionsStorage} from "@src/game/FileActionsStorage";
+import {createGameValidator} from "@src/http/validation/CreateGameValidator";
 
 export const create = async (req: AuthenticatedRequest, res: Response) => {
     try {
         const users = await User.find();
 
-        // Define a zod schema for an array of integers (string numbers converted to integers)
-        const result = gamePlayersValidator(users).safeParse(req.body.players);
-        if (result.error) {
+        const {data, error} = createGameValidator(users).safeParse(req.body);
+        if (error || !data) {
             // TODO: display zod error
-            req.flash('error', 'Что-то не так с выбранными игроками.');
+            console.log(error);
+            req.flash('error', 'Что-то не так с параметрами игры.');
             return res.redirect('/');
         }
 
-        const selectedUsers = result.data.map(id => {
+        const selectedUsers = data.players.map(id => {
             return users.find(u => u.id === id)!;
         });
 
-        const withTimeControl = req.body['time-control'] === 'on';
+        const gameSettings: GameSettings = {
+            seed: String(Math.random()),
+            ...defaultSettings,
 
-        const gameSettings = new GameSettings(
-            String(Math.random()),
-            selectedUsers.length,
-            withTimeControl,
-            req.body['lose-when-timeout'] === 'on' && withTimeControl,
-            req.body['is-public'] === 'on'
-        );
+            isDebug: data.isDebug,
+            isPublic: data.isPublic
+        };
 
-        if (withTimeControl) {
-            let startTime = parseInt(req.body['start-time']);
-            startTime = isNaN(startTime) ? 300 : startTime;
-
-            let defaultTimeIncrease = parseInt(req.body['default-time-increase']);
-            defaultTimeIncrease = isNaN(defaultTimeIncrease) ? 45 : defaultTimeIncrease;
-
-            let fightTimeIncrease = parseInt(req.body['fight-time-increase']);
-            fightTimeIncrease = isNaN(fightTimeIncrease) ? 10 : fightTimeIncrease;
-
+        if (data.withTimeControl) {
             gameSettings.timeControlSettings = {
-                startTime: startTime * 1000,
-                defaultTimeIncrease: defaultTimeIncrease * 1000,
-                fightTimeIncrease: fightTimeIncrease * 1000
+                loseWhenTimeout: data.loseWhenTimeout!,
+                startTime: data.startTime! * 1000,
+                defaultTimeIncrease: data.defaultTimeIncrease! * 1000,
+                fightTimeIncrease: data.fightTimeIncrease! * 1000
             };
         }
 
-        await App.getInstance().gamesManager!.createGame(req.body.name, req.user, selectedUsers, gameSettings);
+        await App.getInstance().gamesManager!.createGame(data.name, req.user, selectedUsers, gameSettings);
 
         return res.redirect('/');
     } catch (err) {
@@ -77,7 +70,7 @@ export const joinGame = async (req: AuthenticatedGameRequest, res: Response) => 
 
     if (
         game.players.find(p => p.id === req.user.id) === undefined
-        && !game.settings.isPublic
+        && !game.settings
     ) {
         req.flash('error', 'Вы не можете присоединиться к данной игре.');
         return res.redirect('/');
@@ -97,7 +90,9 @@ export const showCreatePage = async (req: AuthenticatedRequest, res: Response) =
         .getRawMany();
 
     return res.render('game/create', {
-        users: users
+        users: users,
+        defaultSettings,
+        defaultTimeControlSettings
     });
 }
 
@@ -126,7 +121,7 @@ export const showStatusPage = async (req: AuthenticatedGameRequest, res: Respons
         game: {
             ...game,
             settings: game.settings,
-            actions: new Logger(game.logFilepath).getPastActions(),
+            actions: new FileActionsStorage(game.logFilepath).getAllActions(),
             isActive: App.getInstance().gamesManager!.isActive(game.id)
         }
     });

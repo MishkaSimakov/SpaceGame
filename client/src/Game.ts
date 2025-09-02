@@ -1,24 +1,20 @@
-import {GameSettings} from "@common/GameSettings";
-import {GameForPlayerDTO, OtherPlayer} from "@common/GameForPlayerDTO";
-import {Message} from "@common/Types";
+import {GameForPlayerDTO, GameSettings, Message, OtherPlayer, Player, PlayerId} from "@common/Types";
 import {PlayerGetters} from "@common/getters/Player";
 
 import Spaceships from "./graphics/scenes/Spaceships";
 import Controls from "./graphics/scenes/Controls";
-import Player, {PlayerId} from "../../common/Player";
 import RebuildSpaceshipManager from "./graphics/RebuildSpaceshipManager";
 import SocketManager from "./sockets/SocketManager";
 import {Graphics} from "./graphics/engine/Graphics";
 import {DD} from "./graphics/engine/Drag";
 import PopupsScene from "./graphics/scenes/Popups";
-import {ShowHugeMessageActivity} from "./graphics/activities/ShowHugeMessage";
 
 export default class Game {
     currentTurnPlayerId: PlayerId;
 
     currentPlayer: Player;
     otherPlayers: OtherPlayer[];
-    onlineMap: Record<PlayerId, boolean> = {};
+    onlineMap: GameForPlayerDTO["onlineMap"] = [];
 
     socketManager: SocketManager;
 
@@ -30,7 +26,7 @@ export default class Game {
 
     settings: GameSettings;
 
-    playerTime: Record<number, number> = {};
+    playerTime: Record<PlayerId, number> = {};
     timeDecreasingPlayerId: number;
 
     messages: Message[] = [];
@@ -67,7 +63,9 @@ export default class Game {
             }
 
             const currTime = (new Date()).getTime();
-            this.playerTime[this.timeDecreasingPlayerId] -= (currTime - prevTime);
+            if (this.timeDecreasingPlayerId in this.playerTime) {
+                this.playerTime[this.timeDecreasingPlayerId] -= (currTime - prevTime);
+            }
             prevTime = currTime;
 
             this.controlsScene.topBarDrawer.updateTime(this.playerTime);
@@ -104,14 +102,16 @@ export default class Game {
         }
 
         // time control
-        if (this.settings?.withTimeControl) {
+        if (this.settings.timeControlSettings) {
             this.timeDecreasingPlayerId = gameDTO.timeControl.timeDecreasingPlayerId;
 
             for (let player of this.getAllPlayers()) {
-                if (this.timeDecreasingPlayerId === player.id && this.playerTime[this.timeDecreasingPlayerId])
+                if (this.timeDecreasingPlayerId === player.id && this.playerTime[player.id]) {
                     continue;
+                }
 
-                this.playerTime[player.id] = gameDTO.timeControl.playersTime[player.id];
+                this.playerTime[player.id] = gameDTO.timeControl?.playersTime
+                    .find(v => v.player === player.id)?.time ?? 0;
             }
         }
 

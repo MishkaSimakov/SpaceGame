@@ -1,25 +1,24 @@
-import {Event} from "@common/events/Event";
+import {Card} from "@common/Types";
 
 import Game from "../Game";
 import {SIZES} from "./constants";
-import {Card} from "./shapes/Card";
+import {CardShape} from "./shapes/CardShape";
 import Scene from "./engine/Scene";
 import {Rectangle} from "./engine/shapes/Rectangle";
 import Color from "./Color";
 import {Group} from "./engine/Group";
-import Module, {isModule} from "../../../common/modules/Module";
 
 export default class HandDrawer {
     group: Group;
 
-    cardShapes: Card[] = [];
+    cardShapes: CardShape[] = [];
 
     scene: Scene;
 
     gameManager: Game;
     background: Rectangle;
 
-    hand: (Module | Event)[] = [];
+    hand: Card[] = [];
 
     constructor(game: Game, scene: Scene) {
         this.scene = scene;
@@ -32,19 +31,18 @@ export default class HandDrawer {
         this.group.add(this.background);
     }
 
-    setHandData(hand: (Module | Event)[]) {
+    setHandData(hand: Card[]) {
         let newHandData = [];
 
         for (let card of hand) {
-            if (isModule(card)) {
-                const module = card as Module;
+            if (card.cardType === "module") {
+                const existingModule = this.hand
+                    .filter(c => c.cardType === "module")
+                    .find(c => c.module.id === card.module.id);
 
-                const existingModule = this.hand.find(c => {
-                    return isModule(c) && (c as Module).id === module.id;
-                });
-
-                if (existingModule)
-                    module.rotation = (existingModule as Module).rotation;
+                if (existingModule) {
+                    card.module.rotation = existingModule.module.rotation;
+                }
             }
 
             newHandData.push(card);
@@ -108,7 +106,7 @@ export default class HandDrawer {
         // draw cards
 
         for (let [index, card] of hand.entries()) {
-            let cardShape = new Card({
+            let cardShape = new CardShape({
                 size: cardSize,
                 card: card,
                 x: startPosition + index * (cardSize + spaceBetween),
@@ -118,9 +116,9 @@ export default class HandDrawer {
             this.group.add(cardShape);
 
             cardShape.on('click', () => {
-                if (isModule(card)) {
-                    card.rotation = (card.rotation + 1) % 4;
-                    cardShape.rotateCard(card.rotation * (Math.PI / 2));
+                if (card.cardType === "module") {
+                    card.module.rotation = (card.module.rotation + 1) % 4;
+                    cardShape.rotateCard(card.module.rotation * (Math.PI / 2));
                 }
             });
 
