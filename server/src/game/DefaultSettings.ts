@@ -1,4 +1,4 @@
-import {GameSettings} from "@common/Types";
+import {GameSettings, TimeControlSettings} from "@common/Types";
 
 export const defaultSettings = {
     isPublic: false,
@@ -14,3 +14,10 @@ export const defaultSettings = {
     maxCardsOnHand: 5,
     diceResultToRunaway: 4,
 } as Omit<GameSettings, "seed">
+
+export const defaultTimeControlSettings = {
+    loseWhenTimeout: true,
+    defaultTimeIncrease: 45,
+    fightTimeIncrease: 10,
+    startTime: 300
+} as TimeControlSettings;

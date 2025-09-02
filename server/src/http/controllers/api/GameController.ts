@@ -2,12 +2,12 @@ import {Request, Response} from "express";
 
 import {GameSettings} from "@common/Types";
 
-import {User} from "../../../database/entity/user";
+import {User} from "@src/database/entity/user";
 import App from "../../../App";
 import {Game as GameDBEntity} from "../../../database/entity/game";
 import {AuthenticatedRequest} from "../../middleware/auth";
-import {gamePlayersValidator} from "../../validation/GamePlayersValidator";
 import {FileActionsStorage} from "@src/game/FileActionsStorage";
+import {gamePlayersValidator} from "@src/http/validation/CreateGameValidator";
 
 
 export const create = async (req: AuthenticatedRequest, res: Response) => {

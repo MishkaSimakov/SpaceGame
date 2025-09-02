@@ -41,9 +41,13 @@
 
                     <div class="mb-3">
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="on" id="is-public" name="is-public">
+                            <input class="form-check-input" type="checkbox" id="isPublic" name="isPublic" value="on"
+                                   @if(defaultSettings.isPublic)
+                                   checked
+                                   @endif
+                            >
 
-                            <label class="form-check-label" for="is-public">
+                            <label class="form-check-label" for="isPublic">
                                 видна другим игрокам
                             </label>
                         </div>
@@ -51,11 +55,25 @@
 
                     <div class="mb-3">
                         <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="isDebug" name="isDebug" value="on"
+                                   @if(defaultSettings.isDebug)
+                                   checked
+                                   @endif
+                            >
 
-                            <input class="form-check-input" type="checkbox" value="on" id="time-control"
-                                   name="time-control" checked>
+                            <label class="form-check-label" for="isDebug">
+                                режим отладки (только для специалистов)
+                            </label>
+                        </div>
+                    </div>
 
-                            <label class="form-check-label" for="time-control">
+                    <div class="mb-3">
+                        <div class="form-check">
+
+                            <input class="form-check-input" type="checkbox" value="on" id="withTimeControl"
+                                   name="withTimeControl" checked>
+
+                            <label class="form-check-label" for="withTimeControl">
                                 контроль времени
                             </label>
                         </div>
@@ -64,10 +82,14 @@
                     <div id="time-control-settings">
                         <div class="mb-3">
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" value="on" id="lose-when-timeout"
-                                       name="lose-when-timeout" checked>
+                                <input class="form-check-input" type="checkbox" value="on" id="loseWhenTimeout"
+                                       name="loseWhenTimeout"
+                                       @if(defaultTimeControlSettings.loseWhenTimeout)
+                                       checked
+                                       @endif
+                                >
 
-                                <label class="form-check-label" for="lose-when-timeout">
+                                <label class="form-check-label" for="loseWhenTimeout">
                                     проигрыш по истечению времени
                                 </label>
                             </div>
@@ -75,24 +97,24 @@
 
                         <div class="row g-3 mb-3">
                             <div class="col-md-6">
-                                <label class="form-label" for="start-time">Стартовое время (сек.)</label>
+                                <label class="form-label" for="startTime">Стартовое время (сек.)</label>
 
-                                <input type="number" min="0" id="start-time" name="start-time" class="form-control"
-                                       value="300">
+                                <input type="number" min="0" id="startTime" name="startTime" class="form-control"
+                                       value="{{ defaultTimeControlSettings.startTime }}">
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label" for="default-time-increase">Прибавка времени за ход
+                                <label class="form-label" for="defaultTimeIncrease">Прибавка времени за ход
                                     (сек.)</label>
 
-                                <input type="number" min="0" id="default-time-increase" name="default-time-increase"
-                                       class="form-control" value="45">
+                                <input type="number" min="0" id="defaultTimeIncrease" name="defaultTimeIncrease"
+                                       class="form-control" value="{{ defaultTimeControlSettings.defaultTimeIncrease}}">
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label" for="fight-time-increase">Прибавка времени в бою
+                                <label class="form-label" for="fightTimeIncrease">Прибавка времени в бою
                                     (сек.)</label>
 
-                                <input type="number" min="0" id="fight-time-increase" name="fight-time-increase"
-                                       class="form-control" value="10">
+                                <input type="number" min="0" id="fightTimeIncrease" name="fightTimeIncrease"
+                                       class="form-control" value="{{ defaultTimeControlSettings.fightTimeIncrease }}">
                             </div>
                         </div>
                     </div>
@@ -243,7 +265,7 @@
             updateSelectedPlayers();
         };
 
-        let checkbox = document.getElementById('time-control');
+        let checkbox = document.getElementById('withTimeControl');
         let timeControlSettings = document.getElementById('time-control-settings');
         checkbox.addEventListener('click', () => {
             if (checkbox.checked) {
