@@ -8,6 +8,7 @@ import ActionsBus from "../../../../src/game/ActionsBus";
 import {fakeGameState} from "../../Utils";
 import {runSaga} from "../../../../src/game/sagas/runner/RunSaga";
 import {Action} from "@common/ActionsHelpers";
+import {takeType} from "@src/game/sagas/components/TakeSpecific";
 
 test('select', async () => {
     const state = fakeGameState(2);
@@ -50,7 +51,7 @@ test('putAndTake', async () => {
     function* testSaga(): SagaGenerator {
         const {req, res} = yield* all({
             req: put(throwDice(0)),
-            res: take('throwDiceResult')
+            res: takeType('throwDiceResult')
         });
 
         assert.equal(Object.keys(req).length, 0);
@@ -192,7 +193,7 @@ test('throwDuringAll', async () => {
         try {
             yield* all({
                 req: put(throwDice(0)),
-                res: take('throwDiceResult')
+                res: takeType('throwDiceResult')
             });
         } catch (err) {
             assert.equal(err, 123);
@@ -217,7 +218,7 @@ test('throwInAllCancelsAllOtherEffects', async () => {
         try {
             yield* all({
                 0: put(throwDice(0)),
-                1: take('throwDiceResult'),
+                1: takeType('throwDiceResult'),
             });
         } catch (err) {
             bus.emit(throwDiceResult(123));
@@ -258,7 +259,7 @@ test('throwInMiddleware', async () => {
     function* saga(): SagaGenerator {
         yield* all({
             req: put(throwDice(0)),
-            res: take('throwDiceResult')
+            res: takeType('throwDiceResult')
         });
     }
 
