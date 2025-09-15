@@ -7,11 +7,12 @@ import {
     changePlayerTime as changePlayerTimeAction,
     time as timeAction
 } from "@common/Actions";
+import {takeType} from "@src/game/sagas/components/TakeSpecific";
 
 function* getTime() {
     const {res} = yield* all({
         req: put(timeAction()),
-        res: take('timeResult')
+        res: takeType('timeResult')
     });
 
     return res.payload.result as number;
