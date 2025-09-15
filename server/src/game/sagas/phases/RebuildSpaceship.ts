@@ -2,15 +2,18 @@ import {StateGetters} from "@common/getters/State";
 import {message, playerRebuiltSpaceship, rebuildSpaceshipRequest} from "@common/Actions";
 
 import {put, select} from "../runner/Effects";
-import {request} from "../components/Request";
+import {requestWithCheats} from "@src/game/sagas/components/RequestWithCheats";
 
 export function* rebuildSpaceship() {
-    const currentPlayer = StateGetters.currentPlayer(yield* select());
+    let currentPlayer = StateGetters.currentPlayer(yield* select());
 
-    const {newSpaceship} = yield* request(
+    const {newSpaceship} = yield* requestWithCheats(
         rebuildSpaceshipRequest(currentPlayer.id),
         'rebuildSpaceshipResponse'
     );
+
+    // update state after cheats
+    currentPlayer = StateGetters.currentPlayer(yield* select());
 
     const handModules = currentPlayer.hand
         .filter(card => card.cardType === "module")

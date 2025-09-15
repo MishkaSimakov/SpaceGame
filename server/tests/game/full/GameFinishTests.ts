@@ -19,16 +19,12 @@ test('finishWhenTimeIsOver', async () => {
     });
 
     game.bus.on('rebuildSpaceshipRequest', (action) => {
-        const player = StateGetters.playerById(game.state, action.payload.player)!;
-        const spaceship = player.spaceship.modules.map(module => ({
-            id: module.id,
-            position: {x: module.x, y: module.y},
-            rotation: module.rotation
-        }));
-
         clock.advanceTime(6000);
 
-        game.bus.emit(rebuildSpaceshipResponse(spaceship));
+        const player = StateGetters.playerById(game.state, action.payload.player)!;
+        game.bus.emit(
+            rebuildSpaceshipResponse(SpaceshipGetters.mapForRebuildSpaceshipResponse(player.spaceship))
+        );
     });
 
     const result = await game.activate();

@@ -31,7 +31,6 @@ import {Observable} from "@common/Observable";
 import {DeactivateSignal} from "@src/game/middlewares/DeactivateSignal";
 import {LossSignal} from "@src/game/middlewares/LossSignal";
 import {IClock} from "@src/game/interfaces/IClock";
-import {cheatsPerformers} from "@src/game/CheatsPerformers";
 
 
 export type GameResult = { type: "deactivated" } | { type: "finished", winner: PlayerId };
@@ -245,10 +244,7 @@ export default class Game {
                     return;
                 }
 
-                (cheatsPerformers[cheatName as keyof typeof cheatsPerformers] as any)(validationResult.data, structuredClone(this.state), this.bus)
-                    .then(() => {
-                        this.syncPlayersData();
-                    });
+                this.bus.emit(validationResult.data as Action<any, any>);
             });
         }
     }

@@ -1,10 +1,9 @@
 import * as Actions from "@common/Actions";
-import {GameState} from "@common/Types";
-import ActionsBus from "@src/game/ActionsBus";
 import {changePlayerEnergy} from "@common/Actions";
+import {put, SagaGenerator} from "@src/game/sagas/runner/Effects";
 
 type PerformerType<T extends keyof typeof Actions> =
-    (cheat: ReturnType<(typeof Actions)[T]>["payload"], state: GameState, bus: ActionsBus) => Promise<void>;
+    (cheat: ReturnType<(typeof Actions)[T]>["payload"]) => SagaGenerator;
 
 type CheatsPerformersContainer = {
     // TODO: remove optionality
@@ -12,7 +11,7 @@ type CheatsPerformersContainer = {
 };
 
 export const cheatsPerformers: CheatsPerformersContainer = {
-    async cheatChangeEnergy(cheat, state, bus) {
-        await bus.emit(changePlayerEnergy(cheat.target, cheat.delta, "cheat"));
+    * cheatChangeEnergy(cheat) {
+        yield* put(changePlayerEnergy(cheat.target, cheat.delta, "cheat"));
     }
 }
