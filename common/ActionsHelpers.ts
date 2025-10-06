@@ -1,6 +1,6 @@
 import {v4 as uuidv4} from 'uuid';
 
-export interface Action<T extends string, P, M = unknown> {
+export interface Action<T extends string = string, P = unknown, M = unknown> {
     uuid: string;
     time: number;
 

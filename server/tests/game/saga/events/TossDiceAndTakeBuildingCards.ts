@@ -9,6 +9,8 @@ import ActionsBus from "@src/game/ActionsBus";
 import {performEvent} from "@src/game/sagas/components/PerformEvent";
 import {runSaga} from "@src/game/sagas/runner/RunSaga";
 import {StateGetters} from "@common/getters/State";
+import {GameInput} from "@src/game/sagas/runner/Environment";
+import {Channel} from "@src/game/sagas/runner/Channel";
 
 
 test('basicTest', async () => {
@@ -18,6 +20,7 @@ test('basicTest', async () => {
 
     const state = fakeGameState(2);
     const bus = new ActionsBus();
+    const input: GameInput = new Channel();
 
     attachReducers(bus, state);
 
@@ -27,7 +30,7 @@ test('basicTest', async () => {
     bus.on('throwDice', () => {
         sequence.push('throwDice');
 
-        bus.emit(throwDiceResult(diceResult));
+        input.put(throwDiceResult(diceResult));
     });
 
     bus.on('showCardsToPlayersRequest', ({payload}) => {
@@ -36,10 +39,10 @@ test('basicTest', async () => {
         assert.equal(payload.player, StateGetters.currentPlayer(state).id);
         assert.equal(payload.cards.length, cardsCount);
 
-        bus.emit(showCardsToPlayersResponse());
+        input.put(showCardsToPlayersResponse());
     });
 
-    await runSaga({state, bus}, performEvent, event);
+    await runSaga({state, output: bus, input}, performEvent, event);
 
     assert.equal(sequence, ['throwDice', 'showCards']);
 

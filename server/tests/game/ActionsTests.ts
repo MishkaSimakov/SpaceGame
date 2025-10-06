@@ -5,14 +5,18 @@ import {EventType} from "@common/Types";
 
 import ActionsBus from "../../src/game/ActionsBus";
 import {beforeTurn} from "@src/game/sagas/phases/BeforeTurn";
-import {fakeGameState} from "./Utils";
+import {attachReducers, fakeGameState} from "./Utils";
 import {choosePlayerForAttackResponse} from "@common/Actions";
 import {runSaga} from "@src/game/sagas/runner/RunSaga";
-import {DeactivateSignal} from "@src/game/middlewares/DeactivateSignal";
+import {Channel} from "@src/game/sagas/runner/Channel";
+import {deactivateSignal} from "@src/game/sagas/runner/Signals";
+import {GameInput} from "@src/game/sagas/runner/Environment";
+
 
 test('attackLaterEventCard', async () => {
     const state = fakeGameState(2);
     const bus = new ActionsBus();
+    const input: GameInput = new Channel();
 
     // fake state
     const cardIndex = state.stack.event.findIndex(card => card.type === EventType.SaveCardAndThenAttack);
@@ -29,10 +33,12 @@ test('attackLaterEventCard', async () => {
 
     const sequence: string[] = [];
 
+    attachReducers(bus, state);
+
     bus.on("choosePlayerForAttackRequest", () => {
         sequence.push("choose victim");
 
-        bus.emit(choosePlayerForAttackResponse(1));
+        input.put(choosePlayerForAttackResponse(1));
     });
 
     bus.on("popCardsFromHand", (action) => {
@@ -57,14 +63,10 @@ test('attackLaterEventCard', async () => {
         assert.equal(action.payload.attacker, 0);
         assert.equal(action.payload.victim, 1);
 
-        throw new DeactivateSignal();
+        // no one can attack => fight ends => await returns
     });
 
-    try {
-        await runSaga({state, bus}, beforeTurn);
-    } catch (error) {
-        assert.ok(error instanceof DeactivateSignal);
-    }
+    await runSaga({state, output: bus, input}, beforeTurn);
 
     assert.equal(sequence, ["choose victim", "pop card", "discard card", "begin fight"]);
 });

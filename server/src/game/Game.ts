@@ -2,15 +2,9 @@ import * as assert from "node:assert";
 import jsonpatch from 'fast-json-patch'
 import {ZodType} from "zod";
 
-import {GameSettings, Player, GameState, PlayerId} from "@common/Types"
-import {
-    playerLost,
-    reducerUpdatedState,
-    shuffleResult,
-    throwDiceResult,
-    timeResult
-} from "@common/Actions";
+import {GameSettings, GameState, Player, PlayerId} from "@common/Types"
 import * as Actions from "@common/Actions";
+import {reducerUpdatedState, shuffleResult, throwDiceResult, timeResult} from "@common/Actions";
 import {Action, constructAction, isAction} from "@common/ActionsHelpers";
 
 import ActionsBus from "./ActionsBus";
@@ -18,19 +12,26 @@ import {getDTO} from "./mappers/GameToGameForPlayerMapper";
 import {gameSaga} from "./sagas/Main";
 import {isReducerName, reducers} from "./reducers/Main";
 import {Randomizer} from "./Randomizer";
-import {TimeControlMiddleware} from "./middlewares/TimeControlMiddleware";
 import {validators} from "./validation/ResponseValidators";
 import {validators as cheatsValidators} from "./validation/CheatsValidators";
 import {PlayerGameLogListener} from "./PlayerGameLogListener";
 import {getInitialGameState} from "./InitGameState";
-import {runSagaWithThrowHandle} from "./sagas/runner/RunSaga";
+import {runSaga} from "./sagas/runner/RunSaga";
 import {IUser} from "@src/game/interfaces/IUser";
 import {ISocketsManager} from "@src/game/interfaces/ISocketsManager";
 import {IActionsStorage} from "@src/game/interfaces/IActionsStorage";
-import {Observable} from "@common/Observable";
-import {DeactivateSignal} from "@src/game/middlewares/DeactivateSignal";
-import {LossSignal} from "@src/game/middlewares/LossSignal";
 import {IClock} from "@src/game/interfaces/IClock";
+import {Environment} from "@src/game/sagas/runner/Environment";
+import {Channel} from "@src/game/sagas/runner/Channel";
+import {
+    DeactivateSignal,
+    deactivateSignal,
+    PlayerLostSignal,
+    playerTimeoutSignal
+} from "@src/game/sagas/runner/Signals";
+import {getPlayerTime} from "@src/game/sagas/components/Time";
+import {CancellableRaceProtocol, IParticipant} from "@src/game/CancellableRaceProtocol";
+import {Observable} from "@common/Observable";
 
 
 export type GameResult = { type: "deactivated" } | { type: "finished", winner: PlayerId };
@@ -47,8 +48,12 @@ export default class Game {
 
     clock: IClock;
 
+    // resolved when game must be deactivated
+    isDeactivated: Observable<boolean>;
+
+    sagaInput: Channel<Action | PlayerLostSignal | DeactivateSignal>;
+
     private inReplay: boolean = false;
-    private throwHandle = new Observable<any>(undefined);
 
     constructor(
         users: IUser[],
@@ -57,6 +62,9 @@ export default class Game {
         storage: IActionsStorage,
         clock: IClock
     ) {
+        // aborts all ongoing requests when the game is deactivated
+        this.isDeactivated = new Observable(false);
+
         this.users = users;
 
         this.state = getInitialGameState(users, settings);
@@ -69,37 +77,29 @@ export default class Game {
 
         this.playerGameLog = new PlayerGameLogListener(this.bus, this.users);
 
+        this.sagaInput = new Channel();
+
         this.playerGameLog.registerListeners();
         this.registerReduceListeners();
         this.registerLogListeners();
         this.registerRandomizerListeners();
         this.registerIOListeners();
         this.registerTimeListeners();
-
-        this.registerMiddlewares();
-
-        // this listener must be performed after reducer!
-        // reducers are attached to actions bus as * listeners
-        // they are executed after all non-* listeners have finished
-        // therefore this listener must be * listener
-        this.bus.on('*', (action) => {
-            if (action.type === "playerLost") {
-                const payload = action.payload as ReturnType<typeof playerLost>["payload"];
-                this.throwHandle.set(new LossSignal(payload.player));
-
-                // TODO: do not send this via bus, just call some game method
-                // this.bus.emit(sendPlayerLostInfo(payload.player));
-            }
-        });
     }
 
     async activate(): Promise<GameResult> {
         await this.replay(this.storage.getAllActions());
 
+        const env: Environment = {
+            output: this.bus,
+            input: this.sagaInput,
+            state: this.state
+        };
+
         try {
-            await runSagaWithThrowHandle({bus: this.bus, state: this.state}, this.throwHandle, gameSaga);
+            await runSaga(env, gameSaga);
         } catch (error) {
-            if (error instanceof DeactivateSignal) {
+            if (error === deactivateSignal) {
                 return {type: "deactivated"};
             } else {
                 throw error;
@@ -145,7 +145,7 @@ export default class Game {
                 //     game.
                 // } else {
                 // type is *Request
-                this.sendSocketRequest(pendingAction);
+                this.socketRequest(pendingAction);
                 // }
             }
         };
@@ -168,18 +168,13 @@ export default class Game {
                     return;
                 }
 
-                this.bus.emit(actions[0]);
+                this.sagaInput.put(actions[0]);
             } else if (actions.length === 0) {
                 returnToNormalExecution();
             }
         };
 
         this.bus.on('*', actionsReplayListener);
-    }
-
-    registerMiddlewares() {
-        const loss = new TimeControlMiddleware(this.state, this.clock, this.throwHandle);
-        this.bus.registerMiddleware(loss);
     }
 
     registerLogListeners() {
@@ -192,7 +187,7 @@ export default class Game {
 
     registerRandomizerListeners() {
         this.bus.on('throwDice', () => {
-            this.bus.emit(throwDiceResult(this.randomizer.dice()));
+            this.sagaInput.put(throwDiceResult(this.randomizer.dice()));
         });
 
         this.bus.on('shuffle', (action) => {
@@ -202,7 +197,7 @@ export default class Game {
             }
 
             this.randomizer.shuffle(result)
-            this.bus.emit(shuffleResult(result));
+            this.sagaInput.put(shuffleResult(result));
         });
     }
 
@@ -220,7 +215,7 @@ export default class Game {
             // but without an acknowledgment
 
             if (action.type.endsWith("Request")) {
-                this.sendSocketRequest(action);
+                this.socketRequest(action);
             }
 
             if (action.type.endsWith("Info")) {
@@ -239,12 +234,11 @@ export default class Game {
                 const validator = cheatsValidators[cheatName as keyof typeof cheatsValidators] as (state: GameState) => ZodType;
                 const validationResult = validator(structuredClone(this.state)).safeParse(payload);
 
-                console.log(validationResult, payload);
                 if (validationResult.error) {
                     return;
                 }
 
-                this.bus.emit(validationResult.data as Action<any, any>);
+                this.sagaInput.put(constructAction(cheatName, validationResult.data) as Action<any, any>);
             });
         }
     }
@@ -271,7 +265,7 @@ export default class Game {
     registerTimeListeners() {
         this.bus.on('time', () => {
             if (!this.inReplay) {
-                this.bus.emit(timeResult(this.clock.getTime()));
+                this.sagaInput.put(timeResult(this.clock.getTime()));
             }
         });
     }
@@ -291,51 +285,161 @@ export default class Game {
         }
     }
 
-    private sendSocketRequest(request: Action<string, any, any>) {
-        this.syncPlayersData();
+    private async socketRequest(request: Action) {
+        assert.ok(request.payload && typeof request.payload === "object");
+        assert.ok("player" in request.payload && typeof request.payload.player === "number");
 
         const responseType = request.type.replace("Request", "Response");
-
-        assert.ok("player" in request.payload);
         assert.ok(responseType in Actions);
 
-        let currentAttempt = 0;
-        const requestAttempt = (errors: string[]) => {
-            ++currentAttempt;
+        // There are 3 competing processes:
+        // 1. Sending a request and waiting for a reply
+        // 2. Waiting for player's timeout
+        // 3. Waiting for game cancellation
+        // Each of these tasks must cancel all the others.
 
-            this.sockets.emit(request.payload.player, {
-                withAcknowledgement: true,
-                ensureSending: true
-            }, request.type, {...request.payload, errors})
-                .then((response: any) => {
+        class SendRequest implements IParticipant {
+            private cancelled = false;
+            private response: Action | undefined = undefined;
+
+            constructor(
+                private readonly game: Game,
+                private readonly requestPlayer: PlayerId,
+                private readonly requestPayload: object) {
+            }
+
+            isReady(): boolean {
+                return false;
+            }
+
+            async prepare(): Promise<void> {
+                this.game.syncPlayersData();
+
+                // TODO: limit attempts!
+                let currentAttempt = 0;
+                let errors: string[] = [];
+
+                while (true) {
+                    if (this.cancelled) {
+                        return;
+                    }
+
+                    ++currentAttempt;
+                    const response = await this.game.sockets.emit(this.requestPlayer, {
+                        withAcknowledgement: true,
+                        ensureSending: true
+                    }, request.type, {...this.requestPayload, errors});
+
                     if (!isAction(response)) {
-                        return requestAttempt(["Ответ должен быть в формате действия."]);
+                        errors = ["Ответ должен быть в формате действия."];
+                        continue;
                     }
 
                     try {
                         const validator = validators[responseType as keyof typeof validators] as (state: GameState, request: unknown) => ZodType;
-                        const validationResult = validator(structuredClone(this.state), request).safeParse(response.payload);
+                        const validationResult = validator(structuredClone(this.game.state), request).safeParse(response.payload);
 
                         if (validationResult.error) {
-                            return requestAttempt(validationResult.error.issues.map(issue => issue.message));
+                            errors = validationResult.error.issues.map(issue => issue.message);
+                            continue;
                         }
 
                         // action comes from a user, payload is validated, but time and uuid are untrusted
-                        const responseAction = constructAction(responseType, response.payload);
-                        this.bus.emit(responseAction);
+                        // constructAction replaces time and uuid
+                        this.response = constructAction(responseType, response.payload);
+
+                        return;
                     } catch (err) {
-                        console.error(err);
-                        return requestAttempt(["Произошла ошибка при валидации вашего ответа."]);
+                        errors = ["Произошла ошибка при валидации вашего ответа."];
+                    }
+                }
+            }
+
+            proceed(): void {
+                this.game.sagaInput.put(this.response!);
+            }
+
+            cancel(): void {
+                this.cancelled = true;
+            }
+        }
+
+        class TimeoutParticipant implements IParticipant {
+            private readonly game: Game;
+            private readonly remainingTime: number | undefined;
+            private interval: NodeJS.Timeout | undefined = undefined;
+
+            constructor(game: Game, player: PlayerId) {
+                this.game = game;
+
+                const state = structuredClone(game.state);
+
+                if (!state.settings.timeControlSettings) {
+                    this.remainingTime = undefined;
+                } else {
+                    this.remainingTime = getPlayerTime(state, player, this.game.clock.getTime());
+                }
+            }
+
+            isReady(): boolean {
+                return this.remainingTime !== undefined && this.remainingTime <= 0;
+            }
+
+            prepare(): Promise<void> {
+                return new Promise(resolve => {
+                    if (this.remainingTime) {
+                        this.interval = setInterval(resolve, this.remainingTime);
                     }
                 });
-        };
+            }
 
-        requestAttempt([]);
+            proceed(): void {
+                this.game.sagaInput.put(playerTimeoutSignal);
+            }
+
+            cancel(): void {
+                if (this.remainingTime) {
+                    clearInterval(this.interval);
+                }
+            }
+        }
+
+        class DeactivateParticipant implements IParticipant {
+            private listenerId: number | undefined = undefined;
+
+            constructor(
+                private readonly game: Game
+            ) {
+            }
+
+            isReady(): boolean {
+                return this.game.isDeactivated.get();
+            }
+
+            prepare(): Promise<void> {
+                return new Promise(resolve => {
+                    this.listenerId = this.game.isDeactivated.subscribe(() => resolve());
+                });
+            }
+
+            proceed(): void {
+                this.game.sagaInput.put(deactivateSignal);
+            }
+
+            cancel(): void {
+                this.game.isDeactivated.unsubscribe(this.listenerId!);
+            }
+        }
+
+        await new CancellableRaceProtocol([
+            new DeactivateParticipant(this),
+            new TimeoutParticipant(this, request.payload.player),
+            new SendRequest(this, request.payload.player, request.payload),
+        ]).perform();
     }
 
     deactivate() {
-        // this will eventually deactivate the game
-        this.throwHandle.set(new DeactivateSignal());
+        this.isDeactivated.set(true);
     }
 
     onPlayerConnect(id: PlayerId, socket_id: string) {

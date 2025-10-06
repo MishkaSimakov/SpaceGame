@@ -7,6 +7,7 @@ import {defaultSettings} from "@src/game/DefaultSettings";
 import {isReducerName, reducers} from "@src/game/reducers/Main";
 import {getInitialGameState} from "@src/game/InitGameState";
 import {ModuleInfo, modulesInfo} from "@common/cards/Modules";
+import {GameInput} from "@src/game/sagas/runner/Environment";
 
 export function fakeGameState(playersCount: number): GameState {
     const settings: GameSettings = {
@@ -54,14 +55,14 @@ export function attachTerminalLogger(busRef: ActionsBus) {
     });
 }
 
-export function attachFakeRandomizer(busRef: ActionsBus) {
+export function attachFakeRandomizer(busRef: ActionsBus, inputRef: GameInput) {
     const diceCalls = {value: 0};
     const shuffleCalls = {value: 0};
 
     busRef.on('throwDice', () => {
         diceCalls.value += 1;
 
-        busRef.emit(throwDiceResult(1));
+        inputRef.put(throwDiceResult(1));
     });
 
     busRef.on('shuffle', (action) => {
@@ -72,7 +73,7 @@ export function attachFakeRandomizer(busRef: ActionsBus) {
             result[i] = i;
         }
 
-        busRef.emit(shuffleResult(result));
+        inputRef.put(shuffleResult(result));
     });
 
     return {diceCalls, shuffleCalls};

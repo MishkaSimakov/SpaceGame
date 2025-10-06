@@ -8,11 +8,14 @@ import {attachReducers, fakeGameState} from "../Utils";
 import ActionsBus from "../../../src/game/ActionsBus";
 import {discardCards} from "@src/game/sagas/phases/DiscardCards";
 import {runSaga} from "@src/game/sagas/runner/RunSaga";
+import {GameInput} from "@src/game/sagas/runner/Environment";
+import {Channel} from "@src/game/sagas/runner/Channel";
 
 
 test('doesntDiscardWhenNotEnoughCards', async () => {
     const state = fakeGameState(2);
     let player = state.players[0];
+    const input: GameInput = new Channel();
 
     const cardsCount = 4;
 
@@ -26,7 +29,7 @@ test('doesntDiscardWhenNotEnoughCards', async () => {
         assert.unreachable("player must not be asked to discard cards");
     });
 
-    await runSaga({state, bus}, discardCards);
+    await runSaga({state, output: bus, input}, discardCards);
 
     // test
     player = state.players[0];
@@ -36,6 +39,7 @@ test('doesntDiscardWhenNotEnoughCards', async () => {
 
 test('discardCardsWhenThereAreTooMany', async () => {
     const state = fakeGameState(2);
+    const input: GameInput = new Channel();
 
     let player = state.players[0];
 
@@ -51,10 +55,10 @@ test('discardCardsWhenThereAreTooMany', async () => {
 
     attachReducers(bus, state);
     bus.on('discardCardsRequest', () => {
-        bus.emit(discardCardsResponse([1, 2, 3, 4]));
+        input.put(discardCardsResponse([1, 2, 3, 4]));
     });
 
-    await runSaga({state, bus}, discardCards);
+    await runSaga({state, output: bus, input}, discardCards);
 
     // test
     player = state.players[0];

@@ -8,10 +8,13 @@ import {attachReducers, fakeGameState, fakeModule} from "../Utils";
 import ActionsBus from "../../../src/game/ActionsBus";
 import {damageModule} from "@src/game/sagas/components/DamageModule";
 import {runSaga} from "@src/game/sagas/runner/RunSaga";
+import {GameInput} from "@src/game/sagas/runner/Environment";
+import {Channel} from "@src/game/sagas/runner/Channel";
 
 
 test('simple', async () => {
     const state = fakeGameState(2);
+    const input: GameInput = new Channel();
 
     const attacker = state.players[0];
     const victim = state.players[1];
@@ -22,7 +25,7 @@ test('simple', async () => {
     attachReducers(bus, state);
 
     await runSaga(
-        {state, bus},
+        {state, output: bus, input},
         damageModule, victim, {x: 0, y: 0}, 1, {type: "Player", attacker}
     );
 
@@ -37,6 +40,7 @@ test('damageModuleReducesEnergyWhenCapacityDecreases', async () => {
     let attacker = state.players[0];
     let victim = state.players[1];
     const bus = new ActionsBus();
+    const input: GameInput = new Channel();
 
     const mainModule = SpaceshipGetters.getMainModule(victim.spaceship)!;
     mainModule.capacity = 25;
@@ -57,7 +61,7 @@ test('damageModuleReducesEnergyWhenCapacityDecreases', async () => {
 
     // Run
     await runSaga(
-        {state, bus},
+        {state, output: bus, input},
         damageModule, victim, {x: 1, y: 0}, battery.health, {type: 'Player', attacker}
     );
 
@@ -76,6 +80,7 @@ test('damageModuleReducesEnergyWhenCapacityDecreases', async () => {
 test('damageModuleNoEnergyAdjustmentWhenWithinCapacity', async () => {
     // Setup
     const state = fakeGameState(2);
+    const input: GameInput = new Channel();
 
     let attacker = state.players[0];
     let victim = state.players[1];
@@ -100,7 +105,7 @@ test('damageModuleNoEnergyAdjustmentWhenWithinCapacity', async () => {
 
     // Run
     await runSaga(
-        {state, bus},
+        {state, output: bus, input},
         damageModule, victim, {x: 1, y: 0}, battery.health, {type: 'Player', attacker}
     );
 
@@ -119,6 +124,7 @@ test('damageModuleNoEnergyAdjustmentWhenWithinCapacity', async () => {
 test('damageModuleNoDestructionNoEnergyAdjustment', async () => {
     // Setup
     const state = fakeGameState(2);
+    const input: GameInput = new Channel();
 
     let attacker = state.players[0];
     let victim = state.players[1];
@@ -143,7 +149,7 @@ test('damageModuleNoDestructionNoEnergyAdjustment', async () => {
 
     // Run
     await runSaga(
-        {state, bus},
+        {state, output: bus, input},
         damageModule, victim, {x: 1, y: 0}, 1, {type: 'Player', attacker}
     );
 
@@ -165,6 +171,7 @@ test('damageFromNuclearReactor', async () => {
     let attacker = state.players[0];
     let victim = state.players[1];
     const bus = new ActionsBus();
+    const input: GameInput = new Channel();
 
     const mainModule = SpaceshipGetters.getMainModule(victim.spaceship)!;
     mainModule.connectors = {top: 1, right: 1, bottom: 1, left: 1};
@@ -179,7 +186,7 @@ test('damageFromNuclearReactor', async () => {
 
     // Run
     await runSaga(
-        {state, bus},
+        {state, output: bus, input},
         damageModule, victim, {x: 1, y: 0}, reactor.health, {type: 'Player', attacker}
     );
 
@@ -199,6 +206,7 @@ test('damageFromNuclearReactorChain', async () => {
     let attacker = state.players[0];
     let victim = state.players[1];
     const bus = new ActionsBus();
+    const input: GameInput = new Channel();
 
     const mainModule = SpaceshipGetters.getMainModule(victim.spaceship)!;
     mainModule.connectors = {top: 1, right: 1, bottom: 1, left: 1};
@@ -228,7 +236,7 @@ test('damageFromNuclearReactorChain', async () => {
 
     // Run
     await runSaga(
-        {state, bus},
+        {state, output: bus, input},
         damageModule, victim, {x: 3, y: 0}, 1, {type: 'Player', attacker}
     );
 
@@ -248,6 +256,7 @@ test('damageFromNuclearReactorChain', async () => {
 test('healthIsRestoredWhenGoesToDiscards', async () => {
     // Setup
     const state = fakeGameState(2);
+    const input: GameInput = new Channel();
 
     let attacker = state.players[0];
     let victim = state.players[1];
@@ -267,7 +276,7 @@ test('healthIsRestoredWhenGoesToDiscards', async () => {
 
     // Run
     await runSaga(
-        {state, bus},
+        {state, output: bus, input},
         damageModule, victim, {x: 1, y: 0}, 1, {type: 'EventCard'}
     );
 

@@ -1,11 +1,11 @@
 import {ok} from "@src/helpers/Result";
-import {CancellableContinuation, Continuation} from "../Continuation";
+import {Continuation} from "../Continuation";
 import {Environment} from "../Environment";
 import {TakeEffect} from "../Effects";
+import {Action} from "@common/ActionsHelpers";
+import {DeactivateSignal, PlayerLostSignal} from "@src/game/sagas/runner/Signals";
 
-export class TakeContinuation implements CancellableContinuation<TakeEffect["input"]> {
-    private cancelled = false;
-
+export class TakeContinuation implements Continuation<TakeEffect["input"]> {
     constructor(
         private readonly env: Environment,
         private readonly consumer: Continuation<any>
@@ -14,18 +14,10 @@ export class TakeContinuation implements CancellableContinuation<TakeEffect["inp
 
     continue(_: TakeEffect["input"]): void {
         // TODO: possibly make cancellation more effective by removing listener entirely
-        const listener = (payload: any) => {
-            this.env.bus.off('*', listener);
-
-            if (!this.cancelled) {
-                this.consumer.continue(ok(payload));
-            }
+        const receiver = (message: Action | PlayerLostSignal | DeactivateSignal) => {
+            this.consumer.continue(ok(message));
         };
 
-        this.env.bus.on('*', listener);
-    }
-
-    cancel() {
-        this.cancelled = true;
+        this.env.input.take(receiver);
     }
 }

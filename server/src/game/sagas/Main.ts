@@ -12,7 +12,7 @@ import {attack} from "./phases/Attack";
 import {fixSpaceship} from "./phases/FixSpaceship";
 import {init} from "./components/Init";
 import {addTimeRecord} from "./components/Time";
-import {LossSignal} from "../middlewares/LossSignal";
+import {playerTimeoutSignal} from "@src/game/sagas/runner/Signals";
 
 function* isGameEnded() {
     return (yield* select()).players.filter(p => !p.lose).length === 1;
@@ -69,14 +69,12 @@ export function* gameSaga() {
         try {
             yield* playerTurn();
         } catch (error) {
-            // LossSignal indicates that current turn must be cancelled due to player loss
-            if (error instanceof LossSignal) {
+            // PlayerLostSignal indicates that current turn must be cancelled due to player loss
+            if (error === playerTimeoutSignal) {
                 const currentPlayer = StateGetters.currentPlayer(yield* select());
                 yield* addTimeRecord(currentPlayer.id, TimeRecordType.DEFAULT_TURN_ENDED);
 
-                if (!currentPlayer.lose) {
-                    yield* put(playerLost(currentPlayer.id));
-                }
+                yield* put(playerLost(currentPlayer.id));
             } else {
                 throw error;
             }

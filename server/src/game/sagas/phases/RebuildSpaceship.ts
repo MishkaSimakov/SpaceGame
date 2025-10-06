@@ -7,13 +7,13 @@ import {requestWithCheats} from "@src/game/sagas/components/RequestWithCheats";
 export function* rebuildSpaceship() {
     let currentPlayer = StateGetters.currentPlayer(yield* select());
 
-    const {newSpaceship} = yield* requestWithCheats(
+    const {state, response} = yield* requestWithCheats(
         rebuildSpaceshipRequest(currentPlayer.id),
         'rebuildSpaceshipResponse'
     );
 
     // update state after cheats
-    currentPlayer = StateGetters.currentPlayer(yield* select());
+    currentPlayer = StateGetters.currentPlayer(state);
 
     const handModules = currentPlayer.hand
         .filter(card => card.cardType === "module")
@@ -21,7 +21,7 @@ export function* rebuildSpaceship() {
 
     const playerModules = [...currentPlayer.spaceship.modules, ...handModules];
 
-    const newModules = newSpaceship.map(m => {
+    const newModules = response.newSpaceship.map(m => {
         const playerModule = playerModules.find(c => c.id === m.id)!;
 
         playerModule.x = m.position.x;
@@ -32,7 +32,7 @@ export function* rebuildSpaceship() {
     });
 
     const newHand = currentPlayer.hand
-        .filter(card => card.cardType === "event" || !newSpaceship.find(newCard => newCard.id === card.module.id))
+        .filter(card => card.cardType === "event" || !response.newSpaceship.find(newCard => newCard.id === card.module.id))
 
     yield* put(playerRebuiltSpaceship(currentPlayer.id, {modules: newModules}, newHand));
 

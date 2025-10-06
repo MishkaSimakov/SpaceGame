@@ -1,6 +1,7 @@
 import {Action} from "@common/ActionsHelpers";
 import {GameState} from "@common/Types";
 import * as Actions from "@common/Actions"
+import {DeactivateSignal, PlayerLostSignal} from "@src/game/sagas/runner/Signals";
 
 export type EmptyObject = Record<string, never>;
 
@@ -23,28 +24,13 @@ export type TakeEffect = {
     input: {
         type: "take";
     },
-    output: ReturnType<(typeof Actions)[keyof typeof Actions]>
+    output: ReturnType<(typeof Actions)[keyof typeof Actions]> | DeactivateSignal | PlayerLostSignal
 };
 
-// all effect
-type EffectUnion =
+export type Effect =
     | SelectEffect
     | PutEffect
     | TakeEffect;
-
-export type GeneratorReturnValue<T> = T extends Generator<any, infer R, any> ? R : never;
-
-export type AllEffect<T extends Record<string, GeneratorForEffect<EffectUnion>>> = {
-    input: {
-        type: "all",
-        effects: T
-    },
-    output: {
-        [Key in keyof T]: GeneratorReturnValue<T[Key]>
-    }
-};
-
-export type Effect = EffectUnion | AllEffect<any>;
 
 type GeneratorForEffect<E extends Effect> = Generator<E["input"], E["output"], E["output"]>;
 
@@ -64,13 +50,6 @@ export function* put(action: Action<string, any, any>): GeneratorForEffect<PutEf
 export function* take(): GeneratorForEffect<TakeEffect> {
     return yield {
         type: "take"
-    };
-}
-
-export function* all<T extends Record<string, GeneratorForEffect<EffectUnion>>>(effects: T): GeneratorForEffect<AllEffect<T>> {
-    return yield {
-        type: "all",
-        effects: effects
     };
 }
 

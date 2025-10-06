@@ -65,7 +65,6 @@ export default class SocketsManager implements ISocketsManager {
 
     onPlayerDisconnect(playerId: PlayerId) {
         if (!(playerId in this.players)) {
-            console.log(this.players, playerId);
             throw new Error("Unknown player id disconnected from the game");
         }
 

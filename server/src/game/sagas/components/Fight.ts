@@ -20,7 +20,7 @@ import {damageModule} from "./DamageModule";
 import {dice} from "./Random";
 import {addTimeRecord} from "./Time";
 import {request} from "./Request";
-import {LossSignal} from "@src/game/middlewares/LossSignal";
+import {playerTimeoutSignal} from "@src/game/sagas/runner/Signals";
 
 
 function* getCombatants() {
@@ -246,14 +246,16 @@ export function* fight() {
 
         yield* cleanupAfterFight();
     } catch (error) {
-        if (error instanceof LossSignal) {
-            const state = yield* select();
+        if (error === playerTimeoutSignal) {
+            // const state = yield* select();
+            //
+            // if (state.currentPlayerId !== error.player) {
+            //     yield* cleanupAfterFight();
+            // } else {
+            //     throw error;
+            // }
 
-            if (state.currentPlayerId !== error.player) {
-                yield* cleanupAfterFight();
-            } else {
-                throw error;
-            }
+            console.log("Player lost in a fight!!!")
         } else {
             throw error;
         }

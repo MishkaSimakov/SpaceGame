@@ -1,4 +1,4 @@
-import {all, put, select, take} from "../runner/Effects";
+import {put, select, take} from "../runner/Effects";
 import * as assert from "node:assert";
 import {StateGetters} from "@common/getters/State";
 import {GameState, PlayerId, TimeRecord, TimeRecordType} from "@common/Types";
@@ -10,10 +10,8 @@ import {
 import {takeType} from "@src/game/sagas/components/TakeSpecific";
 
 function* getTime() {
-    const {res} = yield* all({
-        req: put(timeAction()),
-        res: takeType('timeResult')
-    });
+    yield* put(timeAction());
+    const res = yield* takeType('timeResult');
 
     return res.payload.result as number;
 }

@@ -33,7 +33,7 @@ function* tryAttackByEventCard() {
             yield* put(popCardsFromHand(currentPlayer.id, [attackLaterCardIndex], "event card (attack later)"));
             yield* put(pushCardsToDiscard([attackLaterCard]));
             yield* put(beginFight(currentPlayer.id, victim, "event card (attack later)"));
-            console.log("starting fight");
+
             yield* fight();
         }
     }
