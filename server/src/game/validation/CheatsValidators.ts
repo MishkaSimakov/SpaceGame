@@ -18,5 +18,7 @@ export const validators: CheatsValidatorsContainer = {
         target: makeActivePlayerIdSchema(state),
         delta: z.number()
     }),
-
+    cheatAdvanceTime: (state: GameState) => z.object({
+        delta: z.number().nonnegative()
+    }),
 };

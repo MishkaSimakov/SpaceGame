@@ -57,6 +57,8 @@ export default class GamesManager {
         }
 
         game.deactivate();
+        console.log("deactivated game");
+        // store game time into database
     }
 
     isActive(gameId: string): boolean {

@@ -13,5 +13,5 @@ type CheatsPerformersContainer = {
 export const cheatsPerformers: CheatsPerformersContainer = {
     * cheatChangeEnergy(cheat) {
         yield* put(changePlayerEnergy(cheat.target, cheat.delta, "cheat"));
-    }
+    },
 }

@@ -18,8 +18,10 @@ export function* requestWithCheats<Req extends Action<string, any, any>, Res ext
     while (true) {
         const message = yield* take();
 
-        if (message === playerTimeoutSignal || message === deactivateSignal) {
-            throw message;
+        if (message.type === 'playerTimeoutSignal') {
+            throw playerTimeoutSignal;
+        } else if (message.type === 'deactivateSignal') {
+            throw deactivateSignal;
         } else if (message.type === response) {
             return {
                 response: message.payload,

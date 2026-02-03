@@ -2,8 +2,11 @@ import path from "path";
 import * as fs from "node:fs";
 
 import {Action} from "@common/ActionsHelpers";
-
-import {IActionsStorage} from "@src/game/interfaces/IActionsStorage";
+import {
+    ActionPurpose,
+    ActionWithStorageInfo,
+    IActionsStorage,
+} from "@src/game/interfaces/IActionsStorage";
 
 export class FileActionsStorage implements IActionsStorage {
     logFilepath: string;
@@ -14,18 +17,26 @@ export class FileActionsStorage implements IActionsStorage {
         this.ensureLogFileExists();
     }
 
-    appendAction(action: Action<string, any, any>) {
+    appendAction(action: Action<string, any, any>, purpose: ActionPurpose, gameTime: number) {
         console.log("📝 logger recorded:", action.type);
-        fs.appendFileSync(this.logFilepath, JSON.stringify(action) + '\n');
+
+        const forStorage: ActionWithStorageInfo = {
+            action,
+            purpose,
+
+            storedAtGameTime: gameTime,
+        }
+
+        fs.appendFileSync(this.logFilepath, JSON.stringify(forStorage) + '\n');
     }
 
-    getAllActions(): Action<string, any, any>[] {
+    getActionsWithStorageInfo(): ActionWithStorageInfo[] {
         const content = fs.readFileSync(this.logFilepath).toString().split("\n");
 
         return content
             .map(line => line.trim())
             .filter(line => line.length > 0)
-            .map(line => JSON.parse(line));
+            .map(line => JSON.parse(line) as ActionWithStorageInfo);
     }
 
     private ensureLogFileExists() {

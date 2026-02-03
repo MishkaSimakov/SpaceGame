@@ -1,11 +1,9 @@
 import {isEffect, SagaGenerator} from "../Effects";
-import {err, ok, Result} from "../../../../helpers/Result";
+import {err, ok, Result} from "@src/helpers/Result";
 import {Environment} from "../Environment";
 import {Continuation} from "../Continuation";
 import {effectContinuationsMap} from "./EffectContinuationsMap";
 
-// calling task.cancel inside saga is UB!
-// + saga cannot be async. Therefore, cancel may only be called during effect execution
 export class SagaContinuation<V> implements Continuation<Result<V, any> | void> {
     private currentEffect: Continuation<any> | undefined;
 

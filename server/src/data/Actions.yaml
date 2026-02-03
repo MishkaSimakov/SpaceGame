@@ -888,6 +888,12 @@
       type:
         ref: MainModuleType
 
+- name: cheatAdvanceTime
+  payload:
+    - name: delta
+      type:
+        type: int32
+
 - name: cheatGetModuleCard
   payload:
     - name: target
@@ -908,3 +914,12 @@
     - name: type
       type:
         ref: EventType
+
+# -----------------------------
+# Signals
+# -----------------------------
+- name: playerTimeoutSignal
+  payload: [ ]
+
+- name: deactivateSignal
+  payload: [ ]

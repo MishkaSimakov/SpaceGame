@@ -2,9 +2,9 @@ import * as assert from "node:assert";
 import jsonpatch from 'fast-json-patch'
 import {ZodType} from "zod";
 
-import {GameSettings, GameState, Player, PlayerId} from "@common/Types"
+import {GameSettings, GameState, Message, Player, PlayerId, TimeRecordType} from "@common/Types"
 import * as Actions from "@common/Actions";
-import {reducerUpdatedState, shuffleResult, throwDiceResult, timeResult} from "@common/Actions";
+import {addTimeRecord, reducerUpdatedState, shuffleResult, throwDiceResult, timeResult} from "@common/Actions";
 import {Action, constructAction, isAction} from "@common/ActionsHelpers";
 
 import ActionsBus from "./ActionsBus";
@@ -14,28 +14,116 @@ import {isReducerName, reducers} from "./reducers/Main";
 import {Randomizer} from "./Randomizer";
 import {validators} from "./validation/ResponseValidators";
 import {validators as cheatsValidators} from "./validation/CheatsValidators";
-import {PlayerGameLogListener} from "./PlayerGameLogListener";
 import {getInitialGameState} from "./InitGameState";
 import {runSaga} from "./sagas/runner/RunSaga";
 import {IUser} from "@src/game/interfaces/IUser";
 import {ISocketsManager} from "@src/game/interfaces/ISocketsManager";
-import {IActionsStorage} from "@src/game/interfaces/IActionsStorage";
-import {IClock} from "@src/game/interfaces/IClock";
+import {ActionPurpose, ActionWithStorageInfo, IActionsStorage} from "@src/game/interfaces/IActionsStorage";
+import {IClock, Milliseconds} from "@src/game/interfaces/IClock";
 import {Environment} from "@src/game/sagas/runner/Environment";
 import {Channel} from "@src/game/sagas/runner/Channel";
-import {
-    DeactivateSignal,
-    deactivateSignal,
-    PlayerLostSignal,
-    playerTimeoutSignal
-} from "@src/game/sagas/runner/Signals";
-import {getPlayerTime} from "@src/game/sagas/components/Time";
+import {deactivateSignal as deactivateSignalSymbol} from "@src/game/sagas/runner/Signals";
+import {getPlayerTime, getTimeDecreasingPlayerId} from "@src/game/sagas/components/Time";
 import {CancellableRaceProtocol, IParticipant} from "@src/game/CancellableRaceProtocol";
 import {Observable} from "@common/Observable";
+import {Exception} from "handlebars";
+import {StateGetters} from "@common/getters/State";
 
 
 export type GameResult = { type: "deactivated" } | { type: "finished", winner: PlayerId };
 
+type TimeoutHandle = () => void;
+
+class GameClock {
+    private shift: number = 0;
+    private pausedAt: number | undefined = 0;
+
+    private deadlines: [number, () => void][] = [];
+
+    constructor(
+        private wallClock: IClock
+    ) {
+        this.checkDeadlines();
+    }
+
+    getTime(): Milliseconds {
+        return this.pausedAt ?? (this.wallClock.getTime() - this.shift);
+    }
+
+    pause() {
+        assert.ok(!this.isPaused());
+
+        this.pausedAt = this.getTime();
+    }
+
+    resume() {
+        assert.ok(this.isPaused());
+
+        this.shift = this.wallClock.getTime() - this.pausedAt!;
+        this.pausedAt = undefined;
+    }
+
+    isPaused(): boolean {
+        return this.pausedAt !== undefined;
+    }
+
+    setTime(time: Milliseconds) {
+        if (this.isPaused()) {
+            this.pausedAt = time;
+        } else {
+            this.shift = this.wallClock.getTime() - time;
+        }
+    }
+
+    setTimeout(callback: () => void, delay: Milliseconds): TimeoutHandle {
+        const deadline = this.getTime() + delay;
+
+        this.deadlines.push([deadline, callback]);
+        return callback;
+    }
+
+    removeTimeout(handle: TimeoutHandle) {
+        this.deadlines = this.deadlines.filter(([d, c]) => c != handle);
+    }
+
+    private checkDeadlines() {
+        const currentTime = this.getTime();
+
+        this.deadlines = this.deadlines.filter(([deadline, callback]) => {
+            if (deadline <= currentTime) {
+                callback();
+                return false;
+            }
+
+            return true;
+        });
+
+        this.wallClock.setTimeout(500, this.checkDeadlines.bind(this));
+    }
+}
+
+/*
+Проблемы:
+2. Сохранять время при деактивации игры
+ - Ввести внутреигровые часы, которые будут вручную переводиться каждую секунду, пока игра работает
+ - Ввести специальный action, который будет указывать, как долго игра была деактивирована
+   Этот action нужно добавлять после перезапуска игры. А если ставим на паузу? А если сервер сломается во время паузы?
+   На время паузы деактивировать игру? Если нет, то нужно как-то отменять все таймауты
+   Время берётся из событий. Сейчас события получают время, используя Date.now(), а не clock.getTime().
+    - Сделать время необязательным атрибутом действий и добавлять время к действиям внутри Game
+
+Логически должно быть 2 режима работы: восстановление прошедших событий и обработка текущих событий
+Они не должны пересекаться. При восстановлении прошедших событий не нужно отправлять запросы пользователю. Вместо этого надо сразу считывать ответы из логов.
+Также нужно что-то сделать со временем. А если увеличивать время только во время ожидания ответа от пользователя?
+Тогда при восстановлении можно поддерживать в точности такое же игровое время.
+Остаётся только логика запросов к пользователю и записи в логи.
+События не нужно записывать в логи, пока идёт восстановление. Добавить флаг inReplay. Но когда его выключать?
+После того как отправлено или получено последнее сообщение, которое есть в логах.
+
+Во время восстановления не надо отправлять запросы пользователю.
+Идея: всегда в конце логов добавлять deactivateSignal, если его нет. Тогда восстановление всегда будет заканчиваться на попытке отправить deactivateSignal в игру
+
+ */
 export default class Game {
     users: IUser[];
 
@@ -44,16 +132,18 @@ export default class Game {
     bus: ActionsBus;
     sockets: ISocketsManager;
     storage: IActionsStorage;
-    playerGameLog: PlayerGameLogListener;
+    playerGameLog: Message[] = [];
 
-    clock: IClock;
+    wallClock: IClock;
+    gameClock: GameClock;
 
     // resolved when game must be deactivated
     isDeactivated: Observable<boolean>;
 
-    sagaInput: Channel<Action | PlayerLostSignal | DeactivateSignal>;
+    sagaInput: Channel<Action>;
+    sagaOutput: Channel<Action>;
 
-    private inReplay: boolean = false;
+    replayActions: ActionWithStorageInfo[] = [];
 
     constructor(
         users: IUser[],
@@ -73,33 +163,184 @@ export default class Game {
         this.bus = new ActionsBus();
         this.sockets = sockets;
         this.storage = storage;
-        this.clock = clock;
 
-        this.playerGameLog = new PlayerGameLogListener(this.bus, this.users);
+        this.wallClock = clock;
+        this.gameClock = new GameClock(this.wallClock);
 
         this.sagaInput = new Channel();
+        this.sagaOutput = new Channel();
 
-        this.playerGameLog.registerListeners();
-        this.registerReduceListeners();
-        this.registerLogListeners();
-        this.registerRandomizerListeners();
-        this.registerIOListeners();
-        this.registerTimeListeners();
+        this.registerCheatsSocketListeners();
+    }
+
+    private insertPause(from: number, to: number) {
+        const player = getTimeDecreasingPlayerId(this.state);
+
+        if (player) {
+            this.processAction(addTimeRecord(player, TimeRecordType.PAUSE_STARTED, from));
+            this.processAction(addTimeRecord(player, TimeRecordType.PAUSE_ENDED, to));
+        }
+    }
+
+    private exitReplay() {
+        console.log("⏪ exiting replay")
+        this.gameClock.resume();
+    }
+
+    // returns next replay action without removing it from queue
+    // skips deactivateSignals and cheats
+    // throws an error if peeked action type is not equal to expected
+    private peekReplayAction(expectedType: string): Action | undefined {
+        const hadActions = this.replayActions.length !== 0;
+
+        while (this.replayActions.length) {
+            const pastAction = this.replayActions[0].action;
+
+            console.log(`⏪ Replaying ${pastAction.type}`);
+
+            if (pastAction.type.startsWith('cheat')) {
+                this.sagaInput.put(pastAction);
+                this.replayActions.shift();
+                continue;
+            }
+            if (pastAction.type === 'deactivateSignal') {
+                this.replayActions.shift();
+                continue;
+            }
+
+            if (pastAction.type !== expectedType) {
+                throw new Error(`Error during game replay: unexpected action type (in a log file ${pastAction.type}, received ${expectedType}). This is possibly due to changes in gameSaga code.`);
+            }
+
+            return pastAction;
+        }
+
+        if (hadActions) {
+            this.exitReplay();
+        }
+
+        return undefined;
+    }
+
+    private shiftReplayAction(expectedType: string): Action | undefined {
+        const action = this.peekReplayAction(expectedType);
+
+        if (!action) {
+            return undefined;
+        }
+
+        this.replayActions.shift();
+
+        if (!this.replayActions.length) {
+            this.exitReplay();
+        }
+
+        return action;
+    }
+
+    private async processAction(action: Action<string, any, any>) {
+        const pastAction = this.shiftReplayAction(action.type);
+        if (!pastAction) {
+            this.storage.appendAction(action, ActionPurpose.SAGA_OUTPUT, this.gameClock.getTime());
+        }
+
+        let response: Action | undefined = undefined;
+
+        if (isReducerName(action.type)) {
+            let copy = structuredClone(this.state);
+
+            // @ts-ignore
+            reducers[action.type](copy, action.payload);
+
+            const delta = jsonpatch.compare(this.state, copy);
+
+            // SagaRunner relies on stateRef. Plain assignment would invalidate its reference
+            Object.assign(this.state, copy);
+
+            response = reducerUpdatedState(delta);
+        } else if (action.type === 'throwDice') {
+            response = throwDiceResult(this.randomizer.dice())
+        } else if (action.type === 'shuffle') {
+            const result = new Array(action.payload.length);
+            for (let i = 0; i < action.payload.length; ++i) {
+                result[i] = i;
+            }
+
+            this.randomizer.shuffle(result)
+            response = shuffleResult(result);
+        } else if (action.type.endsWith('Request')) {
+            // actions that match `*Request` are broadcasted through sockets
+            // they must contain payload.player field, the field specify to which player
+            // the action is broadcasted.
+            const responseType = action.type.replace("Request", "Response");
+
+            response = this.peekReplayAction(responseType) ?? await this.socketRequest(action);
+        } else if (action.type.endsWith("Info")) {
+            // actions that match `*Info` are also broadcasted in the same way,
+            // but without an acknowledgment
+
+            // do not send info when replaying game
+            if (!pastAction) {
+                assert.ok("player" in action.payload);
+
+                this.sockets.emit(action.payload.player, {
+                    withAcknowledgement: false,
+                    ensureSending: true
+                }, action.type, action.payload);
+            }
+        } else if (action.type === 'time') {
+            response = this.peekReplayAction('timeResult') ?? timeResult(this.gameClock.getTime());
+        } else if (action.type === 'message') {
+            const name = this.users.find(u => u.id === action.payload.player)!.login;
+            this.playerGameLog.push({
+                text: `${name}: ${action.payload.text}`
+            });
+        } else {
+            throw new Exception("Unknown saga output type.");
+        }
+
+        if (!response) {
+            return;
+        }
+
+        // send response
+        const pastResponse = this.shiftReplayAction(response.type);
+
+        if (!pastResponse) {
+            this.storage.appendAction(response, ActionPurpose.SAGA_INPUT, this.gameClock.getTime());
+        }
+
+        this.sagaInput.put(response);
     }
 
     async activate(): Promise<GameResult> {
-        await this.replay(this.storage.getAllActions());
+        this.replayActions = this.storage.getActionsWithStorageInfo();
+
+        if (this.replayActions.length) {
+            const last = this.replayActions[this.replayActions.length - 1];
+            this.gameClock.setTime(last.storedAtGameTime);
+        } else {
+            this.gameClock.resume();
+        }
 
         const env: Environment = {
-            output: this.bus,
+            output: this.sagaOutput,
             input: this.sagaInput,
             state: this.state
         };
 
         try {
+            const handler = (action: Action) => {
+                this.processAction(action).then(() => {
+                    this.sagaOutput.take(handler.bind(this));
+                });
+            }
+
+            this.sagaOutput.take(handler);
+
             await runSaga(env, gameSaga);
         } catch (error) {
-            if (error === deactivateSignal) {
+            if (error === deactivateSignalSymbol) {
                 return {type: "deactivated"};
             } else {
                 throw error;
@@ -107,7 +348,7 @@ export default class Game {
         }
 
         // game has finished
-        // notify players about it
+        // notify players about this
         for (let player of this.state.players) {
             await this.sockets.emit(player.id, {
                 withAcknowledgement: false,
@@ -123,112 +364,7 @@ export default class Game {
         };
     }
 
-    private async replay(actions: Action<string, any, any>[]) {
-        if (actions.length === 0) {
-            return;
-        }
-
-        this.inReplay = true;
-
-        const returnToNormalExecution = (pendingAction?: Action<string, any, any>) => {
-            console.log("⏪ replay finished, returning to normal execution");
-
-            this.bus.off('*', actionsReplayListener);
-            this.inReplay = false;
-
-            this.syncPlayersData();
-
-            // game.bus.emit(Actions.insertPause());
-
-            if (pendingAction) {
-                // if (pendingAction.type === "time") {
-                //     game.
-                // } else {
-                // type is *Request
-                this.socketRequest(pendingAction);
-                // }
-            }
-        };
-
-        // register fake sockets listeners
-        // they don't send anything to users and read responses from the log file
-        const actionsReplayListener = (action: Action<string, any, any>) => {
-            const pastAction = actions.shift();
-            if (!pastAction) {
-                return;
-            }
-
-            if (pastAction.type !== action.type) {
-                throw new Error(`Error during game replay: unexpected action type (in a log file ${pastAction.type} (${pastAction.uuid}), received ${action.type} (${action.uuid})). This is possibly due to changes in gameSaga code.`);
-            }
-
-            if (action.type.endsWith("Request") || action.type === "time") {
-                if (actions.length === 0) {
-                    returnToNormalExecution(action);
-                    return;
-                }
-
-                this.sagaInput.put(actions[0]);
-            } else if (actions.length === 0) {
-                returnToNormalExecution();
-            }
-        };
-
-        this.bus.on('*', actionsReplayListener);
-    }
-
-    registerLogListeners() {
-        this.bus.on('*', (action) => {
-            if (!this.inReplay) {
-                this.storage.appendAction(action);
-            }
-        });
-    }
-
-    registerRandomizerListeners() {
-        this.bus.on('throwDice', () => {
-            this.sagaInput.put(throwDiceResult(this.randomizer.dice()));
-        });
-
-        this.bus.on('shuffle', (action) => {
-            const result = new Array(action.payload.length);
-            for (let i = 0; i < action.payload.length; ++i) {
-                result[i] = i;
-            }
-
-            this.randomizer.shuffle(result)
-            this.sagaInput.put(shuffleResult(result));
-        });
-    }
-
-    registerIOListeners() {
-        this.bus.on('*', action => {
-            if (this.inReplay) {
-                return;
-            }
-
-            // actions that match `*Request` are broadcasted through sockets
-            // they must contain payload.player field, the field specify to which player
-            // the action is broadcasted.
-
-            // actions that match `*Info` are also broadcasted in the same way,
-            // but without an acknowledgment
-
-            if (action.type.endsWith("Request")) {
-                this.socketRequest(action);
-            }
-
-            if (action.type.endsWith("Info")) {
-                assert.ok("player" in action.payload);
-
-                this.sockets.emit(action.payload.player, {
-                    withAcknowledgement: false,
-                    ensureSending: true
-                }, action.type, action.payload);
-            }
-        });
-
-        // cheats listeners
+    private registerCheatsSocketListeners() {
         for (const cheatName of Object.keys(Actions).filter(a => a.startsWith('cheat'))) {
             this.sockets.on(cheatName, (payload: any) => {
                 const validator = cheatsValidators[cheatName as keyof typeof cheatsValidators] as (state: GameState) => ZodType;
@@ -238,40 +374,16 @@ export default class Game {
                     return;
                 }
 
-                this.sagaInput.put(constructAction(cheatName, validationResult.data) as Action<any, any>);
+                const action = constructAction(cheatName, validationResult.data) as Action<any, any>;
+
+                this.storage.appendAction(action, ActionPurpose.SAGA_INPUT, this.gameClock.getTime());
+                this.sagaInput.put(action);
             });
         }
     }
 
-    registerReduceListeners() {
-        this.bus.on('*', (action) => {
-            if (isReducerName(action.type)) {
-                let copy = structuredClone(this.state);
-                // TODO: strict typying
-                // @ts-ignore
-                reducers[action.type](copy, action.payload);
-
-                const delta = jsonpatch.compare(this.state, copy);
-
-                // SagaRunner relies on stateRef. Plain assignment would invalidate its reference
-                Object.assign(this.state, copy);
-
-                // for the sake of logging
-                this.bus.emit(reducerUpdatedState(delta));
-            }
-        });
-    }
-
-    registerTimeListeners() {
-        this.bus.on('time', () => {
-            if (!this.inReplay) {
-                this.sagaInput.put(timeResult(this.clock.getTime()));
-            }
-        });
-    }
-
     getPlayerById(id: number): Player {
-        return this.state.players.filter(p => p.id === id)[0];
+        return StateGetters.playerById(this.state, id)!;
     }
 
     syncPlayersData() {
@@ -285,7 +397,7 @@ export default class Game {
         }
     }
 
-    private async socketRequest(request: Action) {
+    private async socketRequest(request: Action): Promise<Action> {
         assert.ok(request.payload && typeof request.payload === "object");
         assert.ok("player" in request.payload && typeof request.payload.player === "number");
 
@@ -297,6 +409,8 @@ export default class Game {
         // 2. Waiting for player's timeout
         // 3. Waiting for game cancellation
         // Each of these tasks must cancel all the others.
+
+        let result: Action | undefined = undefined;
 
         class SendRequest implements IParticipant {
             private cancelled = false;
@@ -356,7 +470,7 @@ export default class Game {
             }
 
             proceed(): void {
-                this.game.sagaInput.put(this.response!);
+                result = this.response!;
             }
 
             cancel(): void {
@@ -367,7 +481,7 @@ export default class Game {
         class TimeoutParticipant implements IParticipant {
             private readonly game: Game;
             private readonly remainingTime: number | undefined;
-            private interval: NodeJS.Timeout | undefined = undefined;
+            private timeout: TimeoutHandle | undefined = undefined;
 
             constructor(game: Game, player: PlayerId) {
                 this.game = game;
@@ -377,7 +491,7 @@ export default class Game {
                 if (!state.settings.timeControlSettings) {
                     this.remainingTime = undefined;
                 } else {
-                    this.remainingTime = getPlayerTime(state, player, this.game.clock.getTime());
+                    this.remainingTime = getPlayerTime(state, player, this.game.gameClock.getTime());
                 }
             }
 
@@ -388,18 +502,18 @@ export default class Game {
             prepare(): Promise<void> {
                 return new Promise(resolve => {
                     if (this.remainingTime) {
-                        this.interval = setInterval(resolve, this.remainingTime);
+                        this.timeout = this.game.gameClock.setTimeout(resolve, this.remainingTime);
                     }
                 });
             }
 
             proceed(): void {
-                this.game.sagaInput.put(playerTimeoutSignal);
+                result = Actions.playerTimeoutSignal();
             }
 
             cancel(): void {
-                if (this.remainingTime) {
-                    clearInterval(this.interval);
+                if (this.remainingTime && this.timeout) {
+                    this.game.gameClock.removeTimeout(this.timeout);
                 }
             }
         }
@@ -423,7 +537,7 @@ export default class Game {
             }
 
             proceed(): void {
-                this.game.sagaInput.put(deactivateSignal);
+                result = Actions.deactivateSignal();
             }
 
             cancel(): void {
@@ -436,6 +550,9 @@ export default class Game {
             new TimeoutParticipant(this, request.payload.player),
             new SendRequest(this, request.payload.player, request.payload),
         ]).perform();
+
+        assert.ok(result);
+        return result;
     }
 
     deactivate() {

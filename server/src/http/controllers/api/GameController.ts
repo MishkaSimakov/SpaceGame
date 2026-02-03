@@ -45,6 +45,6 @@ export const logs = async (req: Request, res: Response) => {
     }
 
     return res.status(200).json(
-        new FileActionsStorage(gameEntity.logFilepath).getAllActions()
+        new FileActionsStorage(gameEntity.logFilepath).getActionsWithStorageInfo()
     );
 };

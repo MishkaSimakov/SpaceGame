@@ -3,7 +3,6 @@ import {Continuation} from "../Continuation";
 import {Environment} from "../Environment";
 import {TakeEffect} from "../Effects";
 import {Action} from "@common/ActionsHelpers";
-import {DeactivateSignal, PlayerLostSignal} from "@src/game/sagas/runner/Signals";
 
 export class TakeContinuation implements Continuation<TakeEffect["input"]> {
     constructor(
@@ -14,7 +13,7 @@ export class TakeContinuation implements Continuation<TakeEffect["input"]> {
 
     continue(_: TakeEffect["input"]): void {
         // TODO: possibly make cancellation more effective by removing listener entirely
-        const receiver = (message: Action | PlayerLostSignal | DeactivateSignal) => {
+        const receiver = (message: Action) => {
             this.consumer.continue(ok(message));
         };
 

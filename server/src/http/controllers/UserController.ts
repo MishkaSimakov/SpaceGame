@@ -1,5 +1,5 @@
 import {Request, Response} from "express";
-import {User} from "../../database/entity/user";
+import {User} from "@src/database/entity/user";
 import bcrypt from "bcrypt";
 import {AuthenticatedRequest} from "../middleware/auth";
 

@@ -1112,6 +1112,17 @@ export function cheatSetMainModuleType(target: Types.PlayerId, type: Types.MainM
 
 
 /**
+ * @param  delta  
+ */
+export function cheatAdvanceTime(delta: number) {
+    return constructAction(
+        'cheatAdvanceTime',
+        {delta},
+    );
+}
+
+
+/**
  * @param  target  
  * @param  type  
  * @param  connectors  
@@ -1132,6 +1143,26 @@ export function cheatGetEventCard(target: Types.PlayerId, type: Types.EventType)
     return constructAction(
         'cheatGetEventCard',
         {target, type},
+    );
+}
+
+
+/**
+ */
+export function playerTimeoutSignal() {
+    return constructAction(
+        'playerTimeoutSignal',
+        {},
+    );
+}
+
+
+/**
+ */
+export function deactivateSignal() {
+    return constructAction(
+        'deactivateSignal',
+        {},
     );
 }
 

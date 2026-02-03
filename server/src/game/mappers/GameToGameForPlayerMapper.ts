@@ -5,7 +5,7 @@ import {GameForPlayerDTO, GameState, Player} from "@common/Types";
 import Game from "../Game";
 import {getTimeDecreasingPlayerId} from "../sagas/components/Time";
 
-function getPlayersTime(state: GameState) {
+function getPlayersTime(state: GameState, currentTime: number) {
     let playersTime = state.players
         .map(p => ({
             player: p.id,
@@ -17,7 +17,6 @@ function getPlayersTime(state: GameState) {
     }
 
     const lastRecord = state.timeRecords[state.timeRecords.length - 1];
-    const currentTime = (new Date()).getTime();
 
     const record = playersTime.find(v => v.player === lastRecord.playerId)!;
     record.time -= (currentTime - lastRecord.time)
@@ -44,8 +43,8 @@ export function getDTO(game: Game, forPlayer: Player): GameForPlayerDTO {
 
         timeControl: game.state.settings.timeControlSettings ? {
             timeDecreasingPlayerId: getTimeDecreasingPlayerId(game.state),
-            playersTime: getPlayersTime(game.state)
+            playersTime: getPlayersTime(game.state, game.gameClock.getTime())
         } : undefined,
-        messages: game.playerGameLog.messages,
+        messages: game.playerGameLog,
     };
 }

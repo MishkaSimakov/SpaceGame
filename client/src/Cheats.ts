@@ -1,9 +1,9 @@
 import {mainModulesInfo, modulesInfo} from "@common/cards/Modules";
 import {eventsInfo} from "@common/cards/Events";
+import {cheatAdvanceTime, cheatChangeEnergy} from "@common/Actions";
 
 import SocketManager from "./sockets/SocketManager";
 import Game from "./Game";
-import {cheatChangeEnergy} from "@common/Actions";
 
 export class Cheats {
     constructor(
@@ -23,6 +23,14 @@ export class Cheats {
 
     setMainModuleType(type: any) {
         // validate input
+    }
+
+    advanceTime(delta: any) {
+        const signature = "advanceTime(delta: number)";
+
+        this.socketManager.cheat(cheatAdvanceTime(
+            this.validateNonNegativeNumber(0, delta, signature)
+        ));
     }
 
     // getters
@@ -52,6 +60,16 @@ export class Cheats {
 
         if (Number.isNaN(parsed)) {
             throw new TypeError(`Argument #${argId} must be a valid number. Received ${value} instead.\nMethod signature: ${signature}`);
+        }
+
+        return parsed;
+    }
+
+    private validateNonNegativeNumber(argId: number, value: any, signature: string) {
+        const parsed = Number(value);
+
+        if (Number.isNaN(parsed) || parsed < 0) {
+            throw new TypeError(`Argument #${argId} must be a valid non-negative number. Received ${value} instead.\nMethod signature: ${signature}`);
         }
 
         return parsed;

@@ -1,4 +1,4 @@
-type Milliseconds = number;
+export type Milliseconds = number;
 
 export interface IClock {
     // returns the number of milliseconds

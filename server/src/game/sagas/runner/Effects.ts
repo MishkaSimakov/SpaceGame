@@ -24,7 +24,7 @@ export type TakeEffect = {
     input: {
         type: "take";
     },
-    output: ReturnType<(typeof Actions)[keyof typeof Actions]> | DeactivateSignal | PlayerLostSignal
+    output: ReturnType<(typeof Actions)[keyof typeof Actions]>
 };
 
 export type Effect =

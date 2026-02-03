@@ -8,9 +8,9 @@ export function* takeType<T extends keyof typeof Actions>(type: T): Generator<Ta
     while (true) {
         const message = yield* take();
 
-        if (message === deactivateSignal) {
+        if (message.type === 'deactivateSignal') {
             throw deactivateSignal;
-        } else if (message === playerTimeoutSignal) {
+        } else if (message.type === 'playerTimeoutSignal') {
             throw playerTimeoutSignal;
         } else if (message.type === type) {
             return message as ActionByType<T>;
