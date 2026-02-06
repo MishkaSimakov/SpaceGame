@@ -73,26 +73,14 @@ export default class HandDrawer {
         let handHeight = cardSize + spaceBetween * 2;
 
         // draw background
-        if (startPosition < spaceBetween * 2) {
-            const outsideOffset = 50;
-
-            this.background
-                .position({
-                    x: -outsideOffset,
-                    y: sceneHeight - handHeight,
-                })
-                .width(sceneWidth + 2 * outsideOffset)
-                .height(handHeight + strokeWidth);
-        } else {
-            this.background
-                .position({
-                    x: startPosition - spaceBetween,
-                    y: sceneHeight - handHeight,
-                })
-                .width(handWidth + 2 * spaceBetween)
-                .height(handHeight + strokeWidth)
-                .cornerRadius([10, 10, 0, 0]);
-        }
+        this.background
+            .position({
+                x: startPosition - spaceBetween,
+                y: sceneHeight - handHeight,
+            })
+            .width(handWidth + 2 * spaceBetween)
+            .height(handHeight + strokeWidth)
+            .cornerRadius([10, 10, 0, 0]);
 
         this.background
             .fill(Color.fromHex('#0B2545', 0.75).toString())

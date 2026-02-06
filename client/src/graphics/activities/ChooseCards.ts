@@ -9,6 +9,7 @@ import Controls from "../scenes/Controls";
 import {Activity} from "./Activity";
 import {COLORS} from "../constants";
 import {BoundaryType, CountBoundary, CountBoundaryValidationResult} from "../CountBoundary";
+import {getCardsGrid} from "../shapes/CardsGrid";
 
 export class ChooseCardsActivity extends Activity {
     private modalGroup?: Group = undefined;
@@ -62,7 +63,7 @@ export class ChooseCardsActivity extends Activity {
             const sceneWidth = this.scene.width();
             const sceneHeight = this.scene.height();
 
-            const cardShapes = this.scene.drawCardsOnScreen(this.cards);
+            const cardShapes = getCardsGrid(this.cards, sceneWidth, sceneHeight);
 
             const fadeShape = new Rectangle({
                 x: 0,

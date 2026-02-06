@@ -6,6 +6,7 @@ import {Group} from "../engine/Group";
 import {Rectangle} from "graphics/engine/shapes/Rectangle";
 import {Text} from "../engine/shapes/Text";
 import {Activity} from "./Activity";
+import {getCardsGrid} from "../shapes/CardsGrid";
 
 export class ShowCardsActivity extends Activity {
     private cardsShape?: Group;
@@ -26,7 +27,7 @@ export class ShowCardsActivity extends Activity {
                 fill: Color.fromHex('#000000', 0.75).toString()
             });
 
-            this.cardsShape = this.scene.drawCardsOnScreen(this.cards);
+            this.cardsShape = getCardsGrid(this.cards, this.scene.width(), this.scene.height());
             this.scene.add(this.cardsShape);
 
             if (this.title) {
@@ -55,7 +56,7 @@ export class ShowCardsActivity extends Activity {
     update() {
         // TODO: update only size & position
         this.cardsShape.destroy();
-        this.cardsShape = this.scene.drawCardsOnScreen(this.cards);
+        this.cardsShape = getCardsGrid(this.cards, this.scene.width(), this.scene.height());
         this.scene.add(this.cardsShape);
 
         this.setPositions();

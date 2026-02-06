@@ -157,50 +157,47 @@ export default class Controls extends Scene {
         return positions;
     }
 
-    drawCardsOnScreen(cards: Card[]): Group {
-        let sceneWidth = this.width();
-        let sceneHeight = this.height();
-
-        let offset = {x: 0, y: 0};
-
-        let maxCardSize = Math.min(sceneWidth, sceneHeight) * 0.75;
-        let spaceAvailable = Math.max(sceneWidth, sceneHeight) * 0.75;
-        let padding = 20;
-
-        let cardSize = Math.min(maxCardSize, (spaceAvailable + padding) / cards.length - padding);
-
-        if (sceneWidth > sceneHeight) {
-            offset.x = cardSize + padding;
-        } else {
-            offset.y = cardSize + padding;
-        }
-
-        let cardShapes = new Group();
-
-        let position = {x: 0, y: 0};
-
-        for (let card of cards) {
-            cardShapes.add(
-                new CardShape({
-                    x: position.x,
-                    y: position.y,
-                    size: cardSize,
-                    card: card
-                })
-            );
-
-            position.x += offset.x;
-            position.y += offset.y;
-        }
-
-        cardShapes
-            .setPosition({
-                x: (sceneWidth - cardShapes.getWidth()) / 2,
-                y: (sceneHeight - cardShapes.getHeight()) / 2
-            });
-
-        return cardShapes;
-    }
+    // drawCardsOnScreen(cards: Card[]): Group {
+    //     const sceneWidth = this.width();
+    //     const sceneHeight = this.height();
+    //
+    //     const maxCardsInRow = 6;
+    //
+    //     const maxCardSize = Math.min(sceneWidth, sceneHeight) * 0.75;
+    //     const spaceAvailable = Math.max(sceneWidth, sceneHeight) * 0.75;
+    //     const padding = 20;
+    //
+    //     const cardSize = Math.min(maxCardSize, (spaceAvailable + padding) / Math.min(cards.length, maxCardsInRow) - padding);
+    //
+    //     const cardShapes = new Group();
+    //
+    //     for (let i = 0; i < cards.length; ++i) {
+    //         let row = Math.floor(i / 6);
+    //         let col = i % 6;
+    //
+    //         // rows and cols are swapped when width is less than height
+    //         if (sceneWidth < sceneHeight) {
+    //             [row, col] = [col, row];
+    //         }
+    //
+    //         cardShapes.add(
+    //             new CardShape({
+    //                 x: padding + (padding + cardSize) * col,
+    //                 y: padding + (padding + cardSize) * row,
+    //                 size: cardSize,
+    //                 card: cards[i]
+    //             })
+    //         );
+    //     }
+    //
+    //     cardShapes
+    //         .setPosition({
+    //             x: (sceneWidth - cardShapes.getWidth()) / 2,
+    //             y: (sceneHeight - cardShapes.getHeight()) / 2
+    //         });
+    //
+    //     return cardShapes;
+    // }
 
     async permuteCards(cards: Card[]): Promise<number[]> {
         return await this.enqueueActivity(new PermuteCardsActivity(this, cards));

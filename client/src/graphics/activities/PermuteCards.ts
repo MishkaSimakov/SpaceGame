@@ -8,6 +8,7 @@ import Color from "../Color";
 import {Text} from "../engine/shapes/Text";
 import {Activity} from "./Activity";
 import {CardShape} from "../shapes/CardShape";
+import {getCardsGrid} from "../shapes/CardsGrid";
 
 export class PermuteCardsActivity extends Activity {
     private modalGroup?: Group = undefined;
@@ -64,7 +65,7 @@ export class PermuteCardsActivity extends Activity {
             const sceneWidth = this.scene.width();
             const sceneHeight = this.scene.height();
 
-            const cardShapes = this.scene.drawCardsOnScreen(this.cards);
+            const cardShapes = getCardsGrid(this.cards, sceneWidth, sceneHeight);
 
             const cardPositions = cardShapes.children.map(card => {
                 return card.getPosition();
