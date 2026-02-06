@@ -7,28 +7,21 @@ import Scene from "./engine/Scene";
 import {Rectangle} from "./engine/shapes/Rectangle";
 import Color from "./Color";
 import {Group} from "./engine/Group";
+import {Text} from "./engine/shapes/Text";
 
 export default class HandDrawer {
-    group: Group;
-
-    cardShapes: CardShape[] = [];
-
     scene: Scene;
 
-    gameManager: Game;
-    background: Rectangle;
+    cardShapes: CardShape[] = [];
+    moreIndicator: Text | undefined = undefined;
+    background: Rectangle | undefined = undefined;
 
+    gameManager: Game;
     hand: Card[] = [];
 
     constructor(game: Game, scene: Scene) {
         this.scene = scene;
-
         this.gameManager = game;
-
-        this.group = this.scene.createAndAdd.group();
-        this.background = new Rectangle();
-
-        this.group.add(this.background);
     }
 
     setHandData(hand: Card[]) {
@@ -54,54 +47,30 @@ export default class HandDrawer {
     redraw() {
         this.destroy();
 
-        let hand = this.hand;
+        const hand = this.hand;
+        const maxVisibleCards = 5;
 
-        if (hand.length === 0)
+        if (hand.length === 0) {
             return;
+        }
 
         const cardSize = Math.max(128 * this.scene.width() / 1440, 75);
-
-        let sceneWidth = this.scene.width() - this.gameManager.controlsScene.topBarDrawer.sizes.width;
-        let sceneHeight = this.scene.height();
-
-        let spaceBetween = cardSize * 0.1;
-        let handWidth = hand.length * (cardSize + spaceBetween) - spaceBetween;
-
-        let strokeWidth = SIZES.STROKE_WIDTH;
-
-        let startPosition = (sceneWidth - handWidth) / 2;
-        let handHeight = cardSize + spaceBetween * 2;
-
-        // draw background
-        this.background
-            .position({
-                x: startPosition - spaceBetween,
-                y: sceneHeight - handHeight,
-            })
-            .width(handWidth + 2 * spaceBetween)
-            .height(handHeight + strokeWidth)
-            .cornerRadius([10, 10, 0, 0]);
-
-        this.background
-            .fill(Color.fromHex('#0B2545', 0.75).toString())
-            .stroke(Color.fromHex('#3D76BE').toString())
-            .strokeWidth(strokeWidth)
-
-        startPosition = Math.max(startPosition, spaceBetween);
-
-        this.group.add(this.background);
+        const maxWidth = this.scene.width() - this.gameManager.controlsScene.topBarDrawer.sizes.width;
+        const spaceBetween = cardSize * 0.1;
 
         // draw cards
+        const handContents = new Group();
 
-        for (let [index, card] of hand.entries()) {
-            let cardShape = new CardShape({
+        for (let i = 0; i < Math.min(hand.length, maxVisibleCards); ++i) {
+            const card = hand[i];
+
+            const cardShape = new CardShape({
                 size: cardSize,
                 card: card,
-                x: startPosition + index * (cardSize + spaceBetween),
-                y: sceneHeight - spaceBetween,
-                originY: 1
+                x: i * (cardSize + spaceBetween),
+                y: 0,
             });
-            this.group.add(cardShape);
+            handContents.add(cardShape);
 
             cardShape.on('click', () => {
                 if (card.cardType === "module") {
@@ -112,20 +81,67 @@ export default class HandDrawer {
 
             this.cardShapes.push(cardShape);
         }
+
+        // draw more indicator
+        if (hand.length > maxVisibleCards) {
+            this.moreIndicator = new Text({
+                text: `+ ${hand.length - maxVisibleCards}`,
+
+                originX: 0,
+                originY: 0.5,
+                x: maxVisibleCards * (cardSize + spaceBetween) + spaceBetween,
+                y: cardSize / 2,
+
+                fontFamily: "Exo2Bold",
+                fill: "white",
+                fontSize: 10,
+            });
+
+            handContents.add(this.moreIndicator);
+        }
+
+        handContents.setAttrs({
+            originX: 0.5,
+            originY: 1,
+
+            x: maxWidth / 2,
+            y: this.scene.height() - spaceBetween + SIZES.STROKE_WIDTH
+        });
+
+        // draw background
+        this.background = new Rectangle({
+            originX: 0.5,
+            originY: 1,
+            x: maxWidth / 2,
+            y: this.scene.height() + SIZES.STROKE_WIDTH,
+            width: handContents.getClientRect().width + 2 * spaceBetween,
+            height: handContents.getClientRect().height + 2 * spaceBetween,
+            cornerRadius: [10, 10, 0, 0],
+
+            fill: Color.fromHex('#0B2545', 0.75).toString(),
+            stroke: Color.fromHex('#3D76BE').toString(),
+            strokeWidth: SIZES.STROKE_WIDTH
+        });
+
+        this.scene.add(this.background, handContents);
     }
 
     setDragEnabled(isEnabled: boolean) {
         for (let shape of this.cardShapes) {
-            if (shape.isModule)
+            if (shape.isModule) {
                 shape.draggable(isEnabled);
+            }
         }
     }
 
     destroy() {
-        if (this.background)
-            this.background.destroy();
+        this.background?.destroy();
+        this.background = undefined;
 
-        for (let shape of this.cardShapes) {
+        this.moreIndicator?.destroy();
+        this.moreIndicator = undefined;
+
+        for (const shape of this.cardShapes) {
             shape.destroy();
         }
 
