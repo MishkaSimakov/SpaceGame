@@ -16,10 +16,12 @@ import {ChooseFromListActivity} from "../activities/ChooseFromList";
 import {ChooseCardsActivity} from "../activities/ChooseCards";
 import {ModuleGetters} from "@common/getters/Module";
 import {CardShape as CardShape} from "../shapes/CardShape";
+import PauseDrawer from "../PauseDrawer";
 
 export default class Controls extends Scene {
     handDrawer: HandDrawer;
     topBarDrawer: TopBarDrawer;
+    pauseDrawer: PauseDrawer;
     gameManager: Game;
 
     activitiesQueue: { activity: Activity, lock: Promise<void> }[] = [];
@@ -33,6 +35,7 @@ export default class Controls extends Scene {
     adopted() {
         this.topBarDrawer = new TopBarDrawer(this);
         this.handDrawer = new HandDrawer(this.gameManager, this);
+        this.pauseDrawer = new PauseDrawer(this.gameManager, this);
     }
 
     updateData(newMessages: Message[]) {
@@ -124,7 +127,7 @@ export default class Controls extends Scene {
             )
         };
 
-        handle.onSet(validate);
+        handle.subscribe(validate);
 
         const positions = await new Promise<Vector2[]>((resolve) => {
             this.topBarDrawer.addButtons([{

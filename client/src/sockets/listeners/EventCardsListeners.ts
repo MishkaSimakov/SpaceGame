@@ -109,7 +109,7 @@ export const eventCardsListeners: ListenersContainer = {
             game.controlsScene.topBarDrawer.setButtonDisabled('attack', handle.get().length === 0);
         };
 
-        handle.onSet(validate);
+        handle.subscribe(validate);
 
         const result = await new Promise<{
             victimId: PlayerId,
@@ -158,7 +158,7 @@ export const eventCardsListeners: ListenersContainer = {
             );
         };
 
-        handle.onSet(validate);
+        handle.subscribe(validate);
 
         const positions = await new Promise<Vector2[]>((resolve) => {
             game.controlsScene.topBarDrawer.addButtons([{
@@ -194,7 +194,7 @@ export const eventCardsListeners: ListenersContainer = {
             );
         };
 
-        handle.onSet(validate);
+        handle.subscribe(validate);
 
         const position = await new Promise<Vector2>((resolve) => {
             game.controlsScene.topBarDrawer.addButtons([{
@@ -249,7 +249,7 @@ export const eventCardsListeners: ListenersContainer = {
             );
         };
 
-        handle.onSet(validate);
+        handle.subscribe(validate);
 
         const position = await new Promise<Vector2>((resolve) => {
             game.controlsScene.topBarDrawer.addButtons([{

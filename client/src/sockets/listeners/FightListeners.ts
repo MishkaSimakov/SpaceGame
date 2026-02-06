@@ -40,7 +40,7 @@ export const fightListeners: ListenersContainer = {
             );
         };
 
-        protectorHandle.onSet(validate);
+        protectorHandle.subscribe(validate);
 
         const position = await new Promise<Vector2 | undefined>(resolve => {
             game.controlsScene.topBarDrawer.addButtons([
@@ -95,8 +95,8 @@ export const fightListeners: ListenersContainer = {
             );
         };
 
-        weaponHandle.onSet(validate);
-        targetHandle.onSet(validate);
+        weaponHandle.subscribe(validate);
+        targetHandle.subscribe(validate);
 
         const {weaponPosition, targetPosition} = await new Promise<{
             weaponPosition: Vector2,
@@ -138,7 +138,7 @@ export const fightListeners: ListenersContainer = {
             );
         };
 
-        targetHandle.onSet(validate);
+        targetHandle.subscribe(validate);
 
         const target = await new Promise<Vector2>(resolve => {
             game.controlsScene.topBarDrawer.addButtons([{

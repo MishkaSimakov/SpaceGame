@@ -24,9 +24,9 @@ export class Spaceship extends Group<SpaceshipConfig> {
 
             if (Number.isNaN(x) || Number.isNaN(y)) {
                 localStorage.removeItem(this.getStorageKey());
+            } else {
+                this.setPosition({x, y});
             }
-
-            this.setPosition({x, y});
         }
     }
 

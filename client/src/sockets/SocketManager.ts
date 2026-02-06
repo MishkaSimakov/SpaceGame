@@ -12,6 +12,7 @@ import {fightListeners} from "./listeners/FightListeners";
 import {COLORS} from "../graphics/constants";
 import {ShowHugeMessageActivity} from "../graphics/activities/ShowHugeMessage";
 import {GameForPlayerDTO} from "@common/Types";
+import {playerRequestsPause, playerRequestsResume} from "@common/Actions";
 
 const listeners: ListenersContainer = {
     ...mainListeners,
@@ -117,11 +118,23 @@ export default class SocketManager {
         window.location.href = window.location.origin;
     }
 
+    private emitAction(action: Action) {
+        this.socket.emit(action.type, action.payload);
+    }
+
     cheat(action: Action<any, any>) {
         if (!action.type.startsWith("cheat")) {
             throw new TypeError("cheat method must be used only for cheating!");
         }
 
-        this.socket.emit(action.type, action.payload);
+        this.emitAction(action);
+    }
+
+    pause() {
+        this.emitAction(playerRequestsPause());
+    }
+
+    resume() {
+        this.emitAction(playerRequestsResume());
     }
 }

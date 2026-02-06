@@ -13,6 +13,7 @@ import {Cheats} from "./Cheats";
 export default class Game {
     currentTurnPlayerId: PlayerId;
 
+    isPaused: boolean;
     currentPlayer: Player;
     otherPlayers: OtherPlayer[];
     onlineMap: GameForPlayerDTO["onlineMap"] = [];
@@ -32,8 +33,6 @@ export default class Game {
 
     messages: Message[] = [];
     cheats: Cheats | undefined;
-
-    isFirstDraw: boolean = true;
 
     constructor() {
         const graphics = new Graphics({
@@ -61,7 +60,7 @@ export default class Game {
             }
 
             const currTime = (new Date()).getTime();
-            if (this.timeDecreasingPlayerId in this.playerTime) {
+            if (this.timeDecreasingPlayerId in this.playerTime && !this.isPaused) {
                 this.playerTime[this.timeDecreasingPlayerId] -= (currTime - prevTime);
             }
             prevTime = currTime;
@@ -90,6 +89,7 @@ export default class Game {
     }
 
     setGameData(gameDTO: GameForPlayerDTO) {
+        this.isPaused = gameDTO.isPaused;
         this.currentTurnPlayerId = gameDTO.currentTurnPlayerId;
         this.onlineMap = gameDTO.onlineMap;
         this.otherPlayers = gameDTO.otherPlayers;
@@ -126,14 +126,9 @@ export default class Game {
         this.redraw(newMessages);
     }
 
-    redraw(newMessages: Message[]) {
+    private redraw(newMessages: Message[]) {
         this.controlsScene.updateData(newMessages);
         this.spaceshipsScene.updateData(this.getAllPlayers());
-
-        if (this.isFirstDraw) {
-            this.isFirstDraw = false;
-            this.spaceshipsScene.panToPlayerWithId(this.currentPlayer.id, 0);
-        }
 
         if (this.rebuildSpaceshipManager.isRebuildingSpaceship) {
             this.rebuildSpaceshipManager.setIsRebuildSpaceshipAllowed(true);
@@ -169,5 +164,9 @@ export default class Game {
         } else {
             document.title = 'Космические баталии';
         }
+    }
+
+    getGameId(): string {
+        return window.location.href.split('/').pop();
     }
 }

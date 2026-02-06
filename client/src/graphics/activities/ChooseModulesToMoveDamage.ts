@@ -36,7 +36,7 @@ export class ChooseModulesToMoveDamage extends Activity {
             this.controlsScene.topBarDrawer.setButtonDisabled('continue', fromHandle.get().length !== 1);
         };
 
-        fromHandle.onSet(validate);
+        fromHandle.subscribe(validate);
 
         return new Promise<MoveDamageResult>(resolve => {
             this.controlsScene.topBarDrawer.addButtons([{
@@ -82,7 +82,7 @@ export class ChooseModulesToMoveDamage extends Activity {
             this.controlsScene.topBarDrawer.setButtonDisabled('continue', toHandle.get().length !== 1);
         };
 
-        toHandle.onSet(validate);
+        toHandle.subscribe(validate);
 
         const to = await new Promise<Vector2>(resolve => {
             this.controlsScene.topBarDrawer.addButtons([{
