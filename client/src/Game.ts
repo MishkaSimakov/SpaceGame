@@ -82,6 +82,7 @@ export default class Game {
             this.popupsScene.setSize(newSize);
 
             this.controlsScene.activitiesQueue[0]?.activity.update();
+            this.controlsScene.pauseDrawer.update();
             this.popupsScene.update();
 
             this.redraw([]);

@@ -42,6 +42,8 @@ export default class Controls extends Scene {
         this.handDrawer.setHandData(this.gameManager.currentPlayer.hand);
         this.handDrawer.redraw();
 
+        this.pauseDrawer.redraw();
+
         this.topBarDrawer.setPlayersData(
             this.gameManager.currentPlayer,
             this.gameManager.otherPlayers,
