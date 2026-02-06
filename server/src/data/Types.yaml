@@ -306,6 +306,8 @@ OtherPlayer:
 
 GameForPlayerDTO:
   properties:
+    isPaused:
+      type: boolean
     currentTurnPlayerId:
       ref: PlayerId
     settings:

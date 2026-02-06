@@ -1149,10 +1149,31 @@ export function cheatGetEventCard(target: Types.PlayerId, type: Types.EventType)
 
 /**
  */
-export function playerTimeoutSignal() {
+export function playerRequestsPause() {
+    return constructAction(
+        'playerRequestsPause',
+        {},
+    );
+}
+
+
+/**
+ */
+export function playerRequestsResume() {
+    return constructAction(
+        'playerRequestsResume',
+        {},
+    );
+}
+
+
+/**
+ * @param  player  
+ */
+export function playerTimeoutSignal(player: Types.PlayerId) {
     return constructAction(
         'playerTimeoutSignal',
-        {},
+        {player},
     );
 }
 

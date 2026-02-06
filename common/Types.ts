@@ -191,6 +191,7 @@ export type OtherPlayer = {
 };
 
 export type GameForPlayerDTO = {
+    isPaused: boolean,
     currentTurnPlayerId: PlayerId,
     settings: GameSettings,
     player: Player,

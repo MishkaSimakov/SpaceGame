@@ -39,7 +39,6 @@ export function constructAction<T extends string, P, M>(type: T, payload: P, met
 export function isAction(value: any): value is Action<any, any, any> {
     return typeof value === 'object'
         && 'uuid' in value
-        && 'time' in value && !Number.isNaN(Number(value['time']))
         && 'type' in value
         && 'payload' in value && typeof value.payload === 'object'
 }

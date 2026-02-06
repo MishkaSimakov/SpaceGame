@@ -78,6 +78,11 @@ export const reducers: ReducersType = {
         } else {
             state.discards.module.push(...detached);
         }
+
+        player.energy = Math.min(
+            player.energy,
+            SpaceshipGetters.getTotalCapacity(player.spaceship)
+        );
     },
 
     changeModuleHealth(state: GameState, payload) {

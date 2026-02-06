@@ -2,8 +2,9 @@ import * as Actions from "@common/Actions";
 import {Action} from "@common/ActionsHelpers";
 import {Effect, put, select, take} from "@src/game/sagas/runner/Effects";
 import {cheatsPerformers} from "@src/game/sagas/components/CheatsPerformers";
-import {deactivateSignal, playerTimeoutSignal} from "@src/game/sagas/runner/Signals";
+import {deactivateSignal} from "@src/game/sagas/runner/Signals";
 import {GameState} from "@common/Types";
+import {playerLost} from "@common/Actions";
 
 type ActionPayload<T extends keyof typeof Actions> = ReturnType<(typeof Actions)[T]>["payload"];
 
@@ -18,10 +19,10 @@ export function* requestWithCheats<Req extends Action<string, any, any>, Res ext
     while (true) {
         const message = yield* take();
 
-        if (message.type === 'playerTimeoutSignal') {
-            throw playerTimeoutSignal;
-        } else if (message.type === 'deactivateSignal') {
+        if (message.type === 'deactivateSignal') {
             throw deactivateSignal;
+        } else if (message.type === 'playerTimeoutSignal') {
+            throw playerLost(message.payload.player);
         } else if (message.type === response) {
             return {
                 response: message.payload,

@@ -916,10 +916,22 @@
         ref: EventType
 
 # -----------------------------
+# Pause
+# -----------------------------
+- name: playerRequestsPause
+  payload: [ ]
+
+- name: playerRequestsResume
+  payload: [ ]
+
+# -----------------------------
 # Signals
 # -----------------------------
 - name: playerTimeoutSignal
-  payload: [ ]
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
 
 - name: deactivateSignal
   payload: [ ]

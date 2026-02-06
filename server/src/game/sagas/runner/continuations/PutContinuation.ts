@@ -12,8 +12,8 @@ export class PutContinuation implements Continuation<PutEffect["input"]> {
 
     continue(effect: PutEffect["input"]): void {
         // TODO: should these errors be passed into saga?
-        this.env.output.put(effect.action);
-
-        this.consumer.continue(ok({}));
+        this.env.output.putAndWait(effect.action, () => {
+            this.consumer.continue(ok({}));
+        });
     }
 }

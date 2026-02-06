@@ -26,6 +26,7 @@ function getPlayersTime(state: GameState, currentTime: number) {
 
 export function getDTO(game: Game, forPlayer: Player): GameForPlayerDTO {
     return {
+        isPaused: game.gameClock.isPaused(),
         currentTurnPlayerId: StateGetters.currentPlayer(game.state).id,
         player: game.getPlayerById(forPlayer.id),
 

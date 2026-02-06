@@ -77,7 +77,7 @@ export const joinGame = async (req: AuthenticatedGameRequest, res: Response) => 
         return res.redirect('/');
     }
 
-    if (game.status !== GameStatus.ACTIVE) {
+    if (game.status === GameStatus.FINISHED) {
         req.flash('error', 'Вы не можете присоединиться к данной игре.');
         return res.redirect('/');
     }

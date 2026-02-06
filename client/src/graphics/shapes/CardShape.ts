@@ -108,12 +108,16 @@ export class CardShape extends Group<CardConfig> {
             originX: 0.5,
             originY: 0.5,
             align: 'center',
-            text: title
+            text: title,
         });
 
-        const titleWidth = this._title.getWidth();
-        if (titleWidth > size - 20 * scale) {
-            this._title.fontSize(titleFontSize * (size - 20 * scale) / titleWidth);
+        if (card.cardType === "module") {
+            const titleWidth = this._title.getWidth();
+            if (titleWidth > size - 20 * scale) {
+                this._title.fontSize(titleFontSize * (size - 20 * scale) / titleWidth);
+            }
+        } else {
+            this._title.maxWidth(size - 20 * scale).fontSize(15 * scale);
         }
 
         this.add(this._background, this._title);

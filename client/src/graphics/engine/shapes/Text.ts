@@ -11,6 +11,7 @@ export interface TextConfig extends ShapeConfig {
     fontSize?: number;
     lineHeight?: number;
     align?: string;
+    maxWidth?: number;
 }
 
 function _fillFunc(context: Context) {
@@ -46,12 +47,13 @@ export class Text extends Shape {
     constructor(config?: TextConfig) {
         super(config);
 
-        let recalculateWhenChange = [
+        const recalculateWhenChange = [
             'text',
             'fontFamily',
             'fontSize',
             'lineHeight',
-            'align'
+            'align',
+            'maxWidth'
         ];
 
         for (let attribute of recalculateWhenChange) {
@@ -153,6 +155,10 @@ export class Text extends Shape {
         context.save();
         context.font = this.getContextFont();
 
+        if (this.maxWidth() > 0) {
+            lines = this.wrapText(this.text(), this.maxWidth());
+        }
+
         for (let line of lines) {
             let lineWidth = this.getTextWidth(line);
             textWidth = Math.max(textWidth, lineWidth);
@@ -182,11 +188,34 @@ export class Text extends Shape {
         return this.textHeight;
     }
 
+    private wrapText(text: string, maxWidth: number): string[] {
+        const words = text.split(' ');
+
+        if (!words.length) {
+            return [];
+        }
+
+        const result = [""]
+
+        for (const word of words) {
+            const last = result[result.length - 1];
+
+            if (this.getTextWidth(last + " " + word) > maxWidth) {
+                result.push("");
+            }
+
+            result[result.length - 1] += " " + word;
+        }
+
+        return result;
+    }
+
     text: GetSet<string, this>;
     fontFamily: GetSet<string, this>;
     fontSize: GetSet<number, this>;
     lineHeight: GetSet<number, this>;
     align: GetSet<string, this>;
+    maxWidth: GetSet<number, this>;
 }
 
 Text.prototype.className = 'Text';
@@ -200,3 +229,4 @@ Factory.addGetterSetter(Text, 'fontFamily', 'Arial');
 Factory.addGetterSetter(Text, 'fontSize', 12);
 Factory.addGetterSetter(Text, 'lineHeight', 1);
 Factory.addGetterSetter(Text, 'align', 'left');
+Factory.addGetterSetter(Text, 'maxWidth', undefined);

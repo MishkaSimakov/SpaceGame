@@ -22,11 +22,10 @@ import {ActionPurpose, ActionWithStorageInfo, IActionsStorage} from "@src/game/i
 import {IClock, Milliseconds} from "@src/game/interfaces/IClock";
 import {Environment} from "@src/game/sagas/runner/Environment";
 import {Channel} from "@src/game/sagas/runner/Channel";
-import {deactivateSignal as deactivateSignalSymbol} from "@src/game/sagas/runner/Signals";
-import {getPlayerTime, getTimeDecreasingPlayerId} from "@src/game/sagas/components/Time";
+import {deactivateSignal as deactivateSignalSymbol, playerLostSignal} from "@src/game/sagas/runner/Signals";
+import {getPlayerTime} from "@src/game/sagas/components/Time";
 import {CancellableRaceProtocol, IParticipant} from "@src/game/CancellableRaceProtocol";
 import {Observable} from "@common/Observable";
-import {Exception} from "handlebars";
 import {StateGetters} from "@common/getters/State";
 
 
@@ -143,7 +142,11 @@ export default class Game {
     sagaInput: Channel<Action>;
     sagaOutput: Channel<Action>;
 
-    replayActions: ActionWithStorageInfo[] = [];
+    isReplaying: Observable<boolean>;
+    replayActions = {
+        inputs: [] as ActionWithStorageInfo[],
+        outputs: [] as ActionWithStorageInfo[]
+    };
 
     constructor(
         users: IUser[],
@@ -154,6 +157,7 @@ export default class Game {
     ) {
         // aborts all ongoing requests when the game is deactivated
         this.isDeactivated = new Observable(false);
+        this.isReplaying = new Observable(true);
 
         this.users = users;
 
@@ -171,78 +175,39 @@ export default class Game {
         this.sagaOutput = new Channel();
 
         this.registerCheatsSocketListeners();
-    }
-
-    private insertPause(from: number, to: number) {
-        const player = getTimeDecreasingPlayerId(this.state);
-
-        if (player) {
-            this.processAction(addTimeRecord(player, TimeRecordType.PAUSE_STARTED, from));
-            this.processAction(addTimeRecord(player, TimeRecordType.PAUSE_ENDED, to));
-        }
+        this.registerPauseSocketListeners();
     }
 
     private exitReplay() {
-        console.log("⏪ exiting replay")
+        console.log("⏪ exiting replay");
+        this.isReplaying.set(false);
         this.gameClock.resume();
     }
 
-    // returns next replay action without removing it from queue
-    // skips deactivateSignals and cheats
-    // throws an error if peeked action type is not equal to expected
-    private peekReplayAction(expectedType: string): Action | undefined {
-        const hadActions = this.replayActions.length !== 0;
-
-        while (this.replayActions.length) {
-            const pastAction = this.replayActions[0].action;
-
-            console.log(`⏪ Replaying ${pastAction.type}`);
-
-            if (pastAction.type.startsWith('cheat')) {
-                this.sagaInput.put(pastAction);
-                this.replayActions.shift();
-                continue;
-            }
-            if (pastAction.type === 'deactivateSignal') {
-                this.replayActions.shift();
-                continue;
-            }
-
-            if (pastAction.type !== expectedType) {
-                throw new Error(`Error during game replay: unexpected action type (in a log file ${pastAction.type}, received ${expectedType}). This is possibly due to changes in gameSaga code.`);
-            }
-
-            return pastAction;
-        }
-
-        if (hadActions) {
-            this.exitReplay();
-        }
-
-        return undefined;
-    }
-
-    private shiftReplayAction(expectedType: string): Action | undefined {
-        const action = this.peekReplayAction(expectedType);
-
-        if (!action) {
-            return undefined;
-        }
-
-        this.replayActions.shift();
-
-        if (!this.replayActions.length) {
-            this.exitReplay();
-        }
-
-        return action;
-    }
+    // Пример:
+    // 1. smthRequest
+    // 2. cheatChangeEnergy
+    // ...
+    // но нет smthResponse! После cheatChangeEnergy может идти много всяких действий.
+    // Идея: искать smthResponse после smthRequest. Если он есть, то не отправлять запрос.
+    // Но как принимать ответ? Если пользователь пришлёт ответ раньше, чем закончится повтор, то будет проблема.
 
     private async processAction(action: Action<string, any, any>) {
-        const pastAction = this.shiftReplayAction(action.type);
-        if (!pastAction) {
+        const pastAction = this.replayActions.outputs.shift();
+        if (pastAction) {
+            console.log(`⏪ replaying: ${pastAction.action.type}`);
+            action.uuid = pastAction.action.uuid;
+
+            if (!this.replayActions.outputs.length) {
+                this.exitReplay();
+            }
+        } else {
             this.storage.appendAction(action, ActionPurpose.SAGA_OUTPUT, this.gameClock.getTime());
         }
+
+        const pastResponse = pastAction
+            ? this.replayActions.inputs.filter(a => a.action.responseTo === pastAction.action.uuid)[0]?.action
+            : undefined;
 
         let response: Action | undefined = undefined;
 
@@ -272,9 +237,7 @@ export default class Game {
             // actions that match `*Request` are broadcasted through sockets
             // they must contain payload.player field, the field specify to which player
             // the action is broadcasted.
-            const responseType = action.type.replace("Request", "Response");
-
-            response = this.peekReplayAction(responseType) ?? await this.socketRequest(action);
+            response = pastResponse ?? await this.socketRequest(action);
         } else if (action.type.endsWith("Info")) {
             // actions that match `*Info` are also broadcasted in the same way,
             // but without an acknowledgment
@@ -289,14 +252,14 @@ export default class Game {
                 }, action.type, action.payload);
             }
         } else if (action.type === 'time') {
-            response = this.peekReplayAction('timeResult') ?? timeResult(this.gameClock.getTime());
+            response = pastResponse ?? timeResult(this.gameClock.getTime());
         } else if (action.type === 'message') {
             const name = this.users.find(u => u.id === action.payload.player)!.login;
             this.playerGameLog.push({
                 text: `${name}: ${action.payload.text}`
             });
         } else {
-            throw new Exception("Unknown saga output type.");
+            throw new Error("Unknown saga output type.");
         }
 
         if (!response) {
@@ -304,23 +267,46 @@ export default class Game {
         }
 
         // send response
-        const pastResponse = this.shiftReplayAction(response.type);
-
         if (!pastResponse) {
-            this.storage.appendAction(response, ActionPurpose.SAGA_INPUT, this.gameClock.getTime());
-        }
+            if (this.isReplaying.get()) {
+                await this.awaitReplayEnd();
+            }
 
-        this.sagaInput.put(response);
+            response.responseTo = action.uuid;
+
+            this.storage.appendAction(response, ActionPurpose.SAGA_INPUT, this.gameClock.getTime());
+            this.sagaInput.put(response);
+        }
+    }
+
+    private awaitReplayEnd(): Promise<void> {
+        return new Promise((resolve, reject) => {
+            if (!this.isReplaying.get()) {
+                resolve();
+            } else {
+                let id: number;
+
+                id = this.isReplaying.subscribe((isReplaying: boolean) => {
+                    if (!isReplaying) {
+                        this.isReplaying.unsubscribe(id);
+                        resolve();
+                    }
+                });
+            }
+        })
     }
 
     async activate(): Promise<GameResult> {
-        this.replayActions = this.storage.getActionsWithStorageInfo();
+        const pastActions = this.storage.getActionsWithStorageInfo();
 
-        if (this.replayActions.length) {
-            const last = this.replayActions[this.replayActions.length - 1];
+        this.replayActions.outputs = pastActions.filter(a => a.purpose === ActionPurpose.SAGA_OUTPUT);
+        this.replayActions.inputs = pastActions.filter(a => a.purpose === ActionPurpose.SAGA_INPUT);
+
+        if (pastActions.length) {
+            const last = pastActions[pastActions.length - 1];
             this.gameClock.setTime(last.storedAtGameTime);
         } else {
-            this.gameClock.resume();
+            this.exitReplay();
         }
 
         const env: Environment = {
@@ -330,13 +316,23 @@ export default class Game {
         };
 
         try {
+            // Почему нельзя посылать сразу все действия на вход?
+            // - для дебага не получится сравнивать то, что отправляется сейчас, и то, что отправлялось раньше
+            // - надо как-то понимать, что повтор закончился
+            //   может быть 2 случая: пришёл запрос и ответ есть или пришёл запрос и ответа нет
             const handler = (action: Action) => {
-                this.processAction(action).then(() => {
-                    this.sagaOutput.take(handler.bind(this));
-                });
+                this.processAction(action);
+                this.sagaOutput.take(handler.bind(this));
             }
 
             this.sagaOutput.take(handler);
+
+            for (const a of pastActions) {
+                if (a.purpose === ActionPurpose.SAGA_INPUT && a.action.type !== 'deactivateSignal') {
+                    console.log(`⏪ replaying: ${a.action.type}`);
+                    this.sagaInput.put(a.action);
+                }
+            }
 
             await runSaga(env, gameSaga);
         } catch (error) {
@@ -367,6 +363,7 @@ export default class Game {
     private registerCheatsSocketListeners() {
         for (const cheatName of Object.keys(Actions).filter(a => a.startsWith('cheat'))) {
             this.sockets.on(cheatName, (payload: any) => {
+                // TODO: catch errors
                 const validator = cheatsValidators[cheatName as keyof typeof cheatsValidators] as (state: GameState) => ZodType;
                 const validationResult = validator(structuredClone(this.state)).safeParse(payload);
 
@@ -378,8 +375,27 @@ export default class Game {
 
                 this.storage.appendAction(action, ActionPurpose.SAGA_INPUT, this.gameClock.getTime());
                 this.sagaInput.put(action);
+                this.syncPlayersData();
             });
         }
+    }
+
+    private registerPauseSocketListeners() {
+        this.sockets.on('playerRequestsPause', (payload: any) => {
+            if (!this.gameClock.isPaused()) {
+                console.log("⏯️ paused");
+                this.gameClock.pause();
+                this.syncPlayersData();
+            }
+        });
+
+        this.sockets.on('playerRequestsResume', (payload: any) => {
+            if (this.gameClock.isPaused()) {
+                console.log("⏯️ resumed");
+                this.gameClock.resume();
+                this.syncPlayersData();
+            }
+        });
     }
 
     getPlayerById(id: number): Player {
@@ -444,6 +460,8 @@ export default class Game {
                         ensureSending: true
                     }, request.type, {...this.requestPayload, errors});
 
+                    console.log(response);
+
                     if (!isAction(response)) {
                         errors = ["Ответ должен быть в формате действия."];
                         continue;
@@ -482,9 +500,11 @@ export default class Game {
             private readonly game: Game;
             private readonly remainingTime: number | undefined;
             private timeout: TimeoutHandle | undefined = undefined;
+            private player: PlayerId;
 
             constructor(game: Game, player: PlayerId) {
                 this.game = game;
+                this.player = player;
 
                 const state = structuredClone(game.state);
 
@@ -508,7 +528,7 @@ export default class Game {
             }
 
             proceed(): void {
-                result = Actions.playerTimeoutSignal();
+                result = Actions.playerTimeoutSignal(this.player);
             }
 
             cancel(): void {

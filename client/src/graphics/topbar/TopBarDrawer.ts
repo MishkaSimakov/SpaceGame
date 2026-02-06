@@ -237,8 +237,9 @@ export default class TopBarDrawer {
             fontFamily: "Exo2Regular",
             fontSize: 14,
             fill: (message.isNew ? newMessageColor : messageColor).toString(),
-            width: maxWidth,
-            name: "text"
+            name: "text",
+
+            maxWidth: maxWidth
         });
         group.add(textShape);
 

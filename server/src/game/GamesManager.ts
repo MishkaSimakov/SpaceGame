@@ -145,11 +145,16 @@ export default class GamesManager {
             }
         });
 
-        if (game && game.status === GameStatus.ACTIVE) {
-            return await this.activateGame(game);
+        if (!game || game.status === GameStatus.FINISHED) {
+            return undefined;
         }
 
-        return undefined;
+        if (game.status === GameStatus.ERROR) {
+            game.status = GameStatus.ACTIVE;
+            await game.save();
+        }
+
+        return await this.activateGame(game);
     }
 
     private async activateGame(gameEntity: GameDBEntity): Promise<Game | undefined> {

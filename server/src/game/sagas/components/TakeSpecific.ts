@@ -1,6 +1,7 @@
 import * as Actions from "@common/Actions"
 import {take, TakeEffect} from "@src/game/sagas/runner/Effects";
-import {deactivateSignal, playerTimeoutSignal} from "@src/game/sagas/runner/Signals";
+import {playerLost} from "@common/Actions";
+import {deactivateSignal} from "@src/game/sagas/runner/Signals";
 
 type ActionByType<T extends keyof typeof Actions> = ReturnType<(typeof Actions)[T]>;
 
@@ -11,7 +12,7 @@ export function* takeType<T extends keyof typeof Actions>(type: T): Generator<Ta
         if (message.type === 'deactivateSignal') {
             throw deactivateSignal;
         } else if (message.type === 'playerTimeoutSignal') {
-            throw playerTimeoutSignal;
+            throw playerLost(message.payload.player);
         } else if (message.type === type) {
             return message as ActionByType<T>;
         }

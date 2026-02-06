@@ -1,7 +1,6 @@
 import {Action} from "@common/ActionsHelpers";
 import {GameState} from "@common/Types";
 import * as Actions from "@common/Actions"
-import {DeactivateSignal, PlayerLostSignal} from "@src/game/sagas/runner/Signals";
 
 export type EmptyObject = Record<string, never>;
 
