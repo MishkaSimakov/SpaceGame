@@ -1102,22 +1102,12 @@ export function cheatChangeEnergy(target: Types.PlayerId, delta: number) {
 /**
  * @param  target  
  * @param  type  
+ * @param  connectors  
  */
-export function cheatSetMainModuleType(target: Types.PlayerId, type: Types.MainModuleType) {
+export function cheatSetMainModuleType(target: Types.PlayerId, type: Types.MainModuleType, connectors: Types.ModuleConnectors) {
     return constructAction(
         'cheatSetMainModuleType',
-        {target, type},
-    );
-}
-
-
-/**
- * @param  delta  
- */
-export function cheatAdvanceTime(delta: number) {
-    return constructAction(
-        'cheatAdvanceTime',
-        {delta},
+        {target, type, connectors},
     );
 }
 
@@ -1127,10 +1117,23 @@ export function cheatAdvanceTime(delta: number) {
  * @param  type  
  * @param  connectors  
  */
-export function cheatGetModuleCard(target: Types.PlayerId, type: Types.ModuleType, connectors: Types.ModuleConnectors) {
+export function cheatPushModuleCardToHand(target: Types.PlayerId, type: Types.ModuleType, connectors: Types.ModuleConnectors) {
     return constructAction(
-        'cheatGetModuleCard',
+        'cheatPushModuleCardToHand',
         {target, type, connectors},
+    );
+}
+
+
+/**
+ * Кладёт данную карту действия на вершину стека
+ * @param  type  
+ * @param  connectors  
+ */
+export function cheatPushModuleCardToStack(type: Types.ModuleType, connectors: Types.ModuleConnectors) {
+    return constructAction(
+        'cheatPushModuleCardToStack',
+        {type, connectors},
     );
 }
 
@@ -1139,10 +1142,22 @@ export function cheatGetModuleCard(target: Types.PlayerId, type: Types.ModuleTyp
  * @param  target  
  * @param  type  
  */
-export function cheatGetEventCard(target: Types.PlayerId, type: Types.EventType) {
+export function cheatPushEventCardToHand(target: Types.PlayerId, type: Types.EventType) {
     return constructAction(
-        'cheatGetEventCard',
+        'cheatPushEventCardToHand',
         {target, type},
+    );
+}
+
+
+/**
+ * Кладёт данную карту строительства на вершину стека
+ * @param  type  
+ */
+export function cheatPushEventCardToStack(type: Types.EventType) {
+    return constructAction(
+        'cheatPushEventCardToStack',
+        {type},
     );
 }
 

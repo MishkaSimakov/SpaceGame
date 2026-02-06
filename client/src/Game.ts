@@ -1,4 +1,13 @@
-import {GameForPlayerDTO, GameSettings, Message, OtherPlayer, Player, PlayerId} from "@common/Types";
+import {
+    EventType,
+    GameForPlayerDTO,
+    GameSettings, MainModuleType,
+    Message,
+    ModuleType,
+    OtherPlayer,
+    Player,
+    PlayerId
+} from "@common/Types";
 import {PlayerGetters} from "@common/getters/Player";
 
 import Spaceships from "./graphics/scenes/Spaceships";
@@ -6,7 +15,6 @@ import Controls from "./graphics/scenes/Controls";
 import RebuildSpaceshipManager from "./graphics/RebuildSpaceshipManager";
 import SocketManager from "./sockets/SocketManager";
 import {Graphics} from "./graphics/engine/Graphics";
-import {DD} from "./graphics/engine/Drag";
 import PopupsScene from "./graphics/scenes/Popups";
 import {Cheats} from "./Cheats";
 
@@ -104,6 +112,9 @@ export default class Game {
         if (this.settings.isDebug && !this.cheats) {
             this.cheats = new Cheats(this, this.socketManager);
             window["cheats"] = this.cheats;
+            window["ModuleType"] = ModuleType;
+            window["EventType"] = EventType;
+            window["MainModuleType"] = MainModuleType;
         }
 
         // time control

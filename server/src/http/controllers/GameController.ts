@@ -129,7 +129,7 @@ export const showStatusPage = async (req: AuthenticatedGameRequest, res: Respons
 }
 
 export const deleteGame = async (req: AuthenticatedGameRequest, res: Response) => {
-    App.getInstance().gamesManager!.deactivateGame(req.params.gameId);
+    await App.getInstance().gamesManager!.deactivateGame(req.params.gameId);
 
     await GameDBEntity.delete({
         id: req.params.gameId
@@ -139,7 +139,7 @@ export const deleteGame = async (req: AuthenticatedGameRequest, res: Response) =
 }
 
 export const deactivateGame = async (req: AuthenticatedGameRequest, res: Response) => {
-    App.getInstance().gamesManager!.deactivateGame(req.params.gameId);
+    await App.getInstance().gamesManager!.deactivateGame(req.params.gameId);
     return res.redirect('/');
 }
 
@@ -147,7 +147,7 @@ export const deleteAllGames = async (req: Request, res: Response) => {
     const games = await GameDBEntity.find()
 
     for (const game of games) {
-        App.getInstance().gamesManager!.deactivateGame(game.id);
+        await App.getInstance().gamesManager!.deactivateGame(game.id);
 
         await GameDBEntity.delete({
             id: game.id

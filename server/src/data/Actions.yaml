@@ -887,14 +887,11 @@
     - name: type
       type:
         ref: MainModuleType
-
-- name: cheatAdvanceTime
-  payload:
-    - name: delta
+    - name: connectors
       type:
-        type: int32
+        ref: ModuleConnectors
 
-- name: cheatGetModuleCard
+- name: cheatPushModuleCardToHand
   payload:
     - name: target
       type:
@@ -906,11 +903,28 @@
       type:
         ref: ModuleConnectors
 
-- name: cheatGetEventCard
+- name: cheatPushModuleCardToStack
+  description: Кладёт данную карту действия на вершину стека
+  payload:
+    - name: type
+      type:
+        ref: ModuleType
+    - name: connectors
+      type:
+        ref: ModuleConnectors
+
+- name: cheatPushEventCardToHand
   payload:
     - name: target
       type:
         ref: PlayerId
+    - name: type
+      type:
+        ref: EventType
+
+- name: cheatPushEventCardToStack
+  description: Кладёт данную карту строительства на вершину стека
+  payload:
     - name: type
       type:
         ref: EventType

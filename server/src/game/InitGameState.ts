@@ -87,18 +87,18 @@ function getInitialMainModulesStack(idCounterRef: { value: number }) {
 }
 
 export function getInitialGameState(users: IUser[], settings: GameSettings): GameState {
-    let idCounter = 0;
+    let idCounter = {value: 0};
 
     return {
         stack: {
-            module: getInitialModulesStack({value: idCounter}),
+            module: getInitialModulesStack(idCounter),
             event: getInitialEventsStack()
         },
         discards: {
             module: [],
             event: []
         },
-        mainModulesStack: getInitialMainModulesStack({value: idCounter}),
+        mainModulesStack: getInitialMainModulesStack(idCounter),
         players: initPlayers(users),
         currentPlayerId: users[0].id,
         settings,

@@ -1,6 +1,6 @@
 import {Server, Socket} from "socket.io";
 
-import {PlayerId} from "@common/Types";
+import {Player, PlayerId} from "@common/Types";
 
 import {ISocketsManager} from "@src/game/interfaces/ISocketsManager";
 
@@ -26,7 +26,7 @@ export default class SocketsManager implements ISocketsManager {
 
     private players: Record<PlayerId, SocketPlayerInfo> = {};
 
-    private listeners: { type: string, callback: (payload: any) => void }[] = [];
+    private listeners: { type: string, callback: (player: PlayerId, payload: any) => void }[] = [];
 
     constructor(io: Server, players: PlayerId[]) {
         this.io = io;
@@ -60,7 +60,7 @@ export default class SocketsManager implements ISocketsManager {
         this.players[playerId].socketId = socketId;
 
         this.listeners.forEach(({type, callback}) =>
-            this.getSocket(playerId)?.on(type, callback));
+            this.getSocket(playerId)?.on(type, (payload: any) => callback(playerId, payload)));
     }
 
     onPlayerDisconnect(playerId: PlayerId) {
@@ -93,6 +93,7 @@ export default class SocketsManager implements ISocketsManager {
                         this.currentEmitPlayerId = undefined;
                     }
 
+                    console.log(`emitting ${event}`);
                     socket.emit(event, ...args);
 
                     resolve(undefined);
@@ -130,7 +131,7 @@ export default class SocketsManager implements ISocketsManager {
         }
     }
 
-    on(type: string, callback: (payload: any) => void) {
+    on(type: string, callback: (player: PlayerId, payload: any) => void) {
         this.listeners.push({type, callback});
     }
 }

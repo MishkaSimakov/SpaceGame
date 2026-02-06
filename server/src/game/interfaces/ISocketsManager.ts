@@ -15,5 +15,5 @@ export interface ISocketsManager {
 
     disconnectEveryone(): void;
 
-    on(type: string, callback: (payload: any) => void): void;
+    on(type: string, callback: (player: PlayerId, payload: any) => void): void;
 }

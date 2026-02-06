@@ -29,7 +29,6 @@ export default class GamesManager {
                 const result = await this.joinGame(payload.token, payload.gameId);
 
                 if (result instanceof Error) {
-                    socket.emit("error", result.message);
                     socket.disconnect();
                 } else {
                     game = result.game;
@@ -49,16 +48,14 @@ export default class GamesManager {
         });
     }
 
-    deactivateGame(gameId: string) {
+    async deactivateGame(gameId: string) {
         const game = this.activeGames[gameId];
 
         if (!game) {
             return;
         }
 
-        game.deactivate();
-        console.log("deactivated game");
-        // store game time into database
+        await game.deactivate();
     }
 
     isActive(gameId: string): boolean {
@@ -177,13 +174,13 @@ export default class GamesManager {
 
                     delete this.activeGames[gameEntity.id];
                 })
-                .catch(err => this.reportGameError(gameEntity, err));
+                .catch(err => this.handleGameError(gameEntity, err));
 
             this.activeGames[gameEntity.id] = game;
 
             return game;
         } catch (err) {
-            await this.reportGameError(gameEntity, err);
+            await this.handleGameError(gameEntity, err);
         }
     }
 
@@ -207,16 +204,20 @@ export default class GamesManager {
         return result;
     }
 
-    private async reportGameError(game: GameDBEntity, error: any) {
+    private async handleGameError(gameDB: GameDBEntity, error: any) {
         console.warn("⚠️ error in game:", error);
 
+        // this should be done as early as possible so that no one connect to this game
+        const game = this.activeGames[gameDB.id];
+        delete this.activeGames[gameDB.id];
+
         try {
-            this.deactivateGame(game.id);
+            await game.deactivate();
         } catch (deactivationError) {
             console.warn("💀 failed even to deactivate the game:", deactivationError);
         }
 
-        game.status = GameStatus.ERROR;
-        await game.save();
+        gameDB.status = GameStatus.ERROR;
+        await gameDB.save();
     }
 }

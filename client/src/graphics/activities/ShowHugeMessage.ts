@@ -20,6 +20,7 @@ export class ShowHugeMessageActivity extends Activity {
                 originX: 0.5,
                 originY: 0.5,
                 fill: "white",
+                align: "center",
                 fontFamily: "Exo2Bold",
                 fontSize: 40
             });

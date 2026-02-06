@@ -55,12 +55,12 @@ export default class SocketManager {
 
         this.socket.on('disconnect', () => {
             this.wasDisconnected = true;
-            this.game.popupsScene.addPopup("Соединение с сервером потеряно", COLORS.BUTTON.DANGER.ACTIVE);
+            this.game.popupsScene.addPopup("Соединение с сервером потеряно", COLORS.BUTTON.DANGER.ACTIVE, 5000);
         });
 
         this.socket.on('connect', () => {
             if (this.wasDisconnected) {
-                this.game.popupsScene.addPopup("Соединение с сервером восстановлено", COLORS.BUTTON.PRIMARY.ACTIVE);
+                this.game.popupsScene.addPopup("Соединение с сервером восстановлено", COLORS.BUTTON.PRIMARY.ACTIVE, 5000);
             }
         });
     }
@@ -86,13 +86,17 @@ export default class SocketManager {
             this.game.setGameData(gameDTO);
         });
 
-        this.on('gameFinished', async () => {
+        this.on('errors', (errors: string[]) => {
+            this.showErrors(errors);
+        });
+
+        this.on('gameFinished', async (reason: string) => {
             await this.game.controlsScene.enqueueActivity(
-                new ShowHugeMessageActivity(this.game.controlsScene, "Игра окончена")
+                new ShowHugeMessageActivity(this.game.controlsScene, `Игра окончена\n${reason}`)
             );
 
             this.exit();
-        })
+        });
     }
 
     private showErrors(errors: any) {

@@ -1,9 +1,15 @@
 import {mainModulesInfo, modulesInfo} from "@common/cards/Modules";
 import {eventsInfo} from "@common/cards/Events";
-import {cheatAdvanceTime, cheatChangeEnergy} from "@common/Actions";
+import {
+    cheatChangeEnergy,
+    cheatPushEventCardToHand, cheatPushEventCardToStack,
+    cheatPushModuleCardToHand,
+    cheatPushModuleCardToStack, cheatSetMainModuleType
+} from "@common/Actions";
 
 import SocketManager from "./sockets/SocketManager";
 import Game from "./Game";
+import {EventType, MainModuleType, ModuleConnectors, ModuleType, PlayerId} from "@common/Types";
 
 export class Cheats {
     constructor(
@@ -21,16 +27,38 @@ export class Cheats {
         ));
     }
 
-    setMainModuleType(type: any) {
-        // validate input
+    setMainModuleType(type: MainModuleType, connectors: ModuleConnectors, playerId: PlayerId = this.thisPlayerId()) {
+        const signature = "setMainModuleType(type: MainModuleType, connectors: ModuleConnectors, playerId: PlayerId = this.thisPlayerId())";
+
+        this.socketManager.cheat(cheatSetMainModuleType(playerId, type, connectors));
     }
 
-    advanceTime(delta: any) {
-        const signature = "advanceTime(delta: number)";
+    // TODO: validate
+    pushModuleCardToHand(type: ModuleType, connectors: ModuleConnectors, playerId: PlayerId = this.thisPlayerId()) {
+        const signature = "pushModuleCardToHand(type: ModuleType, connectors: ModuleConnectors, playerId: PlayerId = this.thisPlayerId())";
 
-        this.socketManager.cheat(cheatAdvanceTime(
-            this.validateNonNegativeNumber(0, delta, signature)
-        ));
+        this.socketManager.cheat(cheatPushModuleCardToHand(playerId, type, connectors));
+    }
+
+    // TODO: validate
+    pushModuleCardToStack(type: ModuleType, connectors: ModuleConnectors) {
+        const signature = "pushModuleCardToStack(type: ModuleType, connectors: ModuleConnectors)";
+
+        this.socketManager.cheat(cheatPushModuleCardToStack(type, connectors));
+    }
+
+    // TODO: validate
+    pushEventCardToHand(type: EventType, playerId: PlayerId = this.thisPlayerId()) {
+        const signature = "pushEventCardToHand(type: EventType, playerId: PlayerId = this.thisPlayerId())";
+
+        this.socketManager.cheat(cheatPushEventCardToHand(playerId, type));
+    }
+
+    // TODO: validate
+    pushEventCardToStack(type: EventType) {
+        const signature = "pushEventCardToStack(type: EventType)";
+
+        this.socketManager.cheat(cheatPushEventCardToStack(type));
     }
 
     // getters

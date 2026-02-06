@@ -343,31 +343,40 @@ export default class Game {
             }
         }
 
+        const winner = this.state.players.filter(p => !p.lose)[0];
+
         // game has finished
         // notify players about this
         for (let player of this.state.players) {
             await this.sockets.emit(player.id, {
                 withAcknowledgement: false,
                 ensureSending: false
-            }, 'gameFinished');
+            }, 'gameFinished', `${winner.name} победил`);
         }
 
         this.sockets.disconnectEveryone();
 
         return {
             type: "finished",
-            winner: this.state.players.filter(p => !p.lose)[0].id
+            winner: winner.id
         };
     }
 
     private registerCheatsSocketListeners() {
         for (const cheatName of Object.keys(Actions).filter(a => a.startsWith('cheat'))) {
-            this.sockets.on(cheatName, (payload: any) => {
+            this.sockets.on(cheatName, (player: PlayerId, payload: any) => {
                 // TODO: catch errors
                 const validator = cheatsValidators[cheatName as keyof typeof cheatsValidators] as (state: GameState) => ZodType;
                 const validationResult = validator(structuredClone(this.state)).safeParse(payload);
 
                 if (validationResult.error) {
+                    const errors = validationResult.error.issues.map(issue => issue.message);
+
+                    this.sockets.emit(player, {
+                        withAcknowledgement: false,
+                        ensureSending: false
+                    }, 'errors', errors);
+
                     return;
                 }
 
@@ -381,7 +390,7 @@ export default class Game {
     }
 
     private registerPauseSocketListeners() {
-        this.sockets.on('playerRequestsPause', (payload: any) => {
+        this.sockets.on('playerRequestsPause', () => {
             if (!this.gameClock.isPaused()) {
                 console.log("⏯️ paused");
                 this.gameClock.pause();
@@ -389,7 +398,7 @@ export default class Game {
             }
         });
 
-        this.sockets.on('playerRequestsResume', (payload: any) => {
+        this.sockets.on('playerRequestsResume', () => {
             if (this.gameClock.isPaused()) {
                 console.log("⏯️ resumed");
                 this.gameClock.resume();
@@ -575,12 +584,28 @@ export default class Game {
         return result;
     }
 
-    deactivate() {
+    async deactivate() {
         this.isDeactivated.set(true);
+
+        for (const player of this.state.players) {
+            await this.sockets.emit(player.id, {
+                withAcknowledgement: false,
+                ensureSending: false
+            }, 'gameFinished', `фатальная ошибка`);
+        }
     }
 
     onPlayerConnect(id: PlayerId, socket_id: string) {
         this.sockets.onPlayerConnect(id, socket_id);
+
+        if (this.isDeactivated.get()) {
+            this.sockets.emit(id, {
+                withAcknowledgement: false,
+                ensureSending: false
+            }, 'gameFinished', `фатальная ошибка`);
+            return;
+        }
+
         this.syncPlayersData();
         this.sockets.tryToEmitEvent(id);
     }
