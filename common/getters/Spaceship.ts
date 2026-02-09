@@ -36,6 +36,10 @@ function getTotalEnergyIncrease(ship: Spaceship): number {
 function canConnectModule(ship: Spaceship, module: ModuleCard, x: number, y: number): boolean;
 function canConnectModule(ship: Spaceship, module: ModuleCard): boolean;
 function canConnectModule(ship: Spaceship, module: ModuleCard, x?: number, y?: number): boolean {
+    if (ship.modules.length === 0) {
+        return true;
+    }
+
     if (x === undefined || y === undefined) {
         x = module.x;
         y = module.y;
@@ -173,38 +177,21 @@ function hasDamagedModules(ship: Spaceship): boolean {
 }
 
 function getUnconnectedModules(ship: Spaceship): ModuleCard[] {
-    let unconnectedModules = ship.modules;
     const mainModule = getMainModule(ship);
 
     if (!mainModule) {
-        return unconnectedModules;
+        return ship.modules;
     }
 
-    let addedModules: ModuleCard[] = [mainModule];
-
-    do {
-        let newAddedModules = [];
-
-        for (let module of addedModules) {
-            unconnectedModules = unconnectedModules.filter(m => (m.x !== module.x || m.y !== module.y));
-
-            newAddedModules.push(
-                ...Object.values(getModulesConnectedTo(ship, module))
-                    .filter(m => unconnectedModules.indexOf(m) !== -1)
-            );
-        }
-
-        addedModules = newAddedModules;
-    } while (addedModules.length !== 0);
-
-    return unconnectedModules;
+    const connected = getConnectedModules(ship, mainModule).map(m => m.id);
+    return ship.modules.filter(m => !connected.includes(m.id));
 }
 
 function hasRepairModule(ship: Spaceship): boolean {
     return getModulesByType(ship, ModuleType.RepairModule).length !== 0;
 }
 
-function checkConfiguration(ship: Spaceship): boolean {
+function checkConfiguration(ship: Spaceship, mustContainMain: boolean = true): boolean {
     // check that all positions are different
     const positions = ship.modules
         .map(module => `${module.x},${module.y}`);
@@ -221,7 +208,11 @@ function checkConfiguration(ship: Spaceship): boolean {
     }
 
     // check that all modules are connected
-    if (getUnconnectedModules(ship).length !== 0) {
+    if (getComponents(ship).length > 1) {
+        return false;
+    }
+
+    if (mustContainMain && getMainModule(ship) === undefined) {
         return false;
     }
 
@@ -335,6 +326,46 @@ function mapForRebuildSpaceshipResponse(ship: Spaceship) {
     }));
 }
 
+function getConnectedModules(ship: Spaceship, origin: ModuleCard) {
+    const result: ModuleCard[] = [origin];
+
+    let prevAddedModules = [origin];
+    let newAddedModules = [];
+
+    do {
+        newAddedModules = [];
+
+        for (const module of prevAddedModules) {
+            const newConnected = Object.values(getModulesConnectedTo(ship, module))
+                .filter(m => !result.map(r => r.id).includes(m.id))
+
+            result.push(...newConnected);
+            newAddedModules.push(...newConnected);
+        }
+
+        prevAddedModules = newAddedModules;
+        newAddedModules = [];
+    } while (prevAddedModules.length !== 0);
+
+    return result;
+}
+
+function getComponents(ship: Spaceship): Spaceship[] {
+    const visitedModules: number[] = []
+    const components: Spaceship[] = [];
+
+    for (const module of ship.modules) {
+        if (!visitedModules.includes(module.id)) {
+            const component = getConnectedModules(ship, module);
+
+            visitedModules.push(...component.map(m => m.id));
+            components.push({modules: component});
+        }
+    }
+
+    return components;
+}
+
 export const SpaceshipGetters = {
     getMainModule,
     getMainModuleType,
@@ -355,5 +386,7 @@ export const SpaceshipGetters = {
     hasRepairModule,
     checkConfiguration,
     damageInfo,
-    mapForRebuildSpaceshipResponse
+    mapForRebuildSpaceshipResponse,
+    getConnectedModules,
+    getComponents,
 };

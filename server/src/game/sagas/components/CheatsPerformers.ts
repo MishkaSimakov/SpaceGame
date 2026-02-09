@@ -28,6 +28,7 @@ function* getNextModuleId() {
     const maxId = Math.max(...[
         ...state.discards.module,
         ...state.stack.module,
+        ...state.mainModulesStack,
         ...state.players.flatMap(p => p.hand.filter(c => c.cardType === "module").map(m => m.module))
     ].map(m => m.id));
 
@@ -72,6 +73,7 @@ export const cheatsPerformers: CheatsPerformersContainer = {
     },
     * cheatPushEventCardToHand(cheat) {
         const event: EventCard = {
+            id: 0,
             type: cheat.type,
             description: eventsInfo[cheat.type].description
         };
@@ -80,6 +82,7 @@ export const cheatsPerformers: CheatsPerformersContainer = {
     },
     * cheatPushEventCardToStack(cheat) {
         const event: EventCard = {
+            id: 0,
             type: cheat.type,
             description: eventsInfo[cheat.type].description
         };

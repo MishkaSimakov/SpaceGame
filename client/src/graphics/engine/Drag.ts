@@ -12,6 +12,7 @@ export const DD = {
             offset: Vector2,
             pointerId: number,
 
+            followPointer: boolean,
             dragStatus: 'ready' | 'dragging' | 'stopped'
         }
     >(),
@@ -23,6 +24,9 @@ export const DD = {
         });
 
         return isDragging;
+    },
+    getDragElement(node: Node) {
+        return DD._dragElements.get(node._id);
     },
     _drag(evt) {
         evt.preventDefault();
@@ -55,7 +59,9 @@ export const DD = {
                 node.startDrag({evt});
             }
 
-            node.setDragPosition(evt, element);
+            if (element.followPointer) {
+                node.setDragPosition(evt, element);
+            }
 
             nodesToFireEvents.push(node);
         });
@@ -69,7 +75,7 @@ export const DD = {
                     evt: evt
                 }, true
             );
-        })
+        });
     },
     _endDragBefore(evt) {
         const drawNodes = [];

@@ -167,13 +167,6 @@ export const createGame = async (req: AuthenticatedRequest, res: Response) => {
 
             isDebug: true,
             isPublic: true,
-
-            timeControlSettings: {
-                loseWhenTimeout: true,
-                startTime: 5 * 60 * 1000,
-                defaultTimeIncrease: 40 * 1000,
-                fightTimeIncrease: 5 * 1000
-            }
         };
 
         const gameId = await App.getInstance().gamesManager!.createGame("Игра", req.user, users, gameSettings);

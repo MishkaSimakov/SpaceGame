@@ -1,25 +1,21 @@
 import {Card, Message, Vector2} from "@common/Types";
+import {ModuleGetters} from "@common/getters/Module";
 
 import Game from "../../Game";
-import HandDrawer from "../HandDrawer";
 import {COLORS} from "../constants";
 import TopBarDrawer from "../topbar/TopBarDrawer";
 import Scene from "../engine/Scene";
-import {Group} from "../engine/Group";
 import Color from "../Color";
 import {Boundary, BoundaryType} from "../CountBoundary";
+import PauseDrawer from "../PauseDrawer";
 
 import {ShowCardsActivity} from "../activities/ShowCards";
 import {Activity} from "../activities/Activity";
 import {PermuteCardsActivity} from "../activities/PermuteCards";
 import {ChooseFromListActivity} from "../activities/ChooseFromList";
 import {ChooseCardsActivity} from "../activities/ChooseCards";
-import {ModuleGetters} from "@common/getters/Module";
-import {CardShape as CardShape} from "../shapes/CardShape";
-import PauseDrawer from "../PauseDrawer";
 
 export default class Controls extends Scene {
-    handDrawer: HandDrawer;
     topBarDrawer: TopBarDrawer;
     pauseDrawer: PauseDrawer;
     gameManager: Game;
@@ -34,14 +30,10 @@ export default class Controls extends Scene {
 
     adopted() {
         this.topBarDrawer = new TopBarDrawer(this);
-        this.handDrawer = new HandDrawer(this.gameManager, this);
         this.pauseDrawer = new PauseDrawer(this.gameManager, this);
     }
 
     updateData(newMessages: Message[]) {
-        this.handDrawer.setHandData(this.gameManager.currentPlayer.hand);
-        this.handDrawer.redraw();
-
         this.pauseDrawer.redraw();
 
         this.topBarDrawer.setPlayersData(
@@ -156,48 +148,6 @@ export default class Controls extends Scene {
 
         return positions;
     }
-
-    // drawCardsOnScreen(cards: Card[]): Group {
-    //     const sceneWidth = this.width();
-    //     const sceneHeight = this.height();
-    //
-    //     const maxCardsInRow = 6;
-    //
-    //     const maxCardSize = Math.min(sceneWidth, sceneHeight) * 0.75;
-    //     const spaceAvailable = Math.max(sceneWidth, sceneHeight) * 0.75;
-    //     const padding = 20;
-    //
-    //     const cardSize = Math.min(maxCardSize, (spaceAvailable + padding) / Math.min(cards.length, maxCardsInRow) - padding);
-    //
-    //     const cardShapes = new Group();
-    //
-    //     for (let i = 0; i < cards.length; ++i) {
-    //         let row = Math.floor(i / 6);
-    //         let col = i % 6;
-    //
-    //         // rows and cols are swapped when width is less than height
-    //         if (sceneWidth < sceneHeight) {
-    //             [row, col] = [col, row];
-    //         }
-    //
-    //         cardShapes.add(
-    //             new CardShape({
-    //                 x: padding + (padding + cardSize) * col,
-    //                 y: padding + (padding + cardSize) * row,
-    //                 size: cardSize,
-    //                 card: cards[i]
-    //             })
-    //         );
-    //     }
-    //
-    //     cardShapes
-    //         .setPosition({
-    //             x: (sceneWidth - cardShapes.getWidth()) / 2,
-    //             y: (sceneHeight - cardShapes.getHeight()) / 2
-    //         });
-    //
-    //     return cardShapes;
-    // }
 
     async permuteCards(cards: Card[]): Promise<number[]> {
         return await this.enqueueActivity(new PermuteCardsActivity(this, cards));

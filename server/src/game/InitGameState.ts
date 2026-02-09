@@ -10,23 +10,26 @@ import {
 } from "@common/Types";
 import {mainModulesInfo, ModuleInfo, modulesInfo} from "@common/cards/Modules";
 import {eventsInfo} from "@common/cards/Events";
-
 import {IUser} from "@src/game/interfaces/IUser";
 
 
-function addEvents(type: EventType, description: string, count: number): EventCard[] {
+function addEvents(idCounterRef: { value: number }, type: EventType, description: string, count: number): EventCard[] {
     let events: EventCard[] = [];
 
     for (let i = 0; i < count; i++) {
-        events.push({type, description});
+        events.push({
+            id: idCounterRef.value++,
+            type,
+            description
+        });
     }
 
     return events;
 }
 
-function getInitialEventsStack(): EventCard[] {
+function getInitialEventsStack(idCounterRef: { value: number }): EventCard[] {
     return Object.entries(eventsInfo)
-        .flatMap(([type, info]) => addEvents(type as EventType, info.description, info.count));
+        .flatMap(([type, info]) => addEvents(idCounterRef, type as EventType, info.description, info.count));
 }
 
 function getModulesFromConfig(idCounterRef: { value: number }, type: ModuleType, config: ModuleInfo): ModuleCard[] {
@@ -92,7 +95,7 @@ export function getInitialGameState(users: IUser[], settings: GameSettings): Gam
     return {
         stack: {
             module: getInitialModulesStack(idCounter),
-            event: getInitialEventsStack()
+            event: getInitialEventsStack(idCounter)
         },
         discards: {
             module: [],

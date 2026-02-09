@@ -90,6 +90,7 @@ export type ModuleCard = {
 };
 
 export type EventCard = {
+    id: ModuleId,
     type: EventType,
     description: string,
 };

@@ -32,7 +32,7 @@ export default class TopBarDefaultAdaptor extends TopBarAdaptor {
                 withTimeControl: drawer.scene.gameManager.settings.timeControlSettings !== undefined,
                 time: drawer.playerTime[player.id] ?? 0,
             }).onClick(() => {
-                drawer.scene.gameManager.spaceshipsScene.panToPlayerWithId(player.id);
+                drawer.scene.gameManager.panToPlayer(player.id);
             });
 
             playersDataLine.setAttr("name", String(player.id));

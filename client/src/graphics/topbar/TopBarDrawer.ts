@@ -49,7 +49,7 @@ export default class TopBarDrawer {
         fontSize: 15,
         strokeWidth: SIZES.STROKE_WIDTH,
         cornerRadius: SIZES.CORNER_RADIUS,
-        width: 400
+        width: SIZES.CONTROLS_WIDTH
     };
 
     constructor(scene: Controls) {

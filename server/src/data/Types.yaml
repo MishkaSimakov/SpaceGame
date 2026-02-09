@@ -111,6 +111,8 @@ ModuleCard:
 
 EventCard:
   properties:
+    id:
+      ref: ModuleId
     type:
       ref: EventType
     description:

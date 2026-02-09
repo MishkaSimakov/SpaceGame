@@ -12,11 +12,12 @@ import {PlayerGetters} from "@common/getters/Player";
 
 import Spaceships from "./graphics/scenes/Spaceships";
 import Controls from "./graphics/scenes/Controls";
-import RebuildSpaceshipManager from "./graphics/RebuildSpaceshipManager";
 import SocketManager from "./sockets/SocketManager";
 import {Graphics} from "./graphics/engine/Graphics";
 import PopupsScene from "./graphics/scenes/Popups";
 import {Cheats} from "./Cheats";
+import Scene from "./graphics/engine/Scene";
+import {CardsManager} from "./graphics/cards/CardsManager";
 
 export default class Game {
     currentTurnPlayerId: PlayerId;
@@ -29,10 +30,11 @@ export default class Game {
     socketManager: SocketManager;
 
     spaceshipsScene: Spaceships;
+    handScene: Scene;
     controlsScene: Controls;
     popupsScene: PopupsScene;
 
-    rebuildSpaceshipManager: RebuildSpaceshipManager;
+    cardsManager: CardsManager;
 
     settings: GameSettings;
 
@@ -50,14 +52,16 @@ export default class Game {
         });
 
         this.spaceshipsScene = new Spaceships(this);
+        this.handScene = new Scene();
         this.controlsScene = new Controls(this);
         this.popupsScene = new PopupsScene(this);
 
         graphics.add(this.spaceshipsScene);
+        graphics.add(this.handScene);
         graphics.add(this.controlsScene);
         graphics.add(this.popupsScene);
 
-        this.rebuildSpaceshipManager = new RebuildSpaceshipManager(this);
+        this.cardsManager = new CardsManager(this.spaceshipsScene, this.handScene);
 
         this.socketManager = new SocketManager(this);
 
@@ -86,12 +90,14 @@ export default class Game {
             };
 
             this.spaceshipsScene.setSize(newSize);
+            this.handScene.setSize(newSize);
             this.controlsScene.setSize(newSize);
             this.popupsScene.setSize(newSize);
 
             this.controlsScene.activitiesQueue[0]?.activity.update();
             this.controlsScene.pauseDrawer.update();
             this.popupsScene.update();
+            this.cardsManager.resize();
 
             this.redraw([]);
         });
@@ -103,10 +109,7 @@ export default class Game {
         this.onlineMap = gameDTO.onlineMap;
         this.otherPlayers = gameDTO.otherPlayers;
         this.settings = gameDTO.settings;
-
-        if (!this.rebuildSpaceshipManager.isRebuildingSpaceship) {
-            this.currentPlayer = gameDTO.player;
-        }
+        this.currentPlayer = gameDTO.player;
 
         // enable cheats for debug
         if (this.settings.isDebug && !this.cheats) {
@@ -140,10 +143,14 @@ export default class Game {
 
     private redraw(newMessages: Message[]) {
         this.controlsScene.updateData(newMessages);
-        this.spaceshipsScene.updateData(this.getAllPlayers());
+        this.cardsManager.setData(this.currentPlayer, this.otherPlayers);
+    }
 
-        if (this.rebuildSpaceshipManager.isRebuildingSpaceship) {
-            this.rebuildSpaceshipManager.setIsRebuildSpaceshipAllowed(true);
+    panToPlayer(id: PlayerId) {
+        const position = this.cardsManager.getPlayerSpaceshipPosition(id);
+
+        if (position) {
+            this.spaceshipsScene.panTo(position);
         }
     }
 

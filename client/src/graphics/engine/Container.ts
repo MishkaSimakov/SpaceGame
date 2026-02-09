@@ -1,5 +1,5 @@
 import {Node, NodeConfig} from './Node';
-import {BoundingRect} from "./types";
+import {BoundingRect, merge} from "./types";
 
 export abstract class Container<ChildType extends Node = Node, Config extends NodeConfig = NodeConfig> extends Node {
     children?: Array<ChildType>;
@@ -137,24 +137,28 @@ export abstract class Container<ChildType extends Node = Node, Config extends No
     }
 
     getClientRect(relativeTo?: Container<Node>, ignoreStroke?: boolean): BoundingRect {
-        if (this.children.length === 0)
-            return;
-
         relativeTo = relativeTo ?? this.getScene();
 
         let br = new BoundingRect();
 
-        this.children?.forEach(child => {
-            let cbr = child.getClientRect(this, ignoreStroke);
+        if (this.children.length > 0) {
+            this.children?.forEach(child => {
+                if (!child.visible()) {
+                    return;
+                }
 
-            if (!cbr)
-                return;
+                let cbr = child.getClientRect(this, ignoreStroke);
 
-            br.top = Math.min(br.top, cbr.top);
-            br.bottom = Math.max(br.bottom, cbr.bottom);
-            br.left = Math.min(br.left, cbr.left);
-            br.right = Math.max(br.right, cbr.right);
-        });
+                if (cbr) {
+                    br = merge(br, cbr);
+                }
+            });
+        } else {
+            br.top = 0;
+            br.bottom = 0;
+            br.left = 0;
+            br.right = 0;
+        }
 
         return this.transformedRect(br, relativeTo);
     }

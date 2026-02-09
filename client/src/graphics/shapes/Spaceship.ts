@@ -36,8 +36,6 @@ export class Spaceship extends Group<SpaceshipConfig> {
         let cardSize = this.cardSize();
 
         for (let module of spaceship.modules) {
-            const connected = SpaceshipGetters.getModulesConnectedTo(spaceship, module);
-
             let shape = new CardShape({
                 card: ModuleGetters.asCard(module),
                 size: cardSize,
@@ -45,12 +43,6 @@ export class Spaceship extends Group<SpaceshipConfig> {
                 y: module.y * cardSize,
                 originY: 0.5,
                 originX: 0.5,
-                connectorsState: {
-                    left: connected.left ? "connected" : "disconnected",
-                    top: connected.top ? "connected" : "disconnected",
-                    right: connected.right ? "connected" : "disconnected",
-                    bottom: connected.bottom ? "connected" : "disconnected",
-                }
             });
 
             this.add(shape);
@@ -99,6 +91,16 @@ export class Spaceship extends Group<SpaceshipConfig> {
                 card.draggable(draggable);
             }
         });
+    }
+
+    deleteModules(modules: ModuleCard[]) {
+        const toDestroy = this.getModules().filter(shape => {
+            const spaceshipModule = (shape.card() as { cardType: "module", module: ModuleCard }).module;
+
+            return modules.map(m => m.id).includes(spaceshipModule.id);
+        });
+
+        toDestroy.forEach(s => s.destroy());
     }
 
     private getStorageKey() {

@@ -1,13 +1,32 @@
-import {GameSettings, GameState, ModuleCard, ModuleType, Vector2} from "@common/Types";
+import * as assert from "node:assert";
+
+import {GameSettings, GameState, MainModuleType, ModuleCard, ModuleType, Vector2} from "@common/Types";
 import {Action} from "@common/ActionsHelpers";
 import {shuffleResult, throwDiceResult} from "@common/Actions";
-
-import ActionsBus from "../../src/game/ActionsBus";
 import {defaultSettings} from "@src/game/DefaultSettings";
 import {isReducerName, reducers} from "@src/game/reducers/Main";
 import {getInitialGameState} from "@src/game/InitGameState";
-import {ModuleInfo, modulesInfo} from "@common/cards/Modules";
-import {GameInput} from "@src/game/sagas/runner/Environment";
+import {mainModulesInfo, ModuleInfo, modulesInfo} from "@common/cards/Modules";
+import {Channel} from "@src/game/sagas/runner/Channel";
+
+import ActionsBus from "../../src/game/ActionsBus";
+
+let idCounter = 0;
+
+export function assertModulesEqual(actual: ModuleCard[], expected: ModuleCard[]) {
+    const sort = (modules: ModuleCard[]) => {
+        return modules
+            .sort((a, b) => a.id - b.id);
+    };
+
+    const actualSet = sort(actual);
+    const expectedSet = sort(expected);
+
+    assert.equal(actualSet.length, expectedSet.length);
+    for (let i = 0; i < actualSet.length; ++i) {
+        assert.equal(actualSet[i], expectedSet[i]);
+    }
+}
 
 export function fakeGameState(playersCount: number): GameState {
     const settings: GameSettings = {
@@ -55,7 +74,7 @@ export function attachTerminalLogger(busRef: ActionsBus) {
     });
 }
 
-export function attachFakeRandomizer(busRef: ActionsBus, inputRef: GameInput) {
+export function attachFakeRandomizer(busRef: ActionsBus, inputRef: Channel<Action>) {
     const diceCalls = {value: 0};
     const shuffleCalls = {value: 0};
 
@@ -80,10 +99,12 @@ export function attachFakeRandomizer(busRef: ActionsBus, inputRef: GameInput) {
 }
 
 export function fakeModule(type: ModuleType, config: Partial<Omit<ModuleInfo, "configurations"> & Vector2>): ModuleCard {
-    const defaultConfig = modulesInfo[type];
+    const defaultConfig = type !== ModuleType.MainModule
+        ? modulesInfo[type]
+        : mainModulesInfo[MainModuleType.DrawAdditionalModuleCard];
 
     return {
-        id: 0,
+        id: idCounter++,
         name: config.name ?? defaultConfig.name,
         connectors: {left: 1, top: 1, right: 1, bottom: 1},
         strength: config.strength ?? defaultConfig.strength ?? 0,

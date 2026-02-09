@@ -133,8 +133,9 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
     }
 
     shouldDrawHit() {
-        if (!this.isInteractive())
+        if (!this.isInteractive()) {
             return false;
+        }
 
         const scene = this.getScene();
 
@@ -368,6 +369,10 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
     }
 
     _getTransform(): Transform {
+        if (this._id === 10) {
+            console.log("_getTransform");
+        }
+
         let tr: Transform = this._cache.get(TRANSFORM) || new Transform();
         tr.reset();
 
@@ -638,9 +643,10 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         this.clearSelfAndDescendantCache(GRAPHICS);
     }
 
-    destroy() {
-        if (this.isDragging())
+    remove() {
+        if (this.isDragging()) {
             this.stopDrag();
+        }
 
         DD._dragElements.delete(this._id);
 
@@ -655,6 +661,12 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
 
             this.parent = undefined;
         }
+    }
+
+
+    destroy() {
+        // TODO: think about caches!!!
+        this.remove();
     }
 
     isAncestorOf(node: Node): boolean {
@@ -758,7 +770,8 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         this.fire('dragstart', {
             type: 'dragstart',
             target: this,
-            evt: evt && evt.evt
+            evt: evt && evt.evt,
+            pointerId: element.pointerId
         }, bubbleEvent);
     }
 
@@ -778,6 +791,7 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
                 x: pos.x - ap.x,
                 y: pos.y - ap.y
             },
+            followPointer: true,
             dragStatus: 'ready',
             pointerId
         });
@@ -824,8 +838,12 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
 
         this.inAnimation = true;
 
-        const animationAttrs = ['x', 'y', 'scaleX', 'scaleY', 'fill']
+        const animationAttrs = ['x', 'y', 'scaleX', 'scaleY', 'fill', 'rotation']
             .filter(attr => Object.keys(newAttrs).includes(attr));
+
+        if (animationAttrs.length !== Object.keys(newAttrs).length) {
+            throw "animate method does not support given attribute";
+        }
 
         const animationStart = new Date().getTime();
         const startAttrs = {};
@@ -847,13 +865,23 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
                 const percent = shouldStop ? 1 : _animationFunction((currentTime - animationStart) / duration);
 
                 const interpolateAttribute = (attr: string, percent: number) => {
-                    if (attr != "fill") {
-                        return newAttrs[attr] * percent + startAttrs[attr] * (1 - percent);
-                    } else {
+                    if (attr === "fill") {
                         const startColor = Color.fromString(startAttrs[attr]);
                         const newColor = Color.fromString(newAttrs[attr]);
 
                         return Color.interpolate(startColor, newColor, percent);
+                    } else if (attr === "rotation") {
+                        // choose the shortest arc for interpolation
+                        const forwardArc = Math.abs(startAttrs[attr] - newAttrs[attr]);
+                        const backwardArc = 2 * Math.PI - forwardArc;
+
+                        if (forwardArc < backwardArc) {
+                            return newAttrs[attr] * percent + startAttrs[attr] * (1 - percent)
+                        } else {
+                            return ((newAttrs[attr] + 2 * Math.PI) * percent + startAttrs[attr] * (1 - percent)) % (2 * Math.PI);
+                        }
+                    } else {
+                        return newAttrs[attr] * percent + startAttrs[attr] * (1 - percent);
                     }
                 }
 

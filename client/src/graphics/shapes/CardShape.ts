@@ -1,4 +1,4 @@
-import {Card} from "@common/Types";
+import {Card, EventCard, ModuleCard} from "@common/Types";
 
 import {Group} from "../engine/Group";
 import {ShapeConfig} from "../engine/Shape";
@@ -17,7 +17,6 @@ export interface CardConfig extends ShapeConfig {
     stroke?: string;
     strokeWidth?: number;
     state?: ModuleStates,
-    connectorsState?: Record<string, "connected" | "disconnected">
 
     disabledColor?: string
 }
@@ -215,8 +214,10 @@ export class CardShape extends Group<CardConfig> {
         this._hitRect.drawHit();
     }
 
-    rotateCard(rotation) {
-        this._rotationGroup.rotation(rotation);
+    rotateCard(rotation: number) {
+        this._rotationGroup.animate({
+            rotation
+        }, 100);
     }
 
     get isModule(): boolean {
@@ -225,6 +226,16 @@ export class CardShape extends Group<CardConfig> {
 
     get isEvent(): boolean {
         return this.card().cardType === "event";
+    }
+
+    getModule(): ModuleCard | undefined {
+        const card = this.card();
+        return card.cardType === "module" ? card.module : undefined;
+    }
+
+    getEvent(): EventCard | undefined {
+        const card = this.card();
+        return card.cardType === "event" ? card.event : undefined;
     }
 
     private getCharacteristicsString(): string {
@@ -309,7 +320,6 @@ export class CardShape extends Group<CardConfig> {
     stroke: GetSet<string, this>;
     strokeWidth: GetSet<number, this>;
     state: GetSet<ModuleStates, this>;
-    connectorsState: GetSet<Record<string, "connected" | "disconnected">, this>;
 
     disabledColor: GetSet<string, this>;
 }
@@ -321,6 +331,5 @@ Factory.addGetterSetter(CardShape, 'stroke');
 Factory.addGetterSetter(CardShape, 'strokeWidth');
 
 Factory.addGetterSetter(CardShape, 'state', 'DEFAULT');
-Factory.addGetterSetter(CardShape, 'connectorsState');
 
 Factory.addGetterSetter(CardShape, 'disabledColor', Color.fromHex('#000000', 0.5).toString());

@@ -1,7 +1,14 @@
 import {SpaceshipGetters} from "../getters/Spaceship";
-import {ModuleCard, ModuleType, Spaceship} from "../Types";
+import {ModuleCard, ModuleType, Spaceship, Vector2} from "../Types";
 
-function addModule(ship: Spaceship, module: ModuleCard, x: number, y: number): boolean {
+function addModule(ship: Spaceship, module: ModuleCard, position: Vector2): boolean;
+function addModule(ship: Spaceship, module: ModuleCard, x: number, y: number): boolean;
+function addModule(ship: Spaceship, module: ModuleCard, x: number | Vector2, y?: number): boolean {
+    if (typeof x !== "number") {
+        y = x.y;
+        x = x.x;
+    }
+
     if (!SpaceshipGetters.canConnectModule(ship, module, x, y)) {
         return false;
     }
