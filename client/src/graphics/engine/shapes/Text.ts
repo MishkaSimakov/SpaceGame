@@ -135,9 +135,6 @@ export class Text extends Shape {
         this.setAttr('text', text);
 
         this.setTextData();
-        this.clearCache('TRANSFORM');
-        this.clearCache('ABSOLUTE_TRANSFORM');
-
         this.requestRedraw();
 
         return this;

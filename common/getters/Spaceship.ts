@@ -1,13 +1,13 @@
 import {MainModuleType, ModuleCard, ModuleType, Spaceship, Vector2} from "../Types";
 import {ModuleGetters} from "./Module";
 
-type Direction = "left" | "top" | "right" | "bottom";
+export type Direction = "left" | "top" | "right" | "bottom";
 
-const directions: Record<string, [number, number]> = {
-    'left': [-1, 0],
-    'top': [0, -1],
-    'right': [1, 0],
-    'bottom': [0, 1]
+export const directions: Record<string, Vector2> = {
+    'left': {x: -1, y: 0},
+    'top': {x: 0, y: -1},
+    'right': {x: 1, y: 0},
+    'bottom': {x: 0, y: 1}
 }
 
 const opposites: Record<string, string> = {
@@ -50,7 +50,7 @@ function canConnectModule(ship: Spaceship, module: ModuleCard, x?: number, y?: n
     let hasConnection = false;
 
     for (let [key, value] of Object.entries(directions)) {
-        let module_in_direction = getModuleByPosition(ship, x + value[0], y + value[1]);
+        let module_in_direction = getModuleByPosition(ship, x + value.x, y + value.y);
 
         if (!module_in_direction) continue;
 
@@ -90,8 +90,8 @@ function getPossibleConnectionsFor(ship: Spaceship, module: ModuleCard): number[
     for (let i in ship.modules) {
         let spaceship_module = ship.modules[i];
         for (let direction in directions) {
-            const x = spaceship_module.x + directions[direction][0];
-            const y = spaceship_module.y + directions[direction][1];
+            const x = spaceship_module.x + directions[direction].x;
+            const y = spaceship_module.y + directions[direction].y;
 
             if (!getModuleByPosition(ship, x, y) && canConnectModule(ship, module, x, y)) {
                 possible_connections.push([x, y]);
@@ -128,7 +128,7 @@ function getModulesConnectedTo(ship: Spaceship, module: ModuleCard) {
             continue;
         }
 
-        const moduleInDirection = getModuleByPosition(ship, module.x + direction[0], module.y + direction[1]);
+        const moduleInDirection = getModuleByPosition(ship, module.x + direction.x, module.y + direction.y);
 
         if (moduleInDirection) {
             connectedModules[index as Direction] = moduleInDirection;

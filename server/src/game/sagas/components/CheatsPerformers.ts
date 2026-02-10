@@ -13,6 +13,7 @@ import {ModuleGetters} from "@common/getters/Module";
 import {eventsInfo} from "@common/cards/Events";
 import {StateGetters} from "@common/getters/State";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
+import {CardGetters} from "@common/getters/Card";
 
 type PerformerType<T extends keyof typeof Actions> =
     (cheat: ReturnType<(typeof Actions)[T]>["payload"]) => SagaGenerator;
@@ -26,11 +27,13 @@ function* getNextModuleId() {
     const state = yield* select();
 
     const maxId = Math.max(...[
-        ...state.discards.module,
-        ...state.stack.module,
-        ...state.mainModulesStack,
-        ...state.players.flatMap(p => p.hand.filter(c => c.cardType === "module").map(m => m.module))
-    ].map(m => m.id));
+        ...state.discards.module.map(m => m.id),
+        ...state.discards.event.map(m => m.id),
+        ...state.stack.module.map(m => m.id),
+        ...state.stack.event.map(m => m.id),
+        ...state.mainModulesStack.map(m => m.id),
+        ...state.players.flatMap(p => p.hand.map(CardGetters.id))
+    ]);
 
     return maxId + 1;
 }

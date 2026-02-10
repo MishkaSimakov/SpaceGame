@@ -2,11 +2,13 @@ import {Card, EventCard, ModuleCard} from "@common/Types";
 
 import {Group} from "../engine/Group";
 import {ShapeConfig} from "../engine/Shape";
-import {GetSet} from "../engine/types";
+import {BoundingRect, GetSet, merge} from "../engine/types";
 import {Factory} from "../engine/Factory";
 import {Rectangle} from "../engine/shapes/Rectangle";
 import {Text} from "../engine/shapes/Text";
 import Color from "../Color";
+import {Container} from "../engine/Container";
+import {Node} from "../engine/Node";
 
 
 export type ModuleStates = 'DEFAULT' | 'ENABLED' | 'DISABLED' | 'PROTECTED' | 'SELECTED';
@@ -202,9 +204,6 @@ export class CardShape extends Group<CardConfig> {
 
         this.add(this._strokeRect);
         this.add(this._hitRect);
-
-        this.width(size);
-        this.height(size);
     }
 
     drawHit() {
@@ -236,6 +235,25 @@ export class CardShape extends Group<CardConfig> {
     getEvent(): EventCard | undefined {
         const card = this.card();
         return card.cardType === "event" ? card.event : undefined;
+    }
+
+    getWidth(): number {
+        return this.size();
+    }
+
+    getHeight(): number {
+        return this.size();
+    }
+
+    getClientRect(relativeTo?: Container<Node>, ignoreStroke?: boolean): BoundingRect | undefined {
+        if (!this.isVisible()) {
+            return;
+        }
+
+        return this.transformedRect(
+            new BoundingRect(0, 0, this.size(), this.size()),
+            relativeTo ?? this.getScene()
+        );
     }
 
     private getCharacteristicsString(): string {

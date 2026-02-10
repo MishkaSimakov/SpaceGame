@@ -109,8 +109,6 @@ export abstract class Container<ChildType extends Node = Node, Config extends No
         child.index = this.children.length;
         child.parent = this;
 
-        child._clearCaches();
-
         this.children.push(child);
 
         this.fire('add', {
@@ -136,17 +134,17 @@ export abstract class Container<ChildType extends Node = Node, Config extends No
         this.drawChildren('drawHit');
     }
 
-    getClientRect(relativeTo?: Container<Node>, ignoreStroke?: boolean): BoundingRect {
+    getClientRect(relativeTo?: Container<Node>, ignoreStroke?: boolean): BoundingRect | undefined {
+        if (!this.visible()) {
+            return;
+        }
+
         relativeTo = relativeTo ?? this.getScene();
 
         let br = new BoundingRect();
 
         if (this.children.length > 0) {
             this.children?.forEach(child => {
-                if (!child.visible()) {
-                    return;
-                }
-
                 let cbr = child.getClientRect(this, ignoreStroke);
 
                 if (cbr) {
@@ -206,13 +204,5 @@ export abstract class Container<ChildType extends Node = Node, Config extends No
             return this.attrs.height;
 
         return this.getClientRect(this, true).height;
-    }
-
-    clearSelfAndDescendantCache(attr?: string) {
-        super.clearSelfAndDescendantCache(attr);
-
-        this.children?.forEach(node => {
-            node.clearSelfAndDescendantCache(attr)
-        });
     }
 }

@@ -8,6 +8,7 @@ import Scene from "../engine/Scene";
 import * as assert from "assert"
 import {CardGetters} from "@common/getters/Card";
 import {BoundingRect, merge} from "../engine/types";
+import {Line} from "../engine/shapes/Line";
 
 type PlaceholderInfo = { shape: Rectangle, card: { cardType: "placeholder" } };
 
@@ -80,11 +81,23 @@ export class HandManager {
         this.update();
     }
 
-    replaceWithPlaceholder(info: CardInfo) {
+    replaceCardWithPlaceholder(info: CardInfo) {
         const index = this.getCardIndex(info);
 
         assert.ok(index !== undefined);
         this.cards[index] = {shape: this.placeholder, card: {cardType: "placeholder"}};
+
+        this.update();
+    }
+
+    replacePlaceholderWithCard(info: CardInfo) {
+        info.shape.remove();
+        this.handContents.add(info.shape);
+
+        const index = this.cards.findIndex(c => c.card.cardType === "placeholder");
+
+        assert.ok(index !== undefined);
+        this.cards[index] = info;
 
         this.update();
     }
@@ -99,11 +112,15 @@ export class HandManager {
     }
 
     // returns undefined if card is too far from hand
-    getPlaceholderPosition(info: CardInfo): number | undefined {
+    getPlaceholderPosition(): number | undefined {
         // remove placeholder if card is too high
         const pointerPosition = this.handScene.getRelativePointerPosition();
         if (pointerPosition.y < this.handScene.height() - this.cardSize - 2 * this.spaceBetween) {
             return undefined;
+        }
+
+        if (this.cards.length === 0) {
+            return 0;
         }
 
         let handCardsBR = new BoundingRect();

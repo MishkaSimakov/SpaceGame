@@ -13,6 +13,9 @@ import Scene from "../engine/Scene";
 import {CardShape} from "../shapes/CardShape";
 import * as assert from "../../assert";
 import {DD} from "../engine/Drag";
+import {getSpaceshipOutline} from "./ShipOutline";
+import {Line} from "../engine/shapes/Line";
+import Color from "../Color";
 
 function asModule(card: Card): ModuleCard {
     assert.ok(card.cardType === "module");
@@ -82,20 +85,47 @@ export class CardsManager {
     setData(thisPlayer: Player, otherPlayers: OtherPlayer[]) {
         this.thisPlayer = thisPlayer.id;
 
+        // New data must be reconciled with old data. Strategy is the following:
+        // go through every card in new data and update current state according to new card state
+        // all cards that aren't present in new state must be destroyed. visitedCards keeps track of cards that
+        // are present in new data.
+        const visitedCards: number[] = [];
+
+        // if there is currently dragged card, ensure that it is still in this player's possession
+        const thisPlayersCards = [
+            ...thisPlayer.hand,
+            ...thisPlayer.spaceship.modules.map(ModuleGetters.asCard)
+        ].map(CardGetters.id);
+
+        const dragCard = this.cards.find(c => c.location.type === "drag");
+        if (dragCard && !thisPlayersCards.includes(CardGetters.id(dragCard.card))) {
+            this.cards = this.cards.filter(c => c !== dragCard);
+            dragCard.shape.destroy();
+        }
+
+        const dragHandCard = this.cards.find(c => c.location.type === "dragHand");
+        if (dragHandCard && !thisPlayersCards.includes(CardGetters.id(dragHandCard.card))) {
+            this.cards = this.cards.filter(c => c !== dragHandCard);
+            this.handManager.removePlaceholder();
+            dragHandCard.shape.destroy();
+        }
+
+        // now in spaceships of other players every card can be only in "chunk" or "hand" state
+
         for (const player of otherPlayers) {
             let chunk = this.chunks.find(c => c.owner === player.id);
 
             if (!chunk) {
                 chunk = {
                     owner: player.id,
-                    spaceship: structuredClone(player.spaceship),
+                    spaceship: {modules: []},
                     group: this.spaceshipsScene.createAndAdd.group(this.allocateSpaceshipPosition())
                 };
 
                 this.chunks.push(chunk);
-            } else {
-                chunk.spaceship.activatedProtector = structuredClone(player.spaceship.activatedProtector);
             }
+
+            chunk.spaceship.activatedProtector = structuredClone(player.spaceship.activatedProtector);
 
             for (const module of player.spaceship.modules) {
                 let info = this.cards.find(c => CardGetters.id(c.card) === module.id);
@@ -121,9 +151,23 @@ export class CardsManager {
 
                     this.cards.push(info);
                     this.attachCardEvents(info);
-                } else {
-                    // TODO
+                } else if (info.location.type === "chunk") {
+                    SpaceshipModifiers.removeModule(info.location.chunk.spaceship, module);
+                    info.shape.remove();
+
+                    chunk.group.add(info.shape);
+
+                    info.location.chunk = chunk;
+                    info = {
+                        card: ModuleGetters.asCard(module),
+                        shape: info.shape,
+                        location: {type: "chunk", chunk}
+                    };
+
+                    this.attachCardEvents(info);
                 }
+
+                SpaceshipModifiers.addModule(chunk.spaceship, module, module.x, module.y);
             }
         }
 
@@ -173,6 +217,8 @@ export class CardsManager {
         for (const module of thisPlayer.spaceship.modules) {
             let info = this.cards.find(c => CardGetters.id(c.card) === module.id);
 
+            console.log(info);
+
             if (!info) {
                 const shape = new CardShape({
                     card: ModuleGetters.asCard(module),
@@ -197,6 +243,18 @@ export class CardsManager {
             } else {
                 // TODO
             }
+        }
+
+        const outline = getSpaceshipOutline(chunk.spaceship, 0.05);
+        console.log(outline);
+        for (const path of outline) {
+            chunk.group.add(new Line({
+                strokeWidth: 5,
+                stroke: Color.fromHex("#ffb703").toString(),
+                points: path.map(p => ({x: p.x * this.cardSize, y: p.y * this.cardSize})),
+                lineJoin: "round",
+                closed: true
+            }));
         }
     }
 
@@ -229,6 +287,10 @@ export class CardsManager {
         const module = asModule(info.card);
         let dragOffset: Vector2;
 
+        // when card shape is moved between scenes, dragend even is fired
+        // it must be ignored
+        let ignoreDragend = false;
+
         info.shape.on('click', () => this.rotateInPlace(info));
 
         info.shape.on('dragstart', (evt) => {
@@ -241,6 +303,7 @@ export class CardsManager {
                     const position = info.shape.getAbsolutePosition();
 
                     // move to hand scene
+                    ignoreDragend = true;
                     info.shape.remove();
                     info.shape.setAttrs({
                         scaleX: this.spaceshipsScene.scaleX(),
@@ -263,8 +326,9 @@ export class CardsManager {
                 const position = info.shape.getAbsolutePosition();
 
                 // replace card with placeholder in hand
-                this.handManager.replaceWithPlaceholder(info);
+                this.handManager.replaceCardWithPlaceholder(info);
 
+                ignoreDragend = true;
                 info.shape.remove();
                 info.shape.setAttrs({
                     x: position.x,
@@ -292,7 +356,7 @@ export class CardsManager {
 
                 // drag -> handDrag
                 if (!connected) {
-                    const placeholderPosition = this.handManager.getPlaceholderPosition(info);
+                    const placeholderPosition = this.handManager.getPlaceholderPosition();
 
                     if (placeholderPosition !== undefined) {
                         console.log("drag -> dragHand");
@@ -329,7 +393,7 @@ export class CardsManager {
                 // measure distance to hand, if the card is too far
                 // remove placeholder from hand
 
-                const position = this.handManager.getPlaceholderPosition(info);
+                const position = this.handManager.getPlaceholderPosition();
 
                 if (position !== undefined) {
                     this.handManager.setPlaceholderPosition(position);
@@ -346,6 +410,11 @@ export class CardsManager {
 
         info.shape.on('dragend', () => {
             console.log("dragend", info);
+
+            if (ignoreDragend) {
+                ignoreDragend = false;
+                return;
+            }
 
             if (info.location.type === "drag") {
                 const position = this.spaceshipsScene.getAbsoluteTransform().invert().point(
@@ -377,6 +446,9 @@ export class CardsManager {
                     scaleY: 1
                 });
                 info.location.chunk.group.add(info.shape);
+            } else if (info.location.type === "dragHand") {
+                this.handManager.replacePlaceholderWithCard(info);
+                info.location = {type: "hand"};
             }
 
             // TODO
@@ -528,7 +600,6 @@ export class CardsManager {
 
         const chunkPosition = mainChunk.group.getPosition();
 
-        console.log(mainModulePosition, chunkPosition);
         return {
             x: chunkPosition.x + mainModulePosition.x + this.cardSize / 2,
             y: chunkPosition.y + mainModulePosition.y + this.cardSize / 2,

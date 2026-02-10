@@ -109,9 +109,10 @@ export class Shape<Config extends ShapeConfig = ShapeConfig> extends Node<Config
         return !!(this.strokeWidth() && this.stroke());
     }
 
-    getClientRect(relativeTo?: Container<Node>, ignoreStroke?: boolean): BoundingRect {
-        if (!this.isVisible())
+    getClientRect(relativeTo?: Container<Node>, ignoreStroke?: boolean): BoundingRect | undefined {
+        if (!this.isVisible()) {
             return;
+        }
 
         relativeTo = relativeTo ?? this.getScene();
 

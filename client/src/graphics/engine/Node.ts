@@ -70,35 +70,15 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
 
     eventListeners: Record<string, Array<{ name: string, handler: Function }>> = {};
 
-    _batchingTransformChange = false;
-    _needClearTransformCache = false;
-
-    _cache: Map<string, any> = new Map<string, any>();
-
     inAnimation: boolean = false;
+
+    _batchingTransformChange: boolean = false;
 
     constructor(config?: Config) {
         this.setAttrs(config);
     }
 
-    clearCache(attr?: string) {
-        if (
-            (attr === TRANSFORM || attr === ABSOLUTE_TRANSFORM)
-            && this._cache.get(attr)
-        ) {
-            (this._cache.get(attr) as Transform).dirty = true;
-        } else if (attr) {
-            this._cache.delete(attr);
-        } else {
-            this._cache.clear();
-        }
-    }
-
     isInteractive(): boolean {
-        return this.getCache(INTERACTIVE, this._isInteractive);
-    }
-
-    _isInteractive(): boolean {
         const interactive = this.interactive();
 
         if (!interactive)
@@ -114,10 +94,6 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
     }
 
     isVisible(): boolean {
-        return this.getCache(VISIBLE, this._isVisible);
-    }
-
-    _isVisible(): boolean {
         const visible = this.visible();
 
         if (!visible)
@@ -149,7 +125,7 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
     }
 
     getProtoListeners(eventType) {
-        const allListeners = this._cache.get(ALL_LISTENERS) ?? {};
+        const allListeners = {};
         let events = allListeners?.[eventType];
 
         if (events === undefined) {
@@ -164,24 +140,9 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
             }
 
             allListeners[eventType] = events;
-            this._cache.set(ALL_LISTENERS, allListeners);
         }
 
         return events;
-    }
-
-    getCache(attr: string, privateGetter: Function) {
-        let cache = this._cache.get(attr);
-
-        let isTransform = attr === TRANSFORM || attr === ABSOLUTE_TRANSFORM;
-        let isInvalid = cache === undefined || (isTransform && (cache as Transform).dirty);
-
-        if (isInvalid) {
-            cache = privateGetter.call(this);
-            this._cache.set(attr, cache);
-        }
-
-        return cache;
     }
 
     requestRedraw() {
@@ -199,10 +160,6 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
     }
 
     getGraphics(): Graphics {
-        return this.getCache(GRAPHICS, this._getGraphics);
-    }
-
-    _getGraphics(): Graphics {
         let parent = this.getParent();
 
         return parent ? parent.getGraphics() : undefined;
@@ -250,12 +207,6 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         this._batchingTransformChange = true;
         func();
         this._batchingTransformChange = false;
-
-        if (this._needClearTransformCache) {
-            this.clearCache(TRANSFORM);
-            this.clearSelfAndDescendantCache(ABSOLUTE_TRANSFORM);
-        }
-        this._needClearTransformCache = false;
     }
 
     eachAncestorsReverse(func: (node: Node) => void, top?: Node) {
@@ -298,37 +249,14 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         return transform.point(pos);
     }
 
-    abstract getClientRect(relativeTo?: Container<Node>, ignoreStroke?: boolean): BoundingRect;
+    abstract getClientRect(relativeTo?: Container<Node>, ignoreStroke?: boolean): BoundingRect | undefined;
 
     getAbsoluteTransform(top?: Node): Transform {
-        if (top) {
-            return this._getAbsoluteTransform(top);
-        } else {
-            return this.getCache(ABSOLUTE_TRANSFORM, this._getAbsoluteTransform) as Transform;
-        }
-    }
+        let tr = new Transform();
 
-    _getAbsoluteTransform(top?: Node): Transform {
-        let tr: Transform;
-
-        if (top) {
-            tr = new Transform();
-
-            this.eachAncestorsReverse(ancestor => {
-                tr.multiply(ancestor.getTransform())
-            }, top);
-        } else {
-            tr = this._cache.get(ABSOLUTE_TRANSFORM) || new Transform();
-
-            if (this.parent) {
-                this.parent._getAbsoluteTransform().copyInto(tr);
-            } else {
-                tr.reset();
-            }
-
-            tr.multiply(this.getTransform());
-            tr.dirty = false;
-        }
+        this.eachAncestorsReverse(ancestor => {
+            tr.multiply(ancestor.getTransform())
+        }, top);
 
         return tr;
     }
@@ -365,15 +293,7 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
     }
 
     getTransform(): Transform {
-        return this.getCache(TRANSFORM, this._getTransform) as Transform;
-    }
-
-    _getTransform(): Transform {
-        if (this._id === 10) {
-            console.log("_getTransform");
-        }
-
-        let tr: Transform = this._cache.get(TRANSFORM) || new Transform();
+        let tr: Transform = new Transform();
         tr.reset();
 
         let x = this.x();
@@ -447,8 +367,6 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
     }
 
     on<K extends keyof NodeEventMap>(evtStr: K, handler: EventListener<this, NodeEventMap[K]>) {
-        this._cache && this._cache.delete(ALL_LISTENERS);
-
         let events = (evtStr as string).split(' ');
 
         for (let event of events) {
@@ -522,8 +440,6 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
     off(evtStr?: string, callback?) {
         let events = (evtStr || '').split(' '),
             parts: string[], baseEvent: string, name: string, event: string;
-
-        this._cache && this._cache.delete(ALL_LISTENERS);
 
         if (!evtStr) {
             for (let t in this.eventListeners) {
@@ -636,22 +552,12 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         }
     }
 
-    _clearCaches() {
-        this.clearSelfAndDescendantCache(ABSOLUTE_TRANSFORM);
-        this.clearSelfAndDescendantCache(VISIBLE);
-        this.clearSelfAndDescendantCache(INTERACTIVE);
-        this.clearSelfAndDescendantCache(GRAPHICS);
-    }
-
     remove() {
         if (this.isDragging()) {
             this.stopDrag();
         }
 
         DD._dragElements.delete(this._id);
-
-        this.clearCache();
-        this._clearCaches();
 
         let parent = this.getParent();
 
@@ -665,7 +571,6 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
 
 
     destroy() {
-        // TODO: think about caches!!!
         this.remove();
     }
 
@@ -735,8 +640,7 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         this.attrs.x = origTransform.x;
         this.attrs.y = origTransform.y;
 
-        this.clearCache(TRANSFORM);
-        let tr = this._getAbsoluteTransform().copy();
+        let tr = this.getAbsoluteTransform().copy();
 
         tr.invert();
         tr.translate(pos.x, pos.y);
@@ -752,9 +656,6 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         this.attrs.rotation = origTransform.rotation;
 
         this.setPosition(newPos);
-
-        this.clearCache(TRANSFORM);
-        this.clearCache(ABSOLUTE_TRANSFORM);
 
         return this;
     }
@@ -826,10 +727,6 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         }
 
         this.lastPos = newNodePosition;
-    }
-
-    clearSelfAndDescendantCache(attr?: string) {
-        this.clearCache(attr);
     }
 
     animate(newAttrs: object, duration: number, animationFunc?: (x: number) => number) {
@@ -930,35 +827,6 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
 Node.prototype.nodeType = 'Node';
 
 Node.prototype.eventListeners = {};
-
-const TRANSFORM_CHANGE_STR = [
-    'add.core',
-    'xChange.core',
-    'yChange.core',
-    'scaleXChange.core',
-    'scaleYChange.core',
-    'originXChange.core',
-    'originYChange.core',
-    'rotationChange.core'
-].join(' ');
-
-Node.prototype.on.call(Node.prototype, TRANSFORM_CHANGE_STR, function () {
-    if (this._batchingTransformChange) {
-        this._needClearTransformCache = true;
-        return;
-    }
-
-    this.clearCache(TRANSFORM);
-    this.clearSelfAndDescendantCache(ABSOLUTE_TRANSFORM);
-});
-
-Node.prototype.on.call(Node.prototype, 'visibleChange.core', function () {
-    this.clearSelfAndDescendantCache(VISIBLE);
-});
-
-Node.prototype.on.call(Node.prototype, 'interactiveChange.core', function () {
-    this.clearSelfAndDescendantCache(INTERACTIVE);
-});
 
 Factory.addGetterSetter(Node, 'name', '');
 

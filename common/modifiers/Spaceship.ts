@@ -9,12 +9,12 @@ function addModule(ship: Spaceship, module: ModuleCard, x: number | Vector2, y?:
         x = x.x;
     }
 
-    if (!SpaceshipGetters.canConnectModule(ship, module, x, y)) {
+    if (!SpaceshipGetters.canConnectModule(ship, module, x, y!)) {
         return false;
     }
 
     module.x = x;
-    module.y = y;
+    module.y = y!;
     ship.modules.push(module);
 
     return true;
