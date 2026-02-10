@@ -13,7 +13,7 @@ export const DD = {
             pointerId: number,
 
             followPointer: boolean,
-            dragStatus: 'ready' | 'dragging' | 'stopped'
+            dragStatus: 'ready' | 'dragging' | 'stopped',
         }
     >(),
     isDragging(): boolean {

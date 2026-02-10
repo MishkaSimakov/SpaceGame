@@ -15,6 +15,11 @@ export default class Color {
         this.a = alpha;
     }
 
+    setAlpha(newValue: number): Color {
+        this.a = newValue;
+        return this;
+    }
+
     static fromHex(hex: string, alpha: number = 1): Color {
         let parts = hex.slice(1).match(/.{1,2}/g);
 
@@ -46,7 +51,7 @@ export default class Color {
         const r = Math.round(from.r + (to.r - from.r) * ratio);
         const g = Math.round(from.g + (to.g - from.g) * ratio);
         const b = Math.round(from.b + (to.b - from.b) * ratio);
-        const a = Math.round(from.a + (to.a - from.a) * ratio);
+        const a = from.a + (to.a - from.a) * ratio;
 
         return Color.fromRGBA(r, g, b, a);
     }

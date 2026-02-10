@@ -523,8 +523,9 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
     stopDrag(evt?) {
         const element = DD._dragElements.get(this._id);
 
-        if (element)
+        if (element) {
             element.dragStatus = 'stopped';
+        }
 
         DD._endDragBefore(evt)
         DD._endDragAfter(evt);
@@ -672,7 +673,7 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
             type: 'dragstart',
             target: this,
             evt: evt && evt.evt,
-            pointerId: element.pointerId
+            pointerId: element.pointerId,
         }, bubbleEvent);
     }
 
@@ -694,7 +695,7 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
             },
             followPointer: true,
             dragStatus: 'ready',
-            pointerId
+            pointerId,
         });
     }
 
@@ -729,13 +730,14 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         this.lastPos = newNodePosition;
     }
 
+    // TODO: abort ongoing animations when start a new one or remove node
     animate(newAttrs: object, duration: number, animationFunc?: (x: number) => number) {
         if (this.inAnimation)
             return;
 
         this.inAnimation = true;
 
-        const animationAttrs = ['x', 'y', 'scaleX', 'scaleY', 'fill', 'rotation']
+        const animationAttrs = ['x', 'y', 'scaleX', 'scaleY', 'fill', 'stroke', 'rotation']
             .filter(attr => Object.keys(newAttrs).includes(attr));
 
         if (animationAttrs.length !== Object.keys(newAttrs).length) {
@@ -762,7 +764,7 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
                 const percent = shouldStop ? 1 : _animationFunction((currentTime - animationStart) / duration);
 
                 const interpolateAttribute = (attr: string, percent: number) => {
-                    if (attr === "fill") {
+                    if (attr === "fill" || attr === 'stroke') {
                         const startColor = Color.fromString(startAttrs[attr]);
                         const newColor = Color.fromString(newAttrs[attr]);
 

@@ -65,6 +65,8 @@ function traverseInterpoints(ship: Spaceship, startPoint: Vector2, prevDirection
     let currentDirection = prevDirection;
     let currentPoint = startPoint;
 
+    let iteration = 0;
+
     while (true) {
         const pointType = getTraverseDirection(ship, currentPoint, currentDirection);
 
@@ -99,6 +101,11 @@ function traverseInterpoints(ship: Spaceship, startPoint: Vector2, prevDirection
             break;
         }
 
+        ++iteration;
+        if (iteration > 20) {
+            break;
+        }
+
         currentPoint = nextPoint;
         currentDirection = nextDirection;
     }
@@ -116,31 +123,33 @@ export function getSpaceshipOutline(ship: Spaceship, padding: number): Vector2[]
     const visitedPoints = new Set<string>();
 
     for (const module of ship.modules) {
-        const connections = SpaceshipGetters.getModulesConnectedTo(ship, module);
-
         for (const direction of directionsArray) {
-            if (!Object.keys(connections).includes(direction)) {
-                const interpointOffset: Record<Direction, Vector2> = {
-                    "right": {x: 1, y: 0},
-                    "bottom": {x: 1, y: 1},
-                    "left": {x: 0, y: 1},
-                    "top": {x: 0, y: 0},
-                };
+            const neighbourPosition = {
+                x: module.x + directions[direction].x,
+                y: module.y + directions[direction].y,
+            };
 
-                const interpointPosition = ModuleGetters.position(module);
-                interpointPosition.x += interpointOffset[direction].x;
-                interpointPosition.y += interpointOffset[direction].y;
+            if (SpaceshipGetters.getModuleByPosition(ship, neighbourPosition) !== undefined) {
+                continue;
+            }
 
-                const prevDirection = directionsArray[(directionsArray.indexOf(direction) + 3) % 4];
+            const interpointOffset: Record<Direction, Vector2> = {
+                "right": {x: 1, y: 0},
+                "bottom": {x: 1, y: 1},
+                "left": {x: 0, y: 1},
+                "top": {x: 0, y: 0},
+            };
 
-                if (!visitedPoints.has(encodeVisited({point: interpointPosition, direction: prevDirection}))) {
-                    const {path, visited} = traverseInterpoints(ship, interpointPosition, prevDirection, padding);
+            const interpointPosition = ModuleGetters.position(module);
+            interpointPosition.x += interpointOffset[direction].x;
+            interpointPosition.y += interpointOffset[direction].y;
 
-                    console.log(visited);
+            const prevDirection = directionsArray[(directionsArray.indexOf(direction) + 3) % 4];
 
-                    result.push(path);
-                    visited.map(encodeVisited).forEach(v => visitedPoints.add(v));
-                }
+            if (!visitedPoints.has(encodeVisited({point: interpointPosition, direction: prevDirection}))) {
+                const {path, visited} = traverseInterpoints(ship, interpointPosition, prevDirection, padding);
+                result.push(path);
+                visited.map(encodeVisited).forEach(v => visitedPoints.add(v));
             }
         }
     }

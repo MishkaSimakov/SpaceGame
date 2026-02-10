@@ -16,6 +16,7 @@ import {DD} from "../engine/Drag";
 import {getSpaceshipOutline} from "./ShipOutline";
 import {Line} from "../engine/shapes/Line";
 import Color from "../Color";
+import {Node} from "../engine/Node";
 
 function asModule(card: Card): ModuleCard {
     assert.ok(card.cardType === "module");
@@ -49,6 +50,20 @@ function mergeSpaceships(merger: ModuleCard, parts: { chunk: Chunk, position: Ve
     return {modules: result};
 }
 
+function addPointerHoldEvent(node: Node, duration: number) {
+    let timeoutHandle: ReturnType<typeof setTimeout> | undefined = undefined;
+
+    node.on('pointerdown', (evt) => {
+        timeoutHandle = setTimeout(() => {
+            node.fire('pointerhold', evt);
+        }, duration);
+    });
+
+    node.on('pointerup pointerleave dragstart dragend', () => {
+        clearTimeout(timeoutHandle);
+    });
+}
+
 export class CardsManager {
     private readonly cardSize: number;
 
@@ -59,6 +74,8 @@ export class CardsManager {
     private readonly autorotateDistance = 0.5;
     private readonly connectDistance = 0.25;
     private readonly mergeConnectDistance = 0.1;
+    private readonly selectChunkDuration = 500;
+    private readonly outlineColor = Color.fromHex("#ffb703");
 
     private spaceshipsScene: SpaceshipsScene;
     private handScene: Scene;
@@ -119,7 +136,8 @@ export class CardsManager {
                 chunk = {
                     owner: player.id,
                     spaceship: {modules: []},
-                    group: this.spaceshipsScene.createAndAdd.group(this.allocateSpaceshipPosition())
+                    group: this.spaceshipsScene.createAndAdd.group(this.allocateSpaceshipPosition()),
+                    outline: []
                 };
 
                 this.chunks.push(chunk);
@@ -206,7 +224,8 @@ export class CardsManager {
             chunk = {
                 owner: thisPlayer.id,
                 spaceship: structuredClone(thisPlayer.spaceship),
-                group: this.spaceshipsScene.createAndAdd.group(this.allocateSpaceshipPosition())
+                group: this.spaceshipsScene.createAndAdd.group(this.allocateSpaceshipPosition()),
+                outline: []
             };
 
             this.chunks.push(chunk);
@@ -216,8 +235,6 @@ export class CardsManager {
 
         for (const module of thisPlayer.spaceship.modules) {
             let info = this.cards.find(c => CardGetters.id(c.card) === module.id);
-
-            console.log(info);
 
             if (!info) {
                 const shape = new CardShape({
@@ -243,18 +260,6 @@ export class CardsManager {
             } else {
                 // TODO
             }
-        }
-
-        const outline = getSpaceshipOutline(chunk.spaceship, 0.05);
-        console.log(outline);
-        for (const path of outline) {
-            chunk.group.add(new Line({
-                strokeWidth: 5,
-                stroke: Color.fromHex("#ffb703").toString(),
-                points: path.map(p => ({x: p.x * this.cardSize, y: p.y * this.cardSize})),
-                lineJoin: "round",
-                closed: true
-            }));
         }
     }
 
@@ -291,10 +296,52 @@ export class CardsManager {
         // it must be ignored
         let ignoreDragend = false;
 
-        info.shape.on('click', () => this.rotateInPlace(info));
+        let dragChunk = false;
+
+        addPointerHoldEvent(info.shape, this.selectChunkDuration);
+
+        info.shape.on('click', () => {
+            this.rotateInPlace(info);
+        });
+
+        info.shape.on('pointerhold', (evt) => {
+            if (info.location.type === "chunk") {
+                const chunk = info.location.chunk;
+                dragChunk = true;
+
+                info.shape.startDrag(evt);
+                DD.getDragElement(info.shape).followPointer = false;
+
+                dragOffset = chunk.group.getRelativePointerPosition();
+
+                chunk.group.moveToTop();
+
+                chunk.outline = getSpaceshipOutline(chunk.spaceship, 0.05).map(path =>
+                    new Line({
+                        strokeWidth: 5,
+                        stroke: this.outlineColor.setAlpha(0).toString(),
+                        points: path.map(p => ({x: p.x * this.cardSize, y: p.y * this.cardSize})),
+                        lineJoin: "round",
+                        closed: true
+                    })
+                );
+
+                chunk.group.add(...chunk.outline);
+                chunk.outline.forEach(l =>
+                    l.animate({
+                        stroke: this.outlineColor.setAlpha(1).toString()
+                    }, 500)
+                );
+            }
+        });
 
         info.shape.on('dragstart', (evt) => {
             console.log("dragstart", info);
+            document.body.style.cursor = "grabbing";
+
+            if (dragChunk) {
+                return;
+            }
 
             if (info.location.type === "chunk") {
                 DD.getDragElement(info.shape).followPointer = false;
@@ -346,6 +393,20 @@ export class CardsManager {
 
         info.shape.on('dragmove', () => {
             assert.ok(info.location.type !== "hand");
+
+            if (dragChunk) {
+                console.log(info);
+                assert.ok(info.location.type === "chunk");
+
+                const pointerPosition = this.spaceshipsScene.getRelativePointerPosition();
+                info.location.chunk.group.setPosition({
+                    x: pointerPosition.x - dragOffset.x,
+                    y: pointerPosition.y - dragOffset.y,
+                });
+
+                return;
+            }
+
             assert.ok(info.shape.getScene() === this.handScene);
 
             // console.log("dragmove", info);
@@ -410,9 +471,21 @@ export class CardsManager {
 
         info.shape.on('dragend', () => {
             console.log("dragend", info);
+            document.body.style.cursor = "default";
 
             if (ignoreDragend) {
                 ignoreDragend = false;
+                return;
+            }
+
+            if (dragChunk) {
+                assert.ok(info.location.type === "chunk");
+
+                const chunk = info.location.chunk;
+                chunk.outline.forEach(l => l.destroy());
+                chunk.outline = [];
+
+                dragChunk = false;
                 return;
             }
 
@@ -428,7 +501,8 @@ export class CardsManager {
                     group: this.spaceshipsScene.createAndAdd.group({
                         x: position.x,
                         y: position.y
-                    })
+                    }),
+                    outline: []
                 };
                 this.chunks.push(chunk);
 
@@ -661,7 +735,8 @@ export class CardsManager {
                         group: this.spaceshipsScene.createAndAdd.group({
                             x: chunk.group.x(),
                             y: chunk.group.y(),
-                        })
+                        }),
+                        outline: []
                     };
 
                     this.chunks.push(componentChunk);
