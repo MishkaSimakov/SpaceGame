@@ -213,10 +213,15 @@ export class CardShape extends Group<CardConfig> {
         this._hitRect.drawHit();
     }
 
-    rotateCard(rotation: number) {
-        this._rotationGroup.animate({
-            rotation
-        }, 100);
+    rotateCard(rotation: number, duration: number) {
+        if (duration > 0) {
+            this._rotationGroup.animate({
+                rotation
+            }, duration);
+        } else {
+            this._rotationGroup.abortAnimation();
+            this._rotationGroup.rotation(rotation);
+        }
     }
 
     get isModule(): boolean {

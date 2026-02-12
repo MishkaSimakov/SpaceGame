@@ -71,6 +71,7 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
     eventListeners: Record<string, Array<{ name: string, handler: Function }>> = {};
 
     inAnimation: boolean = false;
+    shouldAbortAnimation: boolean = false;
 
     _batchingTransformChange: boolean = false;
 
@@ -554,6 +555,8 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
     }
 
     remove() {
+        this.abortAnimation();
+
         if (this.isDragging()) {
             this.stopDrag();
         }
@@ -730,6 +733,12 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         this.lastPos = newNodePosition;
     }
 
+    abortAnimation() {
+        if (this.inAnimation) {
+            this.shouldAbortAnimation = true;
+        }
+    }
+
     // TODO: abort ongoing animations when start a new one or remove node
     animate(newAttrs: object, duration: number, animationFunc?: (x: number) => number) {
         if (this.inAnimation)
@@ -758,8 +767,14 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
 
         const makeAnimationStep = () => {
             requestAnimationFrame(() => {
+                if (this.shouldAbortAnimation) {
+                    this.shouldAbortAnimation = false;
+                    this.inAnimation = false;
+                    return;
+                }
+
                 const currentTime = new Date().getTime();
-                const shouldStop = (currentTime - animationStart) >= duration
+                const shouldStop = (currentTime - animationStart) >= duration;
 
                 const percent = shouldStop ? 1 : _animationFunction((currentTime - animationStart) / duration);
 
@@ -777,7 +792,10 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
                         if (forwardArc < backwardArc) {
                             return newAttrs[attr] * percent + startAttrs[attr] * (1 - percent)
                         } else {
-                            return ((newAttrs[attr] + 2 * Math.PI) * percent + startAttrs[attr] * (1 - percent)) % (2 * Math.PI);
+                            return (
+                                (newAttrs[attr] + 2 * Math.PI * Math.sign(startAttrs[attr] - newAttrs[attr])) * percent
+                                + startAttrs[attr] * (1 - percent)
+                            ) % (2 * Math.PI);
                         }
                     } else {
                         return newAttrs[attr] * percent + startAttrs[attr] * (1 - percent);

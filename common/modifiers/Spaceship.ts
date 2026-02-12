@@ -20,22 +20,21 @@ function addModule(ship: Spaceship, module: ModuleCard, x: number | Vector2, y?:
     return true;
 }
 
-function removeModule(ship: Spaceship, x: number, y: number): void;
-function removeModule(ship: Spaceship, module: ModuleCard): void;
-function removeModule(ship: Spaceship, module: ModuleCard[]): void;
-function removeModule(ship: Spaceship, x: number | ModuleCard | ModuleCard[], y?: number): void {
+function removeModule(ship: Spaceship, x: number, y: number): boolean;
+function removeModule(ship: Spaceship, module: ModuleCard): boolean;
+function removeModule(ship: Spaceship, module: ModuleCard[]): boolean;
+function removeModule(ship: Spaceship, x: number | ModuleCard | ModuleCard[], y?: number): boolean {
+    const initialModulesCount = ship.modules.length;
+
     if (typeof x === 'number') {
         ship.modules = ship.modules.filter(card => (card.x !== x || card.y !== y));
-
-        return;
     } else if (Array.isArray(x)) {
-        for (let m of x)
-            removeModule(ship, m);
-
-        return;
+        x.forEach(m => removeModule(ship, m));
+    } else {
+        removeModule(ship, x.x, x.y);
     }
 
-    removeModule(ship, x.x, x.y);
+    return ship.modules.length !== initialModulesCount;
 }
 
 function setProtector(ship: Spaceship, protector: ModuleCard) {
