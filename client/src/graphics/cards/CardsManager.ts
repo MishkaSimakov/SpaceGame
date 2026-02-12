@@ -460,6 +460,10 @@ export class CardsManager {
                         y: pointerPosition.y - dragOffset.y,
                     });
 
+                    if (info.location.chunk.owner !== this.thisPlayer) {
+                        return;
+                    }
+
                     // try to connect to chunks
                     const connectionPoints = this.getConnectionPoints(this.getChunkSpaceship(info.location.chunk));
 

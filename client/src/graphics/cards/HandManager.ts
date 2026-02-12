@@ -13,7 +13,7 @@ import {Line} from "../engine/shapes/Line";
 type PlaceholderInfo = { shape: Rectangle, card: { cardType: "placeholder" } };
 
 export class HandManager {
-    private readonly maxVisibleCards = 5;
+    private readonly maxVisibleCards = 2;
     private readonly cardSize: number;
     private readonly spaceBetween: number;
 
@@ -70,6 +70,7 @@ export class HandManager {
     }
 
     setPlaceholderPosition(position: number) {
+        console.log(position);
         assert.ok(0 <= position && position <= Math.min(this.cards.length, this.maxVisibleCards - 1));
 
         const currentPosition = this.cards.findIndex(o => o.card.cardType === "placeholder");
@@ -143,7 +144,7 @@ export class HandManager {
         const relativeX = (centerPosition.x - handCardsBR.left) / handCardsBR.width * visibleCardsCount;
 
         // clamp between 0 and visibleCardsCount
-        return Math.min(Math.max(Math.floor(relativeX), 0), visibleCardsCount);
+        return Math.min(Math.max(Math.floor(relativeX), 0), visibleCardsCount - 1);
     }
 
     popCardFromHand(info: CardInfo) {
@@ -197,8 +198,8 @@ export class HandManager {
                 });
             } else {
                 this.cards[i].shape.setAttrs({
-                    visible: true,
-                    interactive: true
+                    visible: false,
+                    interactive: false
                 });
             }
         }
