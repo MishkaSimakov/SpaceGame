@@ -108,6 +108,18 @@ export class CardsManager {
         };
     }
 
+    private isCardModifiable(info: CardInfo): boolean {
+        return info.location.type !== "chunk" || this.isChunkModifiable(info.location.chunk);
+    }
+
+    private isChunkModifiable(chunk: Chunk): boolean {
+        return chunk.owner === this.thisPlayer && (this.canRebuildSpaceshipFlag || !this.hasMainModule(chunk));
+    }
+
+    private getModifiableChunks(): Chunk[] {
+        return this.chunks.filter(c => this.isChunkModifiable(c));
+    }
+
     setData(thisPlayer: Player, otherPlayers: OtherPlayer[]) {
         this.thisPlayer = thisPlayer.id;
 
@@ -317,7 +329,9 @@ export class CardsManager {
         addPointerHoldEvent(info.shape, this.selectChunkDuration);
 
         info.shape.on('click', () => {
-            this.rotateInPlace(info);
+            if (this.isCardModifiable(info)) {
+                this.rotateInPlace(info);
+            }
         });
 
         info.shape.on('pointerhold', (evt) => {
@@ -353,7 +367,10 @@ export class CardsManager {
 
         info.shape.on('dragstart', (evt) => {
             console.log("dragstart", info);
-            document.body.style.cursor = "grabbing";
+
+            if (this.isCardModifiable(info)) {
+                document.body.style.cursor = "grabbing";
+            }
 
             if (dragChunk) {
                 return;
@@ -460,7 +477,7 @@ export class CardsManager {
                         y: pointerPosition.y - dragOffset.y,
                     });
 
-                    if (info.location.chunk.owner !== this.thisPlayer) {
+                    if (!this.isChunkModifiable(info.location.chunk)) {
                         return;
                     }
 
@@ -509,8 +526,7 @@ export class CardsManager {
             if (info.location.type === "drag") {
                 // drag -> chunk
                 // choose first viable connection (not the closest)
-                const autorotatePoint = this.chunks
-                    .filter(c => c.owner === this.thisPlayer)
+                const autorotatePoint = this.getModifiableChunks()
                     .map(c => {
                         const p = this.getClosestModulePosition(c, info.shape.getAbsolutePosition());
                         const rotation = this.getFeasibleModuleRotation(
@@ -549,9 +565,13 @@ export class CardsManager {
                 }
             } else if (info.location.type === "chunk") {
                 // chunk -> drag
-                // measure pointer distance from current location
-                // disconnect if it is too big
 
+                if (this.hasMainModule(info.location.chunk) && !this.canRebuildSpaceshipFlag) {
+                    return;
+                }
+
+                // measure distance from pointer to current location
+                // disconnect module if it is too big
                 if (this.getChunkModules(info.location.chunk).length === 1) {
                     this.removeFromChunk(info);
                 } else {
@@ -654,9 +674,7 @@ export class CardsManager {
     private getConnectionPoints(spaceship: Spaceship): ConnectionPoint[] {
         let primaryConnectionPoint: ConnectionPoint | undefined = undefined;
 
-        const thisPlayerChunks = this.chunks.filter(c => c.owner === this.thisPlayer);
-
-        for (const chunk of thisPlayerChunks) {
+        for (const chunk of this.getModifiableChunks()) {
             for (const module of spaceship.modules) {
                 const modulePosition = this.cards.find(c => CardGetters.id(c.card) === module.id)!.shape.getAbsolutePosition()
 
@@ -694,7 +712,7 @@ export class CardsManager {
 
         const connectionPoints: ConnectionPoint[] = [primaryConnectionPoint];
 
-        for (const chunk of thisPlayerChunks) {
+        for (const chunk of this.getModifiableChunks()) {
             if (chunk === primaryConnectionPoint.chunk) {
                 continue;
             }
