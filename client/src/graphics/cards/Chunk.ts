@@ -4,7 +4,7 @@ import {Line} from "../engine/shapes/Line";
 
 export type Chunk = {
     owner: PlayerId,
-    spaceship: Spaceship,
     group: Group,
+    activatedProtector: Vector2 | undefined,
     outline: Line[]
 };

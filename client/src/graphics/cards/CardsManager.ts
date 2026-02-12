@@ -91,6 +91,23 @@ export class CardsManager {
         window["cardsManager"] = this;
     }
 
+    private getChunkModules(chunk: Chunk): ModuleCard[] {
+        return this.cards
+            .filter(c => c.location.type === "chunk" && c.location.chunk === chunk)
+            .map(c => asModule(c.card));
+    }
+
+    private hasMainModule(chunk: Chunk): boolean {
+        return this.getChunkModules(chunk).some(m => m.type === ModuleType.MainModule);
+    }
+
+    private getChunkSpaceship(chunk: Chunk): Spaceship {
+        return {
+            modules: this.getChunkModules(chunk),
+            activatedProtector: chunk.activatedProtector
+        };
+    }
+
     setData(thisPlayer: Player, otherPlayers: OtherPlayer[]) {
         this.thisPlayer = thisPlayer.id;
 
@@ -127,15 +144,15 @@ export class CardsManager {
             if (!chunk) {
                 chunk = {
                     owner: player.id,
-                    spaceship: {modules: []},
                     group: this.spaceshipsScene.createAndAdd.group(this.allocateSpaceshipPosition()),
-                    outline: []
+                    outline: [],
+                    activatedProtector: undefined
                 };
 
                 this.chunks.push(chunk);
             }
 
-            chunk.spaceship.activatedProtector = structuredClone(player.spaceship.activatedProtector);
+            chunk.activatedProtector = structuredClone(player.spaceship.activatedProtector);
 
             for (const module of player.spaceship.modules) {
                 let info = this.cards.find(c => CardGetters.id(c.card) === module.id);
@@ -162,7 +179,6 @@ export class CardsManager {
                     this.cards.push(info);
                     this.attachCardEvents(info);
                 } else if (info.location.type === "chunk") {
-                    SpaceshipModifiers.removeModule(info.location.chunk.spaceship, module);
                     info.shape.remove();
 
                     chunk.group.add(info.shape);
@@ -176,8 +192,6 @@ export class CardsManager {
 
                     this.attachCardEvents(info);
                 }
-
-                SpaceshipModifiers.addModule(chunk.spaceship, module, module.x, module.y);
             }
         }
 
@@ -208,21 +222,19 @@ export class CardsManager {
             }
         }
 
-        let chunk = this.chunks.find(c =>
-            c.owner === thisPlayer.id && SpaceshipGetters.getMainModule(c.spaceship) !== undefined
-        );
+        let chunk = this.chunks.find(c => c.owner === this.thisPlayer);
 
         if (!chunk) {
             chunk = {
                 owner: thisPlayer.id,
-                spaceship: structuredClone(thisPlayer.spaceship),
+                activatedProtector: undefined,
                 group: this.spaceshipsScene.createAndAdd.group(this.allocateSpaceshipPosition()),
                 outline: []
             };
 
             this.chunks.push(chunk);
         } else {
-            chunk.spaceship.activatedProtector = structuredClone(thisPlayer.spaceship.activatedProtector);
+            chunk.activatedProtector = structuredClone(thisPlayer.spaceship.activatedProtector);
         }
 
         for (const module of thisPlayer.spaceship.modules) {
@@ -259,11 +271,22 @@ export class CardsManager {
         this.canRebuildSpaceshipFlag = value;
     }
 
+    getMainChunk(player: PlayerId): Chunk | undefined {
+        for (const info of this.cards) {
+            if (info.card.cardType === "module" && info.card.module.type === ModuleType.MainModule) {
+                assert.ok(info.location.type === "chunk");
+
+                if (info.location.chunk.owner === player) {
+                    return info.location.chunk;
+                }
+            }
+        }
+
+        return undefined;
+    }
+
     getSpaceship(): Spaceship | undefined {
-        return this.chunks.find(chunk =>
-            chunk.owner === this.thisPlayer
-            && SpaceshipGetters.getMainModule(chunk.spaceship) !== undefined
-        )?.spaceship;
+        return this.getChunkSpaceship(this.getMainChunk(this.thisPlayer));
     }
 
     private attachCardEvents(info: CardInfo) {
@@ -309,7 +332,7 @@ export class CardsManager {
 
                 chunk.group.moveToTop();
 
-                chunk.outline = getSpaceshipOutline(chunk.spaceship, 0.05).map(path =>
+                chunk.outline = getSpaceshipOutline(this.getChunkSpaceship(chunk), 0.05).map(path =>
                     new Line({
                         strokeWidth: 5,
                         stroke: this.outlineColor.setAlpha(0).toString(),
@@ -410,17 +433,18 @@ export class CardsManager {
 
                     if (getDistance(dragPosition, actualPosition) >= this.connectDistance) {
                         for (const cp of currentConnectionPoints) {
-                            const isMainChunk = SpaceshipGetters.getMainModule(cp.chunk.spaceship) !== undefined;
+                            const isMainChunk = this.hasMainModule(cp.chunk);
 
                             // TODO: obvious repetition here
-                            for (const module of cp.chunk.spaceship.modules) {
+                            // TODO: iterate over this.cards
+                            for (const module of this.getChunkModules(cp.chunk)) {
                                 const info = this.cards.find(c => CardGetters.id(c.card) === module.id)!;
                                 info.shape.setState(isMainChunk ? 'DEFAULT' : 'DISABLED');
                             }
                         }
 
-                        const isMainChunk = SpaceshipGetters.getMainModule(info.location.chunk.spaceship) !== undefined;
-                        for (const module of info.location.chunk.spaceship.modules) {
+                        const isMainChunk = this.hasMainModule(info.location.chunk);
+                        for (const module of this.getChunkModules(info.location.chunk)) {
                             const info = this.cards.find(c => CardGetters.id(c.card) === module.id)!;
                             info.shape.setState(isMainChunk ? 'DEFAULT' : 'DISABLED');
                         }
@@ -437,7 +461,7 @@ export class CardsManager {
                     });
 
                     // try to connect to chunks
-                    const connectionPoints = this.getConnectionPoints(info.location.chunk.spaceship);
+                    const connectionPoints = this.getConnectionPoints(this.getChunkSpaceship(info.location.chunk));
 
                     if (connectionPoints.length >= 1) {
                         // update positions
@@ -455,8 +479,8 @@ export class CardsManager {
 
                         // update disabled state
                         const modules = [
-                            ...info.location.chunk.spaceship.modules,
-                            ...connectionPoints.flatMap(p => p.chunk.spaceship.modules)
+                            ...this.getChunkModules(info.location.chunk),
+                            ...connectionPoints.flatMap(p => this.getChunkModules(p.chunk))
                         ];
 
                         const isMainChunk = modules.find(m => m.type === ModuleType.MainModule) !== undefined;
@@ -485,7 +509,11 @@ export class CardsManager {
                     .filter(c => c.owner === this.thisPlayer)
                     .map(c => {
                         const p = this.getClosestModulePosition(c, info.shape.getAbsolutePosition());
-                        const rotation = this.getFeasibleModuleRotation(c.spaceship, asModule(info.card), p.position);
+                        const rotation = this.getFeasibleModuleRotation(
+                            this.getChunkSpaceship(c),
+                            asModule(info.card),
+                            p.position
+                        );
 
                         return {
                             distance: p.distance,
@@ -519,12 +547,11 @@ export class CardsManager {
                 // chunk -> drag
                 // measure pointer distance from current location
                 // disconnect if it is too big
-                const chunk = info.location.chunk;
 
-                if (chunk.spaceship.modules.length === 1) {
+                if (this.getChunkModules(info.location.chunk).length === 1) {
                     this.removeFromChunk(info);
                 } else {
-                    const pointerPosition = chunk.group.getRelativePointerPosition();
+                    const pointerPosition = info.location.chunk.group.getRelativePointerPosition();
                     const relativePosition = {
                         x: (pointerPosition.x - dragOffset.x) / this.cardSize,
                         y: (pointerPosition.y - dragOffset.y) / this.cardSize
@@ -588,7 +615,7 @@ export class CardsManager {
                 // create new chunk
                 const chunk: Chunk = {
                     owner: this.thisPlayer,
-                    spaceship: {modules: []},
+                    activatedProtector: undefined,
                     group: this.spaceshipsScene.createAndAdd.group({
                         x: position.x,
                         y: position.y
@@ -638,7 +665,7 @@ export class CardsManager {
                             x: module.x - closestModuleInfo.position.x,
                             y: module.y - closestModuleInfo.position.y
                         },
-                        spaceship: chunk.spaceship
+                        spaceship: this.getChunkSpaceship(chunk)
                     };
 
                     const mergedSpaceship = mergeSpaceships(
@@ -683,7 +710,7 @@ export class CardsManager {
                             x: module.x - closestModuleInfo.position.x,
                             y: module.y - closestModuleInfo.position.y
                         },
-                        spaceship: chunk.spaceship
+                        spaceship: this.getChunkSpaceship(chunk)
                     };
 
                     const mergedSpaceship = mergeSpaceships(
@@ -737,25 +764,24 @@ export class CardsManager {
         }
 
         const mergedSpaceship = mergeSpaceships(
-            {spaceship: primaryChunk.spaceship, offset: {x: 0, y: 0}},
+            {spaceship: this.getChunkSpaceship(primaryChunk), offset: {x: 0, y: 0}},
             ...connectionPoints
         );
         const isMainChunk = SpaceshipGetters.getMainModule(mergedSpaceship) !== undefined;
 
-        for (const module of primaryChunk.spaceship.modules) {
+        for (const module of this.getChunkModules(primaryChunk)) {
             const info = this.cards.find(c => CardGetters.id(c.card) === module.id)!;
             info.shape.setState(isMainChunk ? 'DEFAULT' : 'DISABLED');
         }
 
         for (const cp of connectionPoints) {
-            for (const module of cp.chunk.spaceship.modules) {
+            // TODO: iterate over this.cards
+            for (const module of this.getChunkModules(cp.chunk)) {
                 // update spaceship
                 const newPosition = ModuleGetters.position(mergedSpaceship.modules.find(m => m.id === module.id)!);
 
                 module.x = newPosition.x;
                 module.y = newPosition.y;
-
-                primaryChunk.spaceship.modules.push(module);
 
                 // update shape
                 const info = this.cards.find(c => CardGetters.id(c.card) === module.id)!;
@@ -812,24 +838,22 @@ export class CardsManager {
     }
 
     getPlayerSpaceshipPosition(id: PlayerId): Vector2 | undefined {
-        const mainChunk = this.chunks.find(chunk =>
-            chunk.owner === id && SpaceshipGetters.getMainModule(chunk.spaceship) !== undefined
-        );
+        for (const info of this.cards) {
+            if (info.card.cardType === "module" && info.card.module.type === ModuleType.MainModule) {
+                assert.ok(info.location.type === "chunk");
 
-        if (!mainChunk) {
-            return undefined;
+                if (info.location.chunk.owner === id) {
+                    const chunkPosition = info.location.chunk.group.getPosition();
+
+                    return {
+                        x: chunkPosition.x + info.card.module.x + this.cardSize / 2,
+                        y: chunkPosition.y + info.card.module.y + this.cardSize / 2,
+                    };
+                }
+            }
         }
 
-        const mainModuleId = SpaceshipGetters.getMainModule(mainChunk.spaceship)!.id;
-        const mainModulePosition = this.cards
-            .find(c => CardGetters.id(c.card) === mainModuleId)!.shape.getPosition();
-
-        const chunkPosition = mainChunk.group.getPosition();
-
-        return {
-            x: chunkPosition.x + mainModulePosition.x + this.cardSize / 2,
-            y: chunkPosition.y + mainModulePosition.y + this.cardSize / 2,
-        }
+        return undefined;
     }
 
     private addToChunk(info: CardInfo, chunk: Chunk, position: Vector2) {
@@ -838,8 +862,8 @@ export class CardsManager {
         const module = asModule(info.card);
 
         // update spaceship info
-        const isAdded = SpaceshipModifiers.addModule(chunk.spaceship, module, position.x, position.y);
-        assert.ok(isAdded);
+        module.x = position.x;
+        module.y = position.y;
 
         // update shape
         info.shape.setPosition(chunk.group.getAbsoluteTransform().point({
@@ -849,9 +873,7 @@ export class CardsManager {
 
         info.shape.rotateCard(module.rotation * Math.PI / 2, 0);
 
-        if (SpaceshipGetters.getMainModule(chunk.spaceship) === undefined) {
-            info.shape.setState('DISABLED');
-        }
+        info.shape.setState(this.hasMainModule(chunk) ? 'DEFAULT' : 'DISABLED');
 
         const dragElement = DD.getDragElement(info.shape);
         if (dragElement) {
@@ -864,29 +886,31 @@ export class CardsManager {
 
     private removeFromChunk(info: CardInfo) {
         assert.ok(info.location.type === "chunk");
-
         const chunk = info.location.chunk;
-        const module = asModule(info.card)
 
-        // update spaceship
-        const wasRemoved = SpaceshipModifiers.removeModule(chunk.spaceship, module);
-        assert.ok(wasRemoved);
+        info.location = {type: "drag"};
 
-        if (chunk.spaceship.modules.length === 0) {
+        info.shape.setState('DEFAULT');
+        DD.getDragElement(info.shape).followPointer = true;
+
+        const spaceship = this.getChunkSpaceship(chunk);
+
+        if (spaceship.modules.length === 0) {
             this.chunks = this.chunks.filter(c => c !== chunk);
             chunk.group.destroy();
         } else {
-            const components = SpaceshipGetters.getComponents(chunk.spaceship);
+            const components = SpaceshipGetters.getComponents(spaceship);
+
+            console.log(components);
 
             for (let i = 0; i < components.length; ++i) {
                 let componentChunk: Chunk;
                 if (i == 0) {
                     componentChunk = chunk;
-                    componentChunk.spaceship = components[i];
                 } else {
                     componentChunk = {
                         owner: this.thisPlayer,
-                        spaceship: components[i],
+                        activatedProtector: undefined,
                         group: this.spaceshipsScene.createAndAdd.group({
                             x: chunk.group.x(),
                             y: chunk.group.y(),
@@ -911,12 +935,6 @@ export class CardsManager {
             }
         }
 
-        // update shape
-        info.shape.setState('DEFAULT');
-
-        info.location = {type: "drag"};
-        DD.getDragElement(info.shape).followPointer = true;
-
         console.log("chunk -> drag");
     }
 
@@ -925,7 +943,7 @@ export class CardsManager {
         const initRotation = module.rotation;
 
         if (info.location.type === "chunk") {
-            const spaceship = info.location.chunk.spaceship;
+            const spaceship = this.getChunkSpaceship(info.location.chunk);
             SpaceshipModifiers.removeModule(spaceship, module);
 
             const possibleRotations = SpaceshipGetters.getPossibleRotationsFor(spaceship, module, module.x, module.y);
