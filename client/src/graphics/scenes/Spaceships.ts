@@ -1,22 +1,16 @@
-import {ModuleCard, OtherPlayer, PlayerId, Vector2} from "@common/Types";
+import {PlayerId, Vector2} from "@common/Types";
+import {getDistance} from "@common/VectorUtils";
 
 import Game from "../../Game";
 import Scene from "../engine/Scene";
-import Color from "../Color";
 import {DD} from "../engine/Drag";
 import {Spaceship as SpaceshipShape} from "../shapes/Spaceship";
-import {CardShape} from "../shapes/CardShape";
-import {CountBoundary} from "../CountBoundary";
-import {ChooseModuleManager} from "../ChooseModuleManager";
-import {getDistance} from "@common/VectorUtils";
 import {SIZES} from "../constants";
 
 export default class Spaceships extends Scene {
     spaceshipShapes: Record<PlayerId, SpaceshipShape> = {};
     gameManager: Game;
     spaceshipsCardSize: number;
-
-    activeChooseModule: ChooseModuleManager[] = [];
 
     constructor(game: Game) {
         super({
@@ -170,31 +164,6 @@ export default class Spaceships extends Scene {
             lastDist = dist;
             lastCenter = newCenter;
         });
-    }
-
-    chooseModules(check: (info: {
-        module: ModuleCard,
-        player: PlayerId
-    }) => boolean, count: CountBoundary, outlineColor: Color) {
-        const manager = new ChooseModuleManager(this, check, count, outlineColor);
-        manager.activate();
-
-        this.activeChooseModule.push(manager);
-
-        return manager.getHandle();
-    }
-
-    endChoosingModule() {
-        this.activeChooseModule = [];
-
-        for (let key in this.spaceshipShapes) {
-            for (let shape of this.spaceshipShapes[key].children) {
-                (shape as CardShape).strokeWidth(0);
-                (shape as CardShape).setState('DEFAULT');
-
-                shape.off('click.choosemodule');
-            }
-        }
     }
 
     panTo(position: Vector2, duration: number = 500) {

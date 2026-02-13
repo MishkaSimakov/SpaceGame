@@ -61,7 +61,7 @@ export const eventCardsListeners: ListenersContainer = {
 
     async chooseModuleToMoveDamageRequest({reason}, {game}) {
         const move = await game.controlsScene.enqueueActivity(
-            new ChooseModulesToMoveDamage(game.controlsScene, game.spaceshipsScene, reason)
+            new ChooseModulesToMoveDamage(game.controlsScene, game.cardsManager, reason)
         );
         return chooseModuleToMoveDamageResponse(move);
     },
@@ -99,7 +99,7 @@ export const eventCardsListeners: ListenersContainer = {
     async chooseModuleToDamageByDiceRequest({damage}, {game}) {
         game.controlsScene.topBarDrawer.setStatus(`выберите модуль, чтобы нанести урон (${damage})`);
 
-        const handle = game.spaceshipsScene.chooseModules(
+        const handle = game.cardsManager.startChoosingModules(
             ({module, player}) => player !== game.getCurrentPlayer().id && !ModuleGetters.isMain(module),
             Boundary.noMoreThan(1),
             Color.fromHex('#a3b18a')
@@ -138,7 +138,7 @@ export const eventCardsListeners: ListenersContainer = {
 
         game.controlsScene.topBarDrawer.removeButtons();
         game.controlsScene.topBarDrawer.clearStatus();
-        game.spaceshipsScene.endChoosingModule();
+        game.cardsManager.endChoosingModules();
 
         return chooseModuleToDamageByDiceResponse(result);
     },
@@ -146,7 +146,7 @@ export const eventCardsListeners: ListenersContainer = {
     async chooseSolarPanelsToDestroyRequest({count}, {game}) {
         game.controlsScene.topBarDrawer.setStatus(`уничтожьте солнечные батареи: ${count}`);
 
-        const handle = game.spaceshipsScene.chooseModules(
+        const handle = game.cardsManager.startChoosingModules(
             ({module, player}) => player === game.getCurrentPlayer().id && module.type === ModuleType.SolarPanel,
             Boundary.equal(count),
             Color.fromHex('#a3b18a')
@@ -174,7 +174,7 @@ export const eventCardsListeners: ListenersContainer = {
 
         game.controlsScene.topBarDrawer.removeButtons();
         game.controlsScene.topBarDrawer.clearStatus();
-        game.spaceshipsScene.endChoosingModule();
+        game.cardsManager.endChoosingModules();
 
         return chooseSolarPanelsToDestroyResponse(positions);
     },
@@ -182,7 +182,7 @@ export const eventCardsListeners: ListenersContainer = {
     async chooseModuleToDestroyRequest({}, {game}) {
         game.controlsScene.topBarDrawer.setStatus(`уничтожьте модуль`);
 
-        const handle = game.spaceshipsScene.chooseModules(
+        const handle = game.cardsManager.startChoosingModules(
             ({module, player}) => player === game.currentPlayer.id && !ModuleGetters.isMain(module),
             Boundary.equal(1),
             Color.fromHex('#a3b18a')
@@ -210,7 +210,7 @@ export const eventCardsListeners: ListenersContainer = {
 
         game.controlsScene.topBarDrawer.removeButtons();
         game.controlsScene.topBarDrawer.clearStatus();
-        game.spaceshipsScene.endChoosingModule();
+        game.cardsManager.endChoosingModules();
 
         return chooseModuleToDestroyResponse(position);
     },
@@ -233,11 +233,11 @@ export const eventCardsListeners: ListenersContainer = {
 
     async chooseModuleToDamageByEventCardRequest({victim}, {game}) {
         game.controlsScene.topBarDrawer.removeButtons();
-        game.spaceshipsScene.endChoosingModule();
+        game.cardsManager.endChoosingModules();
 
         game.controlsScene.topBarDrawer.setStatus(`выберите модуль, чтобы нанести 1 урон`);
 
-        const handle = game.spaceshipsScene.chooseModules(
+        const handle = game.cardsManager.startChoosingModules(
             ({module, player}) => player === victim && !ModuleGetters.isMain(module),
             Boundary.equal(1),
             COLORS.DANGER_STROKE
@@ -265,7 +265,7 @@ export const eventCardsListeners: ListenersContainer = {
 
         game.controlsScene.topBarDrawer.removeButtons();
         game.controlsScene.topBarDrawer.clearStatus();
-        game.spaceshipsScene.endChoosingModule();
+        game.cardsManager.endChoosingModules();
 
         return chooseModuleToDamageByEventCardResponse(position);
     }

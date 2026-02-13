@@ -105,7 +105,7 @@ export default class Controls extends Scene {
 
         this.topBarDrawer.setStatus(title);
 
-        const handle = this.gameManager.spaceshipsScene.chooseModules(
+        const handle = this.gameManager.cardsManager.startChoosingModules(
             ({
                  module,
                  player
@@ -144,7 +144,7 @@ export default class Controls extends Scene {
 
         this.topBarDrawer.removeButtons();
         this.topBarDrawer.clearStatus();
-        this.gameManager.spaceshipsScene.endChoosingModule();
+        this.gameManager.cardsManager.endChoosingModules();
 
         return positions;
     }
@@ -161,7 +161,7 @@ export default class Controls extends Scene {
                 onClick: () => {
                     this.topBarDrawer.removeButtons();
                     this.topBarDrawer.clearStatus();
-                    this.gameManager.spaceshipsScene.endChoosingModule();
+                    this.gameManager.cardsManager.endChoosingModules();
 
                     resolve(true);
                 }
@@ -171,7 +171,7 @@ export default class Controls extends Scene {
                 onClick: () => {
                     this.topBarDrawer.removeButtons();
                     this.topBarDrawer.clearStatus();
-                    this.gameManager.spaceshipsScene.endChoosingModule();
+                    this.gameManager.cardsManager.endChoosingModules();
 
                     resolve(false);
                 }

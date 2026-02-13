@@ -1,4 +1,4 @@
-import {Card} from "../Types";
+import {Card, ModuleCard} from "../Types";
 
 export const CardGetters = {
     id(card: Card): number {
@@ -7,5 +7,9 @@ export const CardGetters = {
         } else {
             return card.module.id;
         }
+    },
+
+    asModule(card: Card): ModuleCard | undefined {
+        return card.cardType === "module" ? card.module : undefined;
     }
 };

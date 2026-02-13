@@ -1,4 +1,4 @@
-import {Card, ModuleCard, ModuleType, OtherPlayer, Player, PlayerId, Spaceship, Vector2} from "@common/Types";
+import {ModuleCard, ModuleType, OtherPlayer, Player, PlayerId, Spaceship, Vector2} from "@common/Types";
 import {ModuleGetters} from "@common/getters/Module";
 import {getDistance} from "@common/VectorUtils";
 import {CardGetters} from "@common/getters/Card";
@@ -17,14 +17,10 @@ import {getSpaceshipOutline} from "./ShipOutline";
 import {Line} from "../engine/shapes/Line";
 import Color from "../Color";
 import {Node} from "../engine/Node";
+import {CountBoundary} from "../CountBoundary";
+import {ChooseModuleManager} from "./ChooseModuleManager";
 
 type ConnectionPoint = { chunk: Chunk, spaceship: Spaceship, offset: Vector2 };
-
-function asModule(card: Card): ModuleCard {
-    assert.ok(card.cardType === "module");
-
-    return card.module;
-}
 
 function mergeSpaceships(...parts: { spaceship: Spaceship, offset: Vector2 }[]): Spaceship {
     const result: ModuleCard[] = [];
@@ -79,6 +75,7 @@ export class CardsManager {
     private thisPlayer: PlayerId;
 
     private handManager: HandManager;
+    private activeChooseModule: ChooseModuleManager[] = [];
 
     constructor(spaceshipsScene: SpaceshipsScene, handScene: Scene) {
         this.spaceshipsScene = spaceshipsScene;
@@ -94,7 +91,7 @@ export class CardsManager {
     private getChunkModules(chunk: Chunk): ModuleCard[] {
         return this.cards
             .filter(c => c.location.type === "chunk" && c.location.chunk === chunk)
-            .map(c => asModule(c.card));
+            .map(c => CardGetters.asModule(c.card)!);
     }
 
     private hasMainModule(chunk: Chunk): boolean {
@@ -301,6 +298,47 @@ export class CardsManager {
         return this.getChunkSpaceship(this.getMainChunk(this.thisPlayer));
     }
 
+    startChoosingModules(check: (info: {
+        module: ModuleCard,
+        player: PlayerId
+    }) => boolean, count: CountBoundary, outlineColor: Color) {
+        assert.ok(!this.canRebuildSpaceshipFlag);
+
+        const manager = new ChooseModuleManager(check, count, outlineColor);
+        this.activeChooseModule.push(manager);
+
+        this.updateChooseModule();
+
+        return manager.getHandle();
+    }
+
+    endChoosingModules() {
+        this.activeChooseModule.forEach(manager => manager.deactivate());
+        this.activeChooseModule = [];
+
+        this.updateChooseModule();
+    }
+
+    private updateChooseModule() {
+        for (const chunk of this.chunks) {
+            if (!this.hasMainModule(chunk)) {
+                continue;
+            }
+
+            for (const module of this.getChunkModules(chunk)) {
+                const info = this.cards.find(c => CardGetters.id(c.card) === module.id)!;
+
+                const active = this.activeChooseModule
+                    .filter(manager => manager.canChooseModule(info))
+                    .length;
+
+                assert.ok(active <= 1);
+
+                info.shape.setState(active === 1 ? "DEFAULT" : "DISABLED");
+            }
+        }
+    }
+
     private attachCardEvents(info: CardInfo) {
         if (info.card.cardType === "event") {
             return;
@@ -312,7 +350,7 @@ export class CardsManager {
     private attachModuleEvents(info: CardInfo) {
         info.shape.draggable(true).dragDistance(5);
 
-        const module = asModule(info.card);
+        const module = CardGetters.asModule(info.card)!;
         let dragOffset: Vector2;
 
         // when card shape is moved between scenes, dragend even is fired
@@ -331,6 +369,16 @@ export class CardsManager {
         info.shape.on('click', () => {
             if (this.isCardModifiable(info)) {
                 this.rotateInPlace(info);
+            }
+
+            if (info.location.type === "chunk" && this.hasMainModule(info.location.chunk)) {
+                const module = CardGetters.asModule(info.card);
+                const chooseManager = this.activeChooseModule
+                    .find(manager => manager.canChooseModule(info));
+
+                if (chooseManager !== undefined) {
+                    chooseManager.onClick(info);
+                }
             }
         });
 
@@ -376,7 +424,7 @@ export class CardsManager {
                 return;
             }
 
-            if (asModule(info.card).type === ModuleType.MainModule) {
+            if (CardGetters.asModule(info.card)!.type === ModuleType.MainModule) {
                 info.shape.fire('pointerhold', evt);
                 return;
             }
@@ -531,7 +579,7 @@ export class CardsManager {
                         const p = this.getClosestModulePosition(c, info.shape.getAbsolutePosition());
                         const rotation = this.getFeasibleModuleRotation(
                             this.getChunkSpaceship(c),
-                            asModule(info.card),
+                            CardGetters.asModule(info.card)!,
                             p.position
                         );
 
@@ -757,7 +805,7 @@ export class CardsManager {
 
     // returns true if module was connected to a chunk
     private tryConnectToChunk(info: CardInfo): boolean {
-        const draggedModule = asModule(info.card);
+        const draggedModule = CardGetters.asModule(info.card)!;
         const connectionPoints = this.getConnectionPoints({modules: [draggedModule]});
 
         if (connectionPoints.length >= 1) {
@@ -881,7 +929,7 @@ export class CardsManager {
     private addToChunk(info: CardInfo, chunk: Chunk, position: Vector2) {
         assert.ok(info.location.type === "drag");
 
-        const module = asModule(info.card);
+        const module = CardGetters.asModule(info.card)!;
 
         // update spaceship info
         module.x = position.x;
@@ -961,7 +1009,7 @@ export class CardsManager {
     }
 
     private rotateInPlace(info: CardInfo) {
-        const module = asModule(info.card);
+        const module = CardGetters.asModule(info.card)!;
         const initRotation = module.rotation;
 
         if (info.location.type === "chunk") {

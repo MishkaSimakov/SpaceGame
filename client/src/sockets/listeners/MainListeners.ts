@@ -36,7 +36,7 @@ export const mainListeners: ListenersContainer = {
 
                     game.controlsScene.topBarDrawer.removeButtons();
                     game.controlsScene.topBarDrawer.clearStatus();
-                    game.spaceshipsScene.endChoosingModule();
+                    game.cardsManager.endChoosingModules();
                 }
             }, {
                 text: "Действия",
@@ -46,7 +46,7 @@ export const mainListeners: ListenersContainer = {
 
                     game.controlsScene.topBarDrawer.removeButtons();
                     game.controlsScene.topBarDrawer.clearStatus();
-                    game.spaceshipsScene.endChoosingModule();
+                    game.cardsManager.endChoosingModules();
                 }
             }]);
         });
