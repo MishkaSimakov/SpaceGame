@@ -554,14 +554,16 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         }
     }
 
-    remove() {
+    remove(abortDrag: boolean = true) {
         this.abortAnimation();
 
-        if (this.isDragging()) {
-            this.stopDrag();
-        }
+        if (abortDrag) {
+            if (this.isDragging()) {
+                this.stopDrag();
+            }
 
-        DD._dragElements.delete(this._id);
+            DD._dragElements.delete(this._id);
+        }
 
         let parent = this.getParent();
 
@@ -576,6 +578,15 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
 
     destroy() {
         this.remove();
+    }
+
+    moveTo(newContainer: Container) {
+        if (this.getParent() !== newContainer) {
+            this.remove(false);
+            newContainer.add(this);
+        }
+
+        return this;
     }
 
     isAncestorOf(node: Node): boolean {
