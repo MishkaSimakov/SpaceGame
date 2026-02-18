@@ -2,14 +2,15 @@ import * as assert from "assert"
 
 import {CardInfo} from "./CardInfo";
 import {Chunk} from "./Chunk";
+import {DD} from "../engine/Drag";
 
 type CardEventsHandler = {
-    onCardClick: (card: CardInfo) => void;
-    onChunkSelect: (chunk: Chunk) => void;
-    onChunkDeselect: (chunk: Chunk) => void;
-    onDragStart: (card: CardInfo) => void;
-    onDragMove: (card: CardInfo) => void;
-    onDragEnd: (card: CardInfo) => void;
+    onCardClick(card: CardInfo): void;
+    onChunkSelect(chunk: Chunk): void;
+    onChunkDeselect(chunk: Chunk): void;
+    onDragStart(card: CardInfo): void;
+    onDragMove(card: CardInfo): void;
+    onDragEnd(card: CardInfo): void;
 };
 
 export class CardEvents {

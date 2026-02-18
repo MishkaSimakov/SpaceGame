@@ -77,6 +77,14 @@ export class Transform {
         };
     }
 
+    vector(vector: Vector2) {
+        let m = this.m;
+        return {
+            x: m[0] * vector.x + m[2] * vector.y,
+            y: m[1] * vector.x + m[3] * vector.y,
+        };
+    }
+
     multiply(tr: Transform): Transform {
         let matrix = tr.getMatrix();
 

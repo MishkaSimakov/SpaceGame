@@ -70,7 +70,6 @@ export class HandManager {
     }
 
     setPlaceholderPosition(position: number) {
-        console.log(position);
         assert.ok(0 <= position && position <= Math.min(this.cards.length, this.maxVisibleCards - 1));
 
         const currentPosition = this.cards.findIndex(o => o.card.cardType === "placeholder");
@@ -92,8 +91,7 @@ export class HandManager {
     }
 
     replacePlaceholderWithCard(info: CardInfo) {
-        info.shape.remove();
-        this.handContents.add(info.shape);
+        info.shape.moveTo(this.handContents);
 
         const index = this.cards.findIndex(c => c.card.cardType === "placeholder");
 

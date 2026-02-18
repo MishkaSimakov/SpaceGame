@@ -10,7 +10,7 @@ export const directions: Record<string, Vector2> = {
     'bottom': {x: 0, y: 1}
 }
 
-const opposites: Record<string, string> = {
+export const opposites: Record<string, string> = {
     'left': 'right',
     'top': 'bottom',
     'right': 'left',
