@@ -88,7 +88,7 @@ export class PermuteCardsActivity extends Activity {
                 text: "Верх колоды",
                 originX: horizontal ? 0 : 0.5,
                 originY: 1,
-                fill: "white",
+                fill: Color.WHITE.toString(),
                 fontFamily: "Exo2Bold",
                 fontSize: 20
             });
@@ -97,7 +97,7 @@ export class PermuteCardsActivity extends Activity {
                 x: sceneWidth / 2,
                 y: cardShapes.getClientRect().bottom + 15,
                 text: "Далее",
-                fill: "white",
+                fill: Color.WHITE.toString(),
                 fontFamily: "Exo2Bold",
                 originX: 0.5
             })

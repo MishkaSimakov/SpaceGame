@@ -6,6 +6,7 @@ import {Text} from "../engine/shapes/Text";
 import {PlayerDataLine} from "../shapes/PlayerDataLine";
 import {Group} from "../engine/Group";
 import {TopBarAdaptor} from "./TopBarAdaptor";
+import Color from "../Color";
 
 export default class TopBarDefaultAdaptor extends TopBarAdaptor {
     drawPlayers(drawer: TopBarDrawer): Group {
@@ -60,7 +61,7 @@ export default class TopBarDefaultAdaptor extends TopBarAdaptor {
                 text: drawer.statusText,
                 fontFamily: "Exo2Bold",
                 fontSize: 15,
-                fill: "white",
+                fill: Color.WHITE.toString(),
                 originX: 0
             });
             result.add(textShape);

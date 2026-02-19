@@ -5,6 +5,7 @@ import {Factory} from "./Factory";
 import {Utils} from "./Utils";
 import {_registerNode} from "./Global";
 import {Container} from "./Container";
+import Color from "../Color";
 
 export interface ShapeConfig extends NodeConfig {
     fill?: string;
@@ -133,6 +134,18 @@ export class Shape<Config extends ShapeConfig = ShapeConfig> extends Node<Config
         delete this.colorKey;
 
         return this;
+    }
+
+    getFillWithBrightness(): string {
+        const brightness = this.getAccumulatedBrightness();
+
+        return Color.fromString(this.fill()).applyBrightnessFilter(brightness).toString();
+    }
+
+    getStrokeWithBrightness(): string {
+        const brightness = this.getAccumulatedBrightness();
+
+        return Color.fromString(this.stroke()).applyBrightnessFilter(brightness).toString();
     }
 
     fill: GetSet<string, this>;

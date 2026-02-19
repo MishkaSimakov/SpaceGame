@@ -36,7 +36,7 @@ export default class Modal {
     setTitle(title: string): Text {
         this.titleShape = this.scene.createAndAdd.text({
             text: title,
-            fill: "white",
+            fill: Color.WHITE.toString(),
             fontFamily: "Exo2Regular",
             fontSize: 20,
             originX: 0.5
@@ -52,7 +52,7 @@ export default class Modal {
             this.scene.createAndAdd.text({
                 text: text,
                 fontSize: 15,
-                fill: "white",
+                fill: Color.WHITE.toString(),
                 fontFamily: "Exo2Regular"
             })
         );
@@ -65,7 +65,7 @@ export default class Modal {
     setBottomText(text: string): Text {
         this.bottomTextShape = this.scene.createAndAdd.text({
             text: text,
-            fill: "white",
+            fill: Color.WHITE.toString(),
             fontFamily: "Exo2Bold",
             fontSize: 15,
             originY: 1

@@ -19,8 +19,6 @@ export interface CardConfig extends ShapeConfig {
     stroke?: string;
     strokeWidth?: number;
     state?: ModuleStates,
-
-    disabledColor?: string
 }
 
 /**
@@ -66,12 +64,6 @@ export class CardShape extends Group<CardConfig> {
 
         if (card.cardType === "module") {
             color = getModuleColor(card.module.health, card.module.totalHealth);
-            // if (isMainModule(card)) {
-            //     color = Color.fromHex('#155745');
-            // } else {
-            //     color = Color.fromHex('#95AFBA');
-            // }
-
         } else {
             color = Color.fromHex('#f8b195');
         }
@@ -105,7 +97,7 @@ export class CardShape extends Group<CardConfig> {
             y: size / 2,
             fontFamily: "Exo2Bold",
             fontSize: titleFontSize,
-            fill: "white",
+            fill: Color.WHITE.toString(),
             originX: 0.5,
             originY: 0.5,
             align: 'center',
@@ -131,7 +123,7 @@ export class CardShape extends Group<CardConfig> {
                 y: size * 3 / 4,
                 fontFamily: "Exo2Bold",
                 fontSize: 15 * scale,
-                fill: "white",
+                fill: Color.WHITE.toString(),
                 originX: 0.5,
                 originY: 0.5,
                 text: this.getCharacteristicsString()
@@ -308,22 +300,7 @@ export class CardShape extends Group<CardConfig> {
     }
 
     setState(state: ModuleStates): CardShape {
-        const currState = this.state();
-
-        if (currState === 'ENABLED' && state === 'DISABLED')
-            return this;
-
-        this._hitRect.visible(state !== 'DEFAULT' && state !== 'ENABLED');
-
         this.setAttr('state', state);
-
-        this.updateStateColor();
-
-        return this;
-    }
-
-    setDisabledColor(color: string): CardShape {
-        this.setAttr('disabledColor', color);
 
         this.updateStateColor();
 
@@ -334,7 +311,9 @@ export class CardShape extends Group<CardConfig> {
         const state = this.state();
 
         if (state === 'DISABLED') {
-            this._hitRect.fill(this.disabledColor());
+            this.brightness(0.5);
+        } else {
+            this.brightness(1);
         }
     }
 
@@ -343,8 +322,6 @@ export class CardShape extends Group<CardConfig> {
     stroke: GetSet<string, this>;
     strokeWidth: GetSet<number, this>;
     state: GetSet<ModuleStates, this>;
-
-    disabledColor: GetSet<string, this>;
 }
 
 Factory.addGetterSetter(CardShape, 'size', 100);
@@ -354,5 +331,3 @@ Factory.addGetterSetter(CardShape, 'stroke');
 Factory.addGetterSetter(CardShape, 'strokeWidth');
 
 Factory.addGetterSetter(CardShape, 'state', 'DEFAULT');
-
-Factory.addGetterSetter(CardShape, 'disabledColor', Color.fromHex('#000000', 0.5).toString());

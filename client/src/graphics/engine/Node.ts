@@ -36,6 +36,8 @@ export interface NodeConfig {
 
     visible?: boolean,
     interactive?: boolean,
+
+    brightness?: number,
 }
 
 type NodeEventMap = GlobalEventHandlersEventMap & {
@@ -833,6 +835,16 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         makeAnimationStep();
     }
 
+    getAccumulatedBrightness(): number {
+        let brightness = 1;
+
+        this.eachAncestorsReverse(ancestor => {
+            brightness *= ancestor.brightness();
+        });
+
+        return brightness;
+    }
+
     name: GetSet<string, this>;
     x: GetSet<number, this>;
     y: GetSet<number, this>;
@@ -853,6 +865,8 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
 
     visible: GetSet<boolean, this>
     interactive: GetSet<boolean, this>
+
+    brightness: GetSet<number, this>
 }
 
 Node.prototype.nodeType = 'Node';
@@ -884,3 +898,5 @@ Factory.addGetterSetter(Node, 'dragDistance', undefined);
 
 Factory.addGetterSetter(Node, 'visible', true);
 Factory.addGetterSetter(Node, 'interactive', true);
+
+Factory.addGetterSetter(Node, 'brightness', 1);

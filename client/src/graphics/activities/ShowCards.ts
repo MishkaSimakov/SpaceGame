@@ -36,7 +36,7 @@ export class ShowCardsActivity extends Activity {
                     originX: 0.5,
                     originY: 1,
                     fontFamily: "Exo2Bold",
-                    fill: "white",
+                    fill: Color.WHITE.toString(),
                     fontSize: 20,
                 });
             }

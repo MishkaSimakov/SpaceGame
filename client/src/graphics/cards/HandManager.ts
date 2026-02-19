@@ -213,7 +213,7 @@ export class HandManager {
                 y: this.cardSize / 2,
 
                 fontFamily: "Exo2Bold",
-                fill: "white",
+                fill: Color.WHITE.toString(),
                 fontSize: 10,
             });
 

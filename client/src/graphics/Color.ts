@@ -1,3 +1,7 @@
+function clamp(min: number, value: number, max: number): number {
+    return Math.min(Math.max(value, min), max);
+}
+
 export default class Color {
     r: number;
     g: number;
@@ -5,6 +9,7 @@ export default class Color {
     a: number;
 
     static BLACK = Color.fromRGBA(0, 0, 0);
+    static GREY = Color.fromRGBA(128, 128, 128);
     static WHITE = Color.fromRGBA(255, 255, 255);
     static YELLOW = Color.fromHex('#ffa42e');
 
@@ -15,8 +20,16 @@ export default class Color {
         this.a = alpha;
     }
 
-    setAlpha(newValue: number): Color {
+    setAlpha(newValue: number): this {
         this.a = newValue;
+        return this;
+    }
+
+    applyBrightnessFilter(brightness: number): this {
+        this.r = clamp(0, this.r * brightness, 255);
+        this.g = clamp(0, this.g * brightness, 255);
+        this.b = clamp(0, this.b * brightness, 255);
+
         return this;
     }
 
@@ -40,17 +53,11 @@ export default class Color {
     }
 
     static interpolate(from: Color, to: Color, ratio: number): Color {
-        if (ratio < 0) {
-            ratio = 0;
-        }
+        ratio = clamp(0, ratio, 1);
 
-        if (ratio > 1) {
-            ratio = 1;
-        }
-
-        const r = Math.round(from.r + (to.r - from.r) * ratio);
-        const g = Math.round(from.g + (to.g - from.g) * ratio);
-        const b = Math.round(from.b + (to.b - from.b) * ratio);
+        const r = from.r + (to.r - from.r) * ratio;
+        const g = from.g + (to.g - from.g) * ratio;
+        const b = from.b + (to.b - from.b) * ratio;
         const a = from.a + (to.a - from.a) * ratio;
 
         return Color.fromRGBA(r, g, b, a);
@@ -70,6 +77,6 @@ export default class Color {
     }
 
     toString(): string {
-        return `rgba(${this.r}, ${this.g}, ${this.b}, ${this.a})`;
+        return `rgba(${Math.floor(this.r)}, ${Math.floor(this.g)}, ${Math.floor(this.b)}, ${this.a})`;
     }
 }

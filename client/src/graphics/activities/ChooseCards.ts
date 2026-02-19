@@ -79,7 +79,7 @@ export class ChooseCardsActivity extends Activity {
                 text: this.title,
                 originX: 0.5,
                 originY: 1,
-                fill: "white",
+                fill: Color.WHITE.toString(),
                 fontFamily: "Exo2Bold",
                 fontSize: 20
             });
@@ -191,7 +191,7 @@ export class ChooseCardsActivity extends Activity {
         if (validationResult.verdict === "correct") {
             this.buttonShape.setAttrs({
                 text: "готово",
-                fill: "white"
+                fill: Color.WHITE.toString()
             });
         } else {
             this.buttonShape.setAttrs({

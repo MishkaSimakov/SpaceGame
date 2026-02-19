@@ -4,6 +4,7 @@ import {Group} from "./engine/Group";
 import {Text} from "./engine/shapes/Text";
 import {Rectangle} from "./engine/shapes/Rectangle";
 import Modal from "./Modal";
+import Color from "./Color";
 
 export default class PauseDrawer {
     group: Group;
@@ -26,7 +27,7 @@ export default class PauseDrawer {
             text: "Пауза",
             originX: 0,
             originY: 0,
-            fill: "white",
+            fill: Color.WHITE.toString(),
             fontFamily: "Exo2Bold",
             fontSize: 10
         }).on('click', () => {
