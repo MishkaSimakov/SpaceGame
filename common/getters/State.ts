@@ -22,5 +22,8 @@ export const StateGetters = {
         } while (offset !== 0);
 
         return currentPlayerIndex;
+    },
+    isGameEnded(state: GameState): boolean {
+        return state.players.filter(p => !p.lose).length === 1;
     }
 };

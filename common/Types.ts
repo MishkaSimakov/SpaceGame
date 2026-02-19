@@ -90,6 +90,7 @@ export type ModuleCard = {
 };
 
 export type EventCard = {
+    id: ModuleId,
     type: EventType,
     description: string,
 };
@@ -191,6 +192,7 @@ export type OtherPlayer = {
 };
 
 export type GameForPlayerDTO = {
+    isPaused: boolean,
     currentTurnPlayerId: PlayerId,
     settings: GameSettings,
     player: Player,

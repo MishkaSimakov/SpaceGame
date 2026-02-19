@@ -28,7 +28,7 @@ export const fightListeners: ListenersContainer = {
     async chooseProtectorRequest({}, {game}) {
         game.controlsScene.topBarDrawer.setStatus("выберите протектор");
 
-        const protectorHandle = game.spaceshipsScene.chooseModules(
+        const protectorHandle = game.cardsManager.startChoosingModules(
             ({module, player}) => player === game.getCurrentPlayer().id && ModuleGetters.isProtector(module),
             Boundary.noMoreThan(1),
             Color.fromHex('#a3b18a')
@@ -40,7 +40,7 @@ export const fightListeners: ListenersContainer = {
             );
         };
 
-        protectorHandle.onSet(validate);
+        protectorHandle.subscribe(validate);
 
         const position = await new Promise<Vector2 | undefined>(resolve => {
             game.controlsScene.topBarDrawer.addButtons([
@@ -66,7 +66,7 @@ export const fightListeners: ListenersContainer = {
 
         game.controlsScene.topBarDrawer.removeButtons();
         game.controlsScene.topBarDrawer.clearStatus();
-        game.spaceshipsScene.endChoosingModule();
+        game.cardsManager.endChoosingModules();
 
         return chooseProtectorResponse(position);
     },
@@ -74,7 +74,7 @@ export const fightListeners: ListenersContainer = {
     async chooseWeaponAndTargetRequest({victim}, {game}) {
         game.controlsScene.topBarDrawer.setStatus("выберите цель и оружие");
 
-        const weaponHandle = game.spaceshipsScene.chooseModules(
+        const weaponHandle = game.cardsManager.startChoosingModules(
             ({module, player}) =>
                 player === game.getCurrentPlayer().id
                 && module.energyCost <= game.getCurrentPlayer().energy
@@ -83,7 +83,7 @@ export const fightListeners: ListenersContainer = {
             Color.fromHex('#a3b18a')
         );
 
-        const targetHandle = game.spaceshipsScene.chooseModules(
+        const targetHandle = game.cardsManager.startChoosingModules(
             ({player}) => player === victim,
             Boundary.equal(1),
             Color.fromHex('#e76f51')
@@ -95,8 +95,8 @@ export const fightListeners: ListenersContainer = {
             );
         };
 
-        weaponHandle.onSet(validate);
-        targetHandle.onSet(validate);
+        weaponHandle.subscribe(validate);
+        targetHandle.subscribe(validate);
 
         const {weaponPosition, targetPosition} = await new Promise<{
             weaponPosition: Vector2,
@@ -118,7 +118,7 @@ export const fightListeners: ListenersContainer = {
 
         game.controlsScene.topBarDrawer.removeButtons();
         game.controlsScene.topBarDrawer.clearStatus();
-        game.spaceshipsScene.endChoosingModule();
+        game.cardsManager.endChoosingModules();
 
         return chooseWeaponAndTargetResponse(targetPosition, weaponPosition);
     },
@@ -126,7 +126,7 @@ export const fightListeners: ListenersContainer = {
     async chooseTargetRequest({victim}, {game}) {
         game.controlsScene.topBarDrawer.setStatus("выберите цель");
 
-        const targetHandle = game.spaceshipsScene.chooseModules(
+        const targetHandle = game.cardsManager.startChoosingModules(
             ({player}) => player === victim,
             Boundary.equal(1),
             Color.fromHex('#e76f51')
@@ -138,7 +138,7 @@ export const fightListeners: ListenersContainer = {
             );
         };
 
-        targetHandle.onSet(validate);
+        targetHandle.subscribe(validate);
 
         const target = await new Promise<Vector2>(resolve => {
             game.controlsScene.topBarDrawer.addButtons([{
@@ -154,7 +154,7 @@ export const fightListeners: ListenersContainer = {
 
         game.controlsScene.topBarDrawer.removeButtons();
         game.controlsScene.topBarDrawer.clearStatus();
-        game.spaceshipsScene.endChoosingModule();
+        game.cardsManager.endChoosingModules();
 
         return chooseTargetResponse(target);
     }

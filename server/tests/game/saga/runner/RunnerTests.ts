@@ -3,14 +3,16 @@ import * as assert from "uvu/assert";
 
 import {setCurrentPlayer, throwDice, throwDiceResult} from "@common/Actions";
 
-import {all, put, SagaGenerator, select, take} from "../../../../src/game/sagas/runner/Effects";
+import {put, SagaGenerator, select} from "../../../../src/game/sagas/runner/Effects";
 import ActionsBus from "../../../../src/game/ActionsBus";
 import {fakeGameState} from "../../Utils";
 import {runSaga} from "../../../../src/game/sagas/runner/RunSaga";
-import {Action} from "@common/ActionsHelpers";
+import {GameInput} from "@src/game/sagas/runner/Environment";
+import {Channel} from "@src/game/sagas/runner/Channel";
 
 test('select', async () => {
     const state = fakeGameState(2);
+    const input: GameInput = new Channel();
     state.currentPlayerId = 42;
 
     const bus = new ActionsBus();
@@ -21,12 +23,13 @@ test('select', async () => {
         assert.equal(state.currentPlayerId, 42);
     }
 
-    await runSaga({state, bus}, testSaga);
+    await runSaga({state, output: bus, input}, testSaga);
 });
 
 test('put', async () => {
     const state = fakeGameState(2);
     const bus = new ActionsBus();
+    const input: GameInput = new Channel();
 
     function* testSaga(): SagaGenerator {
         yield* put(throwDiceResult(3));
@@ -38,67 +41,18 @@ test('put', async () => {
         receivedAction = true;
     })
 
-    await runSaga({state, bus}, testSaga);
+    await runSaga({state, output: bus, input}, testSaga);
 
     assert.ok(receivedAction);
 });
 
-test('putAndTake', async () => {
-    const state = fakeGameState(2);
-    const bus = new ActionsBus();
-
-    function* testSaga(): SagaGenerator {
-        const {req, res} = yield* all({
-            req: put(throwDice(0)),
-            res: take('throwDiceResult')
-        });
-
-        assert.equal(Object.keys(req).length, 0);
-        assert.equal(res.payload.result, 5);
-    }
-
-    bus.on('throwDice', () => {
-        bus.emit(throwDiceResult(5));
-    });
-
-    await runSaga({state, bus}, testSaga);
-});
-
-test('putAndPut', async () => {
-    const state = fakeGameState(2);
-    const bus = new ActionsBus();
-
-    const actions: string[] = [];
-
-    function* testSaga(): SagaGenerator {
-        yield* all({
-            first: put(throwDiceResult(1)),
-            second: put(throwDiceResult(2))
-        });
-
-        actions.push("finished saga");
-    }
-
-    bus.on('throwDiceResult', ({payload}) => {
-        if (payload.result === 1) {
-            actions.push("first")
-        } else if (payload.result === 2) {
-            actions.push("second");
-        } else {
-            assert.unreachable("wrong payload");
-        }
-    });
-
-    await runSaga({state, bus}, testSaga);
-
-    assert.equal(actions, ["first", "second", "finished saga"])
-});
 
 // SagaRunner must have the following property:
 // when yield* put(X); returns, all listeners of the event X must be executed.
 test('putReturnsOnlyWhenListenersAreExecuted', async () => {
     const state = fakeGameState(2);
     const bus = new ActionsBus();
+    const input: GameInput = new Channel();
     let performedListener = false;
 
     function* testSaga(): SagaGenerator {
@@ -111,7 +65,7 @@ test('putReturnsOnlyWhenListenersAreExecuted', async () => {
         performedListener = true;
     });
 
-    await runSaga({state, bus}, testSaga);
+    await runSaga({state, output: bus, input}, testSaga);
 
     assert.ok(performedListener);
 });
@@ -119,6 +73,7 @@ test('putReturnsOnlyWhenListenersAreExecuted', async () => {
 test('multiStepSaga', async () => {
     const state = fakeGameState(2);
     const bus = new ActionsBus();
+    const input: GameInput = new Channel();
 
     function* testSaga(): SagaGenerator {
         yield* put(throwDice(21));
@@ -138,7 +93,7 @@ test('multiStepSaga', async () => {
         received = true;
     });
 
-    await runSaga({state, bus}, testSaga);
+    await runSaga({state, output: bus, input}, testSaga);
 
     assert.ok(received);
 });
@@ -146,6 +101,7 @@ test('multiStepSaga', async () => {
 test('exceptionTest', async () => {
     const state = fakeGameState(2);
     const bus = new ActionsBus();
+    const input: GameInput = new Channel();
 
     function* parent(): SagaGenerator {
         try {
@@ -159,12 +115,13 @@ test('exceptionTest', async () => {
         throw 123;
     }
 
-    await runSaga({state, bus}, parent);
+    await runSaga({state, output: bus, input}, parent);
 });
 
 test('throwDuringPut', async () => {
     const state = fakeGameState(2);
     const bus = new ActionsBus();
+    const input: GameInput = new Channel();
 
     function* parent(): SagaGenerator {
         try {
@@ -181,101 +138,22 @@ test('throwDuringPut', async () => {
         throw 123;
     });
 
-    await runSaga({state, bus}, parent);
-});
-
-test('throwDuringAll', async () => {
-    const state = fakeGameState(2);
-    const bus = new ActionsBus();
-
-    function* saga(): SagaGenerator {
-        try {
-            yield* all({
-                req: put(throwDice(0)),
-                res: take('throwDiceResult')
-            });
-        } catch (err) {
-            assert.equal(err, 123);
-            return;
-        }
-
-        assert.unreachable("exception should have been caught");
-    }
-
-    bus.on('throwDice', () => {
-        throw 123;
-    });
-
-    await runSaga({state, bus}, saga);
-});
-
-test('throwInAllCancelsAllOtherEffects', async () => {
-    const state = fakeGameState(2);
-    const bus = new ActionsBus();
-
-    function* saga(): SagaGenerator {
-        try {
-            yield* all({
-                0: put(throwDice(0)),
-                1: take('throwDiceResult'),
-            });
-        } catch (err) {
-            bus.emit(throwDiceResult(123));
-            return;
-        }
-
-        assert.unreachable("exception should have been caught");
-    }
-
-    bus.on('throwDice', () => {
-        throw 123;
-    });
-
-    await runSaga({state, bus}, saga);
+    await runSaga({state, output: bus, input}, parent);
 });
 
 test('uncaughtException', async () => {
     const state = fakeGameState(2);
     const bus = new ActionsBus();
+    const input: GameInput = new Channel();
 
     function* saga(): SagaGenerator {
         throw 123;
     }
 
     try {
-        await runSaga({state, bus}, saga);
+        await runSaga({state, output: bus, input}, saga);
 
         assert.unreachable("exception should have been thrown");
-    } catch (err) {
-        assert.equal(err, 123);
-    }
-});
-
-test('throwInMiddleware', async () => {
-    const state = fakeGameState(2);
-    const bus = new ActionsBus();
-
-    function* saga(): SagaGenerator {
-        yield* all({
-            req: put(throwDice(0)),
-            res: take('throwDiceResult')
-        });
-    }
-
-    bus.registerMiddleware({
-        apply(action: Action<string, any, any>): Action<string, any, any> | undefined {
-            throw 123;
-        }
-    });
-
-    bus.on('throwDice', () => {
-        assert.unreachable("middleware should have thrown exception");
-    });
-
-    try {
-        await runSaga({state, bus}, saga);
-
-        assert.unreachable("middleware should have thrown exception");
     } catch (err) {
         assert.equal(err, 123);
     }
@@ -284,12 +162,13 @@ test('throwInMiddleware', async () => {
 test('returnValue', async () => {
     const state = fakeGameState(2);
     const bus = new ActionsBus();
+    const input: GameInput = new Channel();
 
     function* saga(): SagaGenerator {
         return 321;
     }
 
-    const result = await runSaga({state, bus}, saga);
+    const result = await runSaga({state, output: bus, input}, saga);
 
     assert.equal(result, 321);
 });

@@ -41,13 +41,13 @@ export abstract class Context extends CanvasRenderingContext2D {
 
 export class SceneContext extends Context {
     _fill(shape: Shape) {
-        this.fillStyle = shape.fill();
+        this.fillStyle = shape.getFillWithBrightness();
 
         shape._fillFunc(this);
     }
 
     _stroke(shape: Shape) {
-        this.strokeStyle = shape.stroke();
+        this.strokeStyle = shape.getStrokeWithBrightness();
         this.lineWidth = shape.strokeWidth();
 
         shape._strokeFunc(this);

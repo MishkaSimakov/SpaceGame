@@ -856,7 +856,7 @@
         type: int32
 
 # -----------------------------
-# From Message.ts
+# Message
 # -----------------------------
 - name: message
   payload:
@@ -866,3 +866,86 @@
     - name: text
       type:
         type: string
+
+# -----------------------------
+# Debug
+# -----------------------------
+- name: cheatChangeEnergy
+  payload:
+    - name: target
+      type:
+        ref: PlayerId
+    - name: delta
+      type:
+        type: int32
+
+- name: cheatSetMainModuleType
+  payload:
+    - name: target
+      type:
+        ref: PlayerId
+    - name: type
+      type:
+        ref: MainModuleType
+    - name: connectors
+      type:
+        ref: ModuleConnectors
+
+- name: cheatPushModuleCardToHand
+  payload:
+    - name: target
+      type:
+        ref: PlayerId
+    - name: type
+      type:
+        ref: ModuleType
+    - name: connectors
+      type:
+        ref: ModuleConnectors
+
+- name: cheatPushModuleCardToStack
+  description: Кладёт данную карту действия на вершину стека
+  payload:
+    - name: type
+      type:
+        ref: ModuleType
+    - name: connectors
+      type:
+        ref: ModuleConnectors
+
+- name: cheatPushEventCardToHand
+  payload:
+    - name: target
+      type:
+        ref: PlayerId
+    - name: type
+      type:
+        ref: EventType
+
+- name: cheatPushEventCardToStack
+  description: Кладёт данную карту строительства на вершину стека
+  payload:
+    - name: type
+      type:
+        ref: EventType
+
+# -----------------------------
+# Pause
+# -----------------------------
+- name: playerRequestsPause
+  payload: [ ]
+
+- name: playerRequestsResume
+  payload: [ ]
+
+# -----------------------------
+# Signals
+# -----------------------------
+- name: playerTimeoutSignal
+  payload:
+    - name: player
+      type:
+        ref: PlayerId
+
+- name: deactivateSignal
+  payload: [ ]

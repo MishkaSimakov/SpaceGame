@@ -36,7 +36,7 @@ export default class PopupsScene extends Scene {
             text: text,
             fontFamily: "Exo2Regular",
             fontSize: fontSize,
-            fill: "white",
+            fill: Color.WHITE.toString(),
             x: padding,
             y: padding,
             align: "left",

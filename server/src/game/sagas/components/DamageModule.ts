@@ -10,6 +10,7 @@ import {
 import {ModuleGetters} from "@common/getters/Module";
 
 import {put, select} from "../runner/Effects";
+import {playerLostSignal} from "@src/game/sagas/runner/Signals";
 
 type DamageType =
     | { type: "EventCard" }
@@ -84,5 +85,10 @@ export function* damageModule(victim: Player, position: Vector2, damage: number,
 
     if (isMainModuleDestroyed) {
         yield* put(playerLost(victim.id));
+
+        const state = yield* select();
+        if (state.fight || StateGetters.currentPlayer(state).id === victim.id) {
+            throw playerLost(victim.id);
+        }
     }
 }

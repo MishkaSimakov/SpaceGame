@@ -16,6 +16,20 @@
     </span>
     </div>
 
+    <div class="d-flex mt-3 mb-3">
+        <form action="/game/{{ game.id }}/delete" method="POST"
+              onsubmit="return confirm('Вы уверены? Это действие нельзя отменить!');">
+            <button type="submit" class="btn btn-outline-danger">Удалить игру</button>
+        </form>
+
+        @if(game.isActive)
+        <button id="deactivateGame" class="btn btn-outline-primary ms-3"
+                title="Выгрузить игру из оперативной памяти сервера">
+            Деактивировать
+        </button>
+        @endif
+    </div>
+
     <div class="card mb-3">
         <div class="card-header">Настройки игры</div>
         <div class="card-body">
@@ -35,24 +49,10 @@
             </andypf-json-viewer>
         </div>
     </div>
-
-    <div class="d-flex mt-3 mb-3">
-        <form action="/game/{{ game.id }}/delete" method="POST"
-              onsubmit="return confirm('Вы уверены? Это действие нельзя отменить!');">
-            <button type="submit" class="btn btn-outline-danger">Удалить игру</button>
-        </form>
-
-        @if(game.isActive)
-        <button id="reloadGame" class="btn btn-outline-primary ms-3"
-                title="Выгрузить игру из оперативной памяти сервера">
-            Деактивировать
-        </button>
-        @endif
-    </div>
 </div>
 
 <script>
-    document.getElementById('reloadGame')?.addEventListener('click', () => {
+    document.getElementById('deactivateGame')?.addEventListener('click', () => {
         fetch(`/game/{{ game.id }}/deactivate`, {method: 'POST'})
             .then(r => {
                 if (r.ok) {

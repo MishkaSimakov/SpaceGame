@@ -1,25 +1,23 @@
 import {Card, Message, Vector2} from "@common/Types";
+import {ModuleGetters} from "@common/getters/Module";
 
 import Game from "../../Game";
-import HandDrawer from "../HandDrawer";
 import {COLORS} from "../constants";
 import TopBarDrawer from "../topbar/TopBarDrawer";
 import Scene from "../engine/Scene";
-import {Group} from "../engine/Group";
 import Color from "../Color";
 import {Boundary, BoundaryType} from "../CountBoundary";
+import PauseDrawer from "../PauseDrawer";
 
 import {ShowCardsActivity} from "../activities/ShowCards";
 import {Activity} from "../activities/Activity";
 import {PermuteCardsActivity} from "../activities/PermuteCards";
 import {ChooseFromListActivity} from "../activities/ChooseFromList";
 import {ChooseCardsActivity} from "../activities/ChooseCards";
-import {ModuleGetters} from "@common/getters/Module";
-import {CardShape as CardShape} from "../shapes/CardShape";
 
 export default class Controls extends Scene {
-    handDrawer: HandDrawer;
     topBarDrawer: TopBarDrawer;
+    pauseDrawer: PauseDrawer;
     gameManager: Game;
 
     activitiesQueue: { activity: Activity, lock: Promise<void> }[] = [];
@@ -32,12 +30,11 @@ export default class Controls extends Scene {
 
     adopted() {
         this.topBarDrawer = new TopBarDrawer(this);
-        this.handDrawer = new HandDrawer(this.gameManager, this);
+        this.pauseDrawer = new PauseDrawer(this.gameManager, this);
     }
 
     updateData(newMessages: Message[]) {
-        this.handDrawer.setHandData(this.gameManager.currentPlayer.hand);
-        this.handDrawer.redraw();
+        this.pauseDrawer.redraw();
 
         this.topBarDrawer.setPlayersData(
             this.gameManager.currentPlayer,
@@ -108,7 +105,7 @@ export default class Controls extends Scene {
 
         this.topBarDrawer.setStatus(title);
 
-        const handle = this.gameManager.spaceshipsScene.chooseModules(
+        const handle = this.gameManager.cardsManager.startChoosingModules(
             ({
                  module,
                  player
@@ -124,7 +121,7 @@ export default class Controls extends Scene {
             )
         };
 
-        handle.onSet(validate);
+        handle.subscribe(validate);
 
         const positions = await new Promise<Vector2[]>((resolve) => {
             this.topBarDrawer.addButtons([{
@@ -147,54 +144,9 @@ export default class Controls extends Scene {
 
         this.topBarDrawer.removeButtons();
         this.topBarDrawer.clearStatus();
-        this.gameManager.spaceshipsScene.endChoosingModule();
+        this.gameManager.cardsManager.endChoosingModules();
 
         return positions;
-    }
-
-    drawCardsOnScreen(cards: Card[]): Group {
-        let sceneWidth = this.width();
-        let sceneHeight = this.height();
-
-        let offset = {x: 0, y: 0};
-
-        let maxCardSize = Math.min(sceneWidth, sceneHeight) * 0.75;
-        let spaceAvailable = Math.max(sceneWidth, sceneHeight) * 0.75;
-        let padding = 20;
-
-        let cardSize = Math.min(maxCardSize, (spaceAvailable + padding) / cards.length - padding);
-
-        if (sceneWidth > sceneHeight) {
-            offset.x = cardSize + padding;
-        } else {
-            offset.y = cardSize + padding;
-        }
-
-        let cardShapes = new Group();
-
-        let position = {x: 0, y: 0};
-
-        for (let card of cards) {
-            cardShapes.add(
-                new CardShape({
-                    x: position.x,
-                    y: position.y,
-                    size: cardSize,
-                    card: card
-                })
-            );
-
-            position.x += offset.x;
-            position.y += offset.y;
-        }
-
-        cardShapes
-            .setPosition({
-                x: (sceneWidth - cardShapes.getWidth()) / 2,
-                y: (sceneHeight - cardShapes.getHeight()) / 2
-            });
-
-        return cardShapes;
     }
 
     async permuteCards(cards: Card[]): Promise<number[]> {
@@ -209,7 +161,7 @@ export default class Controls extends Scene {
                 onClick: () => {
                     this.topBarDrawer.removeButtons();
                     this.topBarDrawer.clearStatus();
-                    this.gameManager.spaceshipsScene.endChoosingModule();
+                    this.gameManager.cardsManager.endChoosingModules();
 
                     resolve(true);
                 }
@@ -219,7 +171,7 @@ export default class Controls extends Scene {
                 onClick: () => {
                     this.topBarDrawer.removeButtons();
                     this.topBarDrawer.clearStatus();
-                    this.gameManager.spaceshipsScene.endChoosingModule();
+                    this.gameManager.cardsManager.endChoosingModules();
 
                     resolve(false);
                 }

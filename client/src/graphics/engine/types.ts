@@ -1,5 +1,6 @@
 export interface GetSet<Type, This> {
     (): Type;
+
     (value: Type): This;
 }
 
@@ -35,4 +36,13 @@ export class BoundingRect {
 
         return this.left <= pos.x && pos.x <= this.right && this.top <= pos.y && pos.y <= this.bottom
     }
+}
+
+export function merge(a: BoundingRect, b: BoundingRect) {
+    return new BoundingRect(
+        Math.min(a.top, b.top),
+        Math.min(a.left, b.left),
+        Math.max(a.bottom, b.bottom),
+        Math.max(a.right, b.right)
+    );
 }

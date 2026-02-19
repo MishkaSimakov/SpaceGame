@@ -1,8 +1,12 @@
 import {GameState} from "@common/Types";
 
-import ActionsBus from "../../ActionsBus";
+import {Channel} from "@src/game/sagas/runner/Channel";
+import {Action} from "@common/ActionsHelpers";
 
 export type Environment = {
     state: GameState
-    bus: ActionsBus
+
+    output: Channel<Action>
+
+    input: Channel<Action>
 }

@@ -19,7 +19,8 @@ export class ShowHugeMessageActivity extends Activity {
                 text: this.text,
                 originX: 0.5,
                 originY: 0.5,
-                fill: "white",
+                fill: Color.WHITE.toString(),
+                align: "center",
                 fontFamily: "Exo2Bold",
                 fontSize: 40
             });

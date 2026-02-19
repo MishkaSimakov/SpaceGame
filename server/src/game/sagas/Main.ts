@@ -1,5 +1,7 @@
+import * as assert from "node:assert";
+
 import {StateGetters} from "@common/getters/State";
-import {TimeRecordType} from "@common/Types";
+import {PlayerId, TimeRecordType} from "@common/Types";
 import {playerLost, setCurrentPlayer, setPlayerSkipNextTurn} from "@common/Actions";
 
 import {put, select} from "./runner/Effects";
@@ -12,11 +14,7 @@ import {attack} from "./phases/Attack";
 import {fixSpaceship} from "./phases/FixSpaceship";
 import {init} from "./components/Init";
 import {addTimeRecord} from "./components/Time";
-import {LossSignal} from "../middlewares/LossSignal";
-
-function* isGameEnded() {
-    return (yield* select()).players.filter(p => !p.lose).length === 1;
-}
+import {isAction} from "@common/ActionsHelpers";
 
 function* shiftTurn() {
     let state = yield* select();
@@ -69,20 +67,25 @@ export function* gameSaga() {
         try {
             yield* playerTurn();
         } catch (error) {
-            // LossSignal indicates that current turn must be cancelled due to player loss
-            if (error instanceof LossSignal) {
-                const currentPlayer = StateGetters.currentPlayer(yield* select());
-                yield* addTimeRecord(currentPlayer.id, TimeRecordType.DEFAULT_TURN_ENDED);
+            if (isAction(error)) {
+                assert.equal(error.type, 'playerLost');
 
-                if (!currentPlayer.lose) {
-                    yield* put(playerLost(currentPlayer.id));
+                const currentPlayer = StateGetters.currentPlayer(yield* select());
+                const lostPlayer = StateGetters.playerById(yield* select(), error.payload.player)!;
+
+                if (currentPlayer.id === lostPlayer.id) {
+                    yield* addTimeRecord(currentPlayer.id, TimeRecordType.DEFAULT_TURN_ENDED);
+                }
+
+                if (!lostPlayer.lose) {
+                    yield* put(playerLost(lostPlayer.id));
                 }
             } else {
                 throw error;
             }
         }
 
-        if (yield* isGameEnded()) {
+        if (StateGetters.isGameEnded(yield* select())) {
             return;
         }
     }

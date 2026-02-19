@@ -1,33 +1,22 @@
-import * as Actions from "@common/Actions";
-
-import {CancellableContinuation, Continuation} from "../Continuation";
+import {ok} from "@src/helpers/Result";
+import {Continuation} from "../Continuation";
 import {Environment} from "../Environment";
-import {ok} from "../../../../helpers/Result";
 import {TakeEffect} from "../Effects";
+import {Action} from "@common/ActionsHelpers";
 
-export class TakeContinuation<T extends keyof typeof Actions> implements CancellableContinuation<TakeEffect<T>["input"]> {
-    private cancelled = false;
-
+export class TakeContinuation implements Continuation<TakeEffect["input"]> {
     constructor(
         private readonly env: Environment,
         private readonly consumer: Continuation<any>
     ) {
     }
 
-    continue(effect: TakeEffect<T>["input"]): void {
+    continue(_: TakeEffect["input"]): void {
         // TODO: possibly make cancellation more effective by removing listener entirely
-        const listener = (payload: any) => {
-            this.env.bus.off(effect.name, listener);
-
-            if (!this.cancelled) {
-                this.consumer.continue(ok(payload));
-            }
+        const receiver = (message: Action) => {
+            this.consumer.continue(ok(message));
         };
 
-        this.env.bus.on(effect.name, listener);
-    }
-
-    cancel() {
-        this.cancelled = true;
+        this.env.input.take(receiver);
     }
 }

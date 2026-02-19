@@ -10,6 +10,7 @@ import {Game as GameDBEntity, GameStatus} from "../../database/entity/game";
 import {defaultSettings, defaultTimeControlSettings} from "../../game/DefaultSettings";
 import {FileActionsStorage} from "@src/game/FileActionsStorage";
 import {createGameValidator} from "@src/http/validation/CreateGameValidator";
+import DatabaseManager from "@src/database/DatabaseManager";
 
 export const create = async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -76,7 +77,7 @@ export const joinGame = async (req: AuthenticatedGameRequest, res: Response) => 
         return res.redirect('/');
     }
 
-    if (game.status !== GameStatus.ACTIVE) {
+    if (game.status === GameStatus.FINISHED) {
         req.flash('error', 'Вы не можете присоединиться к данной игре.');
         return res.redirect('/');
     }
@@ -121,14 +122,14 @@ export const showStatusPage = async (req: AuthenticatedGameRequest, res: Respons
         game: {
             ...game,
             settings: game.settings,
-            actions: new FileActionsStorage(game.logFilepath).getAllActions(),
+            actions: new FileActionsStorage(game.logFilepath).getActionsWithStorageInfo(),
             isActive: App.getInstance().gamesManager!.isActive(game.id)
         }
     });
 }
 
 export const deleteGame = async (req: AuthenticatedGameRequest, res: Response) => {
-    App.getInstance().gamesManager!.deactivateGame(req.params.gameId);
+    await App.getInstance().gamesManager!.deactivateGame(req.params.gameId);
 
     await GameDBEntity.delete({
         id: req.params.gameId
@@ -138,6 +139,41 @@ export const deleteGame = async (req: AuthenticatedGameRequest, res: Response) =
 }
 
 export const deactivateGame = async (req: AuthenticatedGameRequest, res: Response) => {
-    App.getInstance().gamesManager!.deactivateGame(req.params.gameId);
+    await App.getInstance().gamesManager!.deactivateGame(req.params.gameId);
     return res.redirect('/');
 }
+
+export const deleteAllGames = async (req: Request, res: Response) => {
+    const games = await GameDBEntity.find()
+
+    for (const game of games) {
+        await App.getInstance().gamesManager!.deactivateGame(game.id);
+
+        await GameDBEntity.delete({
+            id: game.id
+        });
+    }
+
+    return res.redirect('/');
+}
+
+
+export const createGame = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+        const users = await User.find();
+        const gameSettings: GameSettings = {
+            seed: String(Math.random()),
+            ...defaultSettings,
+
+            isDebug: true,
+            isPublic: true,
+        };
+
+        const gameId = await App.getInstance().gamesManager!.createGame("Игра", req.user, users, gameSettings);
+
+        return res.redirect(`/game/${gameId}`);
+    } catch (err) {
+        console.log(err);
+        return res.redirect('/game/create');
+    }
+};

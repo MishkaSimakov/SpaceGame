@@ -13,6 +13,7 @@ import {
     useEventCardToDealDamageRequest,
     useModuleSecondTimeRequest
 } from "@common/Actions";
+import {playerLostSignal, playerTimeoutSignal} from "@src/game/sagas/runner/Signals";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
 
 import {put, select} from "../runner/Effects";
@@ -20,7 +21,7 @@ import {damageModule} from "./DamageModule";
 import {dice} from "./Random";
 import {addTimeRecord} from "./Time";
 import {request} from "./Request";
-import {LossSignal} from "@src/game/middlewares/LossSignal";
+import {isAction} from "@common/ActionsHelpers";
 
 
 function* getCombatants() {
@@ -246,12 +247,14 @@ export function* fight() {
 
         yield* cleanupAfterFight();
     } catch (error) {
-        if (error instanceof LossSignal) {
-            const state = yield* select();
+        if (isAction(error)) {
+            assert.equal(error.type, 'playerLost');
 
-            if (state.currentPlayerId !== error.player) {
-                yield* cleanupAfterFight();
-            } else {
+            yield* cleanupAfterFight();
+            console.log("Player lost in a fight!!!");
+
+            const state = yield* select();
+            if (StateGetters.currentPlayer(state).id === error.payload.player || StateGetters.isGameEnded(state)) {
                 throw error;
             }
         } else {

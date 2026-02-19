@@ -1,5 +1,5 @@
 import {Node, NodeConfig} from './Node';
-import {BoundingRect} from "./types";
+import {BoundingRect, merge} from "./types";
 
 export abstract class Container<ChildType extends Node = Node, Config extends NodeConfig = NodeConfig> extends Node {
     children?: Array<ChildType>;
@@ -109,8 +109,6 @@ export abstract class Container<ChildType extends Node = Node, Config extends No
         child.index = this.children.length;
         child.parent = this;
 
-        child._clearCaches();
-
         this.children.push(child);
 
         this.fire('add', {
@@ -136,25 +134,29 @@ export abstract class Container<ChildType extends Node = Node, Config extends No
         this.drawChildren('drawHit');
     }
 
-    getClientRect(relativeTo?: Container<Node>, ignoreStroke?: boolean): BoundingRect {
-        if (this.children.length === 0)
+    getClientRect(relativeTo?: Container<Node>, ignoreStroke?: boolean): BoundingRect | undefined {
+        if (!this.visible()) {
             return;
+        }
 
         relativeTo = relativeTo ?? this.getScene();
 
         let br = new BoundingRect();
 
-        this.children?.forEach(child => {
-            let cbr = child.getClientRect(this, ignoreStroke);
+        if (this.children.length > 0) {
+            this.children?.forEach(child => {
+                let cbr = child.getClientRect(this, ignoreStroke);
 
-            if (!cbr)
-                return;
-
-            br.top = Math.min(br.top, cbr.top);
-            br.bottom = Math.max(br.bottom, cbr.bottom);
-            br.left = Math.min(br.left, cbr.left);
-            br.right = Math.max(br.right, cbr.right);
-        });
+                if (cbr) {
+                    br = merge(br, cbr);
+                }
+            });
+        } else {
+            br.top = 0;
+            br.bottom = 0;
+            br.left = 0;
+            br.right = 0;
+        }
 
         return this.transformedRect(br, relativeTo);
     }
@@ -202,13 +204,5 @@ export abstract class Container<ChildType extends Node = Node, Config extends No
             return this.attrs.height;
 
         return this.getClientRect(this, true).height;
-    }
-
-    clearSelfAndDescendantCache(attr?: string) {
-        super.clearSelfAndDescendantCache(attr);
-
-        this.children?.forEach(node => {
-            node.clearSelfAndDescendantCache(attr)
-        });
     }
 }

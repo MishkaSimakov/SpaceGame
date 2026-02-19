@@ -45,7 +45,7 @@ export class Button extends Group<ButtonConfig> {
             text: text,
             originY: 0.5,
             originX: 0.5,
-            fill: "white",
+            fill: Color.WHITE.toString(),
             fontFamily: this.fontFamily(),
             fontSize: this.fontSize()
         });

@@ -5,11 +5,10 @@ import {rebuildSpaceshipResponse} from "@common/Actions";
 import {StateGetters} from "@common/getters/State";
 
 import {mockGame} from "./MockGame";
-import {put, take} from "@src/game/sagas/runner/Effects";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
 
 test('finishWhenTimeIsOver', async () => {
-    const {game, clock} = mockGame(2, {
+    const {game, clock, sockets} = mockGame(2, {
         timeControlSettings: {
             startTime: 5,
             defaultTimeIncrease: 0,
@@ -18,20 +17,19 @@ test('finishWhenTimeIsOver', async () => {
         }
     });
 
-    game.bus.on('rebuildSpaceshipRequest', (action) => {
-        const player = StateGetters.playerById(game.state, action.payload.player)!;
-        const spaceship = player.spaceship.modules.map(module => ({
-            id: module.id,
-            position: {x: module.x, y: module.y},
-            rotation: module.rotation
-        }));
+    sockets.addEmitListener((playerId, settings, event, args) => {
+        if (event === 'rebuildSpaceshipRequest') {
+            clock.advanceTime(6000);
 
-        clock.advanceTime(6000);
-
-        game.bus.emit(rebuildSpaceshipResponse(spaceship));
+            const player = StateGetters.playerById(game.state, playerId)!;
+            game.sagaInput.put(
+                rebuildSpaceshipResponse(SpaceshipGetters.mapForRebuildSpaceshipResponse(player.spaceship))
+            );
+        }
     });
 
     const result = await game.activate();
+
     assert.equal(result.type, "finished");
 });
 

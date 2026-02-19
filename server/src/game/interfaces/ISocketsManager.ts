@@ -14,4 +14,6 @@ export interface ISocketsManager {
     tryToEmitEvent(playerId: PlayerId): void;
 
     disconnectEveryone(): void;
+
+    on(type: string, callback: (player: PlayerId, payload: any) => void): void;
 }

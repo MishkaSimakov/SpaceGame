@@ -20,14 +20,14 @@ export const reducers: ReducersType = {
         Object.assign(state, payload.state);
     },
     playerRebuiltSpaceship(state: GameState, payload) {
-        const currentPlayer = StateGetters.currentPlayer(state);
+        const player = StateGetters.playerById(state, payload.player)!;
 
-        currentPlayer.spaceship = payload.newSpaceship;
-        currentPlayer.hand = payload.newHand;
+        player.spaceship = payload.newSpaceship;
+        player.hand = payload.newHand;
 
-        currentPlayer.energy = Math.min(
-            currentPlayer.energy,
-            SpaceshipGetters.getTotalCapacity(currentPlayer.spaceship)
+        player.energy = Math.min(
+            player.energy,
+            SpaceshipGetters.getTotalCapacity(player.spaceship)
         );
     },
     beginFight(state: GameState, payload) {
@@ -78,6 +78,11 @@ export const reducers: ReducersType = {
         } else {
             state.discards.module.push(...detached);
         }
+
+        player.energy = Math.min(
+            player.energy,
+            SpaceshipGetters.getTotalCapacity(player.spaceship)
+        );
     },
 
     changeModuleHealth(state: GameState, payload) {
@@ -171,9 +176,8 @@ export const reducers: ReducersType = {
     // # Cards manipulations
     // ## hand
     popCardsFromHand(state: GameState, payload) {
-        const player = StateGetters.playerById(state, payload.player);
+        const player = StateGetters.playerById(state, payload.player)!;
 
-        assert.ok(player);
         assert.ok(player.hand.length > Math.max(...payload.indexes));
 
         player.hand = player.hand.filter((card, index) => {

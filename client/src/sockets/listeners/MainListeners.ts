@@ -1,6 +1,3 @@
-import {COLORS} from "../../graphics/constants";
-import {ListenersContainer} from "./ListenersContainer";
-import {ChoosePlayerForAttackActivity} from "../../graphics/activities/ChoosePlayerForAttack";
 import {
     chooseCardTypeResponse, chooseModuleToRepairResponse, choosePlayerForAttackResponse, discardCardsResponse,
     drawAdditionalModuleCardResponse,
@@ -10,14 +7,21 @@ import {
 import {CardType, ModuleType} from "@common/Types";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
 
+import {COLORS} from "../../graphics/constants";
+import {ListenersContainer} from "./ListenersContainer";
+import {ChoosePlayerForAttackActivity} from "../../graphics/activities/ChoosePlayerForAttack";
+import * as assert from "assert"
+
 export const mainListeners: ListenersContainer = {
     async rebuildSpaceshipRequest({}, {game}) {
-        game.rebuildSpaceshipManager.setIsRebuildSpaceshipAllowed(true);
-
+        game.cardsManager.canRebuildSpaceship(true);
         await game.controlsScene.rebuildSpaceship();
-        game.rebuildSpaceshipManager.setIsRebuildSpaceshipAllowed(false);
+        game.cardsManager.canRebuildSpaceship(false);
 
-        return rebuildSpaceshipResponse(SpaceshipGetters.mapForRebuildSpaceshipResponse(game.currentPlayer.spaceship));
+        const spaceship = game.cardsManager.getSpaceship();
+        assert.ok(spaceship);
+
+        return rebuildSpaceshipResponse(SpaceshipGetters.mapForRebuildSpaceshipResponse(spaceship));
     },
 
     async chooseCardTypeRequest({}, {game}) {
@@ -32,7 +36,7 @@ export const mainListeners: ListenersContainer = {
 
                     game.controlsScene.topBarDrawer.removeButtons();
                     game.controlsScene.topBarDrawer.clearStatus();
-                    game.spaceshipsScene.endChoosingModule();
+                    game.cardsManager.endChoosingModules();
                 }
             }, {
                 text: "Действия",
@@ -42,7 +46,7 @@ export const mainListeners: ListenersContainer = {
 
                     game.controlsScene.topBarDrawer.removeButtons();
                     game.controlsScene.topBarDrawer.clearStatus();
-                    game.spaceshipsScene.endChoosingModule();
+                    game.cardsManager.endChoosingModules();
                 }
             }]);
         });

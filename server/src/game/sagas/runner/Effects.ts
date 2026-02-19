@@ -19,40 +19,17 @@ export type PutEffect = {
     output: EmptyObject
 };
 
-export type TakeEffect<T extends keyof typeof Actions> = {
+export type TakeEffect = {
     input: {
         type: "take";
-        name: T;
     },
-    output: ReturnType<(typeof Actions)[T]>
+    output: ReturnType<(typeof Actions)[keyof typeof Actions]>
 };
 
-// all effect
-type EffectUnion =
+export type Effect =
     | SelectEffect
     | PutEffect
-    | TakeEffect<keyof typeof Actions>;
-
-export type GeneratorReturnValue<T> = T extends Generator<any, infer R, any> ? R : never;
-
-export type AllEffect<T extends Record<string, GeneratorForEffect<EffectUnion>>> = {
-    input: {
-        type: "all",
-        effects: T
-    },
-    output: {
-        [Key in keyof T]: GeneratorReturnValue<T[Key]>
-    }
-};
-
-export type Effect = EffectUnion | AllEffect<any>;
-
-export type FindEffectByType<T> =
-    Effect extends infer E
-        ? E extends { input: { type: T } }
-            ? E
-            : never
-        : never;
+    | TakeEffect;
 
 type GeneratorForEffect<E extends Effect> = Generator<E["input"], E["output"], E["output"]>;
 
@@ -69,17 +46,9 @@ export function* put(action: Action<string, any, any>): GeneratorForEffect<PutEf
     };
 }
 
-export function* take<T extends keyof typeof Actions>(actionDescriptor: T): GeneratorForEffect<TakeEffect<T>> {
+export function* take(): GeneratorForEffect<TakeEffect> {
     return yield {
-        type: "take",
-        name: actionDescriptor
-    };
-}
-
-export function* all<T extends Record<string, GeneratorForEffect<EffectUnion>>>(effects: T): GeneratorForEffect<AllEffect<T>> {
-    return yield {
-        type: "all",
-        effects: effects
+        type: "take"
     };
 }
 

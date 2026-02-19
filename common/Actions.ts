@@ -1086,3 +1086,119 @@ export function message(player: Types.PlayerId, text: string) {
     );
 }
 
+
+/**
+ * @param  target  
+ * @param  delta  
+ */
+export function cheatChangeEnergy(target: Types.PlayerId, delta: number) {
+    return constructAction(
+        'cheatChangeEnergy',
+        {target, delta},
+    );
+}
+
+
+/**
+ * @param  target  
+ * @param  type  
+ * @param  connectors  
+ */
+export function cheatSetMainModuleType(target: Types.PlayerId, type: Types.MainModuleType, connectors: Types.ModuleConnectors) {
+    return constructAction(
+        'cheatSetMainModuleType',
+        {target, type, connectors},
+    );
+}
+
+
+/**
+ * @param  target  
+ * @param  type  
+ * @param  connectors  
+ */
+export function cheatPushModuleCardToHand(target: Types.PlayerId, type: Types.ModuleType, connectors: Types.ModuleConnectors) {
+    return constructAction(
+        'cheatPushModuleCardToHand',
+        {target, type, connectors},
+    );
+}
+
+
+/**
+ * Кладёт данную карту действия на вершину стека
+ * @param  type  
+ * @param  connectors  
+ */
+export function cheatPushModuleCardToStack(type: Types.ModuleType, connectors: Types.ModuleConnectors) {
+    return constructAction(
+        'cheatPushModuleCardToStack',
+        {type, connectors},
+    );
+}
+
+
+/**
+ * @param  target  
+ * @param  type  
+ */
+export function cheatPushEventCardToHand(target: Types.PlayerId, type: Types.EventType) {
+    return constructAction(
+        'cheatPushEventCardToHand',
+        {target, type},
+    );
+}
+
+
+/**
+ * Кладёт данную карту строительства на вершину стека
+ * @param  type  
+ */
+export function cheatPushEventCardToStack(type: Types.EventType) {
+    return constructAction(
+        'cheatPushEventCardToStack',
+        {type},
+    );
+}
+
+
+/**
+ */
+export function playerRequestsPause() {
+    return constructAction(
+        'playerRequestsPause',
+        {},
+    );
+}
+
+
+/**
+ */
+export function playerRequestsResume() {
+    return constructAction(
+        'playerRequestsResume',
+        {},
+    );
+}
+
+
+/**
+ * @param  player  
+ */
+export function playerTimeoutSignal(player: Types.PlayerId) {
+    return constructAction(
+        'playerTimeoutSignal',
+        {player},
+    );
+}
+
+
+/**
+ */
+export function deactivateSignal() {
+    return constructAction(
+        'deactivateSignal',
+        {},
+    );
+}
+

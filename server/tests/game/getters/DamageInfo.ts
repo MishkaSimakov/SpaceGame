@@ -1,39 +1,14 @@
 import {test} from "uvu";
 import * as assert from "uvu/assert";
 
-import {MainModuleType, ModuleCard, ModuleType, Spaceship} from "@common/Types";
+import {ModuleType, Spaceship} from "@common/Types";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
 
 import {fakeModule} from "../Utils";
 
-
-const fakeMainModule = (): ModuleCard => {
-    return {
-        id: 0,
-        name: "Командный модуль I",
-        type: ModuleType.MainModule,
-        mainModuleType: MainModuleType.DrawAnotherEventCard,
-        connectors: {
-            top: 1,
-            right: 1,
-            bottom: 1,
-            left: 1
-        },
-        x: 0,
-        y: 0,
-        health: 13,
-        totalHealth: 13,
-        energyIncrease: 1,
-        capacity: 5,
-        strength: 0,
-        energyCost: 0,
-        rotation: 0
-    };
-}
-
 test('simple', () => {
     const spaceship: Spaceship = {modules: []};
-    const mainModule = fakeMainModule();
+    const mainModule = fakeModule(ModuleType.MainModule, {x: 0, y: 0});
     spaceship.modules.push(mainModule);
 
     const info = SpaceshipGetters.damageInfo(spaceship, mainModule, 1);
@@ -48,7 +23,7 @@ test('simple', () => {
 
 test('simpleProtector', () => {
     const spaceship: Spaceship = {modules: []};
-    const mainModule = fakeMainModule();
+    const mainModule = fakeModule(ModuleType.MainModule, {x: 0, y: 0});
     spaceship.modules.push(mainModule);
 
     const protector = fakeModule(ModuleType.SmallQuantumProtector, {
@@ -71,7 +46,7 @@ test('simpleProtector', () => {
 
 test('destroyedProtector', () => {
     const spaceship: Spaceship = {modules: []};
-    const mainModule = fakeMainModule();
+    const mainModule = fakeModule(ModuleType.MainModule, {x: 0, y: 0});
     spaceship.modules.push(mainModule);
 
     const protector = fakeModule(ModuleType.SmallQuantumProtector, {
@@ -97,7 +72,7 @@ test('destroyedProtector', () => {
 
 test('destroyedProtectorAndModule', () => {
     const spaceship: Spaceship = {modules: []};
-    const mainModule = fakeMainModule();
+    const mainModule = fakeModule(ModuleType.MainModule, {x: 0, y: 0});
     spaceship.modules.push(mainModule);
 
     const protector = fakeModule(ModuleType.SmallQuantumProtector, {

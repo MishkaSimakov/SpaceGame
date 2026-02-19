@@ -9,6 +9,7 @@ import Controls from "../scenes/Controls";
 import {Activity} from "./Activity";
 import {COLORS} from "../constants";
 import {BoundaryType, CountBoundary, CountBoundaryValidationResult} from "../CountBoundary";
+import {getCardsGrid} from "../shapes/CardsGrid";
 
 export class ChooseCardsActivity extends Activity {
     private modalGroup?: Group = undefined;
@@ -62,7 +63,7 @@ export class ChooseCardsActivity extends Activity {
             const sceneWidth = this.scene.width();
             const sceneHeight = this.scene.height();
 
-            const cardShapes = this.scene.drawCardsOnScreen(this.cards);
+            const cardShapes = getCardsGrid(this.cards, sceneWidth, sceneHeight);
 
             const fadeShape = new Rectangle({
                 x: 0,
@@ -78,7 +79,7 @@ export class ChooseCardsActivity extends Activity {
                 text: this.title,
                 originX: 0.5,
                 originY: 1,
-                fill: "white",
+                fill: Color.WHITE.toString(),
                 fontFamily: "Exo2Bold",
                 fontSize: 20
             });
@@ -190,7 +191,7 @@ export class ChooseCardsActivity extends Activity {
         if (validationResult.verdict === "correct") {
             this.buttonShape.setAttrs({
                 text: "готово",
-                fill: "white"
+                fill: Color.WHITE.toString()
             });
         } else {
             this.buttonShape.setAttrs({

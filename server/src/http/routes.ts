@@ -37,6 +37,10 @@ function getUserRouter(): Router {
     // @ts-ignore
     router.post('/game/:gameId/deactivate', auth, gameOwner, GameController.deactivateGame);
 
+    router.get('/debug/deleteAllGames', GameController.deleteAllGames);
+    // @ts-ignore
+    router.get('/debug/createGame', auth, GameController.createGame);
+
     return router;
 }
 

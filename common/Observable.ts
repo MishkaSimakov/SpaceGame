@@ -1,6 +1,8 @@
 export class Observable<T> {
+    private static id = 0;
+
     private value: T;
-    private listeners: ((newValue: T) => void)[] = [];
+    private listeners = new Map<number, (newValue: T) => void>();
 
     constructor(value: T) {
         this.value = value;
@@ -18,7 +20,15 @@ export class Observable<T> {
         return this.value;
     }
 
-    onSet(listener: (newValue: T) => void) {
-        this.listeners.push(listener);
+    subscribe(listener: (newValue: T) => void): number {
+        const id = ++Observable.id;
+
+        this.listeners.set(id, listener);
+
+        return id;
+    }
+
+    unsubscribe(id: number) {
+        this.listeners.delete(id);
     }
 }

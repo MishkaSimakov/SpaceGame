@@ -28,6 +28,8 @@ const COLORS = {
 let SIZES = {
     STROKE_WIDTH: 5,
     CORNER_RADIUS: 10,
+
+    CONTROLS_WIDTH: 400
 };
 
 export {COLORS, SIZES, ButtonColors};

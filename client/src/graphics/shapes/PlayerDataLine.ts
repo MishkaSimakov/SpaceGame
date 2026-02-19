@@ -7,6 +7,7 @@ import {GetSet} from "../engine/types";
 import {Factory} from "../engine/Factory";
 import {Rectangle} from "../engine/shapes/Rectangle";
 import {OtherPlayer} from "@common/Types";
+import Color from "../Color";
 
 export type PlayerStatus = {
     online: boolean,
@@ -39,7 +40,7 @@ export class PlayerDataLine extends Group<PlayerDataLineConfig> {
             text: player.name + ":",
             fontFamily: "Exo2Bold",
             fontSize: 15,
-            fill: "white",
+            fill: Color.WHITE.toString(),
         });
 
         this.add(playerNameText);
@@ -51,7 +52,7 @@ export class PlayerDataLine extends Group<PlayerDataLineConfig> {
             text: this.getStatusString(config.status),
             fontFamily: "Exo2Regular",
             fontSize: 11,
-            fill: "grey",
+            fill: Color.GREY.toString(),
         });
 
         this.add(statusText);
@@ -70,7 +71,7 @@ export class PlayerDataLine extends Group<PlayerDataLineConfig> {
                     text: `${player.energy}/${SpaceshipGetters.getTotalCapacity(player.spaceship)}(+${SpaceshipGetters.getTotalEnergyIncrease(player.spaceship)}) ⚡️`,
                     fontFamily: "Exo2Bold",
                     fontSize: 15,
-                    fill: "white",
+                    fill: Color.WHITE.toString(),
                 })
             );
 
@@ -81,7 +82,7 @@ export class PlayerDataLine extends Group<PlayerDataLineConfig> {
                     text: `${player.handSize} 🤚`,
                     fontFamily: "Exo2Bold",
                     fontSize: 15,
-                    fill: "white",
+                    fill: Color.WHITE.toString(),
                 })
             );
 
@@ -93,7 +94,7 @@ export class PlayerDataLine extends Group<PlayerDataLineConfig> {
                         text: `${this.timeToString(this.time())} ` + (this.time() >= 0 ? '⏰' : '🤡'),
                         fontFamily: "Exo2Bold",
                         fontSize: 15,
-                        fill: "white",
+                        fill: Color.WHITE.toString(),
                         name: "time",
 
                         originX: 1,

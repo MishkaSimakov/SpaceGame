@@ -1,17 +1,28 @@
-import {GameForPlayerDTO, GameSettings, Message, OtherPlayer, Player, PlayerId} from "@common/Types";
+import {
+    EventType,
+    GameForPlayerDTO,
+    GameSettings, MainModuleType,
+    Message,
+    ModuleType,
+    OtherPlayer,
+    Player,
+    PlayerId
+} from "@common/Types";
 import {PlayerGetters} from "@common/getters/Player";
 
 import Spaceships from "./graphics/scenes/Spaceships";
 import Controls from "./graphics/scenes/Controls";
-import RebuildSpaceshipManager from "./graphics/RebuildSpaceshipManager";
 import SocketManager from "./sockets/SocketManager";
 import {Graphics} from "./graphics/engine/Graphics";
-import {DD} from "./graphics/engine/Drag";
 import PopupsScene from "./graphics/scenes/Popups";
+import {Cheats} from "./Cheats";
+import Scene from "./graphics/engine/Scene";
+import {CardsManager} from "./graphics/cards/CardsManager";
 
 export default class Game {
     currentTurnPlayerId: PlayerId;
 
+    isPaused: boolean;
     currentPlayer: Player;
     otherPlayers: OtherPlayer[];
     onlineMap: GameForPlayerDTO["onlineMap"] = [];
@@ -19,10 +30,11 @@ export default class Game {
     socketManager: SocketManager;
 
     spaceshipsScene: Spaceships;
+    handScene: Scene;
     controlsScene: Controls;
     popupsScene: PopupsScene;
 
-    rebuildSpaceshipManager: RebuildSpaceshipManager;
+    cardsManager: CardsManager;
 
     settings: GameSettings;
 
@@ -30,8 +42,7 @@ export default class Game {
     timeDecreasingPlayerId: number;
 
     messages: Message[] = [];
-
-    isFirstDraw: boolean = true;
+    cheats: Cheats | undefined;
 
     constructor() {
         const graphics = new Graphics({
@@ -40,19 +51,17 @@ export default class Game {
             height: window.innerHeight
         });
 
-        window["graphics"] = graphics;
-        window["drag"] = DD;
-        window["errors"] = [];
-
         this.spaceshipsScene = new Spaceships(this);
+        this.handScene = new Scene();
         this.controlsScene = new Controls(this);
         this.popupsScene = new PopupsScene(this);
 
         graphics.add(this.spaceshipsScene);
+        graphics.add(this.handScene);
         graphics.add(this.controlsScene);
         graphics.add(this.popupsScene);
 
-        this.rebuildSpaceshipManager = new RebuildSpaceshipManager(this);
+        this.cardsManager = new CardsManager(this.spaceshipsScene, this.handScene);
 
         this.socketManager = new SocketManager(this);
 
@@ -63,7 +72,7 @@ export default class Game {
             }
 
             const currTime = (new Date()).getTime();
-            if (this.timeDecreasingPlayerId in this.playerTime) {
+            if (this.timeDecreasingPlayerId in this.playerTime && !this.isPaused) {
                 this.playerTime[this.timeDecreasingPlayerId] -= (currTime - prevTime);
             }
             prevTime = currTime;
@@ -81,24 +90,34 @@ export default class Game {
             };
 
             this.spaceshipsScene.setSize(newSize);
+            this.handScene.setSize(newSize);
             this.controlsScene.setSize(newSize);
             this.popupsScene.setSize(newSize);
 
             this.controlsScene.activitiesQueue[0]?.activity.update();
+            this.controlsScene.pauseDrawer.update();
             this.popupsScene.update();
+            this.cardsManager.resize();
 
             this.redraw([]);
         });
     }
 
     setGameData(gameDTO: GameForPlayerDTO) {
+        this.isPaused = gameDTO.isPaused;
         this.currentTurnPlayerId = gameDTO.currentTurnPlayerId;
         this.onlineMap = gameDTO.onlineMap;
         this.otherPlayers = gameDTO.otherPlayers;
         this.settings = gameDTO.settings;
+        this.currentPlayer = gameDTO.player;
 
-        if (!this.rebuildSpaceshipManager.isRebuildingSpaceship) {
-            this.currentPlayer = gameDTO.player;
+        // enable cheats for debug
+        if (this.settings.isDebug && !this.cheats) {
+            this.cheats = new Cheats(this, this.socketManager);
+            window["cheats"] = this.cheats;
+            window["ModuleType"] = ModuleType;
+            window["EventType"] = EventType;
+            window["MainModuleType"] = MainModuleType;
         }
 
         // time control
@@ -122,17 +141,16 @@ export default class Game {
         this.redraw(newMessages);
     }
 
-    redraw(newMessages: Message[]) {
+    private redraw(newMessages: Message[]) {
         this.controlsScene.updateData(newMessages);
-        this.spaceshipsScene.updateData(this.getAllPlayers());
+        this.cardsManager.setData(this.currentPlayer, this.otherPlayers);
+    }
 
-        if (this.isFirstDraw) {
-            this.isFirstDraw = false;
-            this.spaceshipsScene.panToPlayerWithId(this.currentPlayer.id, 0);
-        }
+    panToPlayer(id: PlayerId) {
+        const position = this.cardsManager.getPlayerSpaceshipPosition(id);
 
-        if (this.rebuildSpaceshipManager.isRebuildingSpaceship) {
-            this.rebuildSpaceshipManager.setIsRebuildSpaceshipAllowed(true);
+        if (position) {
+            this.spaceshipsScene.panTo(position);
         }
     }
 
@@ -165,5 +183,9 @@ export default class Game {
         } else {
             document.title = 'Космические баталии';
         }
+    }
+
+    getGameId(): string {
+        return window.location.href.split('/').pop();
     }
 }

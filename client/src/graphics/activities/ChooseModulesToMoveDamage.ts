@@ -7,6 +7,7 @@ import {Boundary} from "../CountBoundary";
 import Color from "../Color";
 import {COLORS} from "../constants";
 import {ModuleGetters} from "@common/getters/Module";
+import {CardsManager} from "../cards/CardsManager";
 
 type MoveDamageResult = { source: Vector2, destination: Vector2 } | undefined;
 
@@ -16,14 +17,14 @@ const reasonStatus: Record<MoveDamageReason, string> = {
 }
 
 export class ChooseModulesToMoveDamage extends Activity {
-    constructor(private controlsScene: Controls, private spaceshipsScene: Spaceships, private reason: MoveDamageReason) {
+    constructor(private controlsScene: Controls, private cardsManager: CardsManager, private reason: MoveDamageReason) {
         super();
     }
 
     activate(): Promise<MoveDamageResult> {
         this.controlsScene.topBarDrawer.setStatus(reasonStatus[this.reason]);
 
-        const fromHandle = this.spaceshipsScene.chooseModules(
+        const fromHandle = this.cardsManager.startChoosingModules(
             ({
                  module,
                  player
@@ -36,7 +37,7 @@ export class ChooseModulesToMoveDamage extends Activity {
             this.controlsScene.topBarDrawer.setButtonDisabled('continue', fromHandle.get().length !== 1);
         };
 
-        fromHandle.onSet(validate);
+        fromHandle.subscribe(validate);
 
         return new Promise<MoveDamageResult>(resolve => {
             this.controlsScene.topBarDrawer.addButtons([{
@@ -45,7 +46,7 @@ export class ChooseModulesToMoveDamage extends Activity {
                 onClick: () => {
                     const from = ModuleGetters.position(fromHandle.get()[0].module);
 
-                    this.spaceshipsScene.endChoosingModule();
+                    this.cardsManager.endChoosingModules();
                     this.controlsScene.topBarDrawer.removeButtons();
                     this.controlsScene.topBarDrawer.clearStatus();
 
@@ -72,7 +73,7 @@ export class ChooseModulesToMoveDamage extends Activity {
     private async chooseDestination() {
         this.controlsScene.topBarDrawer.setStatus("выберите, куда переместить урон");
 
-        const toHandle = this.spaceshipsScene.chooseModules(
+        const toHandle = this.cardsManager.startChoosingModules(
             ({player}) => player === this.controlsScene.gameManager.getCurrentPlayer().id,
             Boundary.equal(1),
             Color.fromHex('a3b18a')
@@ -82,7 +83,7 @@ export class ChooseModulesToMoveDamage extends Activity {
             this.controlsScene.topBarDrawer.setButtonDisabled('continue', toHandle.get().length !== 1);
         };
 
-        toHandle.onSet(validate);
+        toHandle.subscribe(validate);
 
         const to = await new Promise<Vector2>(resolve => {
             this.controlsScene.topBarDrawer.addButtons([{
@@ -97,7 +98,7 @@ export class ChooseModulesToMoveDamage extends Activity {
             validate();
         });
 
-        this.spaceshipsScene.endChoosingModule();
+        this.cardsManager.endChoosingModules();
         this.controlsScene.topBarDrawer.removeButtons();
 
         return to;

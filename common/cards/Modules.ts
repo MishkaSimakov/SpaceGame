@@ -1,4 +1,4 @@
-import {MainModuleType, ModuleType} from "@common/Types";
+import {MainModuleType, ModuleCard, ModuleType} from "../Types";
 
 export type ModuleInfo = {
     configurations: {

@@ -24,5 +24,5 @@ export const booleanSchema = z.boolean({message: "Ожидалось логич�
 export const makeActivePlayerIdSchema = (state: GameState) =>
     z.number({message: "Неверный ID игрока"})
         .int({message: "ID игрока должен быть целым числом"})
-        .refine(id => StateGetters.playerById(state, id) !== undefined, {message: "Игрок с таким ID не найден"})
+        .refine(id => StateGetters.playerById(state, id) !== undefined, {message: "Игрок с таким ID не найден", abort: true})
         .refine(id => !StateGetters.playerById(state, id)!.lose, {message: "Выбранный игрок уже проиграл"});

@@ -49,7 +49,7 @@ export default class TopBarDrawer {
         fontSize: 15,
         strokeWidth: SIZES.STROKE_WIDTH,
         cornerRadius: SIZES.CORNER_RADIUS,
-        width: 400
+        width: SIZES.CONTROLS_WIDTH
     };
 
     constructor(scene: Controls) {
@@ -237,8 +237,9 @@ export default class TopBarDrawer {
             fontFamily: "Exo2Regular",
             fontSize: 14,
             fill: (message.isNew ? newMessageColor : messageColor).toString(),
-            width: maxWidth,
-            name: "text"
+            name: "text",
+
+            maxWidth: maxWidth
         });
         group.add(textShape);
 

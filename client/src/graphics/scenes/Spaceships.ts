@@ -1,28 +1,16 @@
-import {ModuleCard, OtherPlayer, PlayerId, Vector2} from "@common/Types";
+import {PlayerId, Vector2} from "@common/Types";
+import {getDistance} from "@common/VectorUtils";
 
 import Game from "../../Game";
 import Scene from "../engine/Scene";
-import Color from "../Color";
 import {DD} from "../engine/Drag";
 import {Spaceship as SpaceshipShape} from "../shapes/Spaceship";
-import {CardShape} from "../shapes/CardShape";
-import {CountBoundary} from "../CountBoundary";
-import {ChooseModuleManager} from "../ChooseModuleManager";
-
-let spaceshipConfigurations: Vector2[][] = [
-    [{x: 0, y: 0}],
-    [{x: 0, y: 0}, {x: 0, y: -2500}],
-    [{x: 0, y: 0}, {x: -1000, y: -1000}, {x: 1000, y: -1000}],
-    [{x: 0, y: 0}, {x: 0, y: -1000}, {x: 1000, y: 0}, {x: 1000, y: -1000}],
-    [{x: 0, y: 0}, {x: 0, y: -1000}, {x: 1000, y: 0}, {x: 1000, y: -1000}, {x: 500, y: 1500}]
-];
+import {SIZES} from "../constants";
 
 export default class Spaceships extends Scene {
-    spaceshipShapes: Record<number, SpaceshipShape> = {};
+    spaceshipShapes: Record<PlayerId, SpaceshipShape> = {};
     gameManager: Game;
     spaceshipsCardSize: number;
-
-    activeChooseModule: ChooseModuleManager[] = [];
 
     constructor(game: Game) {
         super({
@@ -31,6 +19,17 @@ export default class Spaceships extends Scene {
         });
 
         this.gameManager = game;
+
+        const storedPosition = localStorage.getItem(this.getStorageKey());
+        if (storedPosition) {
+            const [pX, pY, sX, sY] = storedPosition.split(',').map(Number);
+
+            if (Number.isNaN(pX) || Number.isNaN(pY) || Number.isNaN(sX) || Number.isNaN(sY)) {
+                localStorage.removeItem(this.getStorageKey());
+            } else {
+                this.setPosition({x: pX, y: pY}).scaleX(sX).scaleY(sY);
+            }
+        }
     }
 
     adopted() {
@@ -45,6 +44,7 @@ export default class Spaceships extends Scene {
                     x: pointerPosition.x - prevPointerPosition.x,
                     y: pointerPosition.y - prevPointerPosition.y
                 });
+                this.storeState();
             }
 
             prevPointerPosition = pointerPosition;
@@ -65,14 +65,13 @@ export default class Spaceships extends Scene {
         });
 
         this.getGraphics().on("wheel", ({evt}) => {
-            let deltaY = evt.deltaY,
-                zoom = this.scaleX(),
-                newZoom = zoom,
-                pos = this.getRelativePointerPosition();
+            const deltaY = evt.deltaY;
+            const zoom = this.scaleX();
+            const pos = this.getRelativePointerPosition();
 
             const scrollCoefficient = 0.0025;
 
-            newZoom = Math.min(
+            const newZoom = Math.min(
                 2,
                 Math.max(0.1, zoom - deltaY * scrollCoefficient)
             );
@@ -81,14 +80,10 @@ export default class Spaceships extends Scene {
                 x: pos.x * (zoom - newZoom),
                 y: pos.y * (zoom - newZoom)
             });
-
             this.scaleX(newZoom).scaleY(newZoom);
+
+            this.storeState();
         });
-
-
-        function getDistance(p1, p2) {
-            return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
-        }
 
         function getCenter(p1, p2) {
             return {
@@ -114,6 +109,8 @@ export default class Spaceships extends Scene {
                         x: pointerPosition.x - prevPointerPosition.x,
                         y: pointerPosition.y - prevPointerPosition.y
                     });
+
+                    this.storeState();
                 }
 
                 prevPointerPosition = pointerPosition;
@@ -162,66 +159,34 @@ export default class Spaceships extends Scene {
             this.scaleX(scale);
             this.scaleY(scale);
 
+            this.storeState();
+
             lastDist = dist;
             lastCenter = newCenter;
         });
     }
 
-    chooseModules(check: (info: {
-        module: ModuleCard,
-        player: PlayerId
-    }) => boolean, count: CountBoundary, outlineColor: Color) {
-        const manager = new ChooseModuleManager(this, check, count, outlineColor);
-        manager.activate();
-
-        this.activeChooseModule.push(manager);
-
-        return manager.getHandle();
-    }
-
-    updateData(players: OtherPlayer[]) {
-        for (let [index, player] of players.entries()) {
-            if (this.spaceshipShapes[player.id] === undefined) {
-                const spaceshipPosition = spaceshipConfigurations[players.length - 1][index];
-
-                const gameId = window.location.href.split('/').pop();
-                this.spaceshipShapes[player.id] = new SpaceshipShape({
-                    id: `spaceship.${gameId}.${player.id}`,
-                    cardSize: this.spaceshipsCardSize,
-                    x: spaceshipPosition.x,
-                    y: spaceshipPosition.y,
-                });
-
-                this.spaceshipShapes[player.id].spaceship(player.spaceship);
-
-                this.add(this.spaceshipShapes[player.id]);
-            } else {
-                this.spaceshipShapes[player.id].setSpaceship(player.spaceship);
-            }
-        }
-
-        this.activeChooseModule.forEach(manager => manager.activate());
-    }
-
-    endChoosingModule() {
-        this.activeChooseModule = [];
-
-        for (let key in this.spaceshipShapes) {
-            for (let shape of this.spaceshipShapes[key].children) {
-                (shape as CardShape).strokeWidth(0);
-                (shape as CardShape).setState('DEFAULT');
-
-                shape.off('click.choosemodule');
-            }
-        }
-    }
-
-    panToPlayerWithId(playerId: number, duration: number = 500) {
-        let position = this.spaceshipShapes[playerId].getPosition();
-
-        this.animate({
-            x: -position.x * this.scaleX(),
+    panTo(position: Vector2, duration: number = 500) {
+        const newPosition = {
+            x: -position.x * this.scaleX() - SIZES.CONTROLS_WIDTH / 2,
             y: -position.y * this.scaleY()
-        }, duration);
+        };
+
+        this.storeState(newPosition, {x: this.scaleX(), y: this.scaleY()});
+
+        this.animate(newPosition, duration);
+    }
+
+    private storeState(): void;
+    private storeState(position: Vector2, scale: Vector2): void;
+    private storeState(position: Vector2 | void, scale: Vector2 | void) {
+        const p = position ? position : this.getPosition();
+        const s = scale ? scale : {x: this.scaleX(), y: this.scaleY()};
+
+        localStorage.setItem(this.getStorageKey(), `${p.x},${p.y},${s.x},${s.y}`);
+    }
+
+    private getStorageKey() {
+        return `spaceships//${this.gameManager.getGameId()}`;
     }
 }

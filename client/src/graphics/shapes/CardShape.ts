@@ -1,12 +1,14 @@
-import {Card} from "@common/Types";
+import {Card, EventCard, ModuleCard} from "@common/Types";
 
 import {Group} from "../engine/Group";
 import {ShapeConfig} from "../engine/Shape";
-import {GetSet} from "../engine/types";
+import {BoundingRect, GetSet, merge} from "../engine/types";
 import {Factory} from "../engine/Factory";
 import {Rectangle} from "../engine/shapes/Rectangle";
 import {Text} from "../engine/shapes/Text";
 import Color from "../Color";
+import {Container} from "../engine/Container";
+import {Node} from "../engine/Node";
 
 
 export type ModuleStates = 'DEFAULT' | 'ENABLED' | 'DISABLED' | 'PROTECTED' | 'SELECTED';
@@ -17,9 +19,6 @@ export interface CardConfig extends ShapeConfig {
     stroke?: string;
     strokeWidth?: number;
     state?: ModuleStates,
-    connectorsState?: Record<string, "connected" | "disconnected">
-
-    disabledColor?: string
 }
 
 /**
@@ -65,12 +64,6 @@ export class CardShape extends Group<CardConfig> {
 
         if (card.cardType === "module") {
             color = getModuleColor(card.module.health, card.module.totalHealth);
-            // if (isMainModule(card)) {
-            //     color = Color.fromHex('#155745');
-            // } else {
-            //     color = Color.fromHex('#95AFBA');
-            // }
-
         } else {
             color = Color.fromHex('#f8b195');
         }
@@ -104,16 +97,20 @@ export class CardShape extends Group<CardConfig> {
             y: size / 2,
             fontFamily: "Exo2Bold",
             fontSize: titleFontSize,
-            fill: "white",
+            fill: Color.WHITE.toString(),
             originX: 0.5,
             originY: 0.5,
             align: 'center',
-            text: title
+            text: title,
         });
 
-        const titleWidth = this._title.getWidth();
-        if (titleWidth > size - 20 * scale) {
-            this._title.fontSize(titleFontSize * (size - 20 * scale) / titleWidth);
+        if (card.cardType === "module") {
+            const titleWidth = this._title.getWidth();
+            if (titleWidth > size - 20 * scale) {
+                this._title.fontSize(titleFontSize * (size - 20 * scale) / titleWidth);
+            }
+        } else {
+            this._title.maxWidth(size - 20 * scale).fontSize(15 * scale);
         }
 
         this.add(this._background, this._title);
@@ -126,7 +123,7 @@ export class CardShape extends Group<CardConfig> {
                 y: size * 3 / 4,
                 fontFamily: "Exo2Bold",
                 fontSize: 15 * scale,
-                fill: "white",
+                fill: Color.WHITE.toString(),
                 originX: 0.5,
                 originY: 0.5,
                 text: this.getCharacteristicsString()
@@ -199,9 +196,6 @@ export class CardShape extends Group<CardConfig> {
 
         this.add(this._strokeRect);
         this.add(this._hitRect);
-
-        this.width(size);
-        this.height(size);
     }
 
     drawHit() {
@@ -211,8 +205,15 @@ export class CardShape extends Group<CardConfig> {
         this._hitRect.drawHit();
     }
 
-    rotateCard(rotation) {
-        this._rotationGroup.rotation(rotation);
+    rotateCard(rotation: number, duration: number) {
+        if (duration > 0) {
+            this._rotationGroup.animate({
+                rotation
+            }, duration);
+        } else {
+            this._rotationGroup.abortAnimation();
+            this._rotationGroup.rotation(rotation);
+        }
     }
 
     get isModule(): boolean {
@@ -221,6 +222,35 @@ export class CardShape extends Group<CardConfig> {
 
     get isEvent(): boolean {
         return this.card().cardType === "event";
+    }
+
+    getModule(): ModuleCard | undefined {
+        const card = this.card();
+        return card.cardType === "module" ? card.module : undefined;
+    }
+
+    getEvent(): EventCard | undefined {
+        const card = this.card();
+        return card.cardType === "event" ? card.event : undefined;
+    }
+
+    getWidth(): number {
+        return this.size();
+    }
+
+    getHeight(): number {
+        return this.size();
+    }
+
+    getClientRect(relativeTo?: Container<Node>, ignoreStroke?: boolean): BoundingRect | undefined {
+        if (!this.isVisible()) {
+            return;
+        }
+
+        return this.transformedRect(
+            new BoundingRect(0, 0, this.size(), this.size()),
+            relativeTo ?? this.getScene()
+        );
     }
 
     private getCharacteristicsString(): string {
@@ -270,22 +300,7 @@ export class CardShape extends Group<CardConfig> {
     }
 
     setState(state: ModuleStates): CardShape {
-        const currState = this.state();
-
-        if (currState === 'ENABLED' && state === 'DISABLED')
-            return this;
-
-        this._hitRect.visible(state !== 'DEFAULT' && state !== 'ENABLED');
-
         this.setAttr('state', state);
-
-        this.updateStateColor();
-
-        return this;
-    }
-
-    setDisabledColor(color: string): CardShape {
-        this.setAttr('disabledColor', color);
 
         this.updateStateColor();
 
@@ -296,7 +311,9 @@ export class CardShape extends Group<CardConfig> {
         const state = this.state();
 
         if (state === 'DISABLED') {
-            this._hitRect.fill(this.disabledColor());
+            this.brightness(0.5);
+        } else {
+            this.brightness(1);
         }
     }
 
@@ -305,9 +322,6 @@ export class CardShape extends Group<CardConfig> {
     stroke: GetSet<string, this>;
     strokeWidth: GetSet<number, this>;
     state: GetSet<ModuleStates, this>;
-    connectorsState: GetSet<Record<string, "connected" | "disconnected">, this>;
-
-    disabledColor: GetSet<string, this>;
 }
 
 Factory.addGetterSetter(CardShape, 'size', 100);
@@ -317,6 +331,3 @@ Factory.addGetterSetter(CardShape, 'stroke');
 Factory.addGetterSetter(CardShape, 'strokeWidth');
 
 Factory.addGetterSetter(CardShape, 'state', 'DEFAULT');
-Factory.addGetterSetter(CardShape, 'connectorsState');
-
-Factory.addGetterSetter(CardShape, 'disabledColor', Color.fromHex('#000000', 0.5).toString());
