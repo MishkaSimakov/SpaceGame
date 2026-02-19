@@ -6,7 +6,7 @@ import {Text} from "../engine/shapes/Text";
 import {PlayerDataLine} from "../shapes/PlayerDataLine";
 import {Group} from "../engine/Group";
 import {TopBarAdaptor} from "./TopBarAdaptor";
-import Color from "../Color";
+import Color from "@common/helpers/Color";
 
 export default class TopBarDefaultAdaptor extends TopBarAdaptor {
     drawPlayers(drawer: TopBarDrawer): Group {

@@ -1,7 +1,7 @@
 import {Continuation} from "../Continuation";
 import {Environment} from "../Environment";
 import {PutEffect} from "../Effects";
-import {ok, err} from "@src/helpers/Result";
+import {ok, err} from "@common/helpers/Result";
 
 export class PutContinuation implements Continuation<PutEffect["input"]> {
     constructor(

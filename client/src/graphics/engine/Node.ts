@@ -8,7 +8,7 @@ import {Shape} from "./Shape";
 import {Graphics} from "./Graphics";
 import {DD} from "./Drag";
 import {Draw} from "./Global";
-import Color from "../Color";
+import Color from "@common/helpers/Color";
 
 const TRANSFORM = 'TRANSFORM',
     ABSOLUTE_TRANSFORM = 'ABSOLUTE_TRANSFORM',
@@ -796,7 +796,7 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
                         const startColor = Color.fromString(startAttrs[attr]);
                         const newColor = Color.fromString(newAttrs[attr]);
 
-                        return Color.interpolate(startColor, newColor, percent);
+                        return Color.interpolate(startColor, newColor, percent).toString();
                     } else if (attr === "rotation") {
                         // choose the shortest arc for interpolation
                         const forwardArc = Math.abs(startAttrs[attr] - newAttrs[attr]);

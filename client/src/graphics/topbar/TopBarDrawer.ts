@@ -8,7 +8,7 @@ import {Group} from "../engine/Group";
 import {Button} from "../shapes/Button";
 import {PlayerDataLine} from "../shapes/PlayerDataLine";
 import TopBarDefaultAdaptor from "./TopBarDefaultAdaptor";
-import Color from "../Color";
+import Color from "@common/helpers/Color";
 
 export type ButtonData = {
     text: string,

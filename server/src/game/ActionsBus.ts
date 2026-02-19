@@ -1,6 +1,6 @@
 import {Action} from "@common/ActionsHelpers";
 import * as Actions from "@common/Actions"
-import {deferred, Deferred} from "../helpers/Deferred";
+import {deferred, Deferred} from "@common/helpers/Deferred";
 
 export type ActionDescriptor = (keyof typeof Actions) | "*";
 

@@ -1,6 +1,7 @@
 import {z} from "zod";
 
 import {IUser} from "@src/game/interfaces/IUser";
+import {createCheckboxValidator} from "@src/http/validation/common";
 
 export const gamePlayersValidator = (users: IUser[]) =>
     z.array(
@@ -11,21 +12,16 @@ export const gamePlayersValidator = (users: IUser[]) =>
         .min(2, {error: "В игре должно быть хотя бы 2 игрока"})
         .max(5, {error: "В игре должно быть не больше 5 игроков"});
 
-const checkbox = z
-    .any()
-    .refine(val => val === undefined || val === 'on')
-    .transform<boolean>(val => val === 'on');
-
 export const createGameValidator = (users: IUser[]) =>
     z.object({
         name: z.string(),
         players: gamePlayersValidator(users),
 
-        isPublic: checkbox,
-        isDebug: checkbox,
-        withTimeControl: checkbox,
+        isPublic: createCheckboxValidator(),
+        isDebug: createCheckboxValidator(),
+        withTimeControl: createCheckboxValidator(),
 
-        loseWhenTimeout: checkbox.optional(),
+        loseWhenTimeout: createCheckboxValidator().optional(),
         startTime: z.coerce.number().nonnegative().optional(),
         defaultTimeIncrease: z.coerce.number().nonnegative().optional(),
         fightTimeIncrease: z.coerce.number().nonnegative().optional(),

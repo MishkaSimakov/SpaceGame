@@ -1,5 +1,5 @@
 import {isEffect, SagaGenerator} from "../Effects";
-import {err, ok, Result} from "@src/helpers/Result";
+import {err, ok, Result} from "@common/helpers/Result";
 import {Environment} from "../Environment";
 import {Continuation} from "../Continuation";
 import {effectContinuationsMap} from "./EffectContinuationsMap";

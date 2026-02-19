@@ -3,7 +3,7 @@ import {Rectangle} from "../engine/shapes/Rectangle";
 import {Text} from "../engine/shapes/Text";
 import {Group} from "../engine/Group";
 import {SIZES} from "../constants";
-import Color from "../Color";
+import Color from "@common/helpers/Color";
 import Scene from "../engine/Scene";
 import * as assert from "assert"
 import {CardGetters} from "@common/getters/Card";
@@ -13,7 +13,7 @@ import {Line} from "../engine/shapes/Line";
 type PlaceholderInfo = { shape: Rectangle, card: { cardType: "placeholder" } };
 
 export class HandManager {
-    private readonly maxVisibleCards = 2;
+    private readonly maxVisibleCards = 5;
     private readonly cardSize: number;
     private readonly spaceBetween: number;
 

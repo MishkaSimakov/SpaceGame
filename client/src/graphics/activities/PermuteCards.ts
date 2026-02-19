@@ -4,7 +4,7 @@ import Controls from "../scenes/Controls";
 import {Group} from "../engine/Group";
 import {COLORS} from "../constants";
 import {Rectangle} from "../engine/shapes/Rectangle";
-import Color from "../Color";
+import Color from "@common/helpers/Color";
 import {Text} from "../engine/shapes/Text";
 import {Activity} from "./Activity";
 import {CardShape} from "../shapes/CardShape";

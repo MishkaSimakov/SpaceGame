@@ -4,7 +4,7 @@ import {Group} from "./engine/Group";
 import {Text} from "./engine/shapes/Text";
 import {Rectangle} from "./engine/shapes/Rectangle";
 import Modal from "./Modal";
-import Color from "./Color";
+import Color from "@common/helpers/Color";
 
 export default class PauseDrawer {
     group: Group;

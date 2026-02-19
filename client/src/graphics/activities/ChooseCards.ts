@@ -3,7 +3,7 @@ import {Card} from "@common/Types";
 import {Group} from "../engine/Group";
 import {Rectangle} from "../engine/shapes/Rectangle";
 import {Text} from "../engine/shapes/Text";
-import Color from "../Color";
+import Color from "@common/helpers/Color";
 import {CardShape} from "../shapes/CardShape";
 import Controls from "../scenes/Controls";
 import {Activity} from "./Activity";

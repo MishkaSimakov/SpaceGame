@@ -3,7 +3,7 @@ import {CardGetters} from "@common/getters/Card";
 import {Observable} from "@common/Observable";
 
 import {BoundaryType, CountBoundary} from "../CountBoundary";
-import Color from "../Color";
+import Color from "@common/helpers/Color";
 import {CardInfo} from "./CardInfo";
 
 import * as assert from "assert"

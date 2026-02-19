@@ -7,7 +7,7 @@ import {GetSet} from "../engine/types";
 import {Factory} from "../engine/Factory";
 import {Rectangle} from "../engine/shapes/Rectangle";
 import {OtherPlayer} from "@common/Types";
-import Color from "../Color";
+import Color from "@common/helpers/Color";
 
 export type PlayerStatus = {
     online: boolean,

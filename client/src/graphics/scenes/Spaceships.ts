@@ -1,14 +1,12 @@
-import {PlayerId, Vector2} from "@common/Types";
-import {getDistance} from "@common/VectorUtils";
+import {Vector2} from "@common/Types";
+import {getDistance} from "@common/helpers/Vector";
 
 import Game from "../../Game";
 import Scene from "../engine/Scene";
 import {DD} from "../engine/Drag";
-import {Spaceship as SpaceshipShape} from "../shapes/Spaceship";
 import {SIZES} from "../constants";
 
 export default class Spaceships extends Scene {
-    spaceshipShapes: Record<PlayerId, SpaceshipShape> = {};
     gameManager: Game;
     spaceshipsCardSize: number;
 

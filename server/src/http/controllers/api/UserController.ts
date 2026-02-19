@@ -1,6 +1,7 @@
 import {Request, Response} from "express";
 import {User} from "../../../database/entity/user";
 import bcrypt from "bcrypt";
+import {defaultUserSettings} from "@common/UserSettings";
 
 export const login = async (req: Request, res: Response) => {
     try {
@@ -55,6 +56,7 @@ export const register = async (req: Request, res: Response) => {
         user.login = name;
         user.password = await User.createHashedPassword(password);
         user.isBot = true;
+        user.settings = defaultUserSettings;
 
         await user.save();
 

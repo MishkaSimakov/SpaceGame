@@ -2,6 +2,7 @@ import {DataSource} from "typeorm";
 import {User} from "./entity/user";
 import {Game} from "./entity/game";
 import * as process from "node:process";
+import {defaultUserSettings} from "@common/UserSettings";
 
 export default class DatabaseManager {
     constructor() {
@@ -47,6 +48,8 @@ export default class DatabaseManager {
             user.login = name;
             user.password = await User.createHashedPassword(name);
             user.isBot = false;
+            user.settings = defaultUserSettings;
+
             await user.save();
 
             console.log(`🤥 fake user '${name}' generated`);

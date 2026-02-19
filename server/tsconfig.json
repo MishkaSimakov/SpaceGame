@@ -4,13 +4,13 @@
     "outDir": "dist",
     "target": "es2024",
     "module": "node16",
+    "moduleResolution": "node16",
     "lib": [
       "esnext"
     ],
     "esModuleInterop": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "moduleResolution": "node16",
     "resolveJsonModule": true,
     "inlineSourceMap": true,
     "strict": true,

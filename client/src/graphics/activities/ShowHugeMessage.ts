@@ -1,7 +1,7 @@
 import {Activity} from "./Activity";
 import Controls from "../scenes/Controls";
 import {Rectangle} from "../engine/shapes/Rectangle";
-import Color from "../Color";
+import Color from "@common/helpers/Color";
 import {Text} from "../engine/shapes/Text";
 
 export class ShowHugeMessageActivity extends Activity {

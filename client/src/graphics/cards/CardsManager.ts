@@ -1,6 +1,6 @@
 import {ModuleCard, ModuleType, OtherPlayer, Player, PlayerId, Spaceship, Vector2} from "@common/Types";
 import {ModuleGetters} from "@common/getters/Module";
-import {getDistance} from "@common/VectorUtils";
+import {getDistance} from "@common/helpers/Vector";
 import {CardGetters} from "@common/getters/Card";
 import {SpaceshipModifiers} from "@common/modifiers/Spaceship";
 import {directions, opposites, SpaceshipGetters} from "@common/getters/Spaceship";
@@ -15,7 +15,7 @@ import * as assert from "../../assert";
 import {DD} from "../engine/Drag";
 import {getSpaceshipOutline} from "./ShipOutline";
 import {Line} from "../engine/shapes/Line";
-import Color from "../Color";
+import Color from "@common/helpers/Color";
 import {Node} from "../engine/Node";
 import {CountBoundary} from "../CountBoundary";
 import {ChooseModuleManager} from "./ChooseModuleManager";

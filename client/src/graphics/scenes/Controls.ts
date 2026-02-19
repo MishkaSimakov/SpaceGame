@@ -5,7 +5,7 @@ import Game from "../../Game";
 import {COLORS} from "../constants";
 import TopBarDrawer from "../topbar/TopBarDrawer";
 import Scene from "../engine/Scene";
-import Color from "../Color";
+import Color from "@common/helpers/Color";
 import {Boundary, BoundaryType} from "../CountBoundary";
 import PauseDrawer from "../PauseDrawer";
 

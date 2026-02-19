@@ -1,7 +1,7 @@
 import {ISocketsManager} from "@src/game/interfaces/ISocketsManager";
 import {PlayerId} from "@common/Types";
 import {EmitSettings} from "@src/game/io/SocketsManager";
-import {deferred} from "@src/helpers/Deferred";
+import {deferred} from "@common/helpers/Deferred";
 
 type EmitListener = (player: PlayerId, settings: EmitSettings, event: string, ...args: any[]) => void;
 

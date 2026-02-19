@@ -10,7 +10,7 @@ import path from "path";
 import serveStatic from "serve-static";
 
 // @ts-ignore
-import edge from "express-edge";
+import {Edge} from "edge.js";
 import cookieParser from 'cookie-parser';
 import {Express} from "express";
 import session from "express-session";
@@ -24,6 +24,8 @@ export default class ServerManager {
     httpServer?: HTTPServer;
     io?: SocketServer;
 
+    edge?: Edge;
+
     staticBasePath: string;
 
     constructor() {
@@ -32,6 +34,8 @@ export default class ServerManager {
 
     initServer() {
         this.server = express();
+        this.edge = Edge.create();
+        this.edge.mount('default', `${__dirname}/../views`);
 
         assert.ok(process.env.SESSION_SECRET_KEY, "Secret key must be set in .env file");
         this.server.use(session({
@@ -40,10 +44,14 @@ export default class ServerManager {
             saveUninitialized: true
         }));
         this.server.use(flash());
-
         this.server.use(cookieParser());
-        this.server.use(edge);
-        this.server.set('views', `${__dirname}/../views`);
+        this.server.use((req, res, next) => {
+            (res as any).view = this.edge!.createRenderer();
+
+            next();
+        });
+
+
         this.server.use(cors());
         this.server.use(serveStatic(this.staticBasePath));
         this.server.use(express.urlencoded({extended: false}));

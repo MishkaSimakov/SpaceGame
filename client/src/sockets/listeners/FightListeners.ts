@@ -8,7 +8,7 @@ import {RunawayType, Vector2} from "@common/Types";
 import {ModuleGetters} from "@common/getters/Module";
 
 import {COLORS} from "../../graphics/constants";
-import Color from "../../graphics/Color";
+import Color from "@common/helpers/Color";
 import {ListenersContainer} from "./ListenersContainer";
 import {Boundary} from "../../graphics/CountBoundary";
 

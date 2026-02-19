@@ -11,6 +11,7 @@ import {defaultSettings, defaultTimeControlSettings} from "../../game/DefaultSet
 import {FileActionsStorage} from "@src/game/FileActionsStorage";
 import {createGameValidator} from "@src/http/validation/CreateGameValidator";
 import DatabaseManager from "@src/database/DatabaseManager";
+import {render} from "@src/helpers/Render";
 
 export const create = async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -82,7 +83,7 @@ export const joinGame = async (req: AuthenticatedGameRequest, res: Response) => 
         return res.redirect('/');
     }
 
-    return res.render('game/game');
+    return render(res, 'game/game');
 };
 
 export const showCreatePage = async (req: AuthenticatedRequest, res: Response) => {
@@ -90,7 +91,7 @@ export const showCreatePage = async (req: AuthenticatedRequest, res: Response) =
         .select(['id', 'login'])
         .getRawMany();
 
-    return res.render('game/create', {
+    return render(res, 'game/create', {
         users: users,
         defaultSettings,
         defaultTimeControlSettings
@@ -98,7 +99,7 @@ export const showCreatePage = async (req: AuthenticatedRequest, res: Response) =
 }
 
 export const showRules = async (req: Request, res: Response) => {
-    return res.render('game/rules');
+    return render(res, 'game/rules');
 }
 
 export const showStatusPage = async (req: AuthenticatedGameRequest, res: Response) => {
@@ -118,7 +119,7 @@ export const showStatusPage = async (req: AuthenticatedGameRequest, res: Respons
         return res.redirect('/');
     }
 
-    return res.render('game/status', {
+    return render(res, 'game/status', {
         game: {
             ...game,
             settings: game.settings,
@@ -173,7 +174,6 @@ export const createGame = async (req: AuthenticatedRequest, res: Response) => {
 
         return res.redirect(`/game/${gameId}`);
     } catch (err) {
-        console.log(err);
         return res.redirect('/game/create');
     }
 };
