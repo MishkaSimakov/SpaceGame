@@ -90,6 +90,12 @@ export class HandManager {
         this.update();
     }
 
+    removeCard(info: CardInfo) {
+        this.cards = this.cards.filter(c => c !== info);
+
+        this.update();
+    }
+
     replacePlaceholderWithCard(info: CardInfo) {
         info.shape.moveTo(this.handContents);
 
@@ -247,7 +253,7 @@ export class HandManager {
         });
     }
 
-    private getCardIndex(info: CardInfo): number | undefined {
+    getCardIndex(info: CardInfo): number | undefined {
         return this.cards.findIndex(o =>
             o.card.cardType !== "placeholder" && CardGetters.id(o.card) === CardGetters.id(info.card)
         );

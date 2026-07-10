@@ -10,6 +10,7 @@ export default class Color {
 
     static BLACK = Color.fromRGBA(0, 0, 0);
     static GREY = Color.fromRGBA(128, 128, 128);
+    static LIGHT_GREY = Color.fromRGBA(200, 200, 200);
     static WHITE = Color.fromRGBA(255, 255, 255);
     static YELLOW = Color.fromHex('#ffa42e');
 

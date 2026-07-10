@@ -1,4 +1,4 @@
-import {ModuleCard, ModuleType, OtherPlayer, Player, PlayerId, Spaceship, Vector2} from "@common/Types";
+import {Card, ModuleCard, ModuleType, OtherPlayer, Player, PlayerId, Spaceship, Vector2} from "@common/Types";
 import {ModuleGetters} from "@common/getters/Module";
 import {getDistance} from "@common/helpers/Vector";
 import {CardGetters} from "@common/getters/Card";
@@ -6,7 +6,7 @@ import {SpaceshipModifiers} from "@common/modifiers/Spaceship";
 import {directions, opposites, SpaceshipGetters} from "@common/getters/Spaceship";
 
 import SpaceshipsScene from "../scenes/Spaceships";
-import {CardInfo} from "./CardInfo";
+import {CardInfo, CardLocation} from "./CardInfo";
 import {Chunk} from "./Chunk";
 import {HandManager} from "./HandManager";
 import Scene from "../engine/Scene";
@@ -22,21 +22,6 @@ import {ChooseModuleManager} from "./ChooseModuleManager";
 import {CardEvents} from "./CardEvents";
 
 type ConnectionPoint = { chunk: Chunk, spaceship: Spaceship, offset: Vector2 };
-
-function addPointerHoldEvent(node: Node, duration: number) {
-    let timeoutHandle: ReturnType<typeof setTimeout> | undefined = undefined;
-
-    node.on('pointerdown', (evt) => {
-        timeoutHandle = setTimeout(() => {
-            node.fire('pointerhold', evt);
-        }, duration);
-    });
-
-    node.on('pointerup pointerleave dragstart dragend', () => {
-        clearTimeout(timeoutHandle);
-    });
-}
-
 
 function mergeSpaceships(...parts: { spaceship: Spaceship, offset: Vector2 }[]): Spaceship {
     const result: ModuleCard[] = [];
@@ -64,6 +49,18 @@ type DragState = {
     offset: Vector2,
 };
 
+type PersistentState = {
+    cards: {
+        id: number,
+        location: { type: "hand", index: number } | { type: "chunk", chunk: number, position: Vector2 },
+        rotation: number
+    }[],
+    chunks: {
+        position: Vector2,
+        owner: PlayerId
+    }[]
+};
+
 export class CardsManager {
     private readonly cardSize: number;
 
@@ -76,6 +73,8 @@ export class CardsManager {
     private readonly closeConnectDistance = 0.1;
     private readonly selectChunkDuration = 500;
     private readonly outlineColor = Color.fromHex("#ffb703");
+
+    private readonly gameId: string;
 
     private spaceshipsScene: SpaceshipsScene;
     private handScene: Scene;
@@ -92,7 +91,11 @@ export class CardsManager {
     private dragState: DragState | undefined = undefined;
     private selectedChunk: Chunk | undefined = undefined;
 
-    constructor(spaceshipsScene: SpaceshipsScene, handScene: Scene) {
+    private isFirstSetData = true;
+
+    constructor(gameId: string, spaceshipsScene: SpaceshipsScene, handScene: Scene) {
+        this.gameId = gameId;
+
         this.spaceshipsScene = spaceshipsScene;
         this.handScene = handScene;
 
@@ -138,6 +141,19 @@ export class CardsManager {
     setData(thisPlayer: Player, otherPlayers: OtherPlayer[]) {
         this.thisPlayer = thisPlayer.id;
 
+        if (this.isFirstSetData) {
+            this.isFirstSetData = false;
+
+            const cards = [
+                ...thisPlayer.hand,
+                ...thisPlayer.spaceship.modules.map(ModuleGetters.asCard),
+                ...otherPlayers.flatMap(p => p.spaceship.modules).map(ModuleGetters.asCard)
+            ];
+
+            const isSuccessful = this.tryRestoreState(cards);
+            assert.ok(isSuccessful);
+        }
+
         // New data must be reconciled with old data. Strategy is the following:
         // go through every card in new data and update current state according to new card state
         // all cards that aren't present in new state must be destroyed. visitedCards keeps track of cards that
@@ -156,126 +172,98 @@ export class CardsManager {
             dragCard.shape.destroy();
         }
 
-        const dragHandCard = this.cards.find(c => c.location.type === "dragHand");
-        if (dragHandCard && !thisPlayersCards.includes(CardGetters.id(dragHandCard.card))) {
-            this.cards = this.cards.filter(c => c !== dragHandCard);
-            this.handManager.removePlaceholder();
-            dragHandCard.shape.destroy();
-        }
-
         // now in spaceships of other players every card can be only in "chunk" or "hand" state
 
         for (const player of otherPlayers) {
-            let chunk = this.chunks.find(c => c.owner === player.id);
-
-            if (!chunk) {
-                chunk = this.createEmptyChunk(player.id, this.allocateSpaceshipPosition());
-            }
-
+            const chunk = this.getOrCreateChunk(player.id, this.allocateSpaceshipPosition());
             chunk.activatedProtector = structuredClone(player.spaceship.activatedProtector);
 
             for (const module of player.spaceship.modules) {
-                let info = this.cards.find(c => CardGetters.id(c.card) === module.id);
+                visitedCards.push(module.id);
+
+                const info = this.cards.find(c => CardGetters.id(c.card) === module.id);
 
                 if (!info) {
-                    const shape = new CardShape({
-                        card: ModuleGetters.asCard(module),
-                        size: this.cardSize,
-                        originY: 0,
-                        originX: 0,
+                    this.createCard(ModuleGetters.asCard(module), {type: "chunk", chunk});
+                } else {
+                    if (info.location.type === "chunk") {
+                        // do nothing
+                    } else {
+                        this.handManager.removeCard(info);
+                    }
 
-                        x: module.x * this.cardSize,
-                        y: module.y * this.cardSize
-                    });
-
-                    chunk.group.add(shape);
-
-                    info = {
-                        card: ModuleGetters.asCard(module),
-                        shape: shape,
-                        location: {type: "chunk", chunk}
-                    };
-
-                    this.cards.push(info);
-                    this.attachCardEvents(info);
-                } else if (info.location.type === "chunk") {
-                    info.shape.moveTo(chunk.group);
-
-                    info.location.chunk = chunk;
-                    info = {
-                        card: ModuleGetters.asCard(module),
-                        shape: info.shape,
-                        location: {type: "chunk", chunk}
-                    };
-
-                    this.attachCardEvents(info);
+                    info.card = ModuleGetters.asCard(module);
+                    this.addCardToChunk(info, chunk);
                 }
             }
         }
 
         for (const card of thisPlayer.hand) {
-            let info = this.cards.find(c => CardGetters.id(c.card) === CardGetters.id(card));
+            visitedCards.push(CardGetters.id(card));
+
+            const info = this.cards.find(c => CardGetters.id(c.card) === CardGetters.id(card));
 
             if (!info) {
-                const shape = new CardShape({
-                    card: card,
-                    size: this.cardSize,
-                    originY: 0,
-                    originX: 0,
-                });
-
-                info = {
-                    card: card,
-                    shape: shape,
-                    location: {type: "hand"}
-                };
-
-                this.handManager.addCardToScene(info);
-                this.handManager.pushCardToHand(info);
-
-                this.cards.push(info);
-                this.attachCardEvents(info);
+                this.createCard(card, {type: "hand"});
             } else {
-                // TODO
+                if (card.cardType === "module") {
+                    card.module.rotation = info.card.cardType === "module" ? info.card.module.rotation : 0;
+                }
+
+                info.card = card;
+
+                if (info.location.type === "chunk" && !this.isChunkModifiable(info.location.chunk)) {
+                    info.location = {type: "hand"}
+
+                    info.shape.remove();
+                    this.handManager.addCardToScene(info);
+                    this.handManager.pushCardToHand(info);
+                }
             }
         }
 
-        let chunk = this.chunks.find(c => c.owner === this.thisPlayer);
-
-        if (!chunk) {
-            chunk = this.createEmptyChunk(thisPlayer.id, this.allocateSpaceshipPosition());
-        }
-
+        const chunk = this.getOrCreateChunk(this.thisPlayer, this.allocateSpaceshipPosition());
         chunk.activatedProtector = structuredClone(thisPlayer.spaceship.activatedProtector);
 
         for (const module of thisPlayer.spaceship.modules) {
-            let info = this.cards.find(c => CardGetters.id(c.card) === module.id);
+            visitedCards.push(module.id);
+
+            const info = this.cards.find(c => CardGetters.id(c.card) === module.id);
 
             if (!info) {
-                const shape = new CardShape({
-                    card: ModuleGetters.asCard(module),
-                    size: this.cardSize,
-                    originY: 0,
-                    originX: 0,
-
-                    x: module.x * this.cardSize,
-                    y: module.y * this.cardSize
-                });
-
-                chunk.group.add(shape);
-
-                info = {
-                    card: ModuleGetters.asCard(module),
-                    shape: shape,
-                    location: {type: "chunk", chunk}
-                };
-
-                this.cards.push(info);
-                this.attachCardEvents(info);
+                this.createCard(ModuleGetters.asCard(module), {type: "chunk", chunk});
             } else {
-                // TODO
+
             }
         }
+
+        // remove unvisited cards
+        for (const info of this.cards) {
+            if (visitedCards.includes(CardGetters.id(info.card))) {
+                continue;
+            }
+
+            if (info.location.type === "hand") {
+                this.handManager.removeCard(info);
+            } else if (info.location.type === "chunk") {
+                this.removeCardFromChunk(info);
+            }
+
+            info.shape.destroy();
+            this.cards = this.cards.filter(c => c !== info);
+        }
+
+        // update chunks
+        const chunks = Array.from(this.chunks);
+        for (const chunk of chunks) {
+            this.updateChunkConnectedness(chunk);
+        }
+
+        for (const chunk of this.chunks) {
+            this.updateModulesDisabledState(this.getChunkModules(chunk));
+        }
+
+        this.storeState();
     }
 
     canRebuildSpaceship(value: boolean) {
@@ -365,6 +353,8 @@ export class CardsManager {
                 chooseManager.onClick(info);
             }
         }
+
+        this.storeState();
     }
 
     onChunkSelect(chunk: Chunk) {
@@ -614,6 +604,8 @@ export class CardsManager {
 
         this.selectedChunk = undefined;
         this.dragState = undefined;
+
+        this.storeState();
     }
 
     // returns dragged shape absolute position
@@ -640,6 +632,10 @@ export class CardsManager {
 
         info.location = {type: "drag"};
 
+        this.updateChunkConnectedness(chunk);
+    }
+
+    private updateChunkConnectedness(chunk: Chunk) {
         const spaceship = this.getChunkSpaceship(chunk);
 
         if (spaceship.modules.length === 0) {
@@ -913,6 +909,10 @@ export class CardsManager {
         this.handManager.resize();
     }
 
+    private getOrCreateChunk(owner: PlayerId, position: Vector2): Chunk {
+        return this.chunks.find(c => c.owner === owner) ?? this.createEmptyChunk(owner, position);
+    }
+
     private createEmptyChunk(owner: PlayerId, position: Vector2): Chunk {
         const chunk = {
             owner: owner,
@@ -924,5 +924,130 @@ export class CardsManager {
         this.chunks.push(chunk);
 
         return chunk;
+    }
+
+    private createCard(card: Card, location: CardLocation): CardInfo {
+        const shape = new CardShape({
+            card: card,
+            size: this.cardSize,
+            originY: 0,
+            originX: 0,
+        });
+
+        const info = {card, shape, location};
+
+        if (location.type === "chunk") {
+            assert.ok(card.cardType === "module");
+
+            location.chunk.group.add(shape);
+            shape.setPosition({
+                x: card.module.x * this.cardSize,
+                y: card.module.y * this.cardSize
+            });
+        } else if (location.type === "hand") {
+            this.handManager.addCardToScene(info);
+            this.handManager.pushCardToHand(info);
+        }
+
+        this.cards.push(info);
+        this.attachCardEvents(info);
+
+        return info;
+    }
+
+    private storeState() {
+        const state: PersistentState = {
+            cards: this.cards.map(info => {
+                if (info.card.cardType === "event") {
+                    assert.ok(info.location.type === "hand");
+
+                    return {
+                        id: info.card.event.id,
+                        location: {type: "hand", index: this.handManager.getCardIndex(info)},
+                        rotation: 0
+                    };
+                } else {
+                    const module = info.card.module;
+
+                    assert.ok(info.location.type === "hand" || info.location.type === "chunk");
+
+                    let location: PersistentState["cards"][0]["location"];
+                    if (info.location.type === "chunk") {
+                        const chunk = info.location.chunk;
+
+                        location = {
+                            type: "chunk",
+                            chunk: this.chunks.findIndex(c => c === chunk),
+                            position: ModuleGetters.position(module)
+                        };
+                    } else {
+                        location = {
+                            type: "hand",
+                            index: this.handManager.getCardIndex(info)!
+                        };
+                    }
+
+                    return {
+                        id: module.id,
+                        rotation: module.rotation,
+                        location
+                    };
+                }
+            }),
+            chunks: this.chunks.map((chunk, index) => ({
+                position: chunk.group.getPosition(),
+                owner: chunk.owner
+            }))
+        };
+
+        localStorage.setItem(this.getStorageKey(), JSON.stringify(state));
+    }
+
+    private tryRestoreState(cards: Card[]): boolean {
+        assert.ok(this.chunks.length === 0 && this.cards.length === 0);
+
+        const stateString = localStorage.getItem(this.getStorageKey());
+
+        if (!stateString) {
+            return true;
+        }
+
+        const state = JSON.parse(stateString) as PersistentState;
+        console.log(state);
+
+        for (const chunk of state.chunks) {
+            this.createEmptyChunk(chunk.owner, chunk.position);
+        }
+
+        for (const info of state.cards) {
+            const card = cards.find(c => CardGetters.id(c) === info.id);
+
+            if (!card) {
+                continue;
+            }
+
+            if (card.cardType === "module") {
+                card.module.rotation = info.rotation;
+            }
+
+            if (info.location.type === "chunk") {
+                if (this.chunks.length <= info.location.chunk || card.cardType !== "module") {
+                    return false;
+                }
+
+                card.module.x = info.location.position.x;
+                card.module.y = info.location.position.y;
+
+                this.createCard(card, {type: "chunk", chunk: this.chunks[info.location.chunk]});
+            } else {
+                this.createCard(card, {type: "hand"});
+            }
+        }
+
+        return true;
+    }
+
+    private getStorageKey() {
+        return `spaceships//cardsManager/${this.gameId}`;
     }
 }

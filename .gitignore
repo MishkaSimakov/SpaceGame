@@ -5,6 +5,8 @@
 **/*.sublime-project
 **/*.sublime-workspace
 
-.context
+CLAUDE.md
+.claude
+wiki
 
 **/node_modules/

@@ -196,7 +196,7 @@ export class ChooseCardsActivity extends Activity {
         } else {
             this.buttonShape.setAttrs({
                 text: validationResult.error,
-                fill: COLORS.TEXT_DANGER
+                fill: COLORS.TEXT_DANGER.toString()
             });
         }
     }
