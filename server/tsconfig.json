@@ -12,8 +12,9 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "resolveJsonModule": true,
-    "inlineSourceMap": true,
     "strict": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
     "paths": {
       "@common/*": [
         "../common/*"

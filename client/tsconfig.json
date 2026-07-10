@@ -3,6 +3,7 @@
     "target": "es2021",
     "lib": ["es2021", "dom"],
     "moduleResolution": "node",
+    "skipLibCheck": true,
     "baseUrl": "src",
 
     "paths": {
@@ -12,8 +13,7 @@
     }
   },
   "include": [
-    "./src/**/*",
-    "node_modules/phaser/scripts/tsgen/test/src/game.ts"
+    "./src/**/*"
   ],
   "rootDirs": [
     ".",

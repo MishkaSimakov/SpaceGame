@@ -51,6 +51,8 @@
   },
   "scripts": {
     "serve": "nodemon -r tsconfig-paths/register src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "typecheck:src": "tsc --noEmit -p tsconfig.src.json",
     "lint": "npx eslint .",
     "test": "uvu -r ts-node/register -r tsconfig-paths/register",
     "test:coverage": "c8 --include=src npm test",

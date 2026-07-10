@@ -1,6 +1,7 @@
 {
   "name": "spacegame-client",
   "scripts": {
+    "typecheck": "tsc --noEmit",
     "dev": "rollup --config rollup.config.dev.js",
     "build": "rollup --config rollup.config.dev.js",
     "watch": "rollup --watch --config rollup.config.dev.js"
