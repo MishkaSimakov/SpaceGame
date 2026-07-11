@@ -2,7 +2,7 @@
   "name": "spacegame-client",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
+    "test": "tsc --noEmit && vitest run",
     "test:watch": "vitest",
     "dev": "rollup --config rollup.config.dev.js",
     "build": "rollup --config rollup.config.dev.js",
