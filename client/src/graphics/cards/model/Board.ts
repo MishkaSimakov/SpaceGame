@@ -275,6 +275,19 @@ export class Board {
         info.location = {type: "chunk", chunk: chunkId};
     }
 
+    /**
+     * The player picking a card up off the field.
+     *
+     * Unlike `removeCardFromChunk`, which reconcile uses to take away whatever the server says is
+     * gone, this is a *move* and so it obeys the rules: the command module cannot be picked up, and
+     * neither can anything in a chunk the player may not rebuild.
+     */
+    liftCard(id: CardId) {
+        assert.ok(this.canDetachCard(id), "this card cannot be taken off the field");
+
+        this.removeCardFromChunk(id);
+    }
+
     /** Lifts a card out of its chunk into `drag`, splitting the chunk if that disconnected it. */
     removeCardFromChunk(id: CardId) {
         const info = this.cards.get(id);
@@ -357,8 +370,18 @@ export class Board {
         return this.getModifiableChunks(dragged).map(c => this.getChunkView(c.id));
     }
 
-    /** Which chunks `dragged` should snap onto right now, given where it currently sits. */
+    /**
+     * Which chunks `dragged` should snap onto right now, given where it currently sits.
+     *
+     * A chunk the player may not rebuild never snaps onto anything. Any chunk can be *moved* — where
+     * it sits is only how this player has arranged their screen — but joining it to another is a
+     * rebuild, and an opponent's ship is not theirs to rebuild.
+     */
     findConnectionPoints(dragged: ChunkId): ConnectionPoint[] {
+        if (!this.isChunkModifiable(dragged)) {
+            return [];
+        }
+
         return getConnectionPoints(this.getChunkView(dragged), this.connectionCandidates(dragged));
     }
 
@@ -394,7 +417,7 @@ export class Board {
     findAutorotateTarget(dragged: ChunkId): { rotation: number } | undefined {
         const modules = this.getChunkModules(dragged);
 
-        if (modules.length !== 1) {
+        if (modules.length !== 1 || !this.isChunkModifiable(dragged)) {
             return undefined;
         }
 

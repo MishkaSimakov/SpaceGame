@@ -204,6 +204,28 @@ export class CardShape extends Group<CardConfig> {
         }
     }
 
+    /**
+     * Re-reads the card's server-owned data: its health, and the stats it prints.
+     *
+     * A card's identity never changes within a game, so its name, connectors and layout are fixed at
+     * construction. Its health is not — and without this a module damaged in combat goes on showing
+     * the health, and the colour, it had when it was drawn.
+     *
+     * NB not `setCard`: `Node.setAttrs` routes a config key to `set` + Capitalised(key), so a method
+     * of that name would be called from the constructor's `super(config)` — before these shapes
+     * exist.
+     */
+    updateCard(card: Card) {
+        this.setAttr('card', card);
+
+        if (card.cardType !== "module") {
+            return;
+        }
+
+        this._background.fill(getModuleColor(card.module.health, card.module.totalHealth).toString());
+        this._values?.text(this.getCharacteristicsString(card));
+    }
+
     rotateCard(rotation: number, duration: number) {
         if (duration > 0) {
             this._rotationGroup.animate({
