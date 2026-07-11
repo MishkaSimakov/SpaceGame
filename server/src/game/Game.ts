@@ -7,7 +7,6 @@ import * as Actions from "@common/Actions";
 import {addTimeRecord, reducerUpdatedState, shuffleResult, throwDiceResult, timeResult} from "@common/Actions";
 import {Action, constructAction, isAction} from "@common/ActionsHelpers";
 
-import ActionsBus from "./ActionsBus";
 import {getDTO} from "./mappers/GameToGameForPlayerMapper";
 import {gameSaga} from "./sagas/Main";
 import {isReducerName, reducers} from "./reducers/Main";
@@ -59,7 +58,6 @@ export default class Game {
 
     randomizer: Randomizer;
     state: GameState;
-    bus: ActionsBus;
     sockets: ISocketsManager;
     storage: IActionsStorage;
     playerGameLog: Message[] = [];
@@ -95,7 +93,6 @@ export default class Game {
         this.state = getInitialGameState(users, settings);
 
         this.randomizer = new Randomizer(settings.seed);
-        this.bus = new ActionsBus();
         this.sockets = sockets;
         this.storage = storage;
 
