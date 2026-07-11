@@ -1,22 +1,16 @@
-import {test} from "uvu";
-import * as assert from "uvu/assert";
+import {expect, test} from "vitest";
 
 import {EventType} from "@common/Types";
 
-import ActionsBus from "../../src/game/ActionsBus";
 import {beforeTurn} from "@src/game/sagas/phases/BeforeTurn";
-import {attachReducers, fakeGameState} from "./Utils";
+import {attachReducers, fakeGameState, TestBus} from "./Utils";
 import {choosePlayerForAttackResponse} from "@common/Actions";
 import {runSaga} from "@src/game/sagas/runner/RunSaga";
-import {Channel} from "@src/game/sagas/runner/Channel";
-import {deactivateSignal} from "@src/game/sagas/runner/Signals";
-import {GameInput} from "@src/game/sagas/runner/Environment";
 
 
 test('attackLaterEventCard', async () => {
     const state = fakeGameState(2);
-    const bus = new ActionsBus();
-    const input: GameInput = new Channel();
+    const bus = new TestBus(state);
 
     // fake state
     const cardIndex = state.stack.event.findIndex(card => card.type === EventType.SaveCardAndThenAttack);
@@ -38,37 +32,37 @@ test('attackLaterEventCard', async () => {
     bus.on("choosePlayerForAttackRequest", () => {
         sequence.push("choose victim");
 
-        input.put(choosePlayerForAttackResponse(1));
+        bus.put(choosePlayerForAttackResponse(1));
     });
 
     bus.on("popCardsFromHand", (action) => {
         sequence.push("pop card");
 
-        assert.equal(action.payload.player, 0);
-        assert.equal(action.payload.indexes, [0]);
+        expect(action.payload.player).toEqual(0);
+        expect(action.payload.indexes).toEqual([0]);
     });
 
     bus.on("pushCardsToDiscard", (action) => {
         sequence.push("discard card");
 
-        assert.equal(action.payload.cards.length, 1);
+        expect(action.payload.cards.length).toEqual(1);
         const card = action.payload.cards[0];
-        assert.ok(card.cardType === "event");
-        assert.equal(card.event.type, EventType.SaveCardAndThenAttack);
+        if (card.cardType !== "event") {
+            expect.unreachable("discarded card must be an event card");
+        }
+        expect(card.event.type).toEqual(EventType.SaveCardAndThenAttack);
     });
 
     bus.on("beginFight", (action) => {
         sequence.push("begin fight");
 
-        assert.equal(action.payload.attacker, 0);
-        assert.equal(action.payload.victim, 1);
+        expect(action.payload.attacker).toEqual(0);
+        expect(action.payload.victim).toEqual(1);
 
         // no one can attack => fight ends => await returns
     });
 
-    await runSaga({state, output: bus, input}, beforeTurn);
+    await runSaga(bus.env, beforeTurn);
 
-    assert.equal(sequence, ["choose victim", "pop card", "discard card", "begin fight"]);
+    expect(sequence).toEqual(["choose victim", "pop card", "discard card", "begin fight"]);
 });
-
-test.run();

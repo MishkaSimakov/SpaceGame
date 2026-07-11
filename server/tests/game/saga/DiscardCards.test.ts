@@ -1,21 +1,17 @@
-import {test} from "uvu";
-import * as assert from "uvu/assert";
+import {expect, test} from "vitest";
 
 import {ModuleGetters} from "@common/getters/Module";
 import {discardCardsResponse} from "@common/Actions";
 
-import {attachReducers, fakeGameState} from "../Utils";
-import ActionsBus from "../../../src/game/ActionsBus";
 import {discardCards} from "@src/game/sagas/phases/DiscardCards";
 import {runSaga} from "@src/game/sagas/runner/RunSaga";
-import {GameInput} from "@src/game/sagas/runner/Environment";
-import {Channel} from "@src/game/sagas/runner/Channel";
+
+import {attachReducers, fakeGameState, TestBus} from "../Utils";
 
 
 test('doesntDiscardWhenNotEnoughCards', async () => {
     const state = fakeGameState(2);
     let player = state.players[0];
-    const input: GameInput = new Channel();
 
     const cardsCount = 4;
 
@@ -23,23 +19,22 @@ test('doesntDiscardWhenNotEnoughCards', async () => {
         player.hand.push(ModuleGetters.asCard(state.stack.module.pop()!));
     }
 
-    const bus = new ActionsBus();
+    const bus = new TestBus(state);
 
     bus.on('discardCardsRequest', () => {
-        assert.unreachable("player must not be asked to discard cards");
+        expect.unreachable("player must not be asked to discard cards");
     });
 
-    await runSaga({state, output: bus, input}, discardCards);
+    await runSaga(bus.env, discardCards);
 
     // test
     player = state.players[0];
 
-    assert.equal(player.hand.length, 4);
+    expect(player.hand.length).toEqual(4);
 });
 
 test('discardCardsWhenThereAreTooMany', async () => {
     const state = fakeGameState(2);
-    const input: GameInput = new Channel();
 
     let player = state.players[0];
 
@@ -51,21 +46,19 @@ test('discardCardsWhenThereAreTooMany', async () => {
 
     const expectedCards = [player.hand[0], player.hand[5]];
 
-    const bus = new ActionsBus();
+    const bus = new TestBus(state);
 
     attachReducers(bus, state);
     bus.on('discardCardsRequest', () => {
-        input.put(discardCardsResponse([1, 2, 3, 4]));
+        bus.put(discardCardsResponse([1, 2, 3, 4]));
     });
 
-    await runSaga({state, output: bus, input}, discardCards);
+    await runSaga(bus.env, discardCards);
 
     // test
     player = state.players[0];
 
-    assert.equal(player.hand.length, 2);
-    assert.equal(player.hand[0], expectedCards[0]);
-    assert.equal(player.hand[1], expectedCards[1]);
+    expect(player.hand.length).toEqual(2);
+    expect(player.hand[0]).toEqual(expectedCards[0]);
+    expect(player.hand[1]).toEqual(expectedCards[1]);
 });
-
-test.run();

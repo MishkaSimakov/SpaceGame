@@ -1,19 +1,14 @@
-import {test} from "uvu";
-import * as assert from "uvu/assert";
+import {expect, test} from "vitest";
 
-import ActionsBus from "../../../src/game/ActionsBus";
-import {attachFakeRandomizer, attachReducers, attachTerminalLogger, fakeGameState} from "../Utils";
+import {attachFakeRandomizer, attachReducers, attachTerminalLogger, fakeGameState, TestBus} from "../Utils";
 import {popOneCard} from "@src/game/sagas/components/PopCards";
 import {CardType} from "@common/Types";
 import {runSaga} from "@src/game/sagas/runner/RunSaga";
-import {GameInput} from "@src/game/sagas/runner/Environment";
-import {Channel} from "@src/game/sagas/runner/Channel";
 
 test('drawOneCard', async () => {
     for (const type of ["module", "event"] as const) {
         const state = fakeGameState(2);
-        const bus = new ActionsBus();
-        const input: GameInput = new Channel();
+        const bus = new TestBus(state);
 
         attachReducers(bus, state);
 
@@ -21,27 +16,26 @@ test('drawOneCard', async () => {
         let expectedCard: any = {cardType: type};
         expectedCard[type] = state.stack[type][modulesCount - 1];
 
-        const {diceCalls, shuffleCalls} = attachFakeRandomizer(bus, input);
+        const {diceCalls, shuffleCalls} = attachFakeRandomizer(bus);
 
         const actualCard = await runSaga(
-            {state, output: bus, input},
+            bus.env,
             popOneCard, type === "module" ? CardType.Module : CardType.Event
         );
 
-        assert.equal(actualCard, expectedCard);
+        expect(actualCard).toEqual(expectedCard);
 
-        assert.equal(state.stack[type].length, modulesCount - 1);
+        expect(state.stack[type].length).toEqual(modulesCount - 1);
 
-        assert.equal(diceCalls.value, 0);
-        assert.equal(shuffleCalls.value, 0);
+        expect(diceCalls.value).toEqual(0);
+        expect(shuffleCalls.value).toEqual(0);
     }
 });
 
 test('drawOneCardWithDiscards', async () => {
     for (const type of ["module", "event"] as const) {
         const state = fakeGameState(2);
-        const input: GameInput = new Channel();
-        const bus = new ActionsBus();
+        const bus = new TestBus(state);
 
         state.discards.event = state.stack.event;
         state.discards.module = state.stack.module;
@@ -54,20 +48,18 @@ test('drawOneCardWithDiscards', async () => {
         let expectedCard: any = {cardType: type};
         expectedCard[type] = state.discards[type][modulesCount - 1];
 
-        const {diceCalls, shuffleCalls} = attachFakeRandomizer(bus, input);
+        const {diceCalls, shuffleCalls} = attachFakeRandomizer(bus);
 
         const actualCard = await runSaga(
-            {state, output: bus, input},
+            bus.env,
             popOneCard, type === "module" ? CardType.Module : CardType.Event
         );
 
-        assert.equal(actualCard, expectedCard);
+        expect(actualCard).toEqual(expectedCard);
 
-        assert.equal(state.stack[type].length, modulesCount - 1);
+        expect(state.stack[type].length).toEqual(modulesCount - 1);
 
-        assert.equal(diceCalls.value, 0);
-        assert.equal(shuffleCalls.value, 1);
+        expect(diceCalls.value).toEqual(0);
+        expect(shuffleCalls.value).toEqual(1);
     }
 });
-
-test.run();

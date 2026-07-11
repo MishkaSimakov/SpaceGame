@@ -1,5 +1,4 @@
-import {test} from "uvu";
-import * as assert from "uvu/assert";
+import {expect, test} from "vitest";
 
 import {ModuleType, Spaceship} from "@common/Types";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
@@ -10,7 +9,7 @@ test('emptyShip', () => {
     const spaceship: Spaceship = {modules: []};
 
     const components = SpaceshipGetters.getComponents(spaceship);
-    assert.equal(components.length, 0);
+    expect(components.length).toEqual(0);
 });
 
 test('oneModule', () => {
@@ -18,11 +17,11 @@ test('oneModule', () => {
     const spaceship: Spaceship = {modules: [mainModule]};
 
     const connected = SpaceshipGetters.getConnectedModules(spaceship, mainModule);
-    assert.equal(connected, [mainModule]);
+    expect(connected).toEqual([mainModule]);
 
     const components = SpaceshipGetters.getComponents(spaceship);
-    assert.equal(components.length, 1);
-    assert.equal(components[0].modules, [mainModule]);
+    expect(components.length).toEqual(1);
+    expect(components[0].modules).toEqual([mainModule]);
 });
 
 test('connectedModules', () => {
@@ -42,7 +41,7 @@ test('connectedModules', () => {
     assertModulesEqual(connected, [mainModule, solarPanel1, solarPanel2]);
 
     const components = SpaceshipGetters.getComponents(spaceship);
-    assert.equal(components.length, 1);
+    expect(components.length).toEqual(1);
     assertModulesEqual(components[0].modules, [mainModule, solarPanel1, solarPanel2]);
 });
 
@@ -78,9 +77,7 @@ test('twoComponents', () => {
     assertModulesEqual(secondConnected, [second]);
 
     const components = SpaceshipGetters.getComponents(spaceship);
-    assert.equal(components.length, 2);
+    expect(components.length).toEqual(2);
     assertModulesEqual(components[0].modules, [first]);
     assertModulesEqual(components[1].modules, [second]);
 });
-
-test.run();

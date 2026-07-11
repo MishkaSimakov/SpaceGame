@@ -1,5 +1,4 @@
-import {test} from "uvu";
-import * as assert from "uvu/assert";
+import {expect, test} from "vitest";
 import {CancellableRaceProtocol, IParticipant} from "@src/game/CancellableRaceProtocol";
 import {deferred} from "@common/helpers/Deferred";
 
@@ -55,7 +54,7 @@ test('simpleRace', async () => {
 
     await promise;
 
-    assert.equal(sequence, ["first isReady", "second isReady", "first prepare", "second prepare", "second cancel", "first proceed"]);
+    expect(sequence).toEqual(["first isReady", "second isReady", "first prepare", "second prepare", "second cancel", "first proceed"]);
 });
 
 test('firstReady', async () => {
@@ -110,7 +109,7 @@ test('firstReady', async () => {
 
     await promise;
 
-    assert.equal(sequence, ["first isReady", "second cancel", "first proceed"]);
+    expect(sequence).toEqual(["first isReady", "second cancel", "first proceed"]);
 });
 
 test('secondReady', async () => {
@@ -165,7 +164,7 @@ test('secondReady', async () => {
 
     await promise;
 
-    assert.equal(sequence, ["first isReady", "second isReady", "first cancel", "second proceed"]);
+    expect(sequence).toEqual(["first isReady", "second isReady", "first cancel", "second proceed"]);
 });
 
 test('bothReady', async () => {
@@ -220,7 +219,7 @@ test('bothReady', async () => {
 
     await promise;
 
-    assert.equal(sequence, ["first isReady", "second cancel", "first proceed"]);
+    expect(sequence).toEqual(["first isReady", "second cancel", "first proceed"]);
 });
 
 test('throwInPrepare', async () => {
@@ -273,12 +272,12 @@ test('throwInPrepare', async () => {
 
     try {
         await promise;
-        assert.unreachable("should have thrown");
+        expect.unreachable("should have thrown");
     } catch (error) {
-        assert.equal(error, 123);
+        expect(error).toEqual(123);
     }
 
-    assert.equal(sequence, ["first isReady", "second isReady", "first prepare", "second prepare", "second cancel"]);
+    expect(sequence).toEqual(["first isReady", "second isReady", "first prepare", "second prepare", "second cancel"]);
 });
 
 test('bothResolve', async () => {
@@ -343,7 +342,5 @@ test('bothResolve', async () => {
 
     const option_1 = ["first isReady", "second isReady", "first prepare", "second prepare", "second cancel", "first proceed"];
     const option_2 = ["first isReady", "second isReady", "first prepare", "second prepare", "first cancel", "second proceed"];
-    assert.ok(areArraysEqual(sequence, option_1) || areArraysEqual(sequence, option_2));
+    expect(areArraysEqual(sequence, option_1) || areArraysEqual(sequence, option_2)).toBeTruthy();
 });
-
-test.run();

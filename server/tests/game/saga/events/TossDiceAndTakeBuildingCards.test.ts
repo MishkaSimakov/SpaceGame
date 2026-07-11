@@ -1,16 +1,13 @@
-import {test} from "uvu";
-import * as assert from "uvu/assert";
+import {expect, test} from "vitest";
 
 import {EventType} from "@common/Types";
 import {showCardsToPlayersResponse, throwDiceResult} from "@common/Actions";
 
-import {attachReducers, fakeGameState} from "../../Utils";
-import ActionsBus from "@src/game/ActionsBus";
 import {performEvent} from "@src/game/sagas/components/PerformEvent";
 import {runSaga} from "@src/game/sagas/runner/RunSaga";
 import {StateGetters} from "@common/getters/State";
-import {GameInput} from "@src/game/sagas/runner/Environment";
-import {Channel} from "@src/game/sagas/runner/Channel";
+
+import {attachReducers, fakeGameState, TestBus} from "../../Utils";
 
 
 test('basicTest', async () => {
@@ -19,8 +16,7 @@ test('basicTest', async () => {
     const sequence: string[] = [];
 
     const state = fakeGameState(2);
-    const bus = new ActionsBus();
-    const input: GameInput = new Channel();
+    const bus = new TestBus(state);
 
     attachReducers(bus, state);
 
@@ -30,24 +26,22 @@ test('basicTest', async () => {
     bus.on('throwDice', () => {
         sequence.push('throwDice');
 
-        input.put(throwDiceResult(diceResult));
+        bus.put(throwDiceResult(diceResult));
     });
 
     bus.on('showCardsToPlayersRequest', ({payload}) => {
         sequence.push('showCards');
 
-        assert.equal(payload.player, StateGetters.currentPlayer(state).id);
-        assert.equal(payload.cards.length, cardsCount);
+        expect(payload.player).toEqual(StateGetters.currentPlayer(state).id);
+        expect(payload.cards.length).toEqual(cardsCount);
 
-        input.put(showCardsToPlayersResponse());
+        bus.put(showCardsToPlayersResponse());
     });
 
-    await runSaga({state, output: bus, input}, performEvent, event);
+    await runSaga(bus.env, performEvent, event);
 
-    assert.equal(sequence, ['throwDice', 'showCards']);
+    expect(sequence).toEqual(['throwDice', 'showCards']);
 
     const currentPlayer = StateGetters.currentPlayer(state);
-    assert.equal(currentPlayer.hand.length, cardsCount);
+    expect(currentPlayer.hand.length).toEqual(cardsCount);
 });
-
-test.run();

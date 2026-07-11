@@ -35,7 +35,7 @@ export class MockSocketsManager implements ISocketsManager {
         return false;
     }
 
-    on(type: string, callback: (payload: any) => void): void {
+    on(type: string, callback: (player: PlayerId, payload: any) => void): void {
     }
 
     onPlayerConnect(playerId: PlayerId, socketId: string): void {

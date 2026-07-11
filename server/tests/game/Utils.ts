@@ -8,10 +8,66 @@ import {isReducerName, reducers} from "@src/game/reducers/Main";
 import {getInitialGameState} from "@src/game/InitGameState";
 import {mainModulesInfo, ModuleInfo, modulesInfo} from "@common/cards/Modules";
 import {Channel} from "@src/game/sagas/runner/Channel";
-
-import ActionsBus from "../../src/game/ActionsBus";
+import {Environment} from "@src/game/sagas/runner/Environment";
 
 let idCounter = 0;
+
+type TestListener = (action: Action<string, any, any>) => void;
+
+/**
+ * Drives a saga over the two channels it expects, dispatching each emitted action to listeners
+ * registered by type ('*' receives every action).
+ *
+ * The receiver is registered on `output` in the constructor, before any saga runs: `put` hands an
+ * action to a waiting receiver synchronously and only then resumes the saga, so a saga whose
+ * output has nobody listening blocks on its first `put` and never returns.
+ *
+ * A listener answers the saga by calling `put`, which queues the response on `input` in time for
+ * the saga's next `take`.
+ */
+export class TestBus {
+    readonly input = new Channel<Action>();
+    readonly output = new Channel<Action>();
+
+    private listeners = new Map<string, TestListener[]>();
+
+    constructor(private stateRef: GameState) {
+        this.receiveNext();
+    }
+
+    get env(): Environment {
+        return {state: this.stateRef, input: this.input, output: this.output};
+    }
+
+    on(type: string, listener: TestListener) {
+        const existing = this.listeners.get(type);
+
+        if (existing) {
+            existing.push(listener);
+        } else {
+            this.listeners.set(type, [listener]);
+        }
+    }
+
+    put(action: Action<string, any, any>) {
+        this.input.put(action);
+    }
+
+    private receiveNext() {
+        this.output.take((action) => {
+            const listeners = [
+                ...(this.listeners.get(action.type) ?? []),
+                ...(this.listeners.get('*') ?? [])
+            ];
+
+            for (const listener of listeners) {
+                listener(action);
+            }
+
+            this.receiveNext();
+        });
+    }
+}
 
 export function assertModulesEqual(actual: ModuleCard[], expected: ModuleCard[]) {
     const sort = (modules: ModuleCard[]) => {
@@ -54,7 +110,7 @@ export function fakeGameState(playersCount: number): GameState {
     return state;
 }
 
-export function attachReducers(busRef: ActionsBus, stateRef: GameState) {
+export function attachReducers(busRef: TestBus, stateRef: GameState) {
     busRef.on('*', (action: Action<string, any, any>) => {
         if (isReducerName(action.type)) {
             let copy = structuredClone(stateRef);
@@ -68,20 +124,20 @@ export function attachReducers(busRef: ActionsBus, stateRef: GameState) {
     });
 }
 
-export function attachTerminalLogger(busRef: ActionsBus) {
+export function attachTerminalLogger(busRef: TestBus) {
     busRef.on('*', (action: Action<string, any, any>) => {
         console.log("📢", action.type, action);
     });
 }
 
-export function attachFakeRandomizer(busRef: ActionsBus, inputRef: Channel<Action>) {
+export function attachFakeRandomizer(busRef: TestBus) {
     const diceCalls = {value: 0};
     const shuffleCalls = {value: 0};
 
     busRef.on('throwDice', () => {
         diceCalls.value += 1;
 
-        inputRef.put(throwDiceResult(1));
+        busRef.put(throwDiceResult(1));
     });
 
     busRef.on('shuffle', (action) => {
@@ -92,7 +148,7 @@ export function attachFakeRandomizer(busRef: ActionsBus, inputRef: Channel<Actio
             result[i] = i;
         }
 
-        inputRef.put(shuffleResult(result));
+        busRef.put(shuffleResult(result));
     });
 
     return {diceCalls, shuffleCalls};

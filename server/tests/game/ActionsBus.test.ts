@@ -1,10 +1,9 @@
-import {test} from "uvu";
-import * as assert from "uvu/assert";
+import {expect, test} from "vitest";
 
 import {setCurrentPlayer, throwDice} from "@common/Actions";
 import {Action} from "@common/ActionsHelpers";
 
-import ActionsBus from "../../src/game/ActionsBus";
+import ActionsBus from "@src/game/ActionsBus";
 
 test("simpleEmit", () => {
     const bus = new ActionsBus();
@@ -12,14 +11,14 @@ test("simpleEmit", () => {
     let sequence: string[] = [];
 
     bus.on('throwDice', (action) => {
-        assert.equal(action.payload.player, 42);
+        expect(action.payload.player).toEqual(42);
 
         sequence.push("throwDice");
     });
 
     bus.emit(throwDice(42));
 
-    assert.equal(sequence, ["throwDice"]);
+    expect(sequence).toEqual(["throwDice"]);
 });
 
 test("manyListeners", () => {
@@ -41,7 +40,7 @@ test("manyListeners", () => {
 
     bus.emit(throwDice(42));
 
-    assert.equal(sequence, ["1", "2", "3"]);
+    expect(sequence).toEqual(["1", "2", "3"]);
 });
 
 test("nested", () => {
@@ -61,7 +60,7 @@ test("nested", () => {
 
     bus.emit(throwDice(42));
 
-    assert.equal(sequence, ["throwDice", "setCurrentPlayer"]);
+    expect(sequence).toEqual(["throwDice", "setCurrentPlayer"]);
 });
 
 test("recursive", () => {
@@ -71,7 +70,7 @@ test("recursive", () => {
     let counter = 0;
 
     bus.on('throwDice', (action) => {
-        assert.equal(action.payload.player, counter);
+        expect(action.payload.player).toEqual(counter);
         sequence.push(counter);
 
         ++counter;
@@ -83,7 +82,7 @@ test("recursive", () => {
 
     bus.emit(throwDice(counter));
 
-    assert.equal(sequence, [0, 1, 2]);
+    expect(sequence).toEqual([0, 1, 2]);
 });
 
 test("promiseResolve", async () => {
@@ -96,7 +95,7 @@ test("promiseResolve", async () => {
 
     await bus.emit(throwDice(0));
 
-    assert.ok(executedListener);
+    expect(executedListener).toBeTruthy();
 });
 
 test("promiseReject", async () => {
@@ -109,9 +108,9 @@ test("promiseReject", async () => {
     try {
         await bus.emit(throwDice(0));
 
-        assert.unreachable("promise must have been rejected");
+        expect.unreachable("promise must have been rejected");
     } catch (error) {
-        assert.equal(error, 123);
+        expect(error).toEqual(123);
     }
 });
 
@@ -122,13 +121,13 @@ test("middlewareChangeAction", () => {
 
     bus.registerMiddleware({
         apply(action: Action<string, any, any>): Action<string, any, any> | undefined {
-            assert.equal(action.type, 'throwDice');
+            expect(action.type).toEqual('throwDice');
             return setCurrentPlayer(123);
         }
     });
 
     bus.on('throwDice', () => {
-        assert.unreachable("action must have been changed by middleware");
+        expect.unreachable("action must have been changed by middleware");
     });
 
     bus.on('setCurrentPlayer', () => {
@@ -137,7 +136,7 @@ test("middlewareChangeAction", () => {
 
     bus.emit(throwDice(0));
 
-    assert.ok(receivedAction);
+    expect(receivedAction).toBeTruthy();
 });
 
 test("middlewareBlocksAction", () => {
@@ -150,7 +149,7 @@ test("middlewareBlocksAction", () => {
     });
 
     bus.on('throwDice', () => {
-        assert.unreachable("action must have been blocked by middleware");
+        expect.unreachable("action must have been blocked by middleware");
     });
 
     bus.emit(throwDice(0));
@@ -166,13 +165,13 @@ test("middlewareThrows", async () => {
     });
 
     bus.on('throwDice', () => {
-        assert.unreachable("exception must have been thrown");
+        expect.unreachable("exception must have been thrown");
     });
 
     try {
         await bus.emit(throwDice(0));
-        assert.unreachable("exception must have been thrown");
+        expect.unreachable("exception must have been thrown");
     } catch (error) {
-        assert.equal(error, 123);
+        expect(error).toEqual(123);
     }
 });

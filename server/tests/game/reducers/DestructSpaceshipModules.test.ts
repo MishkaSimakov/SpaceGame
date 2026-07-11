@@ -1,5 +1,4 @@
-import {test} from "uvu";
-import * as assert from "uvu/assert";
+import {expect, test} from "vitest";
 
 import {CardDestination, ModuleType, Spaceship} from "@common/Types";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
@@ -39,12 +38,16 @@ test('destructOneSpaceshipModule', async () => {
     });
 
     // check state
-    assert.equal(player.spaceship.modules.length, 2);
-    assert.equal(SpaceshipGetters.getModulesByType(player.spaceship, ModuleType.QuantumProtector).length, 0);
+    expect(player.spaceship.modules.length).toEqual(2);
+    expect(SpaceshipGetters.getModulesByType(player.spaceship, ModuleType.QuantumProtector).length).toEqual(0);
 
-    assert.equal(player.hand.length, 1);
-    assert.ok(player.hand[0].cardType === "module");
-    assert.equal(player.hand[0].module.type, ModuleType.QuantumProtector);
+    expect(player.hand.length).toEqual(1);
+
+    const returned = player.hand[0];
+    if (returned.cardType !== "module") {
+        expect.unreachable("destructed module must return to the hand as a module card");
+    }
+    expect(returned.module.type).toEqual(ModuleType.QuantumProtector);
 });
 
 test('destructOneSpaceshipModuleWithChainDestruction', async () => {
@@ -62,10 +65,8 @@ test('destructOneSpaceshipModuleWithChainDestruction', async () => {
     });
 
     // check state
-    assert.equal(player.spaceship.modules.length, 1);
-    assert.equal(player.spaceship.modules[0].type, ModuleType.MainModule);
+    expect(player.spaceship.modules.length).toEqual(1);
+    expect(player.spaceship.modules[0].type).toEqual(ModuleType.MainModule);
 
-    assert.equal(state.discards.module.length, 2);
+    expect(state.discards.module.length).toEqual(2);
 });
-
-test.run();

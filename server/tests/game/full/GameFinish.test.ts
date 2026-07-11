@@ -1,5 +1,4 @@
-import {test} from "uvu";
-import * as assert from "uvu/assert"
+import {expect, test} from "vitest";
 
 import {rebuildSpaceshipResponse} from "@common/Actions";
 import {StateGetters} from "@common/getters/State";
@@ -30,7 +29,7 @@ test('finishWhenTimeIsOver', async () => {
 
     const result = await game.activate();
 
-    assert.equal(result.type, "finished");
+    expect(result.type).toEqual("finished");
 });
 
 test('finishWhenDeactivated', async () => {
@@ -41,7 +40,7 @@ test('finishWhenDeactivated', async () => {
     });
 
     const result = await game.activate();
-    assert.equal(result.type, "deactivated");
+    expect(result.type).toEqual("deactivated");
 });
 
 // test('endPlayerTurnWhenTimeIsOver', async () => {
@@ -70,7 +69,5 @@ test('finishWhenDeactivated', async () => {
 //     }
 //
 //     const result = await game.activate();
-//     assert.equal(result.type, "deactivated");
+//     expect(result.type).toEqual("deactivated");
 // });
-
-test.run();

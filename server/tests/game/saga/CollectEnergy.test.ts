@@ -1,22 +1,18 @@
-import {test} from "uvu";
-import * as assert from "uvu/assert";
+import {expect, test} from "vitest";
 
 import {GameState, ModuleType} from "@common/Types";
 
-import {attachReducers, fakeGameState, fakeModule} from '../Utils';
-import ActionsBus from '../../../src/game/ActionsBus';
 import {collectEnergy} from '@src/game/sagas/phases/CollectEnergy';
 import {runSaga} from "@src/game/sagas/runner/RunSaga";
-import {Channel} from "@src/game/sagas/runner/Channel";
-import {GameInput} from "@src/game/sagas/runner/Environment";
+
+import {attachReducers, fakeGameState, fakeModule, TestBus} from '../Utils';
 
 
 test('collectEnergyWithIncomeLessThanCapacity', async () => {
     // Setup: Create a game state with one player, Command Module, and Solar Panel
     const state: GameState = fakeGameState(1);
     let player = state.players[0];
-    const bus = new ActionsBus();
-    const input: GameInput = new Channel();
+    const bus = new TestBus(state);
 
     // Add Solar Panel to the spaceship
     const solarPanel = fakeModule(ModuleType.SolarPanel, {
@@ -30,20 +26,19 @@ test('collectEnergyWithIncomeLessThanCapacity', async () => {
     attachReducers(bus, state);
 
     // Run the collectEnergy saga
-    await runSaga({state, output: bus, input}, collectEnergy);
+    await runSaga(bus.env, collectEnergy);
 
     // test
     player = state.players[0];
 
-    assert.equal(player.energy, 2);
+    expect(player.energy).toEqual(2);
 });
 
 test('collectEnergyWithIncomeGreaterThanCapacity', async () => {
     // Setup: Create a game state with one player, Command Module, and Dark Matter Generator
     const state: GameState = fakeGameState(1);
     let player = state.players[0];
-    const bus = new ActionsBus();
-    const input: GameInput = new Channel();
+    const bus = new TestBus(state);
 
     // Add Dark Matter Generator to the spaceship
     const darkMatterGenerator1 = fakeModule(ModuleType.DarkMatterGenerator, {
@@ -64,20 +59,19 @@ test('collectEnergyWithIncomeGreaterThanCapacity', async () => {
     attachReducers(bus, state);
 
     // Run the collectEnergy saga
-    await runSaga({state, output: bus, input}, collectEnergy);
+    await runSaga(bus.env, collectEnergy);
 
     // test
     player = state.players[0];
 
-    assert.equal(player.energy, 5);
+    expect(player.energy).toEqual(5);
 });
 
 test('collectEnergyWithSumGreaterThanCapacity', async () => {
     // Setup: Create a game state with one player, Command Module, and Dark Matter Generator
     const state: GameState = fakeGameState(1);
     let player = state.players[0];
-    const bus = new ActionsBus();
-    const input: GameInput = new Channel();
+    const bus = new TestBus(state);
 
     // Add Dark Matter Generator to the spaceship
     const darkMatterGenerator1 = fakeModule(ModuleType.DarkMatterGenerator, {
@@ -92,13 +86,11 @@ test('collectEnergyWithSumGreaterThanCapacity', async () => {
     attachReducers(bus, state);
 
     // Run the collectEnergy saga
-    await runSaga({state, output: bus, input}, collectEnergy);
+    await runSaga(bus.env, collectEnergy);
 
     // test
     // 2 (initial) + 3 (dark matter generator) + 1 (main module) > 5 (main module capacity)
     player = state.players[0];
 
-    assert.equal(player.energy, 5);
+    expect(player.energy).toEqual(5);
 });
-
-test.run();
