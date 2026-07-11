@@ -1,9 +1,10 @@
 import fc from "fast-check";
 
-import {ModuleType, OtherPlayer, Player, Spaceship} from "@common/Types";
+import {ModuleType, OtherPlayer, Player, Spaceship, Vector2} from "@common/Types";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
 
 import {asCard, eventAsCard, IdAllocator, makeEvent, makeModule, MODULE_VARIANTS} from "./Cards";
+import {freeSlots} from "./Generators";
 
 /**
  * Ways the server state can change between two updates, so that reconcile is exercised against
@@ -23,7 +24,8 @@ export type Mutation =
     | { kind: "drawModule", pick: number }
     | { kind: "drawEvent" }
     | { kind: "discardHandCard", pick: number }
-    | { kind: "shipModuleToHand", pick: number };
+    | { kind: "shipModuleToHand", pick: number }
+    | { kind: "captureModule", pick: number, opponent: number, slot: number };
 
 export const mutationArb: fc.Arbitrary<Mutation> = fc.oneof(
     fc.record({kind: fc.constant("damage" as const), pick: fc.nat({max: 100})}),
@@ -36,7 +38,13 @@ export const mutationArb: fc.Arbitrary<Mutation> = fc.oneof(
     fc.record({kind: fc.constant("drawModule" as const), pick: fc.nat({max: 100})}),
     fc.record({kind: fc.constant("drawEvent" as const)}),
     fc.record({kind: fc.constant("discardHandCard" as const), pick: fc.nat({max: 100})}),
-    fc.record({kind: fc.constant("shipModuleToHand" as const), pick: fc.nat({max: 100})})
+    fc.record({kind: fc.constant("shipModuleToHand" as const), pick: fc.nat({max: 100})}),
+    fc.record({
+        kind: fc.constant("captureModule" as const),
+        pick: fc.nat({max: 100}),
+        opponent: fc.nat({max: 100}),
+        slot: fc.nat({max: 100})
+    })
 );
 
 export const mutationsArb: fc.Arbitrary<Mutation[]> = fc.array(mutationArb, {maxLength: 5});
@@ -155,6 +163,43 @@ function apply(state: ServerState, mutation: Mutation, ids: IdAllocator) {
             // it came off the ship rather than being destroyed, so it lands in the hand — as does
             // anything that fell off with it
             player.hand.push(asCard(module), ...dropped.map(asCard));
+
+            return;
+        }
+
+        case "captureModule": {
+            // combat: a destroyed module goes to the attacker, so it changes owner outright
+            const targets = detachable(player.spaceship);
+
+            if (targets.length === 0 || otherPlayers.length === 0) {
+                return;
+            }
+
+            const module = targets[mutation.pick % targets.length];
+            const captor = otherPlayers[mutation.opponent % otherPlayers.length];
+
+            const berths: { position: Vector2, rotation: number }[] = [];
+
+            for (const slot of freeSlots(captor.spaceship)) {
+                for (const rotation of SpaceshipGetters.getPossibleRotationsFor(captor.spaceship, module, slot.x, slot.y)) {
+                    berths.push({position: slot, rotation});
+                }
+            }
+
+            if (berths.length === 0) {
+                return;
+            }
+
+            const dropped = removeKeepingConnected(player.spaceship, module.id);
+            player.hand.push(...dropped.map(asCard));
+
+            const berth = berths[mutation.slot % berths.length];
+
+            module.x = berth.position.x;
+            module.y = berth.position.y;
+            module.rotation = berth.rotation;
+
+            captor.spaceship.modules.push(module);
 
             return;
         }

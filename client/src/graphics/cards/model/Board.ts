@@ -162,12 +162,28 @@ export class Board {
         this.chunks = this.chunks.filter(c => c.id !== id);
     }
 
+    /** Moves a whole chunk. The modules keep their coordinates within it, so nothing shifts inside. */
+    moveChunk(id: ChunkId, position: Vector2) {
+        const chunk = this.getChunk(id);
+        assert.ok(chunk !== undefined);
+
+        chunk.position = {x: position.x, y: position.y};
+    }
+
     getChunkCards(id: ChunkId): CardInfo[] {
         return this.getCards().filter(c => c.location.type === "chunk" && c.location.chunk === id);
     }
 
     getChunkModules(id: ChunkId): ModuleCard[] {
-        return this.getChunkCards(id).map(c => CardGetters.asModule(c.card)!);
+        return this.getChunkCards(id).map(info => {
+            const module = CardGetters.asModule(info.card);
+
+            // only modules go on the field; without this the undefined travels into the connection
+            // getters and fails there instead, a long way from whatever put it in the chunk
+            assert.ok(module !== undefined, `chunk ${id} holds a card that is not a module`);
+
+            return module;
+        });
     }
 
     getChunkSpaceship(id: ChunkId): Spaceship {
@@ -212,6 +228,29 @@ export class Board {
         assert.ok(info !== undefined);
 
         return info.location.type !== "chunk" || this.isChunkModifiable(info.location.chunk);
+    }
+
+    /**
+     * Whether the player may lift this card off the field.
+     *
+     * Never the command module: it anchors the ship, and the server rejects a rebuild whose ship
+     * does not contain it (`checkConfiguration` defaults to requiring the main module). The chunk
+     * as a whole can still be dragged — that moves the ship without detaching anything.
+     *
+     * This is about what the *player* may do. Reconcile still removes a command module the server
+     * says is gone, which is how a defeated player's ship leaves the board.
+     */
+    canDetachCard(id: CardId): boolean {
+        const info = this.cards.get(id);
+        assert.ok(info !== undefined);
+
+        const module = CardGetters.asModule(info.card);
+
+        if (module === undefined || module.type === ModuleType.MainModule) {
+            return false;
+        }
+
+        return this.isCardModifiable(id);
     }
 
     getModifiableChunks(exclude?: ChunkId): Chunk[] {

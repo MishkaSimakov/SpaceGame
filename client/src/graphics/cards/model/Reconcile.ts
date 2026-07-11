@@ -5,6 +5,7 @@ import {ModuleGetters} from "@common/getters/Module";
 import * as assert from "../../../assert";
 import {Board, CardId} from "./Board";
 import {Chunk} from "./Chunk";
+import {hasBadConnection} from "./Connect";
 
 /**
  * Folding a new server state into the board.
@@ -99,13 +100,23 @@ function shipChunk(board: Board, owner: PlayerId): Chunk {
     return board.createChunk(owner, SHIP_POSITIONS[taken.size % SHIP_POSITIONS.length]);
 }
 
-function putOnField(board: Board, module: ModuleCard, chunk: Chunk) {
-    const info = board.getCard(module.id);
+/**
+ * Puts a module on a ship, taking the server's data first and only then placing it.
+ *
+ * The order matters: the board may be holding something quite different under this id, and only a
+ * module may sit on the field. Applying the server's card first means the placement below is always
+ * moving a module, never whatever the board happened to believe.
+ */
+function putOnField(board: Board, module: ModuleCard, chunk: Chunk, adoptLayout: boolean) {
+    const card = ModuleGetters.asCard(module);
 
-    if (info === undefined) {
-        board.addCard(structuredClone(ModuleGetters.asCard(module)), {type: "chunk", chunk: chunk.id});
-        return;
+    if (board.getCard(module.id) === undefined) {
+        board.addCard(structuredClone(card), {type: "chunk", chunk: chunk.id});
     }
+
+    applyServerCard(board, card, adoptLayout);
+
+    const info = board.getCard(module.id)!;
 
     if (info.location.type === "chunk" && info.location.chunk === chunk.id) {
         return;
@@ -123,13 +134,22 @@ function putInHand(board: Board, card: Card) {
         return;
     }
 
-    // already in hand, or pre-assembled in a fragment — a fragment IS the hand, so leave it be
     if (info.location.type === "hand") {
         return;
     }
 
-    if (info.location.type === "chunk" && !board.hasMainModule(info.location.chunk)) {
-        return;
+    // A fragment IS the hand, so a module pre-assembled in one is already where it belongs.
+    //
+    // Two things have to be true for that, though. The chunk must be the local player's — an
+    // opponent's chunk without a command module is not a fragment of ours, and a card left there
+    // would never reach the hand. And the card must be a module: only modules go on the field, so an
+    // event has to be taken into the hand however it came to be sitting in a chunk.
+    if (info.location.type === "chunk" && card.cardType === "module") {
+        const chunk = board.getChunk(info.location.chunk)!;
+
+        if (chunk.owner === board.getThisPlayer() && !board.hasMainModule(chunk.id)) {
+            return;
+        }
     }
 
     board.pushToHand(id);
@@ -167,10 +187,11 @@ export function reconcile(board: Board, player: Player, otherPlayers: OtherPlaye
             const isNew = board.getCard(module.id) === undefined;
 
             if (isNew || !rebuilding) {
-                putOnField(board, module, chunk);
+                putOnField(board, module, chunk, true);
+            } else {
+                // an uncommitted edit: keep where the player put it, and how they turned it
+                applyServerCard(board, ModuleGetters.asCard(module), false);
             }
-
-            applyServerCard(board, ModuleGetters.asCard(module), isNew || !rebuilding);
         }
     }
 
@@ -181,8 +202,7 @@ export function reconcile(board: Board, player: Player, otherPlayers: OtherPlaye
         const chunk = shipChunk(board, other.id);
 
         for (const module of other.spaceship.modules) {
-            putOnField(board, module, chunk);
-            applyServerCard(board, ModuleGetters.asCard(module), true);
+            putOnField(board, module, chunk, true);
         }
     }
 
@@ -194,6 +214,24 @@ export function reconcile(board: Board, player: Player, otherPlayers: OtherPlaye
         }
 
         applyServerCard(board, card, false);
+    }
+
+    // A fragment is the player's own arrangement, so its layout is kept — but the cards in it are
+    // the server's, and if they no longer fit together the group cannot be left sitting illegally on
+    // the field. Returning it to the hand loses only the pre-assembly, never a card.
+    for (const chunk of board.getChunks()) {
+        if (chunk.owner !== player.id || board.hasMainModule(chunk.id)) {
+            continue;
+        }
+
+        if (!hasBadConnection(board.getChunkSpaceship(chunk.id))) {
+            continue;
+        }
+
+        for (const id of board.getChunkCards(chunk.id).map(info => CardGetters.id(info.card))) {
+            board.removeCardFromChunk(id);
+            board.pushToHand(id);
+        }
     }
 
     // moves above can leave a chunk empty or split in two; both are repaired in one pass

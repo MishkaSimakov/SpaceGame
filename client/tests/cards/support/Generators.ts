@@ -43,7 +43,7 @@ export const growthStepArb: fc.Arbitrary<GrowthStep> = fc.record({
 });
 
 /** Every empty cell adjacent to the ship. These are the only places a module may go. */
-function freeSlots(ship: Spaceship): Vector2[] {
+export function freeSlots(ship: Spaceship): Vector2[] {
     const slots: Vector2[] = [];
 
     for (const module of ship.modules) {

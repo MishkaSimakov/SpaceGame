@@ -1,6 +1,8 @@
 import {describe, expect, it} from "vitest";
 import fc from "fast-check";
 
+import {CardGetters} from "@common/getters/Card";
+
 import {reconcile} from "../../src/graphics/cards/model/Reconcile";
 import {boardRecipeArb, buildBoard, serverFromBoard} from "./support/Generators";
 import {checkBoardInvariants, checkServerAgreement} from "./support/Invariants";
@@ -165,6 +167,102 @@ describe("reconcile preserves the player's arrangement", () => {
                 }
             }),
             {numRuns: RUNS}
+        );
+    });
+});
+
+/**
+ * Everything above asserts that agreement holds *after* reconcile. That is only meaningful if the
+ * board genuinely disagreed *before* it — otherwise a mutation that quietly did nothing would let
+ * every property pass for the wrong reason. These tests pin the disagreement down.
+ */
+describe("the board disagrees with the server before reconcile", () => {
+    /** Cards the server holds, by id, zone and health — enough to tell a real change from a no-op. */
+    function fingerprint(server: ServerState): string[] {
+        return [
+            ...server.player.hand.map(card => `${CardGetters.id(card)}:hand`),
+            ...server.player.spaceship.modules.map(m => `${m.id}:ship:${m.health}`),
+            ...server.otherPlayers.flatMap(p => p.spaceship.modules.map(m => `${m.id}:${p.id}:${m.health}`))
+        ].sort();
+    }
+
+    it("reports a violation whenever the incoming state actually moved on", () => {
+        fc.assert(
+            fc.property(boardRecipeArb, mutationsArb, (recipe, mutations) => {
+                const board = buildBoard({...recipe, canRebuild: false});
+
+                const pristine: ServerState = serverFromBoard(board);
+                const server: ServerState = serverFromBoard(board);
+                applyMutations(server, mutations, freshIds());
+
+                // a mutation that changed nothing proves nothing
+                fc.pre(fingerprint(pristine).join() !== fingerprint(server).join());
+
+                expect(checkServerAgreement(board, server.player, server.otherPlayers)).not.toEqual([]);
+            }),
+            {numRuns: RUNS}
+        );
+    });
+
+    const FIXTURE = {
+        localShip: {steps: [{variant: 0, slot: 0, rotation: 0}, {variant: 1, slot: 0, rotation: 0}], position: {x: 0, y: 0}},
+        fragments: [],
+        handModules: [{variant: 2, slot: 0, rotation: 0}],
+        handEvents: 1,
+        otherShips: [{steps: [{variant: 3, slot: 0, rotation: 0}, {variant: 4, slot: 0, rotation: 0}], position: {x: 10, y: 0}}],
+        canRebuild: false,
+        mainModuleChoice: 0
+    };
+
+    /** Mutates the server, asserts the board now disagrees in the named way, then heals it. */
+    function expectDisagreementThenHealed(mutate: (server: ServerState) => void, pattern: RegExp) {
+        const board = buildBoard(FIXTURE);
+        const server: ServerState = serverFromBoard(board);
+
+        expect(checkServerAgreement(board, server.player, server.otherPlayers)).toEqual([]);
+
+        mutate(server);
+
+        expect(checkServerAgreement(board, server.player, server.otherPlayers).join()).toMatch(pattern);
+
+        reconcile(board, server.player, server.otherPlayers);
+
+        expect(checkServerAgreement(board, server.player, server.otherPlayers)).toEqual([]);
+        expect(checkBoardInvariants(board)).toEqual([]);
+    }
+
+    it("a damaged module: stale health, then refreshed", () => {
+        expectDisagreementThenHealed(
+            server => applyMutations(server, [{kind: "damage", pick: 0}], freshIds()),
+            /has stale data/
+        );
+    });
+
+    it("a destroyed module: still on the board, then removed", () => {
+        expectDisagreementThenHealed(
+            server => applyMutations(server, [{kind: "destroyLocalModule", pick: 0}], freshIds()),
+            /on the board but not in the server state/
+        );
+    });
+
+    it("a drawn card: missing from the board, then added", () => {
+        expectDisagreementThenHealed(
+            server => applyMutations(server, [{kind: "drawModule", pick: 0}], freshIds()),
+            /in the server state but not on the board/
+        );
+    });
+
+    it("a module knocked off the ship: still on the ship, then in hand", () => {
+        expectDisagreementThenHealed(
+            server => applyMutations(server, [{kind: "shipModuleToHand", pick: 0}], freshIds()),
+            /main chunk .* != server ship/
+        );
+    });
+
+    it("an opponent losing a module: still on their field, then gone", () => {
+        expectDisagreementThenHealed(
+            server => applyMutations(server, [{kind: "destroyOpponentModule", pick: 0, opponent: 0}], freshIds()),
+            /on the board but not in the server state/
         );
     });
 });
