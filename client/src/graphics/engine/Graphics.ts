@@ -143,6 +143,8 @@ class Graphics extends Container<Scene> {
     constructor(config: GraphicsConfig) {
         super(config);
 
+        window["errors"] = [];
+
         this.buildDOM();
         this.bindContentEvents();
     }

@@ -1,7 +1,7 @@
 import {Continuation} from "../Continuation";
 import {Environment} from "../Environment";
 import {SelectEffect} from "../Effects";
-import {ok} from "../../../../helpers/Result";
+import {ok} from "@common/helpers/Result";
 
 export class SelectContinuation implements Continuation<SelectEffect["input"]> {
     constructor(

@@ -1,100 +1,85 @@
-import * as assert from "assert"
+import {CardShape} from "../shapes/CardShape";
+import {CardId} from "./model/Board";
 
-import {CardInfo} from "./CardInfo";
-import {Chunk} from "./Chunk";
-import {DD} from "../engine/Drag";
+export type CardEventsHandler = {
+    onCardClick(id: CardId): void;
+    onChunkSelect(id: CardId): void;
+    onChunkDeselect(id: CardId): void;
+    onDragStart(id: CardId): void;
+    onDragMove(id: CardId): void;
+    onDragEnd(id: CardId): void;
 
-type CardEventsHandler = {
-    onCardClick(card: CardInfo): void;
-    onChunkSelect(chunk: Chunk): void;
-    onChunkDeselect(chunk: Chunk): void;
-    onDragStart(card: CardInfo): void;
-    onDragMove(card: CardInfo): void;
-    onDragEnd(card: CardInfo): void;
+    /** Whether this card is on the field, and so has a chunk that could be picked up. */
+    isOnField(id: CardId): boolean;
 };
 
+/**
+ * Turns pointer events on one card into the moves the board understands.
+ *
+ * Holding a card picks up its whole chunk — that is what the outline is announcing. The click that
+ * would otherwise fire on release is swallowed, so a hold never also rotates the card.
+ */
 export class CardEvents {
     private readonly selectChunkDuration = 500;
 
+    private holdTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
     private isChunkSelected = false;
-    private ignoreClickAfterChunkSelected = false;
+    private swallowNextClick = false;
 
     constructor(
-        private readonly info: CardInfo
+        private readonly id: CardId,
+        private readonly shape: CardShape
     ) {
     }
 
-    attachEvents(handler: CardEventsHandler) {
-        const shape = this.info.shape;
+    attach(handler: CardEventsHandler) {
+        this.shape.draggable(true).dragDistance(5);
 
-        shape.draggable(true).dragDistance(5);
-
-        this.attachChunkSelectEvent(handler);
-
-        shape.on('click', () => {
-            if (this.ignoreClickAfterChunkSelected) {
-                this.ignoreClickAfterChunkSelected = false;
-                return;
-            }
-
-            this.logEvent("click");
-
-            handler.onCardClick(this.info);
-        });
-
-        shape.on('pointerup', () => {
-            if (this.isChunkSelected) {
-                this.logEvent("chunkDeselect");
-
-                assert.ok(this.info.location.type === "chunk");
-                handler.onChunkDeselect(this.info.location.chunk);
-            }
-        });
-
-        shape.on('dragstart', () => {
-            this.logEvent("dragstart");
-
-            handler.onDragStart(this.info);
-        });
-
-        shape.on('dragmove', () => {
-            this.logEvent("dragmove");
-
-            handler.onDragMove(this.info);
-        });
-
-        shape.on('dragend', () => {
-            this.logEvent("dragend");
-
-            this.isChunkSelected = false;
-            this.ignoreClickAfterChunkSelected = false;
-
-            handler.onDragEnd(this.info);
-        });
-    }
-
-    private attachChunkSelectEvent(handler: CardEventsHandler) {
-        let timeoutHandle: ReturnType<typeof setTimeout> | undefined = undefined;
-
-        this.info.shape.on('pointerdown', () => {
-            timeoutHandle = setTimeout(() => {
-                if (this.info.location.type === "chunk") {
-                    this.logEvent("chunkSelect");
-
-                    this.isChunkSelected = true;
-                    this.ignoreClickAfterChunkSelected = true;
-
-                    handler.onChunkSelect(this.info.location.chunk);
+        this.shape.on('pointerdown', () => {
+            this.holdTimeout = setTimeout(() => {
+                if (!handler.isOnField(this.id)) {
+                    return;
                 }
+
+                this.isChunkSelected = true;
+                this.swallowNextClick = true;
+
+                handler.onChunkSelect(this.id);
             }, this.selectChunkDuration);
         });
 
-        this.info.shape.on('pointerup pointerleave dragstart dragend', () => {
-            clearTimeout(timeoutHandle);
+        this.shape.on('pointerup pointerleave dragstart dragend', () => {
+            clearTimeout(this.holdTimeout);
+        });
+
+        this.shape.on('pointerup', () => {
+            if (this.isChunkSelected) {
+                handler.onChunkDeselect(this.id);
+            }
+        });
+
+        this.shape.on('click', () => {
+            if (this.swallowNextClick) {
+                this.swallowNextClick = false;
+                return;
+            }
+
+            handler.onCardClick(this.id);
+        });
+
+        this.shape.on('dragstart', () => handler.onDragStart(this.id));
+        this.shape.on('dragmove', () => handler.onDragMove(this.id));
+
+        this.shape.on('dragend', () => {
+            this.isChunkSelected = false;
+            this.swallowNextClick = false;
+
+            handler.onDragEnd(this.id);
         });
     }
 
-    private logEvent(name: string) {
-        console.log(name);
+    /** The view calls this when it picks up a chunk itself, so the hold state stays in step. */
+    markChunkSelected() {
+        this.isChunkSelected = true;
     }
 }

@@ -2,6 +2,8 @@ import {Request, Response} from "express";
 import {User} from "@src/database/entity/user";
 import bcrypt from "bcrypt";
 import {AuthenticatedRequest} from "../middleware/auth";
+import {render} from "@src/helpers/Render";
+import {defaultUserSettings} from "@common/UserSettings";
 
 export const login = async (req: Request, res: Response) => {
     let user = await User.findOneBy({
@@ -42,6 +44,7 @@ export const register = async (req: Request, res: Response) => {
         user.login = req.body.login;
         user.password = await User.createHashedPassword(req.body.password);
         user.isBot = false;
+        user.settings = defaultUserSettings;
 
         await user.save();
 
@@ -74,11 +77,7 @@ export const home = async (req: AuthenticatedRequest, res: Response) => {
         throw new Error("Failed to find user in DB");
     }
 
-    res.render('home', {
-        user: {
-            id: user.id,
-            login: user.login
-        },
+    render(res, 'home', {
         games: user.games
             .filter(g => !g.finishedAt)
             .map(game => {
@@ -115,11 +114,11 @@ export const home = async (req: AuthenticatedRequest, res: Response) => {
 };
 
 export const showLoginPage = async (req: Request, res: Response) => {
-    res.render('auth/login');
+    render(res, 'auth/login');
 };
 
 export const showRegisterPage = async (req: Request, res: Response) => {
-    res.render('auth/register');
+    render(res, 'auth/register');
 };
 
 export const showUserPage = async (req: Request, res: Response) => {
@@ -149,11 +148,7 @@ export const showUserPage = async (req: Request, res: Response) => {
         });
     }
 
-    res.render('user', {
-        user: {
-            id: user.id,
-            login: user.login
-        },
+    render(res, 'user', {
         archivedGames: user.games
             ?.filter(game => game.isFinished())
             .map(game => {

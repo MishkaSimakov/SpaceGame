@@ -1,19 +1,22 @@
-import {CardInfo} from "./CardInfo";
+import Color from "@common/helpers/Color";
+
+import Scene from "../engine/Scene";
+import {Group} from "../engine/Group";
 import {Rectangle} from "../engine/shapes/Rectangle";
 import {Text} from "../engine/shapes/Text";
-import {Group} from "../engine/Group";
-import {SIZES} from "../constants";
-import Color from "../Color";
-import Scene from "../engine/Scene";
-import * as assert from "assert"
-import {CardGetters} from "@common/getters/Card";
 import {BoundingRect, merge} from "../engine/types";
-import {Line} from "../engine/shapes/Line";
+import {SIZES} from "../constants";
+import {CardShape} from "../shapes/CardShape";
 
-type PlaceholderInfo = { shape: Rectangle, card: { cardType: "placeholder" } };
-
+/**
+ * Draws the hand.
+ *
+ * Which cards are in the hand and in what order is the board's business — this only lays out the
+ * shapes it is given, plus the gap that opens up under the pointer while a card is being dragged
+ * into or around the hand.
+ */
 export class HandManager {
-    private readonly maxVisibleCards = 2;
+    private readonly maxVisibleCards = 5;
     private readonly cardSize: number;
     private readonly spaceBetween: number;
 
@@ -24,7 +27,8 @@ export class HandManager {
     private placeholder: Rectangle;
     private handContents: Group;
 
-    private cards: (CardInfo | PlaceholderInfo)[] = [];
+    private cards: CardShape[] = [];
+    private placeholderIndex: number | undefined = undefined;
 
     constructor(handScene: Scene, cardSize: number) {
         this.handScene = handScene;
@@ -35,6 +39,7 @@ export class HandManager {
             visible: false,
             interactive: false
         });
+
         this.placeholder = new Rectangle({
             width: this.cardSize,
             height: this.cardSize,
@@ -43,192 +48,138 @@ export class HandManager {
             visible: false,
             interactive: false
         });
+
         this.handContents = this.handScene.createAndAdd.group();
         this.handContents.add(this.placeholder);
     }
 
-    addCardToScene(info: CardInfo) {
-        assert.equal(info.shape.getScene(), undefined);
-
-        this.handContents.add(info.shape);
+    /** Parents a card's shape into the hand. It is laid out by the next setCards. */
+    adopt(shape: CardShape) {
+        shape.moveTo(this.handContents);
     }
 
-    pushCardToHand(info: CardInfo) {
-        assert.equal(info.location.type, "hand");
-        assert.equal(info.shape.getScene(), this.handScene);
-
-        this.cards.push(info);
+    setCards(cards: CardShape[]) {
+        this.cards = cards;
         this.update();
     }
 
-    addPlaceholder(position: number) {
-        assert.ok(this.cards.find(o => o.card.cardType === "placeholder") === undefined);
-        assert.ok(0 <= position && position <= Math.min(this.cards.length, this.maxVisibleCards - 1));
-
-        this.cards.splice(position, 0, {shape: this.placeholder, card: {cardType: "placeholder"}});
+    setPlaceholder(index: number | undefined) {
+        this.placeholderIndex = index;
         this.update();
     }
 
-    setPlaceholderPosition(position: number) {
-        assert.ok(0 <= position && position <= Math.min(this.cards.length, this.maxVisibleCards - 1));
-
-        const currentPosition = this.cards.findIndex(o => o.card.cardType === "placeholder");
-        assert.ok(currentPosition !== undefined);
-
-        const placeholder = this.cards.splice(currentPosition, 1);
-        this.cards.splice(position, 0, placeholder[0]);
-
-        this.update();
-    }
-
-    replaceCardWithPlaceholder(info: CardInfo) {
-        const index = this.getCardIndex(info);
-
-        assert.ok(index !== undefined);
-        this.cards[index] = {shape: this.placeholder, card: {cardType: "placeholder"}};
-
-        this.update();
-    }
-
-    replacePlaceholderWithCard(info: CardInfo) {
-        info.shape.moveTo(this.handContents);
-
-        const index = this.cards.findIndex(c => c.card.cardType === "placeholder");
-
-        assert.ok(index !== undefined);
-        this.cards[index] = info;
-
-        this.update();
-    }
-
-    removePlaceholder() {
-        const currentPosition = this.cards.findIndex(o => o.card.cardType === "placeholder");
-        assert.ok(currentPosition !== undefined);
-
-        this.cards.splice(currentPosition, 1);
-
-        this.update();
-    }
-
-    // returns undefined if card is too far from hand
-    getPlaceholderPosition(): number | undefined {
-        // remove placeholder if card is too high
-        const pointerPosition = this.handScene.getRelativePointerPosition();
-        if (pointerPosition.y < this.handScene.height() - this.cardSize - 2 * this.spaceBetween) {
-            return undefined;
-        }
-
-        if (this.cards.length === 0) {
-            return 0;
-        }
-
-        let handCardsBR = new BoundingRect();
-
-        const visibleCardsCount = Math.min(this.cards.length, this.maxVisibleCards);
-        for (let i = 0; i < visibleCardsCount; ++i) {
-            handCardsBR = merge(handCardsBR, this.cards[i].shape.getClientRect());
-        }
-
-        const centerPosition = {
-            x: pointerPosition.x,
-            y: pointerPosition.y
-        };
-
-        // add padding to make calculations easier
-        // now we can assume that each card has size: this.spaceBetween / 2 + this.cardSize + this.spaceBetween / 2
-        handCardsBR.left -= this.spaceBetween / 2;
-        handCardsBR.right += this.spaceBetween / 2;
-
-        const relativeX = (centerPosition.x - handCardsBR.left) / handCardsBR.width * visibleCardsCount;
-
-        // clamp between 0 and visibleCardsCount
-        return Math.min(Math.max(Math.floor(relativeX), 0), visibleCardsCount - 1);
-    }
-
-    popCardFromHand(info: CardInfo) {
-        assert.equal(info.shape.getScene(), this.handScene);
-        assert.ok(this.getCardIndex(info) !== undefined);
-
-        const index = this.getCardIndex(info);
-        this.cards.splice(index, 1);
-        this.update();
+    getPlaceholderIndex(): number | undefined {
+        return this.placeholderIndex;
     }
 
     resize() {
         this.update();
     }
 
+    /**
+     * Where in the hand the pointer is asking to drop a card, or undefined if it is not over the
+     * hand at all — which is how a drag out onto the field is recognised.
+     */
+    getDropIndex(): number | undefined {
+        const pointer = this.handScene.getRelativePointerPosition();
+
+        if (pointer.y < this.handScene.height() - this.cardSize - 2 * this.spaceBetween) {
+            return undefined;
+        }
+
+        const slots = this.slotCount();
+
+        if (slots === 0) {
+            return 0;
+        }
+
+        let bounds = new BoundingRect();
+
+        for (let i = 0; i < Math.min(slots, this.maxVisibleCards); ++i) {
+            bounds = merge(bounds, this.slotShape(i).getClientRect());
+        }
+
+        // pad by half a gap each side, so every slot is exactly one card wide
+        bounds.left -= this.spaceBetween / 2;
+        bounds.right += this.spaceBetween / 2;
+
+        const visible = Math.min(slots, this.maxVisibleCards);
+        const relative = (pointer.x - bounds.left) / bounds.width * visible;
+
+        return Math.min(Math.max(Math.floor(relative), 0), visible - 1);
+    }
+
+    /** Total occupied slots: the cards, plus the gap if one is open. */
+    private slotCount(): number {
+        return this.cards.length + (this.placeholderIndex !== undefined ? 1 : 0);
+    }
+
+    /** The shape drawn in slot `i`, treating the placeholder as if it were a card. */
+    private slotShape(index: number): CardShape | Rectangle {
+        if (this.placeholderIndex === undefined) {
+            return this.cards[index];
+        }
+
+        if (index === this.placeholderIndex) {
+            return this.placeholder;
+        }
+
+        return this.cards[index < this.placeholderIndex ? index : index - 1];
+    }
+
     private update() {
         this.moreIndicator?.destroy();
+        this.moreIndicator = undefined;
 
-        this.placeholder.setAttrs({
-            visible: false,
-            interactive: false
-        });
+        const slots = this.slotCount();
 
-        if (this.cards.length === 0) {
-            this.background.setAttrs({
-                visible: false,
-                interactive: false
-            });
+        if (slots === 0) {
+            this.placeholder.setAttrs({visible: false, interactive: false});
+            this.background.setAttrs({visible: false, interactive: false});
             return;
         }
 
-        const maxWidth = this.handScene.width() - SIZES.CONTROLS_WIDTH;
+        this.placeholder.setAttrs({
+            visible: this.placeholderIndex !== undefined,
+            interactive: this.placeholderIndex !== undefined
+        });
 
-        // draw cards
-        for (let i = 0; i < this.cards.length; ++i) {
-            if (this.cards[i].card.cardType === "placeholder") {
-                this.placeholder.setAttrs({
-                    x: i * (this.cardSize + this.spaceBetween),
-                    y: 0,
+        for (let i = 0; i < slots; ++i) {
+            const shape = this.slotShape(i);
+            const visible = i < this.maxVisibleCards;
 
-                    visible: true,
-                    interactive: true
-                });
-            } else if (i < this.maxVisibleCards) {
-                this.cards[i].shape.setAttrs({
-                    x: i * (this.cardSize + this.spaceBetween),
-                    y: 0,
-
-                    visible: true,
-                    interactive: true
-                });
-            } else {
-                this.cards[i].shape.setAttrs({
-                    visible: false,
-                    interactive: false
-                });
-            }
+            shape.setAttrs({
+                x: i * (this.cardSize + this.spaceBetween),
+                y: 0,
+                visible,
+                interactive: visible
+            });
         }
 
-        // draw more indicator
-        if (this.cards.length > this.maxVisibleCards) {
+        if (slots > this.maxVisibleCards) {
             this.moreIndicator = new Text({
-                text: `+ ${this.cards.length - this.maxVisibleCards}`,
-
+                text: `+ ${slots - this.maxVisibleCards}`,
                 originX: 0,
                 originY: 0.5,
                 x: this.maxVisibleCards * (this.cardSize + this.spaceBetween) + this.spaceBetween,
                 y: this.cardSize / 2,
-
                 fontFamily: "Exo2Bold",
                 fill: Color.WHITE.toString(),
-                fontSize: 10,
+                fontSize: 10
             });
 
             this.handContents.add(this.moreIndicator);
         }
 
+        const maxWidth = this.handScene.width() - SIZES.CONTROLS_WIDTH;
+
         this.handContents.setAttrs({
             originX: 0.5,
             originY: 1,
-
             x: maxWidth / 2,
             y: this.handScene.height() - this.spaceBetween + SIZES.STROKE_WIDTH
         });
 
-        // draw background
         this.background.setAttrs({
             originX: 0.5,
             originY: 1,
@@ -245,11 +196,5 @@ export class HandManager {
             visible: true,
             interactive: true
         });
-    }
-
-    private getCardIndex(info: CardInfo): number | undefined {
-        return this.cards.findIndex(o =>
-            o.card.cardType !== "placeholder" && CardGetters.id(o.card) === CardGetters.id(info.card)
-        );
     }
 }

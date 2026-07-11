@@ -1,0 +1,88 @@
+@include('partials/header')
+
+<div class="row mx-3">
+    <div class="col-lg-5 mx-auto">
+        <h1 class="text-center">Настройки</h1>
+
+        <div class="alert alert-primary mt-3" role="alert">
+            Не забудьте сохранить настройки, нажав на кнопку внизу.
+        </div>
+
+        @include('partials/flash')
+
+        <form action="/settings" method="POST" id="game-create-form">
+            {{-- Blue connector color --}}
+            <div class="mb-3">
+                <label for="blueConnectorColor" class="form-label d-flex justify-content-between align-items-center">
+                    <span>Цвет синего коннектора</span>
+                    <input
+                            type="color"
+                            class="form-control form-control-color ms-3"
+                            id="blueConnectorColor"
+                            name="blueConnectorColor"
+                            value="{{ settings.blueConnectorColor }}"
+                            data-default="{{ defaultSettings.blueConnectorColor }}"
+                    >
+                </label>
+            </div>
+
+            {{-- Red connector color --}}
+            <div class="mb-3">
+                <label for="redConnectorColor" class="form-label d-flex justify-content-between align-items-center">
+                    <span>Цвет красного коннектора</span>
+                    <input
+                            type="color"
+                            class="form-control form-control-color ms-3"
+                            id="redConnectorColor"
+                            name="redConnectorColor"
+                            value="{{ settings.redConnectorColor }}"
+                            data-default="{{ defaultSettings.redConnectorColor }}"
+                    >
+                </label>
+            </div>
+
+            {{-- Fixed modules grid --}}
+            <div class="form-check form-switch mb-4">
+                <input
+                        class="form-check-input"
+                        type="checkbox"
+                        id="fixedModulesGrid"
+                        name="fixedModulesGrid"
+                        value="on"
+                        data-default="{{ defaultSettings.fixedModulesGrid ? 'true' : 'false' }}"
+                        {{ settings.fixedModulesGrid ? 'checked' : '' }}
+                >
+                <label class="form-check-label" for="fixedModulesGrid">
+                    Фиксированная сетка модулей
+                </label>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    Сохранить
+                </button>
+
+                <button type="button" id="resetSettings" class="btn btn-danger">
+                    Сбросить
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const blueInput = document.getElementById('blueConnectorColor')
+        const redInput = document.getElementById('redConnectorColor')
+        const gridCheckbox = document.getElementById('fixedModulesGrid')
+        const resetBtn = document.getElementById('resetSettings')
+
+        resetBtn.addEventListener('click', () => {
+            blueInput.value = blueInput.dataset.default
+            redInput.value = redInput.dataset.default
+            gridCheckbox.checked = gridCheckbox.dataset.default === 'true'
+        });
+    })
+</script>
+
+@include('partials/footer')

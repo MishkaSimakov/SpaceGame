@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import {Request, Response, NextFunction} from 'express';
-import {User, UserJWTPayload} from "../../database/entity/user";
+import {User, UserJWTPayload} from "@src/database/entity/user";
 import * as assert from "node:assert";
 
 export interface AuthenticatedRequest extends Request {
@@ -28,6 +28,13 @@ export const auth = async (req: Request, res: Response, next: NextFunction) => {
     }
 
     (req as AuthenticatedRequest).user = user;
+    (res as any).view.share({
+        user: {
+            id: user.id,
+            login: user.login,
+            settings: user.settings
+        }
+    });
 
     next();
 };

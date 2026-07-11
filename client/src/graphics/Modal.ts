@@ -1,7 +1,7 @@
 import Scene from "./engine/Scene";
 import {Rectangle} from "./engine/shapes/Rectangle";
 import {Text} from "./engine/shapes/Text";
-import Color from "./Color";
+import Color from "@common/helpers/Color";
 
 const offset = 10;
 

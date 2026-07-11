@@ -1,21 +1,19 @@
-import {ModuleCard, PlayerId, Vector2} from "@common/Types";
-import {CardGetters} from "@common/getters/Card";
+import {ModuleCard, PlayerId} from "@common/Types";
 import {Observable} from "@common/Observable";
+import Color from "@common/helpers/Color";
 
+import * as assert from "../../assert";
 import {BoundaryType, CountBoundary} from "../CountBoundary";
-import Color from "../Color";
-import {CardInfo} from "./CardInfo";
-
-import * as assert from "assert"
+import {FieldCard} from "./CardInfo";
 
 type SelectedModuleInfo = {
     module: ModuleCard,
     player: PlayerId
-}
+};
 
 export class ChooseModuleManager {
     private readonly handle: Observable<SelectedModuleInfo[]>;
-    private selected: CardInfo[] = [];
+    private selected: FieldCard[] = [];
 
     constructor(
         private check: (info: SelectedModuleInfo) => boolean,
@@ -25,16 +23,12 @@ export class ChooseModuleManager {
         this.handle = new Observable<SelectedModuleInfo[]>([]);
     }
 
-    onClick(info: CardInfo) {
-        assert.ok(info.location.type === "chunk");
+    onClick(card: FieldCard) {
+        assert.ok(this.canChooseModule(card));
 
-        const module = CardGetters.asModule(info.card);
+        card.shape.moveToTop();
 
-        assert.ok(this.check({player: info.location.chunk.owner, module: module}));
-
-        info.shape.moveToTop();
-
-        const isSelected = this.selected.includes(info);
+        const isSelected = this.isSelected(card);
 
         if (this.reachedUpperBound() && !isSelected) {
             this.deselect(this.selected[this.selected.length - 1]);
@@ -45,18 +39,16 @@ export class ChooseModuleManager {
         }
 
         if (isSelected) {
-            this.deselect(info);
+            this.deselect(card);
         } else {
-            this.select(info);
+            this.select(card);
         }
 
         this.updateHandle();
     }
 
-    canChooseModule(info: CardInfo): boolean {
-        assert.ok(info.location.type === "chunk");
-
-        return this.check({player: info.location.chunk.owner, module: CardGetters.asModule(info.card)!});
+    canChooseModule(card: FieldCard): boolean {
+        return this.check({player: card.player, module: card.module});
     }
 
     getHandle(): Observable<SelectedModuleInfo[]> {
@@ -64,42 +56,40 @@ export class ChooseModuleManager {
     }
 
     deactivate() {
-        for (const info of this.selected) {
-            this.deselect(info);
+        for (const card of Array.from(this.selected)) {
+            this.deselect(card);
         }
     }
 
-    private isEqual(left: { player: PlayerId, position: Vector2 }, right: { player: PlayerId, position: Vector2 }) {
-        return left.player === right.player && left.position.x === right.position.x && left.position.y === right.position.y;
+    private isSelected(card: FieldCard): boolean {
+        return this.selected.some(s => s.id === card.id);
     }
 
     private reachedUpperBound() {
-        return (this.count.type === BoundaryType.NO_MORE_THAN || this.count.type === BoundaryType.EQUAL) && this.selected.length === this.count.count;
+        return (this.count.type === BoundaryType.NO_MORE_THAN || this.count.type === BoundaryType.EQUAL)
+            && this.selected.length === this.count.count;
     }
 
     private reachedLowerBound() {
-        return (this.count.type === BoundaryType.AT_LEAST || this.count.type === BoundaryType.EQUAL) && this.selected.length === this.count.count;
+        return (this.count.type === BoundaryType.AT_LEAST || this.count.type === BoundaryType.EQUAL)
+            && this.selected.length === this.count.count;
     }
 
-    private deselect(info: CardInfo) {
-        info.shape.strokeWidth(0);
+    private deselect(card: FieldCard) {
+        card.shape.strokeWidth(0);
 
-        this.selected = this.selected.filter(s => s !== info);
+        this.selected = this.selected.filter(s => s.id !== card.id);
     }
 
-    private select(info: CardInfo) {
-        info.shape.strokeWidth(5).stroke(this.strokeColor.toString());
-        this.selected.push(info);
+    private select(card: FieldCard) {
+        card.shape.strokeWidth(5).stroke(this.strokeColor.toString());
+        this.selected.push(card);
     }
 
     private updateHandle() {
-        this.handle.set(this.selected.map(info => {
-            assert.ok(info.location.type === "chunk");
-
-            return {
-                player: info.location.chunk.owner,
-                module: CardGetters.asModule(info.card)
-            };
-        }))
+        this.handle.set(this.selected.map(card => ({
+            player: card.player,
+            module: card.module
+        })));
     }
 }

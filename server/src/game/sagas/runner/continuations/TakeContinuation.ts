@@ -1,4 +1,4 @@
-import {ok} from "@src/helpers/Result";
+import {ok} from "@common/helpers/Result";
 import {Continuation} from "../Continuation";
 import {Environment} from "../Environment";
 import {TakeEffect} from "../Effects";

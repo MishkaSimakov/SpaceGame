@@ -1,7 +1,7 @@
 import {test} from "uvu";
 import * as assert from "uvu/assert";
 import {CancellableRaceProtocol, IParticipant} from "@src/game/CancellableRaceProtocol";
-import {deferred} from "@src/helpers/Deferred";
+import {deferred} from "@common/helpers/Deferred";
 
 test('simpleRace', async () => {
     const first_def = deferred<void>();

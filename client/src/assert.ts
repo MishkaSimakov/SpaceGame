@@ -11,7 +11,7 @@ export function equal(actual: unknown, expected: unknown, message?: string): voi
 }
 
 export function strictEqual(actual: unknown, expected: unknown, message?: string): void {
-    if (actual != expected) {
+    if (actual !== expected) {
         throw message || `Assertion failed: ${actual} === ${expected} evaluated to false`;
     }
 }

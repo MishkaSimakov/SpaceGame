@@ -5,7 +5,7 @@ import {Factory} from "./Factory";
 import {Utils} from "./Utils";
 import {_registerNode} from "./Global";
 import {Container} from "./Container";
-import Color from "../Color";
+import Color from "@common/helpers/Color";
 
 export interface ShapeConfig extends NodeConfig {
     fill?: string;

@@ -1,6 +1,6 @@
 import {Continuation} from "../Continuation";
-import {deferred, Deferred} from "../../../../helpers/Deferred";
-import {Result} from "../../../../helpers/Result";
+import {deferred, Deferred} from "@common/helpers/Deferred";
+import {Result} from "@common/helpers/Result";
 
 export class DeferredContinuation implements Continuation<any> {
     private deferred: Deferred<any>;

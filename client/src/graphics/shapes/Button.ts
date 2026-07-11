@@ -4,7 +4,7 @@ import {GetSet} from "../engine/types";
 import {Factory} from "../engine/Factory";
 import {Rectangle} from "../engine/shapes/Rectangle";
 import {Text} from "../engine/shapes/Text";
-import Color from "../Color";
+import Color from "@common/helpers/Color";
 import {COLORS} from "../constants";
 
 export interface ButtonConfig extends ShapeConfig {

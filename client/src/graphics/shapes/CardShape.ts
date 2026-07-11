@@ -1,14 +1,15 @@
-import {Card, EventCard, ModuleCard} from "@common/Types";
+import {Card} from "@common/Types";
 
 import {Group} from "../engine/Group";
 import {ShapeConfig} from "../engine/Shape";
-import {BoundingRect, GetSet, merge} from "../engine/types";
+import {BoundingRect, GetSet} from "../engine/types";
 import {Factory} from "../engine/Factory";
 import {Rectangle} from "../engine/shapes/Rectangle";
 import {Text} from "../engine/shapes/Text";
-import Color from "../Color";
+import Color from "@common/helpers/Color";
 import {Container} from "../engine/Container";
 import {Node} from "../engine/Node";
+import {getUserSettings} from "../../UserSettingsStore";
 
 
 export type ModuleStates = 'DEFAULT' | 'ENABLED' | 'DISABLED' | 'PROTECTED' | 'SELECTED';
@@ -48,25 +49,23 @@ export class CardShape extends Group<CardConfig> {
     constructor(config: CardConfig) {
         super(config);
 
-        const size = this.size(),
-            card = this.card(),
-            scale = this.size() / 256,
-            title = card.cardType === "module"
-                ? card.module.name.replaceAll(' ', '\n')
-                : card.event.description,
-            baseConnectorWidth = 100,
-            baseConnectorHeight = 20;
+        const card = config.card;
+        const size = this.getSize();
+        const scale = this.getSize() / 256;
+        const title = card.cardType === "module"
+            ? card.module.name.replaceAll(' ', '\n')
+            : card.event.description;
+        const baseConnectorWidth = 100;
+        const baseConnectorHeight = 20;
 
-        let blueColor = Color.fromHex('#4343F4').toString();
-        let redColor = Color.fromHex('#EA4035').toString();
+        const connectorColor = {
+            1: Color.fromHex(getUserSettings().blueConnectorColor).toString(),
+            2: Color.fromHex(getUserSettings().redConnectorColor).toString()
+        };
 
-        let color: Color;
-
-        if (card.cardType === "module") {
-            color = getModuleColor(card.module.health, card.module.totalHealth);
-        } else {
-            color = Color.fromHex('#f8b195');
-        }
+        const cardColor = card.cardType === "module"
+            ? getModuleColor(card.module.health, card.module.totalHealth)
+            : Color.fromHex('#f8b195');
 
         this._rotationGroup = new Group({
             width: size,
@@ -79,7 +78,7 @@ export class CardShape extends Group<CardConfig> {
             height: size - offset * 2,
             x: offset,
             y: offset,
-            fill: color.toString(),
+            fill: cardColor.toString(),
             cornerRadius: 5
         });
 
@@ -126,34 +125,35 @@ export class CardShape extends Group<CardConfig> {
                 fill: Color.WHITE.toString(),
                 originX: 0.5,
                 originY: 0.5,
-                text: this.getCharacteristicsString()
+                text: this.getCharacteristicsString(card)
             });
 
-            if (card.module.connectors.top) {
+            const connectors = card.module.connectors;
+            if (connectors.top !== 0) {
                 this._connectors.push(new Rectangle({
                     x: size / 2,
                     y: -1,
                     originX: 0.5,
                     width: baseConnectorWidth * scale,
                     height: baseConnectorHeight * scale + 1,
-                    fill: card.module.connectors.top === 1 ? blueColor : redColor,
+                    fill: connectorColor[connectors.top],
                     cornerRadius: [0, 0, 10 * scale, 10 * scale]
                 }));
             }
 
-            if (card.module.connectors.left) {
+            if (connectors.left !== 0) {
                 this._connectors.push(new Rectangle({
                     x: -1,
                     y: size / 2,
                     originY: 0.5,
                     width: baseConnectorHeight * scale + 1,
                     height: baseConnectorWidth * scale,
-                    fill: card.module.connectors.left === 1 ? blueColor : redColor,
+                    fill: connectorColor[connectors.left],
                     cornerRadius: [0, 10 * scale, 10 * scale, 0]
                 }));
             }
 
-            if (card.module.connectors.bottom) {
+            if (connectors.bottom !== 0) {
                 this._connectors.push(new Rectangle({
                     x: size / 2,
                     y: size + 1,
@@ -161,12 +161,12 @@ export class CardShape extends Group<CardConfig> {
                     originX: 0.5,
                     width: baseConnectorWidth * scale,
                     height: baseConnectorHeight * scale + 1,
-                    fill: card.module.connectors.bottom === 1 ? blueColor : redColor,
+                    fill: connectorColor[connectors.bottom],
                     cornerRadius: [10 * scale, 10 * scale, 0, 0]
                 }));
             }
 
-            if (card.module.connectors.right) {
+            if (connectors.right !== 0) {
                 this._connectors.push(new Rectangle({
                     x: size + 1,
                     y: size / 2,
@@ -174,7 +174,7 @@ export class CardShape extends Group<CardConfig> {
                     originY: 0.5,
                     width: baseConnectorHeight * scale + 1,
                     height: baseConnectorWidth * scale,
-                    fill: card.module.connectors.right === 1 ? blueColor : redColor,
+                    fill: connectorColor[connectors.right],
                     cornerRadius: [10 * scale, 0, 0, 10 * scale]
                 }));
             }
@@ -199,10 +199,31 @@ export class CardShape extends Group<CardConfig> {
     }
 
     drawHit() {
-        if (!this.shouldDrawHit())
-            return false;
+        if (this.shouldDrawHit()) {
+            this._hitRect.drawHit();
+        }
+    }
 
-        this._hitRect.drawHit();
+    /**
+     * Re-reads the card's server-owned data: its health, and the stats it prints.
+     *
+     * A card's identity never changes within a game, so its name, connectors and layout are fixed at
+     * construction. Its health is not — and without this a module damaged in combat goes on showing
+     * the health, and the colour, it had when it was drawn.
+     *
+     * NB not `setCard`: `Node.setAttrs` routes a config key to `set` + Capitalised(key), so a method
+     * of that name would be called from the constructor's `super(config)` — before these shapes
+     * exist.
+     */
+    updateCard(card: Card) {
+        this.setAttr('card', card);
+
+        if (card.cardType !== "module") {
+            return;
+        }
+
+        this._background.fill(getModuleColor(card.module.health, card.module.totalHealth).toString());
+        this._values?.text(this.getCharacteristicsString(card));
     }
 
     rotateCard(rotation: number, duration: number) {
@@ -216,30 +237,12 @@ export class CardShape extends Group<CardConfig> {
         }
     }
 
-    get isModule(): boolean {
-        return this.card().cardType === "module";
-    }
-
-    get isEvent(): boolean {
-        return this.card().cardType === "event";
-    }
-
-    getModule(): ModuleCard | undefined {
-        const card = this.card();
-        return card.cardType === "module" ? card.module : undefined;
-    }
-
-    getEvent(): EventCard | undefined {
-        const card = this.card();
-        return card.cardType === "event" ? card.event : undefined;
-    }
-
     getWidth(): number {
-        return this.size();
+        return this.getSize();
     }
 
     getHeight(): number {
-        return this.size();
+        return this.getSize();
     }
 
     getClientRect(relativeTo?: Container<Node>, ignoreStroke?: boolean): BoundingRect | undefined {
@@ -248,14 +251,12 @@ export class CardShape extends Group<CardConfig> {
         }
 
         return this.transformedRect(
-            new BoundingRect(0, 0, this.size(), this.size()),
+            new BoundingRect(0, 0, this.getSize(), this.getSize()),
             relativeTo ?? this.getScene()
         );
     }
 
-    private getCharacteristicsString(): string {
-        const card = this.card();
-
+    private getCharacteristicsString(card: Card): string {
         if (!card || card.cardType === "event")
             return "";
 
@@ -317,15 +318,13 @@ export class CardShape extends Group<CardConfig> {
         }
     }
 
-    size: GetSet<number, this>;
-    card: GetSet<Card, this>;
+    getSize: () => number;
     stroke: GetSet<string, this>;
     strokeWidth: GetSet<number, this>;
     state: GetSet<ModuleStates, this>;
 }
 
-Factory.addGetterSetter(CardShape, 'size', 100);
-Factory.addGetterSetter(CardShape, 'card');
+Factory.addGetter(CardShape, 'size', 100);
 
 Factory.addGetterSetter(CardShape, 'stroke');
 Factory.addGetterSetter(CardShape, 'strokeWidth');

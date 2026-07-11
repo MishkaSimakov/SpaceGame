@@ -6,7 +6,7 @@ import {loadData} from "@src/tools/codegen/common/LoadData";
 import {codegenPath} from "@src/tools/codegen/common/Path";
 import {Assign, ASTNode} from "@src/tools/codegen/python/AST";
 import {generateArgument, generateDefinition} from "@src/tools/codegen/python/GenerateType";
-import {capitalize} from "@src/helpers/Str";
+import {capitalize} from "@common/helpers/Str";
 
 type Action = {
     name: string;

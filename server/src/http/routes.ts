@@ -3,6 +3,7 @@ import {auth} from "./middleware/auth";
 
 import * as UserController from './controllers/UserController';
 import * as GameController from './controllers/GameController';
+import * as UserSettingsController from './controllers/UserSettingsController';
 
 import * as ApiUserController from './controllers/api/UserController';
 import * as ApiGameController from './controllers/api/GameController';
@@ -19,6 +20,11 @@ function getUserRouter(): Router {
     router.post('/register', UserController.register);
     // @ts-ignore
     router.get('/', auth, UserController.home);
+
+    // @ts-ignore
+    router.get('/settings', auth, UserSettingsController.show);
+    // @ts-ignore
+    router.post('/settings', auth, UserSettingsController.store);
 
     router.get('/user/:userId', UserController.showUserPage);
 

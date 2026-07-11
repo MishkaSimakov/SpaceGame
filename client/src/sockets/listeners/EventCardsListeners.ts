@@ -16,7 +16,7 @@ import {ModuleGetters} from "@common/getters/Module";
 import {ModuleType, PlayerId, Vector2} from "@common/Types";
 
 import {ListenersContainer} from "./ListenersContainer";
-import Color from "../../graphics/Color";
+import Color from "@common/helpers/Color";
 import {COLORS} from "../../graphics/constants";
 import {Boundary} from "../../graphics/CountBoundary";
 import {ChooseModulesToMoveDamage} from "../../graphics/activities/ChooseModulesToMoveDamage";

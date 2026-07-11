@@ -61,7 +61,7 @@ export default class Game {
         graphics.add(this.controlsScene);
         graphics.add(this.popupsScene);
 
-        this.cardsManager = new CardsManager(this.spaceshipsScene, this.handScene);
+        this.cardsManager = new CardsManager(this.getGameId(), this.spaceshipsScene, this.handScene);
 
         this.socketManager = new SocketManager(this);
 

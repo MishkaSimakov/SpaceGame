@@ -4,7 +4,7 @@ import {Activity} from "./Activity";
 import Controls from "../scenes/Controls";
 import Spaceships from "../scenes/Spaceships";
 import {Boundary} from "../CountBoundary";
-import Color from "../Color";
+import Color from "@common/helpers/Color";
 import {COLORS} from "../constants";
 import {ModuleGetters} from "@common/getters/Module";
 import {CardsManager} from "../cards/CardsManager";

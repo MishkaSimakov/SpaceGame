@@ -12,7 +12,7 @@ import {
 import {AnnAssign, Assign, ASTNode, ClassDef, Constant, Name, Union} from "@src/tools/codegen/python/AST";
 import {arrayOf, dictOf, getEnum, literal, optional, wrapInDefinition} from "@src/tools/codegen/python/Components";
 import {typeMapping} from "@src/tools/codegen/python/TypeMapping";
-import {capitalize} from "@src/helpers/Str";
+import {capitalize} from "@common/helpers/Str";
 
 export function generateDefinition(name: string, schema: Schema, generatedDefinitions: Record<string, ASTNode>) {
     if (name in generatedDefinitions) {

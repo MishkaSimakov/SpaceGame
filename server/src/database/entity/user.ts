@@ -9,6 +9,7 @@ import bcrypt from "bcrypt";
 import {Game} from "./game";
 import jwt, {JwtPayload} from "jsonwebtoken";
 import * as assert from "node:assert";
+import {UserSettings} from "@common/UserSettings";
 
 export interface UserJWTPayload extends JwtPayload {
     _id: string,
@@ -32,6 +33,9 @@ export class User extends BaseEntity {
 
     @Column({nullable: false})
     isBot!: boolean;
+
+    @Column("simple-json")
+    settings!: UserSettings;
 
     static async createHashedPassword(password: string): Promise<string> {
         const saltRounds = 8;

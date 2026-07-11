@@ -5,6 +5,9 @@
 **/*.sublime-project
 **/*.sublime-workspace
 
-.context
+CLAUDE.md
+.claude
+.playwright-mcp
+wiki
 
 **/node_modules/

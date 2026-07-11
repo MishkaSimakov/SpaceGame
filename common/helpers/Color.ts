@@ -10,6 +10,7 @@ export default class Color {
 
     static BLACK = Color.fromRGBA(0, 0, 0);
     static GREY = Color.fromRGBA(128, 128, 128);
+    static LIGHT_GREY = Color.fromRGBA(200, 200, 200);
     static WHITE = Color.fromRGBA(255, 255, 255);
     static YELLOW = Color.fromHex('#ffa42e');
 
@@ -33,8 +34,12 @@ export default class Color {
         return this;
     }
 
-    static fromHex(hex: string, alpha: number = 1): Color {
-        let parts = hex.slice(1).match(/.{1,2}/g);
+    static fromHex(hex: string, alpha: number = 1): Color | undefined {
+        const parts = hex.slice(1).match(/.{1,2}/g);
+
+        if (parts === null || parts.length !== 3) {
+            return undefined;
+        }
 
         return new Color(
             parseInt(parts[0], 16),
@@ -63,7 +68,7 @@ export default class Color {
         return Color.fromRGBA(r, g, b, a);
     }
 
-    static fromString(value: string): Color {
+    static fromString(value: string): Color | undefined {
         if (value.startsWith('rgba(')) {
             value = value.slice(5).slice(0, -1);
             const [r, g, b, a] = value.split(',').map(Number);
@@ -72,8 +77,7 @@ export default class Color {
             return Color.fromHex(value);
         }
 
-        console.error(`Failed to parse color string: ${value}`);
-        return Color.BLACK;
+        return undefined;
     }
 
     toString(): string {

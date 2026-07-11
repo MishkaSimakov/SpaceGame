@@ -1,4 +1,4 @@
-import Color from "./Color";
+import Color from "@common/helpers/Color";
 
 type ButtonColors = { DISABLED: Color, DEFAULT: Color, HOVER: Color, ACTIVE: Color };
 

@@ -65,8 +65,6 @@ function traverseInterpoints(ship: Spaceship, startPoint: Vector2, prevDirection
     let currentDirection = prevDirection;
     let currentPoint = startPoint;
 
-    let iteration = 0;
-
     while (true) {
         const pointType = getTraverseDirection(ship, currentPoint, currentDirection);
 
@@ -98,11 +96,6 @@ function traverseInterpoints(ship: Spaceship, startPoint: Vector2, prevDirection
         }
 
         if (nextPoint.x === startPoint.x && nextPoint.y === startPoint.y) {
-            break;
-        }
-
-        ++iteration;
-        if (iteration > 20) {
             break;
         }
 
