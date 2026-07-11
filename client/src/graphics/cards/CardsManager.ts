@@ -451,8 +451,8 @@ export class CardsManager {
             onChunkSelect: (id: CardId) => this.onChunkSelect(id),
             onChunkDeselect: () => this.onChunkDeselect(),
             onDragStart: (id: CardId) => this.onDragStart(id),
-            onDragMove: (id: CardId) => this.onDragMove(id),
-            onDragEnd: (id: CardId) => this.onDragEnd(id)
+            onDragMove: () => this.onDragMove(),
+            onDragEnd: () => this.onDragEnd()
         };
     }
 
@@ -615,7 +615,8 @@ export class CardsManager {
         shape.setAbsolutePosition(absolute);
     }
 
-    private onDragMove(id: CardId) {
+    // the gesture in flight already knows what is being dragged, so the card is not needed here
+    private onDragMove() {
         if (this.dragState === undefined) {
             return;
         }
@@ -742,7 +743,7 @@ export class CardsManager {
         });
     }
 
-    private onDragEnd(id: CardId) {
+    private onDragEnd() {
         const drag = this.dragState;
 
         document.body.style.cursor = "default";

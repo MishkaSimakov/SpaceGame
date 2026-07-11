@@ -10,7 +10,7 @@ import {SpaceshipGetters} from "@common/getters/Spaceship";
 import {COLORS} from "../../graphics/constants";
 import {ListenersContainer} from "./ListenersContainer";
 import {ChoosePlayerForAttackActivity} from "../../graphics/activities/ChoosePlayerForAttack";
-import * as assert from "assert"
+import * as assert from "../../assert";
 
 export const mainListeners: ListenersContainer = {
     async rebuildSpaceshipRequest({}, {game}) {
