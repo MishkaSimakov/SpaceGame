@@ -8,7 +8,12 @@ import {mainModulesInfo, ModuleInfo, modulesInfo} from "@common/cards/Modules";
 
 /** Hands out ids that are unique across every card in one generated board. */
 export class IdAllocator {
-    private next = 1;
+    private next: number;
+
+    /** Start high to mint cards the server "drew" later, without colliding with a board's own ids. */
+    constructor(start = 1) {
+        this.next = start;
+    }
 
     take(): number {
         return this.next++;

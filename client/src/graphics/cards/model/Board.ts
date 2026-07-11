@@ -278,6 +278,16 @@ export class Board {
         }
     }
 
+    /**
+     * Destroys emptied chunks and splits any chunk that is no longer connected. Cheap to call after
+     * a batch of moves, which is what lets a batch leave the board briefly inconsistent.
+     */
+    repairChunks() {
+        for (const chunk of this.getChunks()) {
+            this.updateChunkConnectedness(chunk.id);
+        }
+    }
+
     /** Absorbs the connected chunks into `primaryId`, then destroys them. */
     mergeChunks(primaryId: ChunkId, connectionPoints: ConnectionPoint[]) {
         if (connectionPoints.length === 0) {
