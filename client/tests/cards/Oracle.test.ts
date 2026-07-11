@@ -191,8 +191,8 @@ describe("server agreement catches disagreement", () => {
         const board = healthyBoard();
         const {player, otherPlayers} = serverFromBoard(board);
 
-        // the server says a module took damage; a board that ignores this is exactly the
-        // stale-visuals defect
+        // health is the server's to dictate: a board still showing the old value is out of date, and
+        // must be reported as such
         player.spaceship.modules[0].health -= 1;
 
         expect(checkServerAgreement(board, player, otherPlayers).join()).toMatch(/has stale data/);

@@ -19,6 +19,7 @@ import {getSpaceshipOutline} from "./ShipOutline";
 import {Board, CardId} from "./model/Board";
 import {ChunkId} from "./model/Chunk";
 import {CONNECT_DISTANCE, ConnectionPoint} from "./model/Connect";
+import {deserialize, serialize} from "./model/Persist";
 import {reconcile} from "./model/Reconcile";
 
 /**
@@ -42,6 +43,7 @@ type DragState = {
 };
 
 export class CardsManager {
+    private readonly gameId: string;
     private readonly cardSize: number;
     private readonly outlineColor = Color.fromHex("#ffb703");
 
@@ -65,6 +67,8 @@ export class CardsManager {
     private choosing: ChooseModuleManager[] = [];
 
     constructor(gameId: string, spaceshipsScene: SpaceshipsScene, handScene: Scene) {
+        this.gameId = gameId;
+
         this.spaceshipsScene = spaceshipsScene;
         this.handScene = handScene;
 
@@ -72,6 +76,38 @@ export class CardsManager {
         this.handManager = new HandManager(this.handScene, this.cardSize);
 
         window["cardsManager"] = this;
+    }
+
+    // -------------------------------------------------------------- storage
+
+    /**
+     * Per game: a card id only means anything within the game that issued it, so one key shared
+     * across games would let one game's arrangement be draped over another's cards.
+     */
+    private storageKey(): string {
+        return `spaceships//cardsManager/${this.gameId}`;
+    }
+
+    /** The arrangement the player left behind, or nothing we can trust. */
+    private restore(): Board | undefined {
+        try {
+            return deserialize(localStorage.getItem(this.storageKey()));
+        } catch {
+            // storage can be disabled outright; the game simply starts from a fresh arrangement
+            return undefined;
+        }
+    }
+
+    private persist() {
+        if (this.board === undefined) {
+            return;
+        }
+
+        try {
+            localStorage.setItem(this.storageKey(), serialize(this.board));
+        } catch {
+            // full, or disabled: losing the arrangement is not worth losing the game over
+        }
     }
 
     // ------------------------------------------------------------- the board
@@ -90,7 +126,9 @@ export class CardsManager {
         }
 
         if (this.board === undefined) {
-            this.board = new Board(player.id);
+            // What was stored is only a hint: reconcile below overrules it wherever the game has
+            // moved on. If there is nothing usable there, an empty board costs only the arrangement.
+            this.board = this.restore() ?? new Board(player.id);
         }
 
         reconcile(this.board, player, otherPlayers);
@@ -226,6 +264,11 @@ export class CardsManager {
 
         this.layout();
         this.applyStates();
+
+        // mid-gesture the arrangement is still in the player's hand, so it is not worth storing yet
+        if (this.dragState === undefined) {
+            this.persist();
+        }
     }
 
     /** Positions and rotations only — cheap enough to run on every pointer move. */
@@ -418,7 +461,9 @@ export class CardsManager {
 
         if (board.isCardModifiable(id)) {
             board.rotateInPlace(id);
+
             this.layout();
+            this.persist();
         }
 
         const info = board.getCard(id);

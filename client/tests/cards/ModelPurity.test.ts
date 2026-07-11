@@ -24,6 +24,13 @@ function modelFiles(): string[] {
         .map(f => path.join(MODEL_DIR, f));
 }
 
+/** Prose is not code: a comment may name what the file deliberately does not do. */
+function code(source: string): string {
+    return source
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .replace(/\/\/.*$/gm, "");
+}
+
 function importsOf(source: string): string[] {
     // matches `from "..."` in both import and re-export position
     return Array.from(source.matchAll(/from\s+["']([^"']+)["']/g)).map(m => m[1]);
@@ -38,7 +45,7 @@ describe("board model purity", () => {
         const violations: string[] = [];
 
         for (const file of modelFiles()) {
-            const source = fs.readFileSync(file, "utf8");
+            const source = code(fs.readFileSync(file, "utf8"));
 
             for (const specifier of importsOf(source)) {
                 if (FORBIDDEN.some(forbidden => specifier.includes(forbidden))) {
@@ -55,7 +62,7 @@ describe("board model purity", () => {
         const violations: string[] = [];
 
         for (const file of modelFiles()) {
-            const source = fs.readFileSync(file, "utf8");
+            const source = code(fs.readFileSync(file, "utf8"));
 
             for (const global of ["localStorage", "document", "window"]) {
                 if (new RegExp(`\\b${global}\\b`).test(source)) {

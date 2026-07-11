@@ -156,6 +156,23 @@ export class Board {
         return chunk;
     }
 
+    /**
+     * Takes back a chunk that already has an id — how a stored board is rebuilt, since the cards in
+     * it refer to their chunk by that id.
+     */
+    adoptChunk(chunk: Chunk) {
+        assert.ok(this.getChunk(chunk.id) === undefined);
+
+        this.chunks.push({
+            id: chunk.id,
+            owner: chunk.owner,
+            position: {x: chunk.position.x, y: chunk.position.y},
+            activatedProtector: chunk.activatedProtector
+        });
+
+        this.nextChunkId = Math.max(this.nextChunkId, chunk.id + 1);
+    }
+
     destroyChunk(id: ChunkId) {
         assert.ok(this.getChunkCards(id).length === 0);
 

@@ -267,7 +267,7 @@ describe("the board disagrees with the server before reconcile", () => {
     });
 });
 
-describe("reconcile handles the cases that used to be broken", () => {
+describe("reconcile applies what the server says about a card", () => {
     it("refreshes the health of a damaged module", () => {
         const board = buildBoard({
             localShip: {steps: [{variant: 0, slot: 0, rotation: 0}, {variant: 1, slot: 0, rotation: 0}], position: {x: 0, y: 0}},
@@ -285,8 +285,8 @@ describe("reconcile handles the cases that used to be broken", () => {
 
         reconcile(board, server.player, server.otherPlayers);
 
-        // the defect this replaces: the board updated its data but the card kept its old health,
-        // so a damaged module never changed colour
+        // the board's copy of the card must carry the new health, since that is what the view reads
+        // to colour it
         expect(board.getCard(damaged.id)!.card).toMatchObject({
             module: {id: damaged.id, health: damaged.health}
         });

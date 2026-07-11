@@ -1,10 +1,8 @@
-import {Card, ModuleCard, ModuleType, OtherPlayer, Player} from "@common/Types";
+import {Card, ModuleCard, OtherPlayer, Player} from "@common/Types";
 import {CardGetters} from "@common/getters/Card";
-import {SpaceshipGetters} from "@common/getters/Spaceship";
 
 import {Board} from "../../../src/graphics/cards/model/Board";
-import {Chunk} from "../../../src/graphics/cards/model/Chunk";
-import {hasBadConnection} from "../../../src/graphics/cards/model/Connect";
+import {validateBoard} from "../../../src/graphics/cards/model/Validate";
 
 /**
  * The specification of a correct board, expressed as checks rather than examples.
@@ -20,106 +18,7 @@ import {hasBadConnection} from "../../../src/graphics/cards/model/Connect";
  * Note a card in `drag` is legal here: a drag in progress is a valid state of the board.
  */
 export function checkBoardInvariants(board: Board): string[] {
-    const violations: string[] = [];
-
-    const local = board.getThisPlayer();
-    const chunks = board.getChunks();
-
-    // every chunk reference resolves, and only modules live on the field
-    for (const info of board.getCards()) {
-        const id = CardGetters.id(info.card);
-        const location = info.location;
-
-        if (location.type !== "chunk") {
-            continue;
-        }
-
-        if (chunks.every(c => c.id !== location.chunk)) {
-            violations.push(`card ${id} references missing chunk ${location.chunk}`);
-        }
-
-        if (info.card.cardType !== "module") {
-            violations.push(`event card ${id} is on the field`);
-        }
-    }
-
-    // hand indices are contiguous 0..n-1
-    const handIndices = board.getCards()
-        .filter(info => info.location.type === "hand")
-        .map(info => (info.location as { index: number }).index)
-        .sort((a, b) => a - b);
-
-    const expected = handIndices.map((_, i) => i);
-    if (handIndices.join(",") !== expected.join(",")) {
-        violations.push(`hand indices are not contiguous: [${handIndices.join(",")}]`);
-    }
-
-    for (const chunk of chunks) {
-        const cards = board.getChunkCards(chunk.id);
-
-        if (cards.length === 0) {
-            violations.push(`chunk ${chunk.id} is empty`);
-            continue;
-        }
-
-        // a chunk holding a non-module is already reported above; its geometry is meaningless
-        if (cards.some(info => info.card.cardType !== "module")) {
-            continue;
-        }
-
-        const modules = cards.map(info => CardGetters.asModule(info.card)!);
-
-        // no two modules stacked on the same cell
-        const cells = modules.map(m => `${m.x};${m.y}`);
-        if (new Set(cells).size !== cells.length) {
-            violations.push(`chunk ${chunk.id} has two modules on one cell`);
-        }
-
-        // A chunk is one connected group with matching connectors — but it is NOT required to
-        // satisfy checkConfiguration, which additionally demands every module be attached to
-        // something. A fragment of a single module is legal: it is a hand card lying on the field.
-        const spaceship = {modules};
-
-        if (SpaceshipGetters.getComponents(spaceship).length > 1) {
-            violations.push(`chunk ${chunk.id} is not connected`);
-        }
-
-        if (hasBadConnection(spaceship)) {
-            violations.push(`chunk ${chunk.id} has mismatched connectors`);
-        }
-    }
-
-    // Worked out here rather than via Board.hasMainModule, which rightly refuses to read a chunk
-    // holding a non-module. The oracle has to survive the very corruption it is looking for.
-    const hasMain = (chunk: Chunk) => board.getChunkCards(chunk.id).some(info =>
-        info.card.cardType === "module" && info.card.module.type === ModuleType.MainModule
-    );
-
-    // a player has at most one ship
-    const owners = new Set(chunks.map(c => c.owner));
-    for (const owner of owners) {
-        const mainChunks = chunks.filter(c => c.owner === owner && hasMain(c));
-
-        if (mainChunks.length > 1) {
-            violations.push(`player ${owner} has ${mainChunks.length} main chunks`);
-        }
-
-        // an opponent's hand is hidden, so their pre-assembled fragments are invisible to us:
-        // they can only ever show their real ship
-        if (owner !== local) {
-            const ownerChunks = chunks.filter(c => c.owner === owner);
-
-            if (ownerChunks.length !== 1) {
-                violations.push(`opponent ${owner} has ${ownerChunks.length} chunks, expected exactly 1`);
-            }
-
-            if (mainChunks.length !== 1) {
-                violations.push(`opponent ${owner} has no main chunk`);
-            }
-        }
-    }
-
-    return violations;
+    return validateBoard(board);
 }
 
 /** Everything about a card the server owns. Position and rotation are the client's, so not here. */
