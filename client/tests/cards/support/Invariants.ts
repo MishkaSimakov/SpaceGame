@@ -1,8 +1,9 @@
-import {Card, ModuleCard, OtherPlayer, Player} from "@common/Types";
+import {Card, ModuleCard, ModuleType, OtherPlayer, Player} from "@common/Types";
 import {CardGetters} from "@common/getters/Card";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
 
 import {Board} from "../../../src/graphics/cards/model/Board";
+import {Chunk} from "../../../src/graphics/cards/model/Chunk";
 import {hasBadConnection} from "../../../src/graphics/cards/model/Connect";
 
 /**
@@ -88,10 +89,16 @@ export function checkBoardInvariants(board: Board): string[] {
         }
     }
 
+    // Worked out here rather than via Board.hasMainModule, which rightly refuses to read a chunk
+    // holding a non-module. The oracle has to survive the very corruption it is looking for.
+    const hasMain = (chunk: Chunk) => board.getChunkCards(chunk.id).some(info =>
+        info.card.cardType === "module" && info.card.module.type === ModuleType.MainModule
+    );
+
     // a player has at most one ship
     const owners = new Set(chunks.map(c => c.owner));
     for (const owner of owners) {
-        const mainChunks = chunks.filter(c => c.owner === owner && board.hasMainModule(c.id));
+        const mainChunks = chunks.filter(c => c.owner === owner && hasMain(c));
 
         if (mainChunks.length > 1) {
             violations.push(`player ${owner} has ${mainChunks.length} main chunks`);
