@@ -4,11 +4,9 @@ import fc from "fast-check";
 import {ModuleCard, ModuleType, Spaceship} from "@common/Types";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
 
-// Smoke test for the client test setup (step 0). It proves three things:
-//   1. the @common alias resolves,
-//   2. the shared rules layer runs unmodified under vitest,
-//   3. fast-check is wired up.
-// The real suites (generators, invariants, reconcile) build on all three.
+// Guards the client test setup itself: that the @common alias resolves, that the shared rules
+// layer runs under vitest, and that fast-check is wired up. Every other suite here depends on all
+// three, so when they break this fails first and says so plainly.
 
 function module(id: number, x: number, y: number, connectors: ModuleCard["connectors"], type = ModuleType.SolarPanel): ModuleCard {
     return {

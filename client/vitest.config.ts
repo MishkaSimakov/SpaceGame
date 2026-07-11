@@ -11,6 +11,6 @@ export default defineConfig({
         // The board model is pure — no DOM needed. Anything that needs a canvas
         // is view code and is verified in the browser instead.
         environment: "node",
-        include: ["src/**/*.test.ts"]
+        include: ["tests/**/*.test.ts"]
     }
 });
