@@ -34,7 +34,7 @@ export default class App {
         this.serverManager.initServer();
 
         // init sockets
-        let io = this.serverManager.initSockets();
+        const io = this.serverManager.initSockets();
 
         // init games manager
         this.gamesManager = new GamesManager(io);

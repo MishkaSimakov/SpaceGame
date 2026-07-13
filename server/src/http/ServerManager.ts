@@ -9,7 +9,7 @@ import cors from "cors";
 import path from "path";
 import serveStatic from "serve-static";
 
-// @ts-ignore
+// @ts-expect-error edge.js is ESM-only and ships no CommonJS types for node16 resolution
 import {Edge} from "edge.js";
 import cookieParser from 'cookie-parser';
 import {Express} from "express";

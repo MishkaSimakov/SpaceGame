@@ -53,7 +53,7 @@ export class GameClock {
     }
 
     removeTimeout(handle: TimeoutHandle) {
-        this.deadlines = this.deadlines.filter(([d, c]) => c != handle);
+        this.deadlines = this.deadlines.filter(([, c]) => c != handle);
     }
 
     private checkDeadlines() {

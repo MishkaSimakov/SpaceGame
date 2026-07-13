@@ -9,7 +9,7 @@ export default class DatabaseManager {
     }
 
     async initConnection() {
-        const AppDataSource = new DataSource({
+        const appDataSource = new DataSource({
             type: "postgres",
             host: process.env.DB_HOST,
             port: parseInt(process.env.DB_PORT ?? "5432"),
@@ -20,7 +20,7 @@ export default class DatabaseManager {
             entities: [User, Game],
         });
 
-        await AppDataSource.initialize()
+        await appDataSource.initialize()
             .then(async () => {
                 console.log("Data Source has been initialized!");
             })
@@ -43,7 +43,7 @@ export default class DatabaseManager {
                 continue;
             }
 
-            let user = new User();
+            const user = new User();
 
             user.login = name;
             user.password = await User.createHashedPassword(name);

@@ -25,7 +25,7 @@ export class FileActionsStorage implements IActionsStorage {
             purpose,
 
             storedAtGameTime: gameTime,
-        }
+        };
 
         fs.appendFileSync(this.logFilepath, JSON.stringify(forStorage) + '\n');
     }

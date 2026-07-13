@@ -18,33 +18,33 @@ function getUserRouter(): Router {
 
     router.post('/login', UserController.login);
     router.post('/register', UserController.register);
-    // @ts-ignore
+    // @ts-expect-error handler takes an AuthenticatedRequest, which Express's RequestHandler does not provide
     router.get('/', auth, UserController.home);
 
-    // @ts-ignore
+    // @ts-expect-error handler takes an AuthenticatedRequest, which Express's RequestHandler does not provide
     router.get('/settings', auth, UserSettingsController.show);
-    // @ts-ignore
+    // @ts-expect-error handler takes an AuthenticatedRequest, which Express's RequestHandler does not provide
     router.post('/settings', auth, UserSettingsController.store);
 
     router.get('/user/:userId', UserController.showUserPage);
 
     router.get('/game/rules', GameController.showRules);
-    // @ts-ignore
+    // @ts-expect-error handler takes an AuthenticatedRequest, which Express's RequestHandler does not provide
     router.get('/game/create', auth, GameController.showCreatePage);
-    // @ts-ignore
+    // @ts-expect-error handler takes an AuthenticatedRequest, which Express's RequestHandler does not provide
     router.post('/game/create', auth, GameController.create);
-    // @ts-ignore
+    // @ts-expect-error handler takes an AuthenticatedRequest, which Express's RequestHandler does not provide
     router.get('/game/:gameId', auth, GameController.joinGame);
-    // @ts-ignore
+    // @ts-expect-error handler takes an AuthenticatedRequest, which Express's RequestHandler does not provide
     router.get('/game/:gameId/status', auth, gameOwner, GameController.showStatusPage);
 
-    // @ts-ignore
+    // @ts-expect-error handler takes an AuthenticatedRequest, which Express's RequestHandler does not provide
     router.post('/game/:gameId/delete', auth, gameOwner, GameController.deleteGame);
-    // @ts-ignore
+    // @ts-expect-error handler takes an AuthenticatedRequest, which Express's RequestHandler does not provide
     router.post('/game/:gameId/deactivate', auth, gameOwner, GameController.deactivateGame);
 
     router.get('/debug/deleteAllGames', GameController.deleteAllGames);
-    // @ts-ignore
+    // @ts-expect-error handler takes an AuthenticatedRequest, which Express's RequestHandler does not provide
     router.get('/debug/createGame', auth, GameController.createGame);
 
     return router;
@@ -58,7 +58,7 @@ function getApiRouter(): Router {
     router.post('/login', ApiUserController.login);
     router.post('/register', ApiUserController.register);
 
-    // @ts-ignore
+    // @ts-expect-error handler takes an AuthenticatedRequest, which Express's RequestHandler does not provide
     router.post('/game/create', auth, ApiGameController.create);
     router.post('/game/:id/logs', auth, ApiGameController.logs);
 

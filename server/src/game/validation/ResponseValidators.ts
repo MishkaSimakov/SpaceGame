@@ -48,7 +48,7 @@ export const validators: ResponseValidatorsContainer = {
     }),
     discardCardsResponse: (state, request) => {
         const player = StateGetters.playerById(state, request.payload.player)!;
-        const outsideRangeError = `Индекс карты выходит за допустимые границы (\\not\\in [0, ${player.hand.length - 1}])`
+        const outsideRangeError = `Индекс карты выходит за допустимые границы (\\not\\in [0, ${player.hand.length - 1}])`;
         const minDiscardedCards = player.hand.length - state.settings.maxCardsOnHand;
 
         return z.object({
@@ -107,7 +107,7 @@ export const validators: ResponseValidatorsContainer = {
                     },
                     {error: "Недостаточно энергии для выбранного оружия."}
                 ),
-        })
+        });
     },
     useModuleSecondTimeResponse: () =>
         z.object({
@@ -159,7 +159,7 @@ export const validators: ResponseValidatorsContainer = {
         }),
     chooseCardsForRepairSpaceshipResponse: (state, request) => {
         const player = StateGetters.playerById(state, request.payload.player)!;
-        const outsideRangeError = `Индекс карты выходит за допустимые границы (\\not\\in [0, ${player.hand.length - 1}])`
+        const outsideRangeError = `Индекс карты выходит за допустимые границы (\\not\\in [0, ${player.hand.length - 1}])`;
         return z.object({
             indexes: z.array(
                 z

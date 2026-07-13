@@ -1,10 +1,10 @@
 import * as assert from "node:assert";
-import jsonpatch from 'fast-json-patch'
+import jsonpatch from 'fast-json-patch';
 import {ZodType} from "zod";
 
-import {GameSettings, GameState, Message, Player, PlayerId, TimeRecordType} from "@common/Types"
+import {GameSettings, GameState, Message, Player, PlayerId} from "@common/Types";
 import * as Actions from "@common/Actions";
-import {addTimeRecord, reducerUpdatedState, shuffleResult, throwDiceResult, timeResult} from "@common/Actions";
+import {reducerUpdatedState, shuffleResult, throwDiceResult, timeResult} from "@common/Actions";
 import {Action, constructAction, isAction} from "@common/ActionsHelpers";
 
 import {getDTO} from "./mappers/GameToGameForPlayerMapper";
@@ -18,10 +18,10 @@ import {runSaga} from "./sagas/runner/RunSaga";
 import {IUser} from "@src/game/interfaces/IUser";
 import {ISocketsManager} from "@src/game/interfaces/ISocketsManager";
 import {ActionPurpose, ActionWithStorageInfo, IActionsStorage} from "@src/game/interfaces/IActionsStorage";
-import {IClock, Milliseconds} from "@src/game/interfaces/IClock";
+import {IClock} from "@src/game/interfaces/IClock";
 import {Environment} from "@src/game/sagas/runner/Environment";
 import {Channel} from "@src/game/sagas/runner/Channel";
-import {deactivateSignal as deactivateSignalSymbol, playerLostSignal} from "@src/game/sagas/runner/Signals";
+import {deactivateSignal as deactivateSignalSymbol} from "@src/game/sagas/runner/Signals";
 import {getPlayerTime} from "@src/game/sagas/components/Time";
 import {CancellableRaceProtocol, IParticipant} from "@src/game/CancellableRaceProtocol";
 import {Observable} from "@common/Observable";
@@ -145,9 +145,9 @@ export default class Game {
         let response: Action | undefined = undefined;
 
         if (isReducerName(action.type)) {
-            let copy = structuredClone(this.state);
+            const copy = structuredClone(this.state);
 
-            // @ts-ignore
+            // @ts-expect-error reducers is keyed by action name, so the payload type cannot be narrowed here
             reducers[action.type](copy, action.payload);
 
             const delta = jsonpatch.compare(this.state, copy);
@@ -157,14 +157,14 @@ export default class Game {
 
             response = reducerUpdatedState(delta);
         } else if (action.type === 'throwDice') {
-            response = throwDiceResult(this.randomizer.dice())
+            response = throwDiceResult(this.randomizer.dice());
         } else if (action.type === 'shuffle') {
             const result = new Array(action.payload.length);
             for (let i = 0; i < action.payload.length; ++i) {
                 result[i] = i;
             }
 
-            this.randomizer.shuffle(result)
+            this.randomizer.shuffle(result);
             response = shuffleResult(result);
         } else if (action.type.endsWith('Request')) {
             // actions that match `*Request` are broadcasted through sockets
@@ -213,20 +213,18 @@ export default class Game {
     }
 
     private awaitReplayEnd(): Promise<void> {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             if (!this.isReplaying.get()) {
                 resolve();
             } else {
-                let id: number;
-
-                id = this.isReplaying.subscribe((isReplaying: boolean) => {
+                const id: number = this.isReplaying.subscribe((isReplaying: boolean) => {
                     if (!isReplaying) {
                         this.isReplaying.unsubscribe(id);
                         resolve();
                     }
                 });
             }
-        })
+        });
     }
 
     async activate(): Promise<GameResult> {
@@ -256,7 +254,7 @@ export default class Game {
             const handler = (action: Action) => {
                 this.processAction(action);
                 this.sagaOutput.take(handler.bind(this));
-            }
+            };
 
             this.sagaOutput.take(handler);
 
@@ -280,7 +278,7 @@ export default class Game {
 
         // game has finished
         // notify players about this
-        for (let player of this.state.players) {
+        for (const player of this.state.players) {
             await this.sockets.emit(player.id, {
                 withAcknowledgement: false,
                 ensureSending: false
@@ -347,7 +345,7 @@ export default class Game {
     syncPlayersData() {
         console.log("🔄 syncing player data");
 
-        for (let player of this.state.players) {
+        for (const player of this.state.players) {
             this.sockets.emit(player.id, {
                 withAcknowledgement: false,
                 ensureSending: false
@@ -388,7 +386,6 @@ export default class Game {
                 this.game.syncPlayersData();
 
                 // TODO: limit attempts!
-                let currentAttempt = 0;
                 let errors: string[] = [];
 
                 while (true) {
@@ -396,7 +393,6 @@ export default class Game {
                         return;
                     }
 
-                    ++currentAttempt;
                     const response = await this.game.sockets.emit(this.requestPlayer, {
                         withAcknowledgement: true,
                         ensureSending: true
@@ -423,7 +419,7 @@ export default class Game {
                         this.response = constructAction(responseType, response.payload);
 
                         return;
-                    } catch (err) {
+                    } catch {
                         errors = ["Произошла ошибка при валидации вашего ответа."];
                     }
                 }
@@ -528,8 +524,8 @@ export default class Game {
         }
     }
 
-    onPlayerConnect(id: PlayerId, socket_id: string) {
-        this.sockets.onPlayerConnect(id, socket_id);
+    onPlayerConnect(id: PlayerId, socketId: string) {
+        this.sockets.onPlayerConnect(id, socketId);
 
         if (this.isDeactivated.get()) {
             this.sockets.emit(id, {

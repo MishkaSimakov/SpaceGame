@@ -13,7 +13,6 @@ import {
     useEventCardToDealDamageRequest,
     useModuleSecondTimeRequest
 } from "@common/Actions";
-import {playerLostSignal, playerTimeoutSignal} from "@src/game/sagas/runner/Signals";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
 
 import {put, select} from "../runner/Effects";
@@ -160,7 +159,7 @@ function* damageByWeapon() {
         ({attacker, victim} = yield* getCombatants());
 
         if (SpaceshipGetters.getMainModuleType(attacker.spaceship) === MainModuleType.UseModuleSecondTime && attacker.energy >= weapon.energyCost * 2) {
-            let {use} = yield* request(
+            const {use} = yield* request(
                 useModuleSecondTimeRequest(attacker.id, weapon.type),
                 'useModuleSecondTimeResponse'
             );

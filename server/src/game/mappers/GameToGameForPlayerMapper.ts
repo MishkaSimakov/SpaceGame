@@ -6,7 +6,7 @@ import Game from "../Game";
 import {getTimeDecreasingPlayerId} from "../sagas/components/Time";
 
 function getPlayersTime(state: GameState, currentTime: number) {
-    let playersTime = state.players
+    const playersTime = state.players
         .map(p => ({
             player: p.id,
             time: p.time
@@ -19,7 +19,7 @@ function getPlayersTime(state: GameState, currentTime: number) {
     const lastRecord = state.timeRecords[state.timeRecords.length - 1];
 
     const record = playersTime.find(v => v.player === lastRecord.playerId)!;
-    record.time -= (currentTime - lastRecord.time)
+    record.time -= (currentTime - lastRecord.time);
 
     return playersTime;
 }

@@ -1,5 +1,4 @@
 import {Assign, ASTNode, ClassDef, Constant, Name, Subscript, Union} from "@src/tools/codegen/python/AST";
-import {SchemaFormType} from "jtd";
 
 export function getEnum(name: string, options: string[]) {
     const body = options.map<Assign>(option =>

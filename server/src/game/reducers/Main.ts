@@ -1,6 +1,6 @@
 import * as assert from "node:assert";
 
-import * as Actions from "@common/Actions"
+import * as Actions from "@common/Actions";
 import {StateGetters} from "@common/getters/State";
 import {CardType, GameState, TimeRecordType} from "@common/Types";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
@@ -228,7 +228,7 @@ export const reducers: ReducersType = {
             state.discards.event = [];
         }
     },
-}
+};
 
 export function isReducerName(name: string): name is keyof ReducersType {
     return name in reducers;

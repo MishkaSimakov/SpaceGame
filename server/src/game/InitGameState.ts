@@ -14,7 +14,7 @@ import {IUser} from "@src/game/interfaces/IUser";
 
 
 function addEvents(idCounterRef: { value: number }, type: EventType, description: string, count: number): EventCard[] {
-    let events: EventCard[] = [];
+    const events: EventCard[] = [];
 
     for (let i = 0; i < count; i++) {
         events.push({
@@ -53,8 +53,8 @@ function getModulesFromConfig(idCounterRef: { value: number }, type: ModuleType,
 function getInitialModulesStack(idCounterRef: { value: number }): ModuleCard[] {
     const modules: ModuleCard[] = [];
 
-    for (let [type, info] of Object.entries(modulesInfo)) {
-        modules.push(...getModulesFromConfig(idCounterRef, type as ModuleType, info))
+    for (const [type, info] of Object.entries(modulesInfo)) {
+        modules.push(...getModulesFromConfig(idCounterRef, type as ModuleType, info));
     }
 
     return modules;
@@ -79,7 +79,7 @@ function initPlayers(users: IUser[]): Player[] {
 function getInitialMainModulesStack(idCounterRef: { value: number }) {
     const modules: ModuleCard[] = [];
 
-    for (let [type, info] of Object.entries(mainModulesInfo)) {
+    for (const [type, info] of Object.entries(mainModulesInfo)) {
         const module = getModulesFromConfig(idCounterRef, ModuleType.MainModule, info)[0];
         module.mainModuleType = type as MainModuleType;
 
@@ -90,7 +90,7 @@ function getInitialMainModulesStack(idCounterRef: { value: number }) {
 }
 
 export function getInitialGameState(users: IUser[], settings: GameSettings): GameState {
-    let idCounter = {value: 0};
+    const idCounter = {value: 0};
 
     return {
         stack: {

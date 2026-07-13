@@ -10,4 +10,4 @@ export const effectContinuationsMap: Record<Effect["input"]["type"], EffectConti
     select: SelectContinuation,
     put: PutContinuation,
     take: TakeContinuation,
-}
+};

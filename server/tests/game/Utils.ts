@@ -95,7 +95,7 @@ export function fakeGameState(playersCount: number): GameState {
         users.push({
             id: i,
             login: `player #${i}`
-        })
+        });
     }
 
     const state = getInitialGameState(users, settings);
@@ -113,10 +113,10 @@ export function fakeGameState(playersCount: number): GameState {
 export function attachReducers(busRef: TestBus, stateRef: GameState) {
     busRef.on('*', (action: Action<string, any, any>) => {
         if (isReducerName(action.type)) {
-            let copy = structuredClone(stateRef);
+            const copy = structuredClone(stateRef);
 
             // TODO: add typing
-            // @ts-ignore
+            // @ts-expect-error reducers is keyed by action name, so the payload type cannot be narrowed here
             reducers[action.type](copy, action.payload);
 
             Object.assign(stateRef, copy);
@@ -173,5 +173,5 @@ export function fakeModule(type: ModuleType, config: Partial<Omit<ModuleInfo, "c
         x: config.x ?? 0,
         y: config.y ?? 0,
         rotation: 0,
-    }
+    };
 }

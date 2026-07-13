@@ -27,7 +27,7 @@ export const store = async (req: AuthenticatedRequest, res: Response) => {
         await req.user.save();
 
         return res.redirect('settings');
-    } catch (err) {
+    } catch {
         return res.redirect('settings');
     }
 };

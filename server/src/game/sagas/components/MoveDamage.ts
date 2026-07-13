@@ -10,7 +10,7 @@ import {damageModule} from "./DamageModule";
 const reasonDescription = {
     [MoveDamageReason.MainModule]: "move damage by main module",
     [MoveDamageReason.EventCard]: "move damage by event card",
-}
+};
 
 export function* moveDamage(reason: MoveDamageReason, energyCost: number, movedDamage: number) {
     const state = yield* select();

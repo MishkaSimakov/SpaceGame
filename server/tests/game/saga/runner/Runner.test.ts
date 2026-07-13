@@ -34,7 +34,7 @@ test('put', async () => {
     bus.on('throwDiceResult', (action) => {
         expect(action.payload.result).toEqual(3);
         receivedAction = true;
-    })
+    });
 
     await runSaga(bus.env, testSaga);
 

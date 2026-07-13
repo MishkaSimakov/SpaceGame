@@ -1,7 +1,7 @@
 import App from "./App";
 
 App.getInstance().init()
-    .then(res => {
+    .then(() => {
         console.log("App started.");
     })
     .catch(err => {

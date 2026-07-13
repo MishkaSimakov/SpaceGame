@@ -1,6 +1,6 @@
 import {expect, test} from "vitest";
 
-import {attachFakeRandomizer, attachReducers, attachTerminalLogger, fakeGameState, TestBus} from "../Utils";
+import {attachFakeRandomizer, attachReducers, fakeGameState, TestBus} from "../Utils";
 import {popOneCard} from "@src/game/sagas/components/PopCards";
 import {CardType} from "@common/Types";
 import {runSaga} from "@src/game/sagas/runner/RunSaga";
@@ -13,7 +13,7 @@ test('drawOneCard', async () => {
         attachReducers(bus, state);
 
         const modulesCount = state.stack[type].length;
-        let expectedCard: any = {cardType: type};
+        const expectedCard: any = {cardType: type};
         expectedCard[type] = state.stack[type][modulesCount - 1];
 
         const {diceCalls, shuffleCalls} = attachFakeRandomizer(bus);
@@ -45,7 +45,7 @@ test('drawOneCardWithDiscards', async () => {
         attachReducers(bus, state);
 
         const modulesCount = state.discards[type].length;
-        let expectedCard: any = {cardType: type};
+        const expectedCard: any = {cardType: type};
         expectedCard[type] = state.discards[type][modulesCount - 1];
 
         const {diceCalls, shuffleCalls} = attachFakeRandomizer(bus);

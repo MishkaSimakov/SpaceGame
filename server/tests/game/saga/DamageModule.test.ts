@@ -256,7 +256,6 @@ test('healthIsRestoredWhenGoesToDiscards', async () => {
     // Setup
     const state = fakeGameState(2);
 
-    let attacker = state.players[0];
     let victim = state.players[1];
     const bus = new TestBus(state);
 
@@ -279,7 +278,6 @@ test('healthIsRestoredWhenGoesToDiscards', async () => {
     );
 
     // Test
-    attacker = state.players[0];
     victim = state.players[1];
 
     expect(victim.spaceship.modules.length).toEqual(1);

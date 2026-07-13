@@ -1,4 +1,4 @@
-import * as Actions from "@common/Actions"
+import * as Actions from "@common/Actions";
 import {take, TakeEffect} from "@src/game/sagas/runner/Effects";
 import {playerLost} from "@common/Actions";
 import {deactivateSignal} from "@src/game/sagas/runner/Signals";

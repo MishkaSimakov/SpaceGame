@@ -6,7 +6,7 @@ import {
     ManyToMany,
     JoinTable,
     PrimaryColumn
-} from "typeorm"
+} from "typeorm";
 import {User} from "./user";
 import {GameSettings} from "@common/Types";
 
@@ -19,15 +19,15 @@ export enum GameStatus {
 @Entity()
 export class Game extends BaseEntity {
     @PrimaryColumn({nullable: false})
-    id!: string
+    id!: string;
 
     @Column({nullable: false})
     name!: string;
 
-    @ManyToOne(type => User, {nullable: false})
+    @ManyToOne(() => User, {nullable: false})
     owner!: User;
 
-    @ManyToOne(type => User, {nullable: true})
+    @ManyToOne(() => User, {nullable: true})
     winner?: User;
 
     @ManyToMany(() => User, (user) => user.games, {nullable: false})

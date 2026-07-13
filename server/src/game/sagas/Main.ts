@@ -1,7 +1,7 @@
 import * as assert from "node:assert";
 
 import {StateGetters} from "@common/getters/State";
-import {PlayerId, TimeRecordType} from "@common/Types";
+import {TimeRecordType} from "@common/Types";
 import {playerLost, setCurrentPlayer, setPlayerSkipNextTurn} from "@common/Actions";
 
 import {put, select} from "./runner/Effects";

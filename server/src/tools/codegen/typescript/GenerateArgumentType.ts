@@ -40,7 +40,7 @@ function generateArgumentTypeWithState(schema: Schema, state: GenerationState): 
 
     const formNotAllowedError = (form: "discriminator" | "enum") => {
         throw new Error(`${form} form is allowed only inside "definitions" section. Use "ref" form instead. Path: ${state.path.join('/')}`);
-    }
+    };
 
     if (isRefForm(schema)) {
         const reference = state.definitions[schema.ref].getReference();
@@ -68,7 +68,7 @@ function generateArgumentTypeWithState(schema: Schema, state: GenerationState): 
 
         if (schema.properties) {
             for (const [name, property] of Object.entries(schema.properties)) {
-                state.path.push(name)
+                state.path.push(name);
                 properties[name] = {
                     type: generateArgumentTypeWithState(property, state),
                     nullable: false
@@ -79,7 +79,7 @@ function generateArgumentTypeWithState(schema: Schema, state: GenerationState): 
 
         if (schema.optionalProperties) {
             for (const [name, property] of Object.entries(schema.optionalProperties)) {
-                state.path.push(name)
+                state.path.push(name);
                 properties[name] = {
                     type: generateArgumentTypeWithState(property, state),
                     nullable: true

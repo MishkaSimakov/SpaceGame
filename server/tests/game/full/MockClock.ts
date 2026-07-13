@@ -18,7 +18,7 @@ export class MockClock implements IClock {
             }
 
             return true;
-        })
+        });
     }
 
     setTimeout(timeout: number, callback: () => void): void {

@@ -53,7 +53,7 @@ function* putTopThreeCardsInAnyOrder(state: GameState) {
         'permuteTopThreeEventCardsResponse'
     );
 
-    let newOrderedCards: Card[] = [];
+    const newOrderedCards: Card[] = [];
     for (let i = 0; i < 3; ++i) {
         newOrderedCards.push(topThreeCards[order[i]]);
     }
@@ -70,7 +70,7 @@ function* takeBuildingCards(state: GameState, count: number) {
     yield* showCards(player, cards, false);
 }
 
-let eventsPerformFunctions: Record<EventType, (state: GameState, event: EventCard) => Generator> = {
+const eventsPerformFunctions: Record<EventType, (state: GameState, event: EventCard) => Generator> = {
     [EventType.PutTopThreeCardsInAnyOrder]: putTopThreeCardsInAnyOrder,
     [EventType.PutTopThreeCardsInAnyOrderAndTakeTop]: function* (state: GameState, event: EventCard) {
         yield* putTopThreeCardsInAnyOrder(state);
@@ -276,7 +276,7 @@ let eventsPerformFunctions: Record<EventType, (state: GameState, event: EventCar
             'chooseModulesToRepairByDiscardedCardsResponse'
         );
 
-        for (let modulePosition of positions) {
+        for (const modulePosition of positions) {
             yield* put(changeModuleHealth(currentPlayer.id, modulePosition, 2, "event card (discard & repair)"));
         }
     },
