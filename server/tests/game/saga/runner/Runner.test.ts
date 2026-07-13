@@ -95,6 +95,7 @@ test('exceptionTest', async () => {
     const state = fakeGameState(2);
     const bus = new TestBus(state);
 
+    // eslint-disable-next-line require-yield -- the saga under test raises before reaching an effect
     function* parent(): SagaGenerator {
         try {
             child();
@@ -103,6 +104,7 @@ test('exceptionTest', async () => {
         }
     }
 
+    // eslint-disable-next-line require-yield -- the saga under test raises before reaching an effect
     function* child() {
         throw 123;
     }
@@ -136,6 +138,7 @@ test('uncaughtException', async () => {
     const state = fakeGameState(2);
     const bus = new TestBus(state);
 
+    // eslint-disable-next-line require-yield -- the saga under test raises before reaching an effect
     function* saga(): SagaGenerator {
         throw 123;
     }
@@ -153,6 +156,7 @@ test('returnValue', async () => {
     const state = fakeGameState(2);
     const bus = new TestBus(state);
 
+    // eslint-disable-next-line require-yield -- the saga under test returns without emitting an effect
     function* saga(): SagaGenerator {
         return 321;
     }
