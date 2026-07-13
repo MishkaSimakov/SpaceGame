@@ -11,7 +11,7 @@ export class TakeContinuation implements Continuation<TakeEffect["input"]> {
     ) {
     }
 
-    continue(_: TakeEffect["input"]): void {
+    continue(): void {
         // TODO: possibly make cancellation more effective by removing listener entirely
         const receiver = (message: Action) => {
             this.consumer.continue(ok(message));

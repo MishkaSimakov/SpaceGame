@@ -32,7 +32,7 @@ export const validators: ResponseValidatorsContainer = {
             victim: request.payload.required ? victimValidator : victimValidator.optional()
         });
     },
-    rebuildSpaceshipResponse: (state, request) =>
+    rebuildSpaceshipResponse: (state) =>
         z.object({newSpaceship: rebuildSpaceshipValidator(state)}),
 
     chooseCardTypeResponse: () =>

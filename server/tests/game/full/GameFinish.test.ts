@@ -16,7 +16,7 @@ test('finishWhenTimeIsOver', async () => {
         }
     });
 
-    sockets.addEmitListener((playerId, settings, event, args) => {
+    sockets.addEmitListener((playerId, settings, event) => {
         if (event === 'rebuildSpaceshipRequest') {
             clock.advanceTime(6000);
 

@@ -31,19 +31,19 @@ export class MockSocketsManager implements ISocketsManager {
         return def.promise;
     }
 
-    isOnline(playerId: PlayerId): boolean {
+    isOnline(): boolean {
         return false;
     }
 
-    on(type: string, callback: (player: PlayerId, payload: any) => void): void {
+    on(): void {
     }
 
-    onPlayerConnect(playerId: PlayerId, socketId: string): void {
+    onPlayerConnect(): void {
     }
 
-    onPlayerDisconnect(playerId: PlayerId): void {
+    onPlayerDisconnect(): void {
     }
 
-    tryToEmitEvent(playerId: PlayerId): void {
+    tryToEmitEvent(): void {
     }
 }

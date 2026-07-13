@@ -38,7 +38,7 @@ export const validators: CheatsValidatorsContainer = {
         type: z.enum(ModuleType, {error: "Неверный тип модуля"}),
         connectors: makeConnectorValidator()
     }),
-    cheatPushModuleCardToStack: (state: GameState) => z.object({
+    cheatPushModuleCardToStack: () => z.object({
         type: z.enum(ModuleType, {error: "Неверный тип модуля"}),
         connectors: makeConnectorValidator()
     }),
@@ -47,7 +47,7 @@ export const validators: CheatsValidatorsContainer = {
         target: makeActivePlayerIdSchema(state),
         type: z.enum(EventType, {error: "Неверный тип события"})
     }),
-    cheatPushEventCardToStack: (state: GameState) => z.object({
+    cheatPushEventCardToStack: () => z.object({
         type: z.enum(EventType, {error: "Неверный тип события"})
     }),
 

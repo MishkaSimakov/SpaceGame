@@ -42,11 +42,14 @@ export default tseslint.config(
                     format: ["camelCase", "UPPER_CASE"],
                 },
                 {
-                    // `_` marks a parameter that exists only to hold a position in the signature.
                     selector: "parameter",
-                    filter: {regex: "^_+$", match: true},
-                    format: null,
+                    format: ["camelCase"],
+                    leadingUnderscore: "allow",
                 },
+            ],
+            "@typescript-eslint/no-unused-vars": [
+                "error",
+                {args: "after-used", argsIgnorePattern: "^_"},
             ],
             "semi": ["error", "always"],
             "@typescript-eslint/no-explicit-any": "off"
