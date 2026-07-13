@@ -9,6 +9,7 @@ import {getInitialGameState} from "@src/game/InitGameState";
 import {mainModulesInfo, ModuleInfo, modulesInfo} from "@common/cards/Modules";
 import {Channel} from "@src/game/sagas/runner/Channel";
 import {Environment} from "@src/game/sagas/runner/Environment";
+import {AbortHandle} from "@src/game/sagas/runner/AbortHandle";
 
 let idCounter = 0;
 
@@ -28,6 +29,7 @@ type TestListener = (action: Action<string, any, any>) => void;
 export class TestBus {
     readonly input = new Channel<Action>();
     readonly output = new Channel<Action>();
+    readonly abortHandle: AbortHandle = new AbortHandle();
 
     private listeners = new Map<string, TestListener[]>();
 
@@ -36,7 +38,12 @@ export class TestBus {
     }
 
     get env(): Environment {
-        return {state: this.stateRef, input: this.input, output: this.output};
+        return {
+            state: this.stateRef,
+            input: this.input,
+            output: this.output,
+            abortHandle: this.abortHandle
+        };
     }
 
     on(type: string, listener: TestListener) {

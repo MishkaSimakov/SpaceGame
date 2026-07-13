@@ -173,7 +173,7 @@ export default class Game {
             response = pastResponse ?? await this.socketRequest(action);
         } else if (action.type.endsWith("Info")) {
             // actions that match `*Info` are also broadcasted in the same way,
-            // but without an acknowledgment
+            // but without an acknowledgement
 
             // do not send info when replaying game
             if (!pastAction) {
@@ -247,10 +247,6 @@ export default class Game {
         };
 
         try {
-            // Почему нельзя посылать сразу все действия на вход?
-            // - для дебага не получится сравнивать то, что отправляется сейчас, и то, что отправлялось раньше
-            // - надо как-то понимать, что повтор закончился
-            //   может быть 2 случая: пришёл запрос и ответ есть или пришёл запрос и ответа нет
             const handler = (action: Action) => {
                 this.processAction(action);
                 this.sagaOutput.take(handler.bind(this));

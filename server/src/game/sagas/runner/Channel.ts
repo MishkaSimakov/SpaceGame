@@ -1,3 +1,4 @@
+// A receiver must handle its own failures: exceptions must not escape it.
 type Receiver<MessageT> = (message: MessageT) => void;
 
 export class Channel<MessageT> {
