@@ -2,7 +2,6 @@ import {MoveDamageReason, Vector2} from "@common/Types";
 
 import {Activity} from "./Activity";
 import Controls from "../scenes/Controls";
-import Spaceships from "../scenes/Spaceships";
 import {Boundary} from "../CountBoundary";
 import Color from "@common/helpers/Color";
 import {COLORS} from "../constants";
@@ -14,7 +13,7 @@ type MoveDamageResult = { source: Vector2, destination: Vector2 } | undefined;
 const reasonStatus: Record<MoveDamageReason, string> = {
     [MoveDamageReason.MainModule]: "выберите, откуда переместить урон",
     [MoveDamageReason.EventCard]: "выберите, откуда переместить урон"
-}
+};
 
 export class ChooseModulesToMoveDamage extends Activity {
     constructor(private controlsScene: Controls, private cardsManager: CardsManager, private reason: MoveDamageReason) {

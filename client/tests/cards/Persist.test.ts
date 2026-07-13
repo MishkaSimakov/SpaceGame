@@ -103,7 +103,7 @@ describe("restoring is a hint the server can overrule", () => {
 });
 
 describe("an unsubmitted rebuild survives the player reloading", () => {
-    const FIXTURE = {
+    const fixture = {
         localShip: {steps: [{variant: 0, slot: 0, rotation: 0}, {variant: 1, slot: 0, rotation: 0}], position: {x: 0, y: 0}},
         fragments: [],
         handModules: [{variant: 2, slot: 0, rotation: 0}, {variant: 5, slot: 0, rotation: 0}],
@@ -146,7 +146,7 @@ describe("an unsubmitted rebuild survives the player reloading", () => {
     }
 
     it("keeps a module attached to the ship that the server still calls a hand card", () => {
-        const board = buildBoard(FIXTURE);
+        const board = buildBoard(fixture);
         const server: ServerState = serverFromBoard(board);
 
         const attached = attachToShip(board);
@@ -176,7 +176,7 @@ describe("an unsubmitted rebuild survives the player reloading", () => {
     });
 
     it("hands the module back once the rebuild phase is over", () => {
-        const board = buildBoard(FIXTURE);
+        const board = buildBoard(fixture);
         const server: ServerState = serverFromBoard(board);
 
         const attached = attachToShip(board)!;

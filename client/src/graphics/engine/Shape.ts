@@ -1,4 +1,4 @@
-import {Node, NodeConfig} from './Node'
+import {Node, NodeConfig} from './Node';
 import {Context} from "./Context";
 import {BoundingRect, GetSet} from "./types";
 import {Factory} from "./Factory";
@@ -67,16 +67,16 @@ export class Shape<Config extends ShapeConfig = ShapeConfig> extends Node<Config
         if (!this.isVisible())
             return;
 
-        let context = this.getScene().canvas.getContext();
+        const context = this.getScene().canvas.getContext();
 
-        let drawFunc = this.sceneFunc();
+        const drawFunc = this.sceneFunc();
 
         if (!drawFunc)
             return;
 
         context.save();
 
-        let m = this.getAbsoluteTransform().getMatrix();
+        const m = this.getAbsoluteTransform().getMatrix();
 
         context.transform(m[0], m[1], m[2], m[3], m[4], m[5]);
 
@@ -89,15 +89,15 @@ export class Shape<Config extends ShapeConfig = ShapeConfig> extends Node<Config
         if (!this.shouldDrawHit())
             return;
 
-        let context = this.getScene().hitCanvas.getContext();
-        let drawFunc = this.hitFunc() || this.sceneFunc();
+        const context = this.getScene().hitCanvas.getContext();
+        const drawFunc = this.hitFunc() || this.sceneFunc();
 
         if (!drawFunc)
             return;
 
         context.save();
 
-        let m = this.getAbsoluteTransform().getMatrix();
+        const m = this.getAbsoluteTransform().getMatrix();
 
         context.transform(m[0], m[1], m[2], m[3], m[4], m[5]);
 
@@ -117,9 +117,9 @@ export class Shape<Config extends ShapeConfig = ShapeConfig> extends Node<Config
 
         relativeTo = relativeTo ?? this.getScene();
 
-        let strokeWidth = (this.hasStroke() && !ignoreStroke) && this.strokeWidth();
+        const strokeWidth = (this.hasStroke() && !ignoreStroke) && this.strokeWidth();
 
-        let rect = new BoundingRect(
+        const rect = new BoundingRect(
             0, 0,
             this.height() + strokeWidth, this.width() + strokeWidth
         );
@@ -156,7 +156,7 @@ export class Shape<Config extends ShapeConfig = ShapeConfig> extends Node<Config
 }
 
 Shape.prototype.nodeType = 'Shape';
-_registerNode(Shape)
+_registerNode(Shape);
 
 Shape.prototype._fillFunc = _fillFunc;
 Shape.prototype._strokeFunc = _strokeFunc;

@@ -31,7 +31,7 @@ export default class Scene extends Container<Group | Shape> {
         this.canvas.setSize(width, height);
         this.hitCanvas.setSize(width, height);
 
-        this.width(width).height(height)
+        this.width(width).height(height);
 
         return this;
     }

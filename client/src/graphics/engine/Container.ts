@@ -41,15 +41,15 @@ export abstract class Container<ChildType extends Node = Node, Config extends No
     }
 
     findOne(selector): ChildType {
-        let result = this._find(selector, true);
+        const result = this._find(selector, true);
         return result.length > 0 ? result[0] : undefined;
     }
 
     private _find(selector, findOne: boolean): ChildType[] {
-        let result = [];
+        const result = [];
 
         this.descendants(desc => {
-            let isValid = desc.isMatch(selector);
+            const isValid = desc.isMatch(selector);
 
             if (isValid)
                 result.push(desc);
@@ -91,7 +91,7 @@ export abstract class Container<ChildType extends Node = Node, Config extends No
             return this;
 
         if (children.length > 1) {
-            for (let child of children) {
+            for (const child of children) {
                 this.add(child);
             }
 
@@ -145,7 +145,7 @@ export abstract class Container<ChildType extends Node = Node, Config extends No
 
         if (this.children.length > 0) {
             this.children?.forEach(child => {
-                let cbr = child.getClientRect(this, ignoreStroke);
+                const cbr = child.getClientRect(this, ignoreStroke);
 
                 if (cbr) {
                     br = merge(br, cbr);
@@ -164,7 +164,7 @@ export abstract class Container<ChildType extends Node = Node, Config extends No
     private drawChildren(drawMethod: string) {
         this.children?.forEach(child => {
             child[drawMethod]();
-        })
+        });
     }
 
     setChildrenIndices() {

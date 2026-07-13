@@ -130,7 +130,7 @@ export default class Modal {
     }
 
     destroy() {
-        for (let shape of this.lines) {
+        for (const shape of this.lines) {
             shape.destroy();
         }
 

@@ -5,4 +5,4 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap';
 
 // used in a game status page
-import "@andypf/json-viewer"
+import "@andypf/json-viewer";

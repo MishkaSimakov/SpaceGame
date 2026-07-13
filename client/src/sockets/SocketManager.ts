@@ -115,7 +115,7 @@ export default class SocketManager {
                 COLORS.BUTTON.DANGER.ACTIVE,
                 5000
             );
-        })
+        });
     }
 
     private exit() {

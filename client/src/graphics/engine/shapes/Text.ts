@@ -34,7 +34,7 @@ function getDummyContext() {
     return dummyContext;
 }
 
-export class Text extends Shape {
+export class Text extends Shape<TextConfig> {
     textArr: Array<{ text: string, width: number }> = [];
     textHeight: number;
     textWidth: number;
@@ -47,27 +47,20 @@ export class Text extends Shape {
     constructor(config?: TextConfig) {
         super(config);
 
-        const recalculateWhenChange = [
-            'text',
-            'fontFamily',
-            'fontSize',
-            'lineHeight',
-            'align',
-            'maxWidth'
-        ];
-
-        for (let attribute of recalculateWhenChange) {
-            this.on(attribute + 'Change', this.setTextData);
-        }
+        // the laid-out text depends on these, so any of them changing invalidates it
+        this.on(
+            'textChange fontFamilyChange fontSizeChange lineHeightChange alignChange maxWidthChange',
+            this.setTextData
+        );
 
         this.setTextData();
     }
 
     _sceneFunc(context: Context) {
-        let align = this.align();
-        let totalWidth = this.width();
-        let fontSize = this.fontSize();
-        let lineHeightPx = this.lineHeight() * fontSize;
+        const align = this.align();
+        const totalWidth = this.width();
+        const fontSize = this.fontSize();
+        const lineHeightPx = this.lineHeight() * fontSize;
 
         let translateY = lineHeightPx / 2;
 
@@ -75,7 +68,7 @@ export class Text extends Shape {
         context.textBaseline = 'middle';
         context.textAlign = 'left';
 
-        for (let line of this.textArr) {
+        for (const line of this.textArr) {
             if (align === 'center') {
                 this._partialTextX = (totalWidth - line.width) / 2;
             } else if (align === 'right') {
@@ -103,12 +96,12 @@ export class Text extends Shape {
     }
 
     measureSize(text: string) {
-        let context = getDummyContext();
+        const context = getDummyContext();
         context.save();
 
         context.font = this.getContextFont();
 
-        let measure = context.measureText(text);
+        const measure = context.measureText(text);
 
         context.restore();
 
@@ -142,10 +135,10 @@ export class Text extends Shape {
 
     setTextData() {
         let lines = this.text().split('\n');
-        let fontSize = this.fontSize();
-        let lineHeightPx = this.lineHeight() * fontSize;
+        const fontSize = this.fontSize();
+        const lineHeightPx = this.lineHeight() * fontSize;
         let textWidth = 0;
-        let context = getDummyContext();
+        const context = getDummyContext();
 
         this.textArr = [];
 
@@ -156,8 +149,8 @@ export class Text extends Shape {
             lines = this.wrapText(this.text(), this.maxWidth());
         }
 
-        for (let line of lines) {
-            let lineWidth = this.getTextWidth(line);
+        for (const line of lines) {
+            const lineWidth = this.getTextWidth(line);
             textWidth = Math.max(textWidth, lineWidth);
 
             this.addTextLine(line, lineWidth);
@@ -192,7 +185,7 @@ export class Text extends Shape {
             return [];
         }
 
-        const result = [""]
+        const result = [""];
 
         for (const word of words) {
             const last = result[result.length - 1];

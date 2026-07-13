@@ -118,7 +118,7 @@ export default class Controls extends Scene {
             this.topBarDrawer.setButtonDisabled(
                 'repair',
                 handle.get().length === 0 || handle.get().length > maxCount
-            )
+            );
         };
 
         handle.subscribe(validate);

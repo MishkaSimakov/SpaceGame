@@ -60,8 +60,8 @@ export class PlayerDataLine extends Group<PlayerDataLineConfig> {
         availableSpace -= 150;
         startX += 150;
 
-        let elementsCount = this.withTimeControl() ? 3 : 2;
-        let spacePerElement = availableSpace / elementsCount;
+        const elementsCount = this.withTimeControl() ? 3 : 2;
+        const spacePerElement = availableSpace / elementsCount;
 
         if (!this.player().lose) {
             this.add(
@@ -104,8 +104,8 @@ export class PlayerDataLine extends Group<PlayerDataLineConfig> {
             }
         }
 
-        let hitOffset = 5;
-        let hitRect = new Rectangle({
+        const hitOffset = 5;
+        const hitRect = new Rectangle({
             x: -hitOffset,
             y: -hitOffset,
             width: this.width() + hitOffset * 2,
@@ -147,11 +147,11 @@ export class PlayerDataLine extends Group<PlayerDataLineConfig> {
         time = Math.floor(time / 1000);
 
         if (time >= 0) {
-            let minutes = Math.floor(time / 60);
+            const minutes = Math.floor(time / 60);
             return minutes + ":" + padWithLeadingZeros(time - minutes * 60, 2);
         } else {
             time = -time;
-            let minutes = Math.floor(time / 60);
+            const minutes = Math.floor(time / 60);
             return "-" + minutes + ":" + padWithLeadingZeros(time - minutes * 60, 2);
         }
     }

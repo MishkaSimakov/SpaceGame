@@ -11,10 +11,10 @@ export const Draw = {
     _injectGlobal(draw) {
         glob.Draw = draw;
     }
-}
+};
 
-export const _registerNode = (NodeClass: any) => {
-    Draw[NodeClass.prototype.getClassName()] = NodeClass;
-}
+export const _registerNode = (nodeClass: any) => {
+    Draw[nodeClass.prototype.getClassName()] = nodeClass;
+};
 
 Draw._injectGlobal(Draw);

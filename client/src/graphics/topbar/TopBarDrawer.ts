@@ -249,7 +249,7 @@ export default class TopBarDrawer {
         }] : []);
         let currentY = textShape.getClientRect().bottom + 6;
 
-        for (let action of rawActions) {
+        for (const action of rawActions) {
             const actionText = new Text({
                 x: 0,
                 y: currentY,
@@ -278,16 +278,16 @@ export default class TopBarDrawer {
     }
 
     getButtonsGroup(width: number): Group {
-        let group = new Group({width: width});
+        const group = new Group({width: width});
         if (!this.buttons) {
             return group;
         }
 
-        let buttonWidth = (width - (this.buttons.length - 1) * this.sizes.padding) / this.buttons.length;
-        let buttonHeight = 40;
+        const buttonWidth = (width - (this.buttons.length - 1) * this.sizes.padding) / this.buttons.length;
+        const buttonHeight = 40;
 
         for (const [index, button] of this.buttons.entries()) {
-            let buttonShape = new Button({
+            const buttonShape = new Button({
                 x: index * (buttonWidth + this.sizes.padding),
                 y: 0,
                 width: buttonWidth,

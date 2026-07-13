@@ -4,7 +4,7 @@ export const Utils = {
     isFunction(obj: any): boolean {
         return !!(obj && obj.constructor && obj.call && obj.apply);
     },
-    isObject(val: any): val is Object {
+    isObject(val: any): val is object {
         return val instanceof Object;
     },
     capitalize(str: string): string {
@@ -35,7 +35,7 @@ export const Utils = {
         return ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
     },
     assign<T, U>(target: T, source: U) {
-        for (var key in source) {
+        for (const key in source) {
             (<any>target)[key] = source[key];
         }
         return target as T & U;
@@ -88,4 +88,4 @@ export const Utils = {
         context.lineTo(0, topLeft);
         context.arc(topLeft, topLeft, topLeft, Math.PI, (Math.PI * 3) / 2, false);
     }
-}
+};

@@ -8,7 +8,7 @@ type ReplaceRequestWithResponse<T extends string> =
 
 type Services = { sockets: SocketManager, game: Game };
 
-type ListenerReturnType<T extends keyof typeof Actions> = T extends `${infer _Prefix}Request`
+type ListenerReturnType<T extends keyof typeof Actions> = T extends `${string}Request`
     ? Promise<ReturnType<(typeof Actions)[ReplaceRequestWithResponse<T>]>>
     : Promise<void>;
 

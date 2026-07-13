@@ -11,7 +11,7 @@ const reasonStatus: Record<AttackReason, string> = {
     [AttackReason.AttackAnyEventCard]: "Выберите игрока для нападения",
     [AttackReason.AttackLaterEventCard]: "Используйте карточку, чтобы напасть",
     [AttackReason.UsingAttackModuleSecondTime]: "Выберите игрока для нападения"
-}
+};
 
 export class ChoosePlayerForAttackActivity extends Activity {
     private modal: Modal;
@@ -77,7 +77,7 @@ export class ChoosePlayerForAttackActivity extends Activity {
 
             this.modal.setTitle("Выберите игрока для атаки");
 
-            for (let player of this.players) {
+            for (const player of this.players) {
                 this.modal.addLine(player.name).on('click', () => {
                     resolve(player.id);
 

@@ -245,7 +245,7 @@ export class CardShape extends Group<CardConfig> {
         return this.getSize();
     }
 
-    getClientRect(relativeTo?: Container<Node>, ignoreStroke?: boolean): BoundingRect | undefined {
+    getClientRect(relativeTo?: Container<Node>): BoundingRect | undefined {
         if (!this.isVisible()) {
             return;
         }
@@ -275,7 +275,7 @@ export class CardShape extends Group<CardConfig> {
             values += ' +' + module.energyIncrease + '⚡️';
 
         if (module.energyCost)
-            values += ' -' + module.energyCost + '⚡️'
+            values += ' -' + module.energyCost + '⚡️';
 
         return values;
     }

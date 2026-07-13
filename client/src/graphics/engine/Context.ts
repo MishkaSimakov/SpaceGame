@@ -15,7 +15,7 @@ export abstract class Context extends CanvasRenderingContext2D {
     }
 
     clear() {
-        let canvas = this.getCanvas();
+        const canvas = this.getCanvas();
 
         this.clearRect(0, 0, canvas.width / canvas.pixelRatio, canvas.height / canvas.pixelRatio);
     }

@@ -25,7 +25,7 @@ const COLORS = {
     DEFAULT_STROKE: Color.fromHex('#a3b18a'),
 };
 
-let SIZES = {
+const SIZES = {
     STROKE_WIDTH: 5,
     CORNER_RADIUS: 10,
 

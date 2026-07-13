@@ -33,7 +33,7 @@ export const DD = {
 
         const nodesToFireEvents: Array<Node> = [];
 
-        DD._dragElements.forEach((element, key) => {
+        DD._dragElements.forEach(element=> {
             const {node} = element;
             const graphics = node.getGraphics();
 
@@ -47,8 +47,8 @@ export const DD = {
                 return;
 
             if (element.dragStatus !== 'dragging') {
-                let dragDistance = node.getDragDistance();
-                let distance = Math.sqrt(
+                const dragDistance = node.getDragDistance();
+                const distance = Math.sqrt(
                     Math.pow(pos.x - element.startPointerPos.x, 2) +
                     Math.pow(pos.y - element.startPointerPos.y, 2)
                 );
@@ -80,7 +80,7 @@ export const DD = {
     _endDragBefore(evt) {
         const drawNodes = [];
 
-        DD._dragElements.forEach((element, key) => {
+        DD._dragElements.forEach(element => {
             const {node} = element;
             const graphics = node.getGraphics();
 
@@ -127,7 +127,7 @@ export const DD = {
             }
         });
     }
-}
+};
 
 window.addEventListener('mouseup', DD._endDragBefore, true);
 window.addEventListener('touchend', DD._endDragBefore, true);
