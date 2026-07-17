@@ -153,16 +153,20 @@ jobs:
           docker compose up -d
           docker compose ps
 
+          # A 2xx/3xx answer means the server booted and is serving HTTP; that
+          # is all this liveness check verifies. The root path itself is behind
+          # auth and 302-redirects to /login, so an exact-200 check never passes.
           for _ in $(seq 1 60); do
             status=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 || true)
-            if [ "$status" = "200" ]; then
-              echo "Server answered HTTP 200."
+            status=${status:-000}
+            if [ "$status" -ge 200 ] && [ "$status" -lt 400 ]; then
+              echo "Server is up (HTTP $status)."
               exit 0
             fi
             sleep 5
           done
 
-          echo "Server never answered HTTP 200 (last status: ${status:-none})."
+          echo "Server never answered a 2xx/3xx (last status: ${status:-none})."
           exit 1
 
       - name: Container logs
