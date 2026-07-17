@@ -1,5 +1,3 @@
-import {v4 as uuidv4} from 'uuid';
-
 export interface Action<T extends string = string, P = unknown, M = unknown> {
     uuid: string;
 
@@ -28,7 +26,7 @@ export function constructAction<T extends string, P, M>(type: T, payload: P, met
     ) as UndefinedToOptional<P>;
 
     return {
-        uuid: uuidv4() as string,
+        uuid: crypto.randomUUID(),
 
         type,
         payload: cleanPayload,
