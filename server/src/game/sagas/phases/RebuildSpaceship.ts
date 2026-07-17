@@ -32,7 +32,7 @@ export function* rebuildSpaceship() {
     });
 
     const newHand = currentPlayer.hand
-        .filter(card => card.cardType === "event" || !response.newSpaceship.find(newCard => newCard.id === card.module.id))
+        .filter(card => card.cardType === "event" || !response.newSpaceship.find(newCard => newCard.id === card.module.id));
 
     yield* put(playerRebuiltSpaceship(currentPlayer.id, {modules: newModules}, newHand));
 

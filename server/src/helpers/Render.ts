@@ -4,4 +4,4 @@ export const render = (response: Response, path: string, state?: Record<string, 
     const renderer = (response as any).view;
 
     response.send(renderer.renderSync(path, state));
-}
+};

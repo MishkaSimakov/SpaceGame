@@ -13,7 +13,7 @@ export const defaultSettings = {
     energyToDragAdditionalCardByMainModule: 15,
     maxCardsOnHand: 5,
     diceResultToRunaway: 4,
-} as Omit<GameSettings, "seed">
+} as Omit<GameSettings, "seed">;
 
 export const defaultTimeControlSettings = {
     loseWhenTimeout: true,

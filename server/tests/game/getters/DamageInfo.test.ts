@@ -1,5 +1,4 @@
-import {test} from "uvu";
-import * as assert from "uvu/assert";
+import {expect, test} from "vitest";
 
 import {ModuleType, Spaceship} from "@common/Types";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
@@ -13,12 +12,12 @@ test('simple', () => {
 
     const info = SpaceshipGetters.damageInfo(spaceship, mainModule, 1);
 
-    assert.equal(info.shouldDeactivateProtector, false);
-    assert.equal(info.destroyed.length, 0);
+    expect(info.shouldDeactivateProtector).toEqual(false);
+    expect(info.destroyed.length).toEqual(0);
 
-    assert.equal(info.damaged.length, 1);
-    assert.equal(info.damaged[0].position, {x: 0, y: 0});
-    assert.equal(info.damaged[0].damage, 1);
+    expect(info.damaged.length).toEqual(1);
+    expect(info.damaged[0].position).toEqual({x: 0, y: 0});
+    expect(info.damaged[0].damage).toEqual(1);
 });
 
 test('simpleProtector', () => {
@@ -36,12 +35,12 @@ test('simpleProtector', () => {
 
     const info = SpaceshipGetters.damageInfo(spaceship, mainModule, 1);
 
-    assert.equal(info.shouldDeactivateProtector, false);
-    assert.equal(info.destroyed.length, 0);
+    expect(info.shouldDeactivateProtector).toEqual(false);
+    expect(info.destroyed.length).toEqual(0);
 
-    assert.equal(info.damaged.length, 1);
-    assert.equal(info.damaged[0].position, {x: -1, y: 0});
-    assert.equal(info.damaged[0].damage, 1);
+    expect(info.damaged.length).toEqual(1);
+    expect(info.damaged[0].position).toEqual({x: -1, y: 0});
+    expect(info.damaged[0].damage).toEqual(1);
 });
 
 test('destroyedProtector', () => {
@@ -59,15 +58,15 @@ test('destroyedProtector', () => {
 
     const info = SpaceshipGetters.damageInfo(spaceship, mainModule, protector.health + 5);
 
-    assert.equal(info.shouldDeactivateProtector, true);
+    expect(info.shouldDeactivateProtector).toEqual(true);
 
-    assert.equal(info.destroyed.length, 1);
-    assert.equal(info.destroyed[0].position, {x: -1, y: 0});
-    assert.equal(info.destroyed[0].byNuclearReactor, false);
+    expect(info.destroyed.length).toEqual(1);
+    expect(info.destroyed[0].position).toEqual({x: -1, y: 0});
+    expect(info.destroyed[0].byNuclearReactor).toEqual(false);
 
-    assert.equal(info.damaged.length, 1);
-    assert.equal(info.damaged[0].position, {x: 0, y: 0});
-    assert.equal(info.damaged[0].damage, 5);
+    expect(info.damaged.length).toEqual(1);
+    expect(info.damaged[0].position).toEqual({x: 0, y: 0});
+    expect(info.damaged[0].damage).toEqual(5);
 });
 
 test('destroyedProtectorAndModule', () => {
@@ -91,16 +90,12 @@ test('destroyedProtectorAndModule', () => {
 
     const info = SpaceshipGetters.damageInfo(spaceship, module, protector.health + module.health + 1);
 
-    assert.equal(info.shouldDeactivateProtector, true);
+    expect(info.shouldDeactivateProtector).toEqual(true);
 
-    assert.equal(info.destroyed.length, 2);
-    assert.equal(
-        new Set(info.destroyed.map(d => d.position)),
-        new Set([{x: -1, y: 0}, {x: -2, y: 0}])
-    );
-    assert.ok(!info.destroyed.some(d => d.byNuclearReactor));
+    expect(info.destroyed.length).toEqual(2);
+    expect(new Set(info.destroyed.map(d => d.position)))
+        .toEqual(new Set([{x: -1, y: 0}, {x: -2, y: 0}]));
+    expect(info.destroyed.some(d => d.byNuclearReactor)).toBeFalsy();
 
-    assert.equal(info.damaged.length, 0);
+    expect(info.damaged.length).toEqual(0);
 });
-
-test.run();

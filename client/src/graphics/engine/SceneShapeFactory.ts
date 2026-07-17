@@ -12,7 +12,7 @@ export class SceneShapeFactory {
     }
 
     rectangle(config?: RectangleConfig): Rectangle {
-        let rect = new Rectangle(config);
+        const rect = new Rectangle(config);
 
         this.scene.add(rect);
 
@@ -20,7 +20,7 @@ export class SceneShapeFactory {
     }
 
     text(config?: TextConfig): Text {
-        let text = new Text(config);
+        const text = new Text(config);
 
         this.scene.add(text);
 
@@ -28,7 +28,7 @@ export class SceneShapeFactory {
     }
 
     group(config?: ShapeConfig): Group {
-        let group = new Group(config);
+        const group = new Group(config);
 
         this.scene.add(group);
 

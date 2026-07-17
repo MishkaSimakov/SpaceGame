@@ -20,10 +20,10 @@ export function* popOneCard<T extends CardType>(type: T): Generator<any, CardFro
     if (state.stack[typeAsString].length === 0) {
         const discards = type === CardType.Module
             ? state.discards.module.map<Card>(module => ({cardType: "module", module}))
-            : state.discards.event.map<Card>(event => ({cardType: "event", event}))
+            : state.discards.event.map<Card>(event => ({cardType: "event", event}));
 
         yield* shuffleArray(discards);
-        yield* put(pushCardsToStack(discards))
+        yield* put(pushCardsToStack(discards));
         yield* put(clearDiscard(type));
     }
 

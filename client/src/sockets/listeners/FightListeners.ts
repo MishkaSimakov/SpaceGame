@@ -18,14 +18,14 @@ export const fightListeners: ListenersContainer = {
             ? "будете ли вы сбегать, используя командный модуль?"
             : "будете ли вы сбегать?";
 
-        game.controlsScene.topBarDrawer.setStatus(message)
+        game.controlsScene.topBarDrawer.setStatus(message);
 
         const response = await game.controlsScene.askYesOrNo();
 
         return tryToRunawayResponse(response);
     },
 
-    async chooseProtectorRequest({}, {game}) {
+    async chooseProtectorRequest(_payload, {game}) {
         game.controlsScene.topBarDrawer.setStatus("выберите протектор");
 
         const protectorHandle = game.cardsManager.startChoosingModules(
@@ -158,4 +158,4 @@ export const fightListeners: ListenersContainer = {
 
         return chooseTargetResponse(target);
     }
-}
+};

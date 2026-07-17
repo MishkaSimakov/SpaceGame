@@ -9,7 +9,7 @@ import cors from "cors";
 import path from "path";
 import serveStatic from "serve-static";
 
-// @ts-ignore
+// @ts-expect-error edge.js is ESM-only and ships no CommonJS types for node16 resolution
 import {Edge} from "edge.js";
 import cookieParser from 'cookie-parser';
 import {Express} from "express";
@@ -56,8 +56,9 @@ export default class ServerManager {
         this.server.use(serveStatic(this.staticBasePath));
         this.server.use(express.urlencoded({extended: false}));
 
-        // error handler
-        this.server.use((err: unknown, req: any, res: any, next: any) => {
+        // Express only treats a middleware as an error handler if it declares all four parameters,
+        // so the unused ones have to stay in the signature.
+        this.server.use((err: unknown, _req: any, res: any, _next: any) => {
             console.error(err);
             res.status(500).json({message: "Internal server error"});
         });

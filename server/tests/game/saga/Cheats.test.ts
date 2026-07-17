@@ -1,21 +1,17 @@
-import {test} from "uvu";
-import * as assert from "uvu/assert";
+import {expect, test} from "vitest";
 
-import {attachReducers, fakeGameState} from "../Utils";
-import ActionsBus from "@src/game/ActionsBus";
 import {runSaga} from "@src/game/sagas/runner/RunSaga";
 import {rebuildSpaceship} from "@src/game/sagas/phases/RebuildSpaceship";
 import {StateGetters} from "@common/getters/State";
 import {cheatChangeEnergy, rebuildSpaceshipResponse} from "@common/Actions";
 import {SpaceshipGetters} from "@common/getters/Spaceship";
-import {Channel} from "@src/game/sagas/runner/Channel";
-import {GameInput} from "@src/game/sagas/runner/Environment";
+
+import {attachReducers, fakeGameState, TestBus} from "../Utils";
 
 test('cheatChangeCurrentPlayerEnergy', async () => {
     const state = fakeGameState(1);
     const player = state.players[0];
-    const bus = new ActionsBus();
-    const input: GameInput = new Channel();
+    const bus = new TestBus(state);
 
     state.settings.isDebug = true; // Cheats are allowed
     player.energy = 0; // Initial energy
@@ -28,15 +24,13 @@ test('cheatChangeCurrentPlayerEnergy', async () => {
     bus.on('rebuildSpaceshipRequest', (action) => {
         // issue some cheats
         const player = StateGetters.playerById(state, action.payload.player)!;
-        input.put(cheatChangeEnergy(player.id, 10));
+        bus.put(cheatChangeEnergy(player.id, 10));
 
         // issue rebuildSpaceshipResponse
-        input.put(rebuildSpaceshipResponse(SpaceshipGetters.mapForRebuildSpaceshipResponse(player.spaceship)));
+        bus.put(rebuildSpaceshipResponse(SpaceshipGetters.mapForRebuildSpaceshipResponse(player.spaceship)));
     });
 
-    await runSaga({state, output: bus, input}, rebuildSpaceship);
+    await runSaga(bus.env, rebuildSpaceship);
 
-    assert.equal(StateGetters.playerById(state, player.id)!.energy, 10);
+    expect(StateGetters.playerById(state, player.id)!.energy).toEqual(10);
 });
-
-test.run();

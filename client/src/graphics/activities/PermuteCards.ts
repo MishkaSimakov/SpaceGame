@@ -14,7 +14,7 @@ export class PermuteCardsActivity extends Activity {
     private modalGroup?: Group = undefined;
     private order: number[] = [];
 
-    private resolveModal: Function | undefined = undefined;
+    private resolveModal: ((order: number[] | undefined) => void) | undefined = undefined;
 
     constructor(private scene: Controls, private cards: Card[]) {
         super();
@@ -49,7 +49,7 @@ export class PermuteCardsActivity extends Activity {
     update() {
         if (this.modalGroup !== undefined) {
             this.destructModal();
-            this.resolveModal();
+            this.resolveModal(undefined);
 
             this.resolveModal = undefined;
         }
@@ -142,10 +142,10 @@ export class PermuteCardsActivity extends Activity {
                     const index = i;
 
                     const pos = cardShapes.getRelativePointerPosition();
-                    let newIndexInOrder = this.getCardIndexByPosition(this.cards.length, pos.x, pos.y);
+                    const newIndexInOrder = this.getCardIndexByPosition(this.cards.length, pos.x, pos.y);
 
                     // because order could be updated
-                    let oldIndexInOrder = this.order.indexOf(index);
+                    const oldIndexInOrder = this.order.indexOf(index);
 
                     if (newIndexInOrder !== oldIndexInOrder) {
                         this.order.splice(oldIndexInOrder, 1);
@@ -164,13 +164,13 @@ export class PermuteCardsActivity extends Activity {
             this.scene.add(this.modalGroup);
 
             const moveCards = (except?: number) => {
-                for (let [indexInOrder, index] of this.order.entries()) {
+                for (const [indexInOrder, index] of this.order.entries()) {
                     if (index === except)
                         continue;
 
                     cardShapesInOrder[index].setPosition(cardPositions[indexInOrder]);
                 }
-            }
+            };
 
             moveCards();
 
@@ -199,7 +199,7 @@ export class PermuteCardsActivity extends Activity {
 
         const clamp = (x, min, max) => {
             return Math.min(Math.max(x, min), max);
-        }
+        };
 
         if (sceneWidth > sceneHeight) {
             return clamp(
@@ -212,7 +212,7 @@ export class PermuteCardsActivity extends Activity {
                 Math.floor(y / (cardSize + padding)),
                 0,
                 cardsLength
-            )
+            );
         }
     }
 }

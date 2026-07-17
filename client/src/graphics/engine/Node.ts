@@ -2,24 +2,15 @@ import {Utils} from "./Utils";
 import {Container} from "./Container";
 import {Factory} from "./Factory";
 import {BoundingRect, GetSet, Vector2} from "./types";
+import {EventListener, EventName, EventOf, NodeEventMap, ValidSelector} from "./Events";
 import Scene from "./Scene";
 import {Transform} from "./Transform";
-import {Shape} from "./Shape";
 import {Graphics} from "./Graphics";
 import {DD} from "./Drag";
 import {Draw} from "./Global";
 import Color from "@common/helpers/Color";
 
-const TRANSFORM = 'TRANSFORM',
-    ABSOLUTE_TRANSFORM = 'ABSOLUTE_TRANSFORM',
-    ALL_LISTENERS = 'ALL_LISTENERS',
-    VISIBLE = 'VISIBLE',
-    GRAPHICS = 'GRAPHICS',
-    INTERACTIVE = 'INTERACTIVE';
-
 export interface NodeConfig {
-    [index: string]: any;
-
     name?: string;
     x?: number;
     y?: number;
@@ -40,25 +31,7 @@ export interface NodeConfig {
     brightness?: number,
 }
 
-type NodeEventMap = GlobalEventHandlersEventMap & {
-    [index: string]: any;
-}
-
-export interface EventObject<EventType> {
-    type: string;
-    target: Shape | Scene;
-    evt: EventType;
-    currentTarget: Node;
-    pointerId: number;
-    child?: Node;
-}
-
 let idCounter = 0;
-
-export type EventListener<This, EventType> = (
-    this: This,
-    ev: EventObject<EventType>
-) => void;
 
 export abstract class Node<Config extends NodeConfig = NodeConfig> {
     _id = idCounter++;
@@ -70,7 +43,12 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
 
     lastPos: Vector2;
 
-    eventListeners: Record<string, Array<{ name: string, handler: Function }>> = {};
+    eventListeners: {
+        [Key in EventName<Config>]?: Array<{
+            name: string,
+            handler: EventListener<Node, NodeEventMap<Config>[Key]>
+        }>
+    } = {};
 
     inAnimation: boolean = false;
     shouldAbortAnimation: boolean = false;
@@ -118,7 +96,7 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
 
         const scene = this.getScene();
 
-        for (let [_, dragElement] of DD._dragElements) {
+        for (const [, dragElement] of DD._dragElements) {
             if (dragElement.dragStatus === 'dragging' && dragElement.node.getScene() === scene) {
                 return false;
             }
@@ -153,7 +131,7 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
     }
 
     getScene(): Scene {
-        let parent = this.getParent();
+        const parent = this.getParent();
 
         return parent ? parent.getScene() : undefined;
     }
@@ -163,7 +141,7 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
     }
 
     getGraphics(): Graphics {
-        let parent = this.getParent();
+        const parent = this.getParent();
 
         return parent ? parent.getGraphics() : undefined;
     }
@@ -192,8 +170,8 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
             return this;
 
         this.batchTransformChanges(() => {
-            for (let key in config) {
-                let setterName = 'set' + Utils.capitalize(key);
+            for (const key in config) {
+                const setterName = 'set' + Utils.capitalize(key);
 
                 if (Utils.isFunction(this[setterName])) {
                     this[setterName](config[key]);
@@ -213,8 +191,8 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
     }
 
     eachAncestorsReverse(func: (node: Node) => void, top?: Node) {
-        let ancestors = [],
-            parent = this.getParent();
+        const ancestors = [];
+        let parent = this.getParent();
 
         if (top && top._id === this._id)
             return;
@@ -227,7 +205,7 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
             parent = parent.getParent();
         }
 
-        for (let ancestor of ancestors) {
+        for (const ancestor of ancestors) {
             func(ancestor);
         }
     }
@@ -241,13 +219,13 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         if (pointerId) {
             pos = this.getGraphics().getPointerById(pointerId);
         } else {
-            pos = this.getGraphics().getPointerPosition()
+            pos = this.getGraphics().getPointerPosition();
         }
 
         if (!pos)
             return;
 
-        let transform = this.getAbsoluteTransform().copy().invert();
+        const transform = this.getAbsoluteTransform().copy().invert();
 
         return transform.point(pos);
     }
@@ -255,27 +233,27 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
     abstract getClientRect(relativeTo?: Container<Node>, ignoreStroke?: boolean): BoundingRect | undefined;
 
     getAbsoluteTransform(top?: Node): Transform {
-        let tr = new Transform();
+        const tr = new Transform();
 
         this.eachAncestorsReverse(ancestor => {
-            tr.multiply(ancestor.getTransform())
+            tr.multiply(ancestor.getTransform());
         }, top);
 
         return tr;
     }
 
     transformedRect(rect: BoundingRect, top: Node): BoundingRect {
-        let points = [
+        const points = [
             {x: rect.left, y: rect.top},
             {x: rect.right, y: rect.top},
             {x: rect.right, y: rect.bottom},
             {x: rect.left, y: rect.bottom},
         ];
         let minX: number, minY: number, maxX: number, maxY: number;
-        let trans = this.getAbsoluteTransform(top);
+        const trans = this.getAbsoluteTransform(top);
 
         points.forEach(point => {
-            var transformed = trans.point(point);
+            const transformed = trans.point(point);
             if (minX === undefined) {
                 minX = maxX = transformed.x;
                 minY = maxY = transformed.y;
@@ -286,7 +264,7 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
             maxY = Math.max(maxY, transformed.y);
         });
 
-        let br = new BoundingRect();
+        const br = new BoundingRect();
         br.left = minX;
         br.top = minY;
         br.bottom = maxY;
@@ -296,21 +274,21 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
     }
 
     getTransform(): Transform {
-        let tr: Transform = new Transform();
+        const tr: Transform = new Transform();
         tr.reset();
 
-        let x = this.x();
-        let y = this.y();
-        let width = this.width();
-        let height = this.height();
+        const x = this.x();
+        const y = this.y();
+        const width = this.width();
+        const height = this.height();
 
-        let originX = this.originX();
-        let originY = this.originY();
+        const originX = this.originX();
+        const originY = this.originY();
 
-        let scaleX = this.attrs.scaleX ?? 1;
-        let scaleY = this.attrs.scaleY ?? 1;
+        const scaleX = this.attrs.scaleX ?? 1;
+        const scaleY = this.attrs.scaleY ?? 1;
 
-        let rotation = this.rotation();
+        const rotation = this.rotation();
 
         if (x !== 0 || y !== 0)
             tr.translate(x, y);
@@ -322,11 +300,11 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
             tr.translate(0, -1 * height * originY);
 
         // move rotation position
-        let s = Math.sin(rotation);
-        let c = Math.cos(rotation);
+        const s = Math.sin(rotation);
+        const c = Math.cos(rotation);
 
-        let dx = (width - width * c + height * s) / 2;
-        let dy = (height - width * s - height * c) / 2;
+        const dx = (width - width * c + height * s) / 2;
+        const dy = (height - width * s - height * c) / 2;
 
         tr.translate(dx, dy);
 
@@ -343,7 +321,7 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
     }
 
     setAttr(key: string, value: any) {
-        let oldValue = this.attrs[key];
+        const oldValue = this.attrs[key];
 
         if (oldValue === value && !Utils.isObject(value))
             return;
@@ -369,38 +347,45 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         return this;
     }
 
-    on<K extends keyof NodeEventMap>(evtStr: K, handler: EventListener<this, NodeEventMap[K]>) {
-        let events = (evtStr as string).split(' ');
+    on<Selector extends string>(
+        evtStr: ValidSelector<Config, Selector>,
+        handler: EventListener<this, EventOf<Config, Selector>>
+    ) {
+        const events = evtStr.split(' ');
 
-        for (let event of events) {
-            let parts = event.split('.');
-            let baseEvent = parts[0];
-            let name = parts[1] || '';
+        for (const event of events) {
+            const parts = event.split('.');
+            // the signature has already checked the selector, so its base names are event names
+            const baseEvent = parts[0] as EventName<Config>;
+            const name = parts[1] || '';
 
             if (!this.eventListeners[baseEvent])
                 this.eventListeners[baseEvent] = [];
 
-            this.eventListeners[baseEvent].push({
+            this.eventListeners[baseEvent]!.push({
                 name: name,
-                handler: handler
+                handler: handler as EventListener<Node, never>
             });
         }
 
         return this;
     }
 
-    once<K extends keyof NodeEventMap>(evtStr: K, handler: EventListener<this, NodeEventMap[K]>) {
-        let newHandler = (...args) => {
-            this.off(evtStr as string, newHandler);
+    once<Selector extends string>(
+        evtStr: ValidSelector<Config, Selector>,
+        handler: EventListener<this, EventOf<Config, Selector>>
+    ) {
+        const newHandler = ((event: EventOf<Config, Selector>) => {
+            this.off(evtStr, newHandler);
 
-            handler.call(this, ...args);
-        };
+            handler.call(this, event);
+        }) as EventListener<this, EventOf<Config, Selector>>;
 
-        this.on(evtStr, newHandler);
+        return this.on(evtStr, newHandler);
     }
 
     _fireAndBubble(eventType: string, evt: any = {}, compareShape?) {
-        let shouldStop = (eventType === 'mouseenter' || eventType === 'mouseleave') &&
+        const shouldStop = (eventType === 'mouseenter' || eventType === 'mouseleave') &&
             (compareShape && (this === compareShape || (this.isAncestorOf && this.isAncestorOf(compareShape))));
 
         if (shouldStop)
@@ -417,14 +402,14 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         const protoListeners = this.getProtoListeners(eventType);
 
         if (protoListeners) {
-            for (let listener of protoListeners) {
+            for (const listener of protoListeners) {
                 listener.handler.call(this, evt);
             }
         }
 
-        let listeners = this.eventListeners[eventType];
+        const listeners = this.eventListeners[eventType];
         if (listeners) {
-            for (let listener of listeners) {
+            for (const listener of listeners) {
                 listener.handler.call(this, evt);
             }
         }
@@ -441,24 +426,21 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
     }
 
     off(evtStr?: string, callback?) {
-        let events = (evtStr || '').split(' '),
-            parts: string[], baseEvent: string, name: string, event: string;
-
         if (!evtStr) {
-            for (let t in this.eventListeners) {
+            for (const t in this.eventListeners) {
                 this._off(t, callback);
             }
         }
 
-        for (event of events) {
-            parts = event.split('.');
-            baseEvent = parts[0];
-            name = parts[1];
+        for (const event of (evtStr || '').split(' ')) {
+            const parts = event.split('.');
+            const baseEvent = parts[0];
+            const name = parts[1];
 
             if (baseEvent) {
                 this._off(baseEvent, name, callback);
             } else {
-                for (let t in this.eventListeners) {
+                for (const t in this.eventListeners) {
                     this._off(t, name, callback);
                 }
             }
@@ -466,7 +448,7 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
     }
 
     move(offset: Vector2) {
-        let x = this.x(),
+        const x = this.x(),
             y = this.y();
 
         this.setPosition({
@@ -506,7 +488,7 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
                 }
             });
         } else {
-            let graphics = this.getGraphics();
+            const graphics = this.getGraphics();
 
             if (!graphics)
                 return;
@@ -530,18 +512,18 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
             element.dragStatus = 'stopped';
         }
 
-        DD._endDragBefore(evt)
+        DD._endDragBefore(evt);
         DD._endDragAfter(evt);
     }
 
     _off(type, name?, callback?) {
-        let evtListeners = this.eventListeners[type];
+        const evtListeners = this.eventListeners[type];
 
         if (!evtListeners)
             return;
 
         for (let i = 0; i < evtListeners.length; ++i) {
-            let {name: evtName, handler} = evtListeners[i];
+            const {name: evtName, handler} = evtListeners[i];
 
             if ((evtName !== 'core' || name === 'core') && (!name || name === evtName) && (!callback || handler === callback)) {
                 evtListeners.splice(i, 1);
@@ -567,7 +549,7 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
             DD._dragElements.delete(this._id);
         }
 
-        let parent = this.getParent();
+        const parent = this.getParent();
 
         if (parent && parent.children) {
             parent.children.splice(this.index, 1);
@@ -591,7 +573,7 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         return this;
     }
 
-    isAncestorOf(node: Node): boolean {
+    isAncestorOf(_node: Node): boolean {
         return false;
     }
 
@@ -599,7 +581,7 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         if (!this.parent)
             return false;
 
-        let index = this.index,
+        const index = this.index,
             length = this.parent.getChildren().length;
 
         if (index !== length - 1) {
@@ -634,13 +616,13 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
     }
 
     clearTransform() {
-        let origTransform = {
+        const origTransform = {
             x: this.x(),
             y: this.y(),
             scaleX: this.scaleX(),
             scaleY: this.scaleY(),
             rotation: this.rotation()
-        }
+        };
 
         this.attrs.x = 0;
         this.attrs.y = 0;
@@ -652,17 +634,17 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
     }
 
     setAbsolutePosition(pos: Vector2) {
-        let origTransform = this.clearTransform();
+        const origTransform = this.clearTransform();
 
         this.attrs.x = origTransform.x;
         this.attrs.y = origTransform.y;
 
-        let tr = this.getAbsoluteTransform().copy();
+        const tr = this.getAbsoluteTransform().copy();
 
         tr.invert();
         tr.translate(pos.x, pos.y);
 
-        let newPos = {
+        const newPos = {
             x: this.attrs.x + tr.getTranslation().x,
             y: this.attrs.y + tr.getTranslation().y
         };
@@ -694,10 +676,10 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
     }
 
     createDragElement(evt) {
-        let pointerId = evt?.pointerId;
-        let graphics = this.getGraphics();
-        let ap = this.getAbsolutePosition();
-        let pos = graphics.getPointerById(pointerId) ||
+        const pointerId = evt?.pointerId;
+        const graphics = this.getGraphics();
+        const ap = this.getAbsolutePosition();
+        const pos = graphics.getPointerById(pointerId) ||
             graphics._changedPointerPositions[0] ||
             ap;
 
@@ -731,7 +713,7 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         if (!pos)
             return;
 
-        let newNodePosition = {
+        const newNodePosition = {
             x: pos.x - element.offset.x,
             y: pos.y - element.offset.y
         };
@@ -769,7 +751,7 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
         const animationStart = new Date().getTime();
         const startAttrs = {};
 
-        for (let attr of animationAttrs) {
+        for (const attr of animationAttrs) {
             startAttrs[attr] = this[attr]();
             newAttrs[attr] = newAttrs[attr] ?? startAttrs[attr];
         }
@@ -803,7 +785,7 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
                         const backwardArc = 2 * Math.PI - forwardArc;
 
                         if (forwardArc < backwardArc) {
-                            return newAttrs[attr] * percent + startAttrs[attr] * (1 - percent)
+                            return newAttrs[attr] * percent + startAttrs[attr] * (1 - percent);
                         } else {
                             return (
                                 (newAttrs[attr] + 2 * Math.PI * Math.sign(startAttrs[attr] - newAttrs[attr])) * percent
@@ -813,7 +795,7 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
                     } else {
                         return newAttrs[attr] * percent + startAttrs[attr] * (1 - percent);
                     }
-                }
+                };
 
                 this.batchTransformChanges(() => {
                     for (const attr of animationAttrs) {
@@ -830,7 +812,7 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
                     this.inAnimation = false;
                 }
             });
-        }
+        };
 
         makeAnimationStep();
     }
@@ -863,10 +845,10 @@ export abstract class Node<Config extends NodeConfig = NodeConfig> {
     draggable: GetSet<boolean, this>;
     dragDistance: GetSet<number, this>;
 
-    visible: GetSet<boolean, this>
-    interactive: GetSet<boolean, this>
+    visible: GetSet<boolean, this>;
+    interactive: GetSet<boolean, this>;
 
-    brightness: GetSet<number, this>
+    brightness: GetSet<number, this>;
 }
 
 Node.prototype.nodeType = 'Node';

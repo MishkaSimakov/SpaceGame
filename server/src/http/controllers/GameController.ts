@@ -10,7 +10,6 @@ import {Game as GameDBEntity, GameStatus} from "../../database/entity/game";
 import {defaultSettings, defaultTimeControlSettings} from "../../game/DefaultSettings";
 import {FileActionsStorage} from "@src/game/FileActionsStorage";
 import {createGameValidator} from "@src/http/validation/CreateGameValidator";
-import DatabaseManager from "@src/database/DatabaseManager";
 import {render} from "@src/helpers/Render";
 
 export const create = async (req: AuthenticatedRequest, res: Response) => {
@@ -96,11 +95,11 @@ export const showCreatePage = async (req: AuthenticatedRequest, res: Response) =
         defaultSettings,
         defaultTimeControlSettings
     });
-}
+};
 
 export const showRules = async (req: Request, res: Response) => {
     return render(res, 'game/rules');
-}
+};
 
 export const showStatusPage = async (req: AuthenticatedGameRequest, res: Response) => {
     const game = await GameDBEntity.findOne({
@@ -127,7 +126,7 @@ export const showStatusPage = async (req: AuthenticatedGameRequest, res: Respons
             isActive: App.getInstance().gamesManager!.isActive(game.id)
         }
     });
-}
+};
 
 export const deleteGame = async (req: AuthenticatedGameRequest, res: Response) => {
     await App.getInstance().gamesManager!.deactivateGame(req.params.gameId);
@@ -137,15 +136,15 @@ export const deleteGame = async (req: AuthenticatedGameRequest, res: Response) =
     });
 
     return res.redirect('/');
-}
+};
 
 export const deactivateGame = async (req: AuthenticatedGameRequest, res: Response) => {
     await App.getInstance().gamesManager!.deactivateGame(req.params.gameId);
     return res.redirect('/');
-}
+};
 
 export const deleteAllGames = async (req: Request, res: Response) => {
-    const games = await GameDBEntity.find()
+    const games = await GameDBEntity.find();
 
     for (const game of games) {
         await App.getInstance().gamesManager!.deactivateGame(game.id);
@@ -156,7 +155,7 @@ export const deleteAllGames = async (req: Request, res: Response) => {
     }
 
     return res.redirect('/');
-}
+};
 
 
 export const createGame = async (req: AuthenticatedRequest, res: Response) => {
@@ -173,7 +172,7 @@ export const createGame = async (req: AuthenticatedRequest, res: Response) => {
         const gameId = await App.getInstance().gamesManager!.createGame("Игра", req.user, users, gameSettings);
 
         return res.redirect(`/game/${gameId}`);
-    } catch (err) {
+    } catch {
         return res.redirect('/game/create');
     }
 };

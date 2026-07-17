@@ -29,7 +29,6 @@ export default class TopBarDefaultAdaptor extends TopBarAdaptor {
                     lost: player.lose,
                     isHisTurn: drawer.scene.gameManager.currentTurnPlayerId === player.id
                 },
-                withName: true,
                 withTimeControl: drawer.scene.gameManager.settings.timeControlSettings !== undefined,
                 time: drawer.playerTime[player.id] ?? 0,
             }).onClick(() => {

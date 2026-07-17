@@ -1,6 +1,6 @@
 import {Action} from "@common/ActionsHelpers";
 import {GameState} from "@common/Types";
-import * as Actions from "@common/Actions"
+import * as Actions from "@common/Actions";
 
 export type EmptyObject = Record<string, never>;
 

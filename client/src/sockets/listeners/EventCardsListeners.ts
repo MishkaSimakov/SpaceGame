@@ -31,7 +31,7 @@ export const eventCardsListeners: ListenersContainer = {
             return player ? player.name : id;
         });
 
-        const index = await game.controlsScene.chooseFromList("Выберите игрока для кражи карт", players.map(v => v.toString()))
+        const index = await game.controlsScene.chooseFromList("Выберите игрока для кражи карт", players.map(v => v.toString()));
         return choosePlayerToStealCardResponse(options[index]);
     },
 
@@ -47,7 +47,7 @@ export const eventCardsListeners: ListenersContainer = {
         return chooseCardToStealResponse(indexes[0]);
     },
 
-    async chooseCardsToDiscardAndTakeAnotherRequest({}, {game}) {
+    async chooseCardsToDiscardAndTakeAnotherRequest(_payload, {game}) {
         const indexes = await game.controlsScene.enqueueActivity(
             new ChooseCardsActivity(
                 game.controlsScene,
@@ -66,7 +66,7 @@ export const eventCardsListeners: ListenersContainer = {
         return chooseModuleToMoveDamageResponse(move);
     },
 
-    async chooseCardsForRepairSpaceshipRequest({}, {game}) {
+    async chooseCardsForRepairSpaceshipRequest(_payload, {game}) {
         const indexes = await game.controlsScene.enqueueActivity(
             new ChooseCardsActivity(
                 game.controlsScene,
@@ -179,7 +179,7 @@ export const eventCardsListeners: ListenersContainer = {
         return chooseSolarPanelsToDestroyResponse(positions);
     },
 
-    async chooseModuleToDestroyRequest({}, {game}) {
+    async chooseModuleToDestroyRequest(_payload, {game}) {
         game.controlsScene.topBarDrawer.setStatus(`уничтожьте модуль`);
 
         const handle = game.cardsManager.startChoosingModules(
@@ -224,8 +224,8 @@ export const eventCardsListeners: ListenersContainer = {
         return permuteTopThreeEventCardsResponse(order);
     },
 
-    async useEventCardToDealDamageRequest({}, {game}) {
-        game.controlsScene.topBarDrawer.setStatus("нанести урон карточкой действия с руки?")
+    async useEventCardToDealDamageRequest(_payload, {game}) {
+        game.controlsScene.topBarDrawer.setStatus("нанести урон карточкой действия с руки?");
 
         const result = await game.controlsScene.askYesOrNo();
         return useEventCardToDealDamageResponse(result);
@@ -269,4 +269,4 @@ export const eventCardsListeners: ListenersContainer = {
 
         return chooseModuleToDamageByEventCardResponse(position);
     }
-}
+};

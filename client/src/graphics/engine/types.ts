@@ -34,7 +34,7 @@ export class BoundingRect {
         if (!pos)
             return false;
 
-        return this.left <= pos.x && pos.x <= this.right && this.top <= pos.y && pos.y <= this.bottom
+        return this.left <= pos.x && pos.x <= this.right && this.top <= pos.y && pos.y <= this.bottom;
     }
 }
 

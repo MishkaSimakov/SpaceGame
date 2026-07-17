@@ -1,36 +1,32 @@
-import {test} from "uvu";
-import * as assert from "uvu/assert";
+import {expect, test} from "vitest";
 
 import {SpaceshipGetters} from "@common/getters/Spaceship";
 import {ModuleType} from "@common/Types";
 
-import {attachReducers, fakeGameState, fakeModule} from "../Utils";
-import ActionsBus from "../../../src/game/ActionsBus";
 import {damageModule} from "@src/game/sagas/components/DamageModule";
 import {runSaga} from "@src/game/sagas/runner/RunSaga";
-import {GameInput} from "@src/game/sagas/runner/Environment";
-import {Channel} from "@src/game/sagas/runner/Channel";
+
+import {attachReducers, fakeGameState, fakeModule, TestBus} from "../Utils";
 
 
 test('simple', async () => {
     const state = fakeGameState(2);
-    const input: GameInput = new Channel();
 
     const attacker = state.players[0];
     const victim = state.players[1];
     const expectedHealth = SpaceshipGetters.getMainModule(victim.spaceship)!.totalHealth - 1;
 
-    const bus = new ActionsBus();
+    const bus = new TestBus(state);
 
     attachReducers(bus, state);
 
     await runSaga(
-        {state, output: bus, input},
+        bus.env,
         damageModule, victim, {x: 0, y: 0}, 1, {type: "Player", attacker}
     );
 
     // test
-    assert.equal(SpaceshipGetters.getMainModule(state.players[1].spaceship)!.health, expectedHealth);
+    expect(SpaceshipGetters.getMainModule(state.players[1].spaceship)!.health).toEqual(expectedHealth);
 });
 
 test('damageModuleReducesEnergyWhenCapacityDecreases', async () => {
@@ -39,8 +35,7 @@ test('damageModuleReducesEnergyWhenCapacityDecreases', async () => {
 
     let attacker = state.players[0];
     let victim = state.players[1];
-    const bus = new ActionsBus();
-    const input: GameInput = new Channel();
+    const bus = new TestBus(state);
 
     const mainModule = SpaceshipGetters.getMainModule(victim.spaceship)!;
     mainModule.capacity = 25;
@@ -61,30 +56,33 @@ test('damageModuleReducesEnergyWhenCapacityDecreases', async () => {
 
     // Run
     await runSaga(
-        {state, output: bus, input},
+        bus.env,
         damageModule, victim, {x: 1, y: 0}, battery.health, {type: 'Player', attacker}
     );
 
     // Test
     attacker = state.players[0];
     victim = state.players[1];
-    assert.equal(victim.spaceship.modules.length, 1);
-    assert.equal(SpaceshipGetters.getTotalCapacity(victim.spaceship), 25);
-    assert.equal(victim.energy, 25);
-    assert.equal(attacker.hand.length, 1);
-    assert.ok(attacker.hand[0].cardType === "module");
-    assert.equal(attacker.hand[0].module.type, ModuleType.Battery);
-    assert.equal(victim.hand.length, 0);
+    expect(victim.spaceship.modules.length).toEqual(1);
+    expect(SpaceshipGetters.getTotalCapacity(victim.spaceship)).toEqual(25);
+    expect(victim.energy).toEqual(25);
+    expect(attacker.hand.length).toEqual(1);
+
+    const looted = attacker.hand[0];
+    if (looted.cardType !== "module") {
+        expect.unreachable("destroyed module must go to the attacker's hand as a module card");
+    }
+    expect(looted.module.type).toEqual(ModuleType.Battery);
+    expect(victim.hand.length).toEqual(0);
 });
 
 test('damageModuleNoEnergyAdjustmentWhenWithinCapacity', async () => {
     // Setup
     const state = fakeGameState(2);
-    const input: GameInput = new Channel();
 
     let attacker = state.players[0];
     let victim = state.players[1];
-    const bus = new ActionsBus();
+    const bus = new TestBus(state);
 
     const mainModule = SpaceshipGetters.getMainModule(victim.spaceship)!;
     mainModule.capacity = 25;
@@ -105,30 +103,33 @@ test('damageModuleNoEnergyAdjustmentWhenWithinCapacity', async () => {
 
     // Run
     await runSaga(
-        {state, output: bus, input},
+        bus.env,
         damageModule, victim, {x: 1, y: 0}, battery.health, {type: 'Player', attacker}
     );
 
     // Test
     attacker = state.players[0];
     victim = state.players[1];
-    assert.equal(victim.spaceship.modules.length, 1);
-    assert.equal(SpaceshipGetters.getTotalCapacity(victim.spaceship), 25);
-    assert.equal(victim.energy, 20);
-    assert.equal(attacker.hand.length, 1);
-    assert.ok(attacker.hand[0].cardType === "module");
-    assert.equal(attacker.hand[0].module.type, ModuleType.Battery);
-    assert.equal(victim.hand.length, 0);
+    expect(victim.spaceship.modules.length).toEqual(1);
+    expect(SpaceshipGetters.getTotalCapacity(victim.spaceship)).toEqual(25);
+    expect(victim.energy).toEqual(20);
+    expect(attacker.hand.length).toEqual(1);
+
+    const looted = attacker.hand[0];
+    if (looted.cardType !== "module") {
+        expect.unreachable("destroyed module must go to the attacker's hand as a module card");
+    }
+    expect(looted.module.type).toEqual(ModuleType.Battery);
+    expect(victim.hand.length).toEqual(0);
 });
 
 test('damageModuleNoDestructionNoEnergyAdjustment', async () => {
     // Setup
     const state = fakeGameState(2);
-    const input: GameInput = new Channel();
 
     let attacker = state.players[0];
     let victim = state.players[1];
-    const bus = new ActionsBus();
+    const bus = new TestBus(state);
 
     const mainModule = SpaceshipGetters.getMainModule(victim.spaceship)!;
     mainModule.capacity = 25;
@@ -149,19 +150,19 @@ test('damageModuleNoDestructionNoEnergyAdjustment', async () => {
 
     // Run
     await runSaga(
-        {state, output: bus, input},
+        bus.env,
         damageModule, victim, {x: 1, y: 0}, 1, {type: 'Player', attacker}
     );
 
     // Test
     attacker = state.players[0];
     victim = state.players[1];
-    assert.equal(victim.spaceship.modules.length, 2);
-    assert.equal(SpaceshipGetters.getTotalCapacity(victim.spaceship), 35);
-    assert.equal(victim.energy, 30);
-    assert.equal(attacker.hand.length, 0);
-    assert.equal(victim.hand.length, 0);
-    assert.equal(SpaceshipGetters.getModuleByPosition(victim.spaceship, {x: 1, y: 0})!.health, 1);
+    expect(victim.spaceship.modules.length).toEqual(2);
+    expect(SpaceshipGetters.getTotalCapacity(victim.spaceship)).toEqual(35);
+    expect(victim.energy).toEqual(30);
+    expect(attacker.hand.length).toEqual(0);
+    expect(victim.hand.length).toEqual(0);
+    expect(SpaceshipGetters.getModuleByPosition(victim.spaceship, {x: 1, y: 0})!.health).toEqual(1);
 });
 
 test('damageFromNuclearReactor', async () => {
@@ -170,8 +171,7 @@ test('damageFromNuclearReactor', async () => {
 
     let attacker = state.players[0];
     let victim = state.players[1];
-    const bus = new ActionsBus();
-    const input: GameInput = new Channel();
+    const bus = new TestBus(state);
 
     const mainModule = SpaceshipGetters.getMainModule(victim.spaceship)!;
     mainModule.connectors = {top: 1, right: 1, bottom: 1, left: 1};
@@ -186,7 +186,7 @@ test('damageFromNuclearReactor', async () => {
 
     // Run
     await runSaga(
-        {state, output: bus, input},
+        bus.env,
         damageModule, victim, {x: 1, y: 0}, reactor.health, {type: 'Player', attacker}
     );
 
@@ -194,8 +194,8 @@ test('damageFromNuclearReactor', async () => {
     attacker = state.players[0];
     victim = state.players[1];
 
-    assert.equal(victim.spaceship.modules.length, 1);
-    assert.equal(victim.spaceship.modules[0].health, victim.spaceship.modules[0].totalHealth - 1);
+    expect(victim.spaceship.modules.length).toEqual(1);
+    expect(victim.spaceship.modules[0].health).toEqual(victim.spaceship.modules[0].totalHealth - 1);
 });
 
 
@@ -205,8 +205,7 @@ test('damageFromNuclearReactorChain', async () => {
 
     let attacker = state.players[0];
     let victim = state.players[1];
-    const bus = new ActionsBus();
-    const input: GameInput = new Channel();
+    const bus = new TestBus(state);
 
     const mainModule = SpaceshipGetters.getMainModule(victim.spaceship)!;
     mainModule.connectors = {top: 1, right: 1, bottom: 1, left: 1};
@@ -236,7 +235,7 @@ test('damageFromNuclearReactorChain', async () => {
 
     // Run
     await runSaga(
-        {state, output: bus, input},
+        bus.env,
         damageModule, victim, {x: 3, y: 0}, 1, {type: 'Player', attacker}
     );
 
@@ -244,23 +243,21 @@ test('damageFromNuclearReactorChain', async () => {
     attacker = state.players[0];
     victim = state.players[1];
 
-    assert.equal(victim.spaceship.modules.length, 1);
-    assert.equal(victim.spaceship.modules[0].health, victim.spaceship.modules[0].totalHealth - 1);
+    expect(victim.spaceship.modules.length).toEqual(1);
+    expect(victim.spaceship.modules[0].health).toEqual(victim.spaceship.modules[0].totalHealth - 1);
 
     // 1 nuclear reactor in attacker's hand + 2 in discards
-    assert.equal(state.discards.module.length, 2);
-    assert.equal(attacker.hand.length, 1);
+    expect(state.discards.module.length).toEqual(2);
+    expect(attacker.hand.length).toEqual(1);
 });
 
 
 test('healthIsRestoredWhenGoesToDiscards', async () => {
     // Setup
     const state = fakeGameState(2);
-    const input: GameInput = new Channel();
 
-    let attacker = state.players[0];
     let victim = state.players[1];
-    const bus = new ActionsBus();
+    const bus = new TestBus(state);
 
     const mainModule = SpaceshipGetters.getMainModule(victim.spaceship)!;
     mainModule.connectors = {top: 1, right: 1, bottom: 1, left: 1};
@@ -276,22 +273,18 @@ test('healthIsRestoredWhenGoesToDiscards', async () => {
 
     // Run
     await runSaga(
-        {state, output: bus, input},
+        bus.env,
         damageModule, victim, {x: 1, y: 0}, 1, {type: 'EventCard'}
     );
 
     // Test
-    attacker = state.players[0];
     victim = state.players[1];
 
-    assert.equal(victim.spaceship.modules.length, 1);
+    expect(victim.spaceship.modules.length).toEqual(1);
 
-    assert.equal(state.discards.module.length, 1);
+    expect(state.discards.module.length).toEqual(1);
     const discarded = state.discards.module[0];
 
-    assert.equal(discarded.id, protector.id);
-    assert.equal(discarded.health, discarded.totalHealth);
+    expect(discarded.id).toEqual(protector.id);
+    expect(discarded.health).toEqual(discarded.totalHealth);
 });
-
-
-test.run();

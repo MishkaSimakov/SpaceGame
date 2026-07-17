@@ -124,7 +124,7 @@ export default class Game {
         if (this.settings.timeControlSettings) {
             this.timeDecreasingPlayerId = gameDTO.timeControl.timeDecreasingPlayerId;
 
-            for (let player of this.getAllPlayers()) {
+            for (const player of this.getAllPlayers()) {
                 if (this.timeDecreasingPlayerId === player.id && this.playerTime[player.id]) {
                     continue;
                 }
@@ -159,7 +159,7 @@ export default class Game {
     }
 
     getAllPlayers(): OtherPlayer[] {
-        let allPlayers: OtherPlayer[] = [];
+        const allPlayers: OtherPlayer[] = [];
 
         allPlayers.push(...this.otherPlayers);
         allPlayers.push(PlayerGetters.forOtherPlayer(this.currentPlayer));
@@ -171,7 +171,7 @@ export default class Game {
         if (id === this.currentPlayer.id)
             return PlayerGetters.forOtherPlayer(this.currentPlayer);
 
-        for (let player of this.otherPlayers) {
+        for (const player of this.otherPlayers) {
             if (player.id === id)
                 return player;
         }

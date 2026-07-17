@@ -11,7 +11,7 @@ export interface RectangleConfig extends ShapeConfig {
 
 export class Rectangle extends Shape<RectangleConfig> {
     _sceneFunc(context: Context) {
-        let cornerRadius = this.cornerRadius(),
+        const cornerRadius = this.cornerRadius(),
             width = this.width(),
             height = this.height();
 
@@ -29,7 +29,7 @@ export class Rectangle extends Shape<RectangleConfig> {
     }
 
     _hitFunc(context: Context) {
-        let width = this.width(),
+        const width = this.width(),
             height = this.height();
 
         context.beginPath();

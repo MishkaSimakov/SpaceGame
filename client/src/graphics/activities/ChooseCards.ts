@@ -14,7 +14,7 @@ import {getCardsGrid} from "../shapes/CardsGrid";
 export class ChooseCardsActivity extends Activity {
     private modalGroup?: Group = undefined;
     private buttonShape?: Text = undefined;
-    private resolveModal: Function | undefined = undefined;
+    private resolveModal: ((selected: number[] | undefined) => void) | undefined = undefined;
 
     private selected: number[] = [];
 
@@ -46,7 +46,7 @@ export class ChooseCardsActivity extends Activity {
     update() {
         if (this.modalGroup !== undefined) {
             this.destructModal();
-            this.resolveModal();
+            this.resolveModal(undefined);
 
             this.resolveModal = undefined;
         }

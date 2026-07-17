@@ -2,7 +2,6 @@ import Game from "../Game";
 import Scene from "./engine/Scene";
 import {Group} from "./engine/Group";
 import {Text} from "./engine/shapes/Text";
-import {Rectangle} from "./engine/shapes/Rectangle";
 import Modal from "./Modal";
 import Color from "@common/helpers/Color";
 
@@ -46,7 +45,7 @@ export default class PauseDrawer {
             });
 
             this.pauseModal.addLine("Выйти").on('click', () => {
-                window.location.replace('/')
+                window.location.replace('/');
             });
         }
 

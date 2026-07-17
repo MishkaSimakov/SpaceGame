@@ -28,5 +28,5 @@ export const createGameValidator = (users: IUser[]) =>
     })
         .refine(input => {
             return !input.withTimeControl
-                || input.loseWhenTimeout && input.startTime && input.defaultTimeIncrease && input.fightTimeIncrease
+                || input.loseWhenTimeout && input.startTime && input.defaultTimeIncrease && input.fightTimeIncrease;
         });

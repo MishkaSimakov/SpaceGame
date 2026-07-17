@@ -12,16 +12,14 @@ export type CountBoundary = {
 export type CountBoundaryValidationResult = { verdict: "error", error: string } | { verdict: "correct" };
 
 // convenient constructors
-export namespace Boundary {
-    export function equal(count: number) {
+export const Boundary = {
+    equal(count: number) {
         return {type: BoundaryType.EQUAL, count};
-    }
-
-    export function atLeast(count: number) {
+    },
+    atLeast(count: number) {
         return {type: BoundaryType.AT_LEAST, count};
-    }
-
-    export function noMoreThan(count: number) {
+    },
+    noMoreThan(count: number) {
         return {type: BoundaryType.NO_MORE_THAN, count};
-    }
-}
+    },
+};

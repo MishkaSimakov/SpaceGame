@@ -1,6 +1,6 @@
 import {Server, Socket} from "socket.io";
 
-import {Player, PlayerId} from "@common/Types";
+import {PlayerId} from "@common/Types";
 
 import {ISocketsManager} from "@src/game/interfaces/ISocketsManager";
 
@@ -126,8 +126,8 @@ export default class SocketsManager implements ISocketsManager {
     }
 
     disconnectEveryone() {
-        for (let player_id of Object.keys(this.players)) {
-            this.getSocket(player_id)?.disconnect(true);
+        for (const playerId of Object.keys(this.players)) {
+            this.getSocket(playerId)?.disconnect(true);
         }
     }
 

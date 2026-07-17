@@ -3,9 +3,7 @@ import {Context} from "../Context";
 import {GetSet} from "../types";
 import {Factory} from "../Factory";
 import {_registerNode} from "../Global";
-import {Utils} from "../Utils";
 import {Vector2} from "@common/Types";
-import {Rectangle} from "./Rectangle";
 
 export interface LineConfig extends ShapeConfig {
     lineJoin: 'round' | 'bevel' | 'miter',

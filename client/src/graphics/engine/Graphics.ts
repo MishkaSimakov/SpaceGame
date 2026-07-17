@@ -1,6 +1,6 @@
 import Scene from "./Scene";
 import {Container} from "./Container";
-import {Node, NodeConfig} from "./Node";
+import {NodeConfig} from "./Node";
 import {GetSet, Vector2} from "./types";
 import {Factory} from "./Factory";
 import {Utils} from "./Utils";
@@ -14,9 +14,7 @@ export interface GraphicsConfig extends NodeConfig {
     container: HTMLDivElement | string;
 }
 
-const STRING = 'string',
-    PX = 'px',
-    MOUSEOUT = 'mouseout',
+const MOUSEOUT = 'mouseout',
     MOUSELEAVE = 'mouseleave',
     MOUSEOVER = 'mouseover',
     MOUSEENTER = 'mouseenter',
@@ -130,16 +128,6 @@ class Graphics extends Container<Scene> {
     _pointerPositions: (Vector2 & { id?: number })[] = [];
     _changedPointerPositions: (Vector2 & { id: number })[] = [];
 
-    _pointerClickStart: Shape;
-    _mouseClickStart: Shape;
-    _touchClickStart: Shape;
-
-    _pointerTarget: Shape;
-    _mouseTarget: Shape;
-    _touchTarget: Shape;
-
-    CLICK_TIMEOUT: number = 100;
-
     constructor(config: GraphicsConfig) {
         super(config);
 
@@ -150,7 +138,7 @@ class Graphics extends Container<Scene> {
     }
 
     private buildDOM() {
-        let container = this.container();
+        const container = this.container();
 
         if (!container)
             throw 'There must be container in graphics';
@@ -223,7 +211,7 @@ class Graphics extends Container<Scene> {
             this._pointerPositions = [];
             this._changedPointerPositions = [];
 
-            for (let touch of evt.touches) {
+            for (const touch of evt.touches) {
                 this._pointerPositions.push({
                     id: touch.identifier,
                     x: touch.clientX,
@@ -231,7 +219,7 @@ class Graphics extends Container<Scene> {
                 });
             }
 
-            for (let touch of (evt.changedTouches || evt.touches)) {
+            for (const touch of (evt.changedTouches || evt.touches)) {
                 this._changedPointerPositions.push({
                     id: touch.identifier,
                     x: touch.clientX,
@@ -239,8 +227,8 @@ class Graphics extends Container<Scene> {
                 });
             }
         } else {
-            let x = evt.clientX;
-            let y = evt.clientY;
+            const x = evt.clientX;
+            const y = evt.clientY;
 
             this.pointerPos = {
                 x: x,
@@ -267,7 +255,7 @@ class Graphics extends Container<Scene> {
         let triggeredOnShape = false;
 
         this._changedPointerPositions.forEach((pointer) => {
-            let shape = this.getIntersection(pointer);
+            const shape = this.getIntersection(pointer);
 
             Draw['_' + eventType + 'ListenClick'] = true;
 
@@ -307,16 +295,16 @@ class Graphics extends Container<Scene> {
 
         let triggeredOnShape = false;
 
-        let target = this['_' + eventType + 'Target'];
+        const target = this['_' + eventType + 'Target'];
         this._changedPointerPositions.forEach((pointer) => {
-            let currentTarget = this.getIntersection(pointer);
+            const currentTarget = this.getIntersection(pointer);
 
-            let event = {
+            const event = {
                 evt: evt,
                 pointerId: pointer.id
             };
 
-            let targetChanged = currentTarget !== target;
+            const targetChanged = currentTarget !== target;
 
             if (targetChanged && target) {
                 target._fireAndBubble(events.pointerout, {...event}, currentTarget);
@@ -369,7 +357,7 @@ class Graphics extends Container<Scene> {
         let triggeredOnShape = false;
 
         this._changedPointerPositions.forEach((pointer) => {
-            let shape = this.getIntersection(pointer);
+            const shape = this.getIntersection(pointer);
 
             if (!shape)
                 return;
@@ -407,7 +395,7 @@ class Graphics extends Container<Scene> {
     _wheel(evt) {
         this.updatePointerPosition(evt);
 
-        let shape = this.getIntersection(this.getPointerPosition());
+        const shape = this.getIntersection(this.getPointerPosition());
 
         if (shape) {
             shape.fire('wheel', {evt: evt}, true);
@@ -416,7 +404,7 @@ class Graphics extends Container<Scene> {
                 evt: evt,
                 target: this,
                 currentTarget: this
-            })
+            });
         }
     }
 
@@ -424,7 +412,7 @@ class Graphics extends Container<Scene> {
         if (!pos)
             return;
 
-        let children = this.getChildren();
+        const children = this.getChildren();
 
         for (let i = children.length - 1; i >= 0; i--) {
             const shape = children[i].getIntersection(pos);

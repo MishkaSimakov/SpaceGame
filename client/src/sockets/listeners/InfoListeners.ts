@@ -24,9 +24,9 @@ export const infoListeners: ListenersContainer = {
         await showCards(cardsReceiver, cards, game);
     },
 
-    async sendPlayerLostInfo({}, {game}) {
+    async sendPlayerLostInfo(_payload, {game}) {
         await game.controlsScene.enqueueActivity(
             new ShowHugeMessageActivity(this, "Вы проиграли :(")
         );
     },
-}
+};

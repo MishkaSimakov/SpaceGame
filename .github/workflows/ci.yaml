@@ -1,0 +1,208 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+# A new push to the same ref makes the previous run's answer obsolete.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "23.11.0"
+
+jobs:
+  client:
+    name: Client
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
+    outputs:
+      lint: ${{ steps.lint.outcome }}
+      typecheck: ${{ steps.typecheck.outcome }}
+      build: ${{ steps.build.outcome }}
+      test: ${{ steps.test.outcome }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Every check runs even after an earlier one fails, so a single run
+      # reports the whole picture instead of just the first broken level.
+      - name: Lint
+        id: lint
+        continue-on-error: true
+        run: npm run lint
+
+      - name: Typecheck
+        id: typecheck
+        continue-on-error: true
+        run: npm run typecheck
+
+      - name: Build
+        id: build
+        continue-on-error: true
+        run: npm run build
+
+      - name: Test
+        id: test
+        continue-on-error: true
+        run: npm test
+
+      - name: Report
+        if: always()
+        run: |
+          source "$GITHUB_WORKSPACE/.github/workflows/report.sh"
+          report_checks "Client" \
+            "Lint:${{ steps.lint.outcome }}" \
+            "Typecheck:${{ steps.typecheck.outcome }}" \
+            "Build:${{ steps.build.outcome }}" \
+            "Tests:${{ steps.test.outcome }}"
+
+  server:
+    name: Server
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    outputs:
+      lint: ${{ steps.lint.outcome }}
+      typecheck: ${{ steps.typecheck.outcome }}
+      test: ${{ steps.test.outcome }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        id: lint
+        continue-on-error: true
+        run: npm run lint
+
+      - name: Typecheck
+        id: typecheck
+        continue-on-error: true
+        run: npm run typecheck
+
+      - name: Test
+        id: test
+        continue-on-error: true
+        run: npm test
+
+      - name: Report
+        if: always()
+        run: |
+          source "$GITHUB_WORKSPACE/.github/workflows/report.sh"
+          report_checks "Server" \
+            "Lint:${{ steps.lint.outcome }}" \
+            "Typecheck:${{ steps.typecheck.outcome }}" \
+            "Tests:${{ steps.test.outcome }}"
+
+  stack:
+    name: Docker stack
+    runs-on: ubuntu-latest
+    outputs:
+      build: ${{ steps.build.outcome }}
+      smoke: ${{ steps.smoke.outcome }}
+    steps:
+      - uses: actions/checkout@v7
+
+      # The server refuses to boot without a .env (App.init throws). Host names
+      # and ports here are the ones inside the compose network, not the
+      # host-mapped ones.
+      - name: Write server .env
+        run: |
+          cat > server/.env <<'EOF'
+          APP_URL=http://localhost:3000
+          DB_HOST=database
+          DB_PORT=5432
+          DB_USERNAME=user
+          DB_PASSWORD=secret
+          DB_DATABASE=spaceships
+          JWT_SECRET_KEY=ci-jwt-secret
+          SESSION_SECRET_KEY=ci-session-secret
+          EOF
+
+      - name: Build images
+        id: build
+        continue-on-error: true
+        run: docker compose build
+
+      - name: Smoke test
+        id: smoke
+        if: steps.build.outcome == 'success'
+        continue-on-error: true
+        run: |
+          docker compose up -d
+          docker compose ps
+
+          # A 2xx/3xx answer means the server booted and is serving HTTP; that
+          # is all this liveness check verifies. The root path itself is behind
+          # auth and 302-redirects to /login, so an exact-200 check never passes.
+          for _ in $(seq 1 60); do
+            status=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 || true)
+            status=${status:-000}
+            if [ "$status" -ge 200 ] && [ "$status" -lt 400 ]; then
+              echo "Server is up (HTTP $status)."
+              exit 0
+            fi
+            sleep 5
+          done
+
+          echo "Server never answered a 2xx/3xx (last status: ${status:-none})."
+          exit 1
+
+      - name: Container logs
+        if: steps.smoke.outcome == 'failure'
+        run: docker compose logs --no-color
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
+
+      - name: Report
+        if: always()
+        run: |
+          source "$GITHUB_WORKSPACE/.github/workflows/report.sh"
+          report_checks "Docker stack" \
+            "Image build:${{ steps.build.outcome }}" \
+            "Boot + HTTP smoke test:${{ steps.smoke.outcome }}"
+
+  report:
+    name: Report
+    if: always()
+    needs: [client, server, stack]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The server is not compiled — it runs from source under ts-node — so its
+      # build column is the docker image build from the stack job.
+      - name: Summarise
+        run: |
+          source .github/workflows/report.sh
+          report_matrix \
+            "Client:${{ needs.client.outputs.lint }}:${{ needs.client.outputs.typecheck }}:${{ needs.client.outputs.build }}:${{ needs.client.outputs.test }}" \
+            "Server:${{ needs.server.outputs.lint }}:${{ needs.server.outputs.typecheck }}:${{ needs.stack.outputs.build }}:${{ needs.server.outputs.test }}" \
+            "Stack (boot + HTTP smoke test):-:-:-:${{ needs.stack.outputs.smoke }}"
+
+      - name: Fail if any check failed
+        if: needs.client.result != 'success' || needs.server.result != 'success' || needs.stack.result != 'success'
+        run: exit 1

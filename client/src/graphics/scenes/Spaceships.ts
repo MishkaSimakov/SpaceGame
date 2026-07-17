@@ -35,7 +35,7 @@ export default class Spaceships extends Scene {
 
         let prevPointerPosition = undefined;
         this.getGraphics().on("mousemove", ({evt}) => {
-            let pointerPosition = this.getGraphics().getRelativePointerPosition();
+            const pointerPosition = this.getGraphics().getRelativePointerPosition();
 
             if (!DD.isDragging() && prevPointerPosition && evt.buttons !== 0) {
                 this.move({
@@ -96,11 +96,11 @@ export default class Spaceships extends Scene {
         this.getGraphics().on('touchmove', ({evt}) => {
             evt.preventDefault();
 
-            let touch1 = evt.touches[0];
-            let touch2 = evt.touches[1];
+            const touch1 = evt.touches[0];
+            const touch2 = evt.touches[1];
 
             if (touch1 && !touch2) {
-                let pointerPosition = this.getGraphics().getRelativePointerPosition();
+                const pointerPosition = this.getGraphics().getRelativePointerPosition();
 
                 if (!DD.isDragging() && prevPointerPosition) {
                     this.move({
@@ -118,11 +118,11 @@ export default class Spaceships extends Scene {
                 return;
             }
 
-            let p1 = {
+            const p1 = {
                 x: touch1.clientX,
                 y: touch1.clientY,
             };
-            let p2 = {
+            const p2 = {
                 x: touch2.clientX,
                 y: touch2.clientY
             };
@@ -131,9 +131,9 @@ export default class Spaceships extends Scene {
                 lastCenter = getCenter(p1, p2);
                 return;
             }
-            let newCenter = getCenter(p1, p2);
+            const newCenter = getCenter(p1, p2);
 
-            let dist = getDistance(p1, p2);
+            const dist = getDistance(p1, p2);
 
             if (!lastDist) {
                 lastDist = dist;
@@ -142,12 +142,12 @@ export default class Spaceships extends Scene {
             const tr = this.getAbsoluteTransform().copy();
             tr.invert();
 
-            let localPoint = tr.point(newCenter);
+            const localPoint = tr.point(newCenter);
 
-            var scale = this.scaleX() * (dist / lastDist);
+            const scale = this.scaleX() * (dist / lastDist);
 
-            let dx = lastCenter.x - newCenter.x;
-            let dy = lastCenter.y - newCenter.y;
+            const dx = lastCenter.x - newCenter.x;
+            const dy = lastCenter.y - newCenter.y;
 
             this.move({
                 x: localPoint.x * (this.scaleX() - scale) - dx,

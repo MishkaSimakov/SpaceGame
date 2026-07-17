@@ -6,7 +6,7 @@ import {render} from "@src/helpers/Render";
 import {defaultUserSettings} from "@common/UserSettings";
 
 export const login = async (req: Request, res: Response) => {
-    let user = await User.findOneBy({
+    const user = await User.findOneBy({
         login: req.body.login
     });
 
@@ -22,7 +22,7 @@ export const login = async (req: Request, res: Response) => {
         return res.redirect('/login');
     }
 
-    let token = user.generateToken();
+    const token = user.generateToken();
 
     return res.cookie('authentication_token', token, {
         expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365)
@@ -31,15 +31,15 @@ export const login = async (req: Request, res: Response) => {
 
 export const register = async (req: Request, res: Response) => {
     try {
-        let existUserWithSameName = await User.createQueryBuilder().where({
+        const existUserWithSameName = await User.createQueryBuilder().where({
             login: req.body.login
         }).getExists();
 
         if (existUserWithSameName) {
-            return res.redirect('/register')
+            return res.redirect('/register');
         }
 
-        let user = new User();
+        const user = new User();
 
         user.login = req.body.login;
         user.password = await User.createHashedPassword(req.body.password);
@@ -53,7 +53,7 @@ export const register = async (req: Request, res: Response) => {
         return res.cookie('authentication_token', token, {
             expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365)
         }).redirect('/');
-    } catch (error) {
+    } catch {
         return res.status(500).send('Something went wrong.');
     }
 };
@@ -168,4 +168,4 @@ export const showUserPage = async (req: Request, res: Response) => {
                 };
             }) || []
     });
-}
+};

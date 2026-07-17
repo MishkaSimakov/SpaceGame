@@ -10,7 +10,6 @@ import {
 import {ModuleGetters} from "@common/getters/Module";
 
 import {put, select} from "../runner/Effects";
-import {playerLostSignal} from "@src/game/sagas/runner/Signals";
 
 type DamageType =
     | { type: "EventCard" }
@@ -35,11 +34,11 @@ export function* damageModule(victim: Player, position: Vector2, damage: number,
         yield* put(deactivateProtectorIfActive(victim.id));
     }
 
-    for (let damaged of info.damaged) {
+    for (const damaged of info.damaged) {
         yield* put(changeModuleHealth(victim.id, damaged.position, -damaged.damage, "damage module"));
     }
 
-    for (let destroyed of info.destroyed) {
+    for (const destroyed of info.destroyed) {
         const destroyedModule = SpaceshipGetters.getModuleByPosition(victim.spaceship, destroyed.position)!;
 
         yield* put(removeSpaceshipModules(victim.id, [destroyed.position]));
@@ -59,7 +58,7 @@ export function* damageModule(victim: Player, position: Vector2, damage: number,
 
         if (unconnectedModules.length !== 0) {
             yield* put(removeSpaceshipModules(victim.id, unconnectedModules.map(ModuleGetters.position)));
-            yield* put(pushCardsToHand(victim.id, unconnectedModules.map(ModuleGetters.asCard)))
+            yield* put(pushCardsToHand(victim.id, unconnectedModules.map(ModuleGetters.asCard)));
         }
     }
 

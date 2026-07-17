@@ -71,7 +71,7 @@ function generateDefinitionTypeWithState(schema: Schema, state: GenerationState)
 
         if (schema.properties) {
             for (const [name, property] of Object.entries(schema.properties)) {
-                state.path.push(name)
+                state.path.push(name);
                 properties[name] = {
                     type: generateDefinitionTypeWithState(property, state),
                     nullable: false
@@ -82,7 +82,7 @@ function generateDefinitionTypeWithState(schema: Schema, state: GenerationState)
 
         if (schema.optionalProperties) {
             for (const [name, property] of Object.entries(schema.optionalProperties)) {
-                state.path.push(name)
+                state.path.push(name);
                 properties[name] = {
                     type: generateDefinitionTypeWithState(property, state),
                     nullable: true

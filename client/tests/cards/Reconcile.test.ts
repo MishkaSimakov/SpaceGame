@@ -204,7 +204,7 @@ describe("the board disagrees with the server before reconcile", () => {
         );
     });
 
-    const FIXTURE = {
+    const fixture = {
         localShip: {steps: [{variant: 0, slot: 0, rotation: 0}, {variant: 1, slot: 0, rotation: 0}], position: {x: 0, y: 0}},
         fragments: [],
         handModules: [{variant: 2, slot: 0, rotation: 0}],
@@ -216,7 +216,7 @@ describe("the board disagrees with the server before reconcile", () => {
 
     /** Mutates the server, asserts the board now disagrees in the named way, then heals it. */
     function expectDisagreementThenHealed(mutate: (server: ServerState) => void, pattern: RegExp) {
-        const board = buildBoard(FIXTURE);
+        const board = buildBoard(fixture);
         const server: ServerState = serverFromBoard(board);
 
         expect(checkServerAgreement(board, server.player, server.otherPlayers)).toEqual([]);

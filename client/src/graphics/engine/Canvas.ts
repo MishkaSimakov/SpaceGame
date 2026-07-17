@@ -13,10 +13,10 @@ function getDevicePixelRatio() {
     if (_pixelRatio) {
         return _pixelRatio;
     }
-    var canvas = Utils.createCanvasElement();
-    var context = canvas.getContext('2d') as any;
+    const canvas = Utils.createCanvasElement();
+    const context = canvas.getContext('2d') as any;
     _pixelRatio = (function () {
-        var devicePixelRatio = window.devicePixelRatio || 1,
+        const devicePixelRatio = window.devicePixelRatio || 1,
             backingStoreRatio =
                 context.webkitBackingStorePixelRatio ||
                 context.mozBackingStorePixelRatio ||
@@ -38,7 +38,7 @@ export class Canvas {
     context: Context;
 
     constructor(config: ICanvasConfig) {
-        let conf = config || {};
+        const conf = config || {};
 
         this.pixelRatio = conf.pixelRatio || getDevicePixelRatio();
 

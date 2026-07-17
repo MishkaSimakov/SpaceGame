@@ -13,7 +13,7 @@ import {ChoosePlayerForAttackActivity} from "../../graphics/activities/ChoosePla
 import * as assert from "../../assert";
 
 export const mainListeners: ListenersContainer = {
-    async rebuildSpaceshipRequest({}, {game}) {
+    async rebuildSpaceshipRequest(_payload, {game}) {
         game.cardsManager.canRebuildSpaceship(true);
         await game.controlsScene.rebuildSpaceship();
         game.cardsManager.canRebuildSpaceship(false);
@@ -24,8 +24,8 @@ export const mainListeners: ListenersContainer = {
         return rebuildSpaceshipResponse(SpaceshipGetters.mapForRebuildSpaceshipResponse(spaceship));
     },
 
-    async chooseCardTypeRequest({}, {game}) {
-        game.controlsScene.topBarDrawer.setStatus("выберите тип карты")
+    async chooseCardTypeRequest(_payload, {game}) {
+        game.controlsScene.topBarDrawer.setStatus("выберите тип карты");
 
         const chosenType = await new Promise<CardType>((resolve) => {
             game.controlsScene.topBarDrawer.addButtons([{
@@ -54,13 +54,13 @@ export const mainListeners: ListenersContainer = {
         return chooseCardTypeResponse(chosenType);
     },
 
-    async drawAnotherEventCardRequest({}, {game}) {
+    async drawAnotherEventCardRequest(_payload, {game}) {
         game.controlsScene.topBarDrawer.setStatus("взять другую карточку действия?");
         const response = await game.controlsScene.askYesOrNo();
         return drawAnotherEventCardResponse(response);
     },
 
-    async drawAdditionalModuleCardRequest({}, {game}) {
+    async drawAdditionalModuleCardRequest(_payload, {game}) {
         game.controlsScene.topBarDrawer.setStatus("взять дополнительную карточку строительства?");
         const response = await game.controlsScene.askYesOrNo();
         return drawAdditionalModuleCardResponse(response);
@@ -73,14 +73,14 @@ export const mainListeners: ListenersContainer = {
         return choosePlayerForAttackResponse(chosen);
     },
 
-    async discardCardsRequest({}, {game}) {
+    async discardCardsRequest(_payload, {game}) {
         const requiredDiscardCount = game.getCurrentPlayer().hand.length - game.settings.maxCardsOnHand;
 
         const indexes = await game.controlsScene.discardCards(requiredDiscardCount);
         return discardCardsResponse(indexes);
     },
 
-    async chooseModuleToRepairRequest({}, {game}) {
+    async chooseModuleToRepairRequest(_payload, {game}) {
         const positions = await game.controlsScene.chooseModulesToRepair(
             `починить с помощью ремонтного модуля`,
             1
@@ -91,7 +91,7 @@ export const mainListeners: ListenersContainer = {
     },
 
     async useModuleSecondTimeRequest({moduleType}, {game}) {
-        let moduleNames: Partial<Record<ModuleType, string>> = {
+        const moduleNames: Partial<Record<ModuleType, string>> = {
             [ModuleType.AttackModule]: "абордажный модуль",
             [ModuleType.RepairModule]: "ремонтный модуль",
 
@@ -105,4 +105,4 @@ export const mainListeners: ListenersContainer = {
         const result = await game.controlsScene.askYesOrNo();
         return useModuleSecondTimeResponse(result);
     }
-}
+};

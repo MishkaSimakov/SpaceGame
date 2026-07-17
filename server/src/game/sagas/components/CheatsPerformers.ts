@@ -67,12 +67,12 @@ export const cheatsPerformers: CheatsPerformersContainer = {
     * cheatPushModuleCardToHand(cheat) {
         yield* put(pushCardsToHand(cheat.target, [
             ModuleGetters.asCard(yield* constructModule(cheat.type, cheat.connectors))
-        ]))
+        ]));
     },
     * cheatPushModuleCardToStack(cheat) {
         yield* put(pushCardsToStack([
             ModuleGetters.asCard(yield* constructModule(cheat.type, cheat.connectors))
-        ]))
+        ]));
     },
     * cheatPushEventCardToHand(cheat) {
         const event: EventCard = {
@@ -132,4 +132,4 @@ export const cheatsPerformers: CheatsPerformersContainer = {
             StateGetters.playerById(yield* select(), cheat.target)!.hand
         ));
     }
-}
+};

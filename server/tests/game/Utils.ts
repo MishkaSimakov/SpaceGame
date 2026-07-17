@@ -8,10 +8,73 @@ import {isReducerName, reducers} from "@src/game/reducers/Main";
 import {getInitialGameState} from "@src/game/InitGameState";
 import {mainModulesInfo, ModuleInfo, modulesInfo} from "@common/cards/Modules";
 import {Channel} from "@src/game/sagas/runner/Channel";
-
-import ActionsBus from "../../src/game/ActionsBus";
+import {Environment} from "@src/game/sagas/runner/Environment";
+import {AbortHandle} from "@src/game/sagas/runner/AbortHandle";
 
 let idCounter = 0;
+
+type TestListener = (action: Action<string, any, any>) => void;
+
+/**
+ * Drives a saga over the two channels it expects, dispatching each emitted action to listeners
+ * registered by type ('*' receives every action).
+ *
+ * The receiver is registered on `output` in the constructor, before any saga runs: `put` hands an
+ * action to a waiting receiver synchronously and only then resumes the saga, so a saga whose
+ * output has nobody listening blocks on its first `put` and never returns.
+ *
+ * A listener answers the saga by calling `put`, which queues the response on `input` in time for
+ * the saga's next `take`.
+ */
+export class TestBus {
+    readonly input = new Channel<Action>();
+    readonly output = new Channel<Action>();
+    readonly abortHandle: AbortHandle = new AbortHandle();
+
+    private listeners = new Map<string, TestListener[]>();
+
+    constructor(private stateRef: GameState) {
+        this.receiveNext();
+    }
+
+    get env(): Environment {
+        return {
+            state: this.stateRef,
+            input: this.input,
+            output: this.output,
+            abortHandle: this.abortHandle
+        };
+    }
+
+    on(type: string, listener: TestListener) {
+        const existing = this.listeners.get(type);
+
+        if (existing) {
+            existing.push(listener);
+        } else {
+            this.listeners.set(type, [listener]);
+        }
+    }
+
+    put(action: Action<string, any, any>) {
+        this.input.put(action);
+    }
+
+    private receiveNext() {
+        this.output.take((action) => {
+            const listeners = [
+                ...(this.listeners.get(action.type) ?? []),
+                ...(this.listeners.get('*') ?? [])
+            ];
+
+            for (const listener of listeners) {
+                listener(action);
+            }
+
+            this.receiveNext();
+        });
+    }
+}
 
 export function assertModulesEqual(actual: ModuleCard[], expected: ModuleCard[]) {
     const sort = (modules: ModuleCard[]) => {
@@ -39,7 +102,7 @@ export function fakeGameState(playersCount: number): GameState {
         users.push({
             id: i,
             login: `player #${i}`
-        })
+        });
     }
 
     const state = getInitialGameState(users, settings);
@@ -54,13 +117,13 @@ export function fakeGameState(playersCount: number): GameState {
     return state;
 }
 
-export function attachReducers(busRef: ActionsBus, stateRef: GameState) {
+export function attachReducers(busRef: TestBus, stateRef: GameState) {
     busRef.on('*', (action: Action<string, any, any>) => {
         if (isReducerName(action.type)) {
-            let copy = structuredClone(stateRef);
+            const copy = structuredClone(stateRef);
 
             // TODO: add typing
-            // @ts-ignore
+            // @ts-expect-error reducers is keyed by action name, so the payload type cannot be narrowed here
             reducers[action.type](copy, action.payload);
 
             Object.assign(stateRef, copy);
@@ -68,20 +131,20 @@ export function attachReducers(busRef: ActionsBus, stateRef: GameState) {
     });
 }
 
-export function attachTerminalLogger(busRef: ActionsBus) {
+export function attachTerminalLogger(busRef: TestBus) {
     busRef.on('*', (action: Action<string, any, any>) => {
         console.log("📢", action.type, action);
     });
 }
 
-export function attachFakeRandomizer(busRef: ActionsBus, inputRef: Channel<Action>) {
+export function attachFakeRandomizer(busRef: TestBus) {
     const diceCalls = {value: 0};
     const shuffleCalls = {value: 0};
 
     busRef.on('throwDice', () => {
         diceCalls.value += 1;
 
-        inputRef.put(throwDiceResult(1));
+        busRef.put(throwDiceResult(1));
     });
 
     busRef.on('shuffle', (action) => {
@@ -92,7 +155,7 @@ export function attachFakeRandomizer(busRef: ActionsBus, inputRef: Channel<Actio
             result[i] = i;
         }
 
-        inputRef.put(shuffleResult(result));
+        busRef.put(shuffleResult(result));
     });
 
     return {diceCalls, shuffleCalls};
@@ -117,5 +180,5 @@ export function fakeModule(type: ModuleType, config: Partial<Omit<ModuleInfo, "c
         x: config.x ?? 0,
         y: config.y ?? 0,
         rotation: 0,
-    }
+    };
 }

@@ -5,7 +5,6 @@ import {Factory} from "../engine/Factory";
 import {Rectangle} from "../engine/shapes/Rectangle";
 import {Text} from "../engine/shapes/Text";
 import Color from "@common/helpers/Color";
-import {COLORS} from "../constants";
 
 export interface ButtonConfig extends ShapeConfig {
     text?: string;
@@ -29,7 +28,7 @@ export class Button extends Group<ButtonConfig> {
     constructor(config?: ButtonConfig) {
         super(config);
 
-        let width = this.width(),
+        const width = this.width(),
             height = this.height(),
             text = this.text();
 
@@ -56,7 +55,7 @@ export class Button extends Group<ButtonConfig> {
             width: width,
             height: height,
             visible: false,
-        })
+        });
 
         this.add(this._background, this._text, this._hitRect);
 
@@ -117,7 +116,7 @@ export class Button extends Group<ButtonConfig> {
             'DEFAULT': ['default', this.fill()],
             'HOVER': ['pointer', this.hoverFill()],
             'ACTIVE': ['pointer', this.activeFill()],
-        }
+        };
 
         if (this._state !== "DISABLED") {
             document.body.style.cursor = stateDesign[this._state][0];

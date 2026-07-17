@@ -52,4 +52,4 @@ export const rebuildSpaceshipValidator = (state: GameState) =>
 
                 return SpaceshipGetters.checkConfiguration({modules: spaceship});
             },
-            {error: "Неправильная конфигурация корабля"})
+            {error: "Неправильная конфигурация корабля"});

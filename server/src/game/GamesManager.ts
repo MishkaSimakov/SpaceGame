@@ -67,7 +67,7 @@ export default class GamesManager {
         const decodedToken = jwt.verify(token, process.env.JWT_SECRET_KEY);
 
         const user = await User.findOneBy({
-            id: (decodedToken as JwtPayload)._id
+            id: (decodedToken as JwtPayload).id
         });
 
         if (!user) {
@@ -120,7 +120,7 @@ export default class GamesManager {
         assert.ok(gameEntity);
 
         // TODO: strict typing for typeorm
-        // @ts-ignore
+        // @ts-expect-error findOneBy returns User | null, while winner is typed as User
         gameEntity.winner = await User.findOneBy({id: winner});
         gameEntity.status = GameStatus.FINISHED;
         gameEntity.finishedAt = new Date();

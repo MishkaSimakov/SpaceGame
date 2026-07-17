@@ -8,6 +8,9 @@ export interface AuthenticatedRequest extends Request {
 }
 
 export const auth = async (req: Request, res: Response, next: NextFunction) => {
+    // TODO: strengthen auth
+    // jwt.verify may throw exception
+    // findOneBy may throw exception
     const token = req.cookies.authentication_token;
 
     if (!token) {
@@ -16,10 +19,11 @@ export const auth = async (req: Request, res: Response, next: NextFunction) => {
     }
 
     assert.ok(process.env.JWT_SECRET_KEY, "Secret token must be set in .env file.");
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY) as unknown as UserJWTPayload;
 
-    let user = await User.findOneBy({
-        id: parseInt(decoded._id)
+    const user = await User.findOneBy({
+        id: parseInt(decoded.id)
     });
 
     if (user == null) {

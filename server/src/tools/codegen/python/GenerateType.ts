@@ -57,7 +57,7 @@ function inlineState(state: GenerationState): GenerationState {
     return {
         ...state,
         info: {type: "inline"}
-    }
+    };
 }
 
 function generateWithState(schema: Schema, state: GenerationState): ASTNode {

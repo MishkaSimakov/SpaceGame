@@ -1,13 +1,12 @@
-import {test} from "uvu";
-import * as assert from "uvu/assert";
+import {expect, test} from "vitest";
 import {CancellableRaceProtocol, IParticipant} from "@src/game/CancellableRaceProtocol";
 import {deferred} from "@common/helpers/Deferred";
 
 test('simpleRace', async () => {
-    const first_def = deferred<void>();
-    const second_def = deferred<void>();
+    const firstDef = deferred<void>();
+    const secondDef = deferred<void>();
 
-    const sequence: string[] = []
+    const sequence: string[] = [];
 
     class FirstParticipant implements IParticipant {
         cancel(): void {
@@ -21,7 +20,7 @@ test('simpleRace', async () => {
 
         prepare(): Promise<void> {
             sequence.push("first prepare");
-            return first_def.promise;
+            return firstDef.promise;
         }
 
         proceed(): void {
@@ -41,7 +40,7 @@ test('simpleRace', async () => {
 
         prepare(): Promise<void> {
             sequence.push("second prepare");
-            return second_def.promise;
+            return secondDef.promise;
         }
 
         proceed(): void {
@@ -51,18 +50,18 @@ test('simpleRace', async () => {
 
     const promise = new CancellableRaceProtocol([new FirstParticipant(), new SecondParticipant()]).perform();
 
-    first_def.resolve();
+    firstDef.resolve();
 
     await promise;
 
-    assert.equal(sequence, ["first isReady", "second isReady", "first prepare", "second prepare", "second cancel", "first proceed"]);
+    expect(sequence).toEqual(["first isReady", "second isReady", "first prepare", "second prepare", "second cancel", "first proceed"]);
 });
 
 test('firstReady', async () => {
-    const first_def = deferred<void>();
-    const second_def = deferred<void>();
+    const firstDef = deferred<void>();
+    const secondDef = deferred<void>();
 
-    const sequence: string[] = []
+    const sequence: string[] = [];
 
     class FirstParticipant implements IParticipant {
         cancel(): void {
@@ -76,7 +75,7 @@ test('firstReady', async () => {
 
         prepare(): Promise<void> {
             sequence.push("first prepare");
-            return first_def.promise;
+            return firstDef.promise;
         }
 
         proceed(): void {
@@ -96,7 +95,7 @@ test('firstReady', async () => {
 
         prepare(): Promise<void> {
             sequence.push("second prepare");
-            return second_def.promise;
+            return secondDef.promise;
         }
 
         proceed(): void {
@@ -106,18 +105,18 @@ test('firstReady', async () => {
 
     const promise = new CancellableRaceProtocol([new FirstParticipant(), new SecondParticipant()]).perform();
 
-    first_def.resolve();
+    firstDef.resolve();
 
     await promise;
 
-    assert.equal(sequence, ["first isReady", "second cancel", "first proceed"]);
+    expect(sequence).toEqual(["first isReady", "second cancel", "first proceed"]);
 });
 
 test('secondReady', async () => {
-    const first_def = deferred<void>();
-    const second_def = deferred<void>();
+    const firstDef = deferred<void>();
+    const secondDef = deferred<void>();
 
-    const sequence: string[] = []
+    const sequence: string[] = [];
 
     class FirstParticipant implements IParticipant {
         cancel(): void {
@@ -131,7 +130,7 @@ test('secondReady', async () => {
 
         prepare(): Promise<void> {
             sequence.push("first prepare");
-            return first_def.promise;
+            return firstDef.promise;
         }
 
         proceed(): void {
@@ -151,7 +150,7 @@ test('secondReady', async () => {
 
         prepare(): Promise<void> {
             sequence.push("second prepare");
-            return second_def.promise;
+            return secondDef.promise;
         }
 
         proceed(): void {
@@ -161,18 +160,18 @@ test('secondReady', async () => {
 
     const promise = new CancellableRaceProtocol([new FirstParticipant(), new SecondParticipant()]).perform();
 
-    first_def.resolve();
+    firstDef.resolve();
 
     await promise;
 
-    assert.equal(sequence, ["first isReady", "second isReady", "first cancel", "second proceed"]);
+    expect(sequence).toEqual(["first isReady", "second isReady", "first cancel", "second proceed"]);
 });
 
 test('bothReady', async () => {
-    const first_def = deferred<void>();
-    const second_def = deferred<void>();
+    const firstDef = deferred<void>();
+    const secondDef = deferred<void>();
 
-    const sequence: string[] = []
+    const sequence: string[] = [];
 
     class FirstParticipant implements IParticipant {
         cancel(): void {
@@ -186,7 +185,7 @@ test('bothReady', async () => {
 
         prepare(): Promise<void> {
             sequence.push("first prepare");
-            return first_def.promise;
+            return firstDef.promise;
         }
 
         proceed(): void {
@@ -206,7 +205,7 @@ test('bothReady', async () => {
 
         prepare(): Promise<void> {
             sequence.push("second prepare");
-            return second_def.promise;
+            return secondDef.promise;
         }
 
         proceed(): void {
@@ -216,18 +215,17 @@ test('bothReady', async () => {
 
     const promise = new CancellableRaceProtocol([new FirstParticipant(), new SecondParticipant()]).perform();
 
-    first_def.resolve();
+    firstDef.resolve();
 
     await promise;
 
-    assert.equal(sequence, ["first isReady", "second cancel", "first proceed"]);
+    expect(sequence).toEqual(["first isReady", "second cancel", "first proceed"]);
 });
 
 test('throwInPrepare', async () => {
-    const first_def = deferred<void>();
-    const second_def = deferred<void>();
+    const secondDef = deferred<void>();
 
-    const sequence: string[] = []
+    const sequence: string[] = [];
 
     class FirstParticipant implements IParticipant {
         cancel(): void {
@@ -261,7 +259,7 @@ test('throwInPrepare', async () => {
 
         prepare(): Promise<void> {
             sequence.push("second prepare");
-            return second_def.promise;
+            return secondDef.promise;
         }
 
         proceed(): void {
@@ -273,19 +271,19 @@ test('throwInPrepare', async () => {
 
     try {
         await promise;
-        assert.unreachable("should have thrown");
+        expect.unreachable("should have thrown");
     } catch (error) {
-        assert.equal(error, 123);
+        expect(error).toEqual(123);
     }
 
-    assert.equal(sequence, ["first isReady", "second isReady", "first prepare", "second prepare", "second cancel"]);
+    expect(sequence).toEqual(["first isReady", "second isReady", "first prepare", "second prepare", "second cancel"]);
 });
 
 test('bothResolve', async () => {
-    const first_def = deferred<void>();
-    const second_def = deferred<void>();
+    const firstDef = deferred<void>();
+    const secondDef = deferred<void>();
 
-    const sequence: string[] = []
+    const sequence: string[] = [];
 
     class FirstParticipant implements IParticipant {
         cancel(): void {
@@ -299,7 +297,7 @@ test('bothResolve', async () => {
 
         prepare(): Promise<void> {
             sequence.push("first prepare");
-            return first_def.promise;
+            return firstDef.promise;
         }
 
         proceed(): void {
@@ -319,7 +317,7 @@ test('bothResolve', async () => {
 
         prepare(): Promise<void> {
             sequence.push("second prepare");
-            return second_def.promise;
+            return secondDef.promise;
         }
 
         proceed(): void {
@@ -329,21 +327,19 @@ test('bothResolve', async () => {
 
     const promise = new CancellableRaceProtocol([new FirstParticipant(), new SecondParticipant()]).perform();
 
-    first_def.resolve();
-    second_def.resolve();
+    firstDef.resolve();
+    secondDef.resolve();
 
     await promise;
 
     const areArraysEqual = <T>(first: T[], second: T[]) => {
         return first.length == second.length &&
-            first.every((this_i, i) => {
-                return this_i == second[i]
+            first.every((item, i) => {
+                return item == second[i];
             });
-    }
+    };
 
-    const option_1 = ["first isReady", "second isReady", "first prepare", "second prepare", "second cancel", "first proceed"];
-    const option_2 = ["first isReady", "second isReady", "first prepare", "second prepare", "first cancel", "second proceed"];
-    assert.ok(areArraysEqual(sequence, option_1) || areArraysEqual(sequence, option_2));
+    const firstOption = ["first isReady", "second isReady", "first prepare", "second prepare", "second cancel", "first proceed"];
+    const secondOption = ["first isReady", "second isReady", "first prepare", "second prepare", "first cancel", "second proceed"];
+    expect(areArraysEqual(sequence, firstOption) || areArraysEqual(sequence, secondOption)).toBeTruthy();
 });
-
-test.run();

@@ -2,7 +2,7 @@ import Game from "./Game";
 
 async function loadFont(name, url) {
     return new Promise((resolve, reject) => {
-        let newFont = new FontFace(name, `url(${url})`);
+        const newFont = new FontFace(name, `url(${url})`);
         newFont.load().then((loaded) => {
             document.fonts.add(loaded);
 
@@ -26,5 +26,5 @@ Promise.all([
     loadFont("Exo2Regular", "/fonts/Exo2-Regular.ttf"),
     waitDOMLoad()
 ]).then(() => {
-    let game = new Game();
+    new Game();
 });

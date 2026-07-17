@@ -5,7 +5,6 @@ import {CardGetters} from "@common/getters/Card";
 
 import {Board} from "../../src/graphics/cards/model/Board";
 import {reconcile} from "../../src/graphics/cards/model/Reconcile";
-import {IdAllocator} from "./support/Cards";
 import {Command, commandsArb, runCommand} from "./support/Commands";
 import {boardRecipeArb, buildBoard, serverFromBoard} from "./support/Generators";
 import {checkBoardInvariants, checkServerAgreement} from "./support/Invariants";
@@ -154,7 +153,10 @@ describe("the cases that are meant to be hard", () => {
 
     it("an uncommitted rebuild survives an update landing mid-edit", () => {
         const board = buildBoard({
-            localShip: {steps: [{variant: 0, slot: 0, rotation: 0}, {variant: 1, slot: 0, rotation: 0}], position: {x: 0, y: 0}},
+            localShip: {
+                steps: [{variant: 0, slot: 0, rotation: 0}, {variant: 1, slot: 0, rotation: 0}],
+                position: {x: 0, y: 0}
+            },
             fragments: [],
             handModules: [],
             handEvents: 0,
