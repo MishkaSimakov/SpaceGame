@@ -7,6 +7,19 @@ export default tseslint.config(
     eslint.configs.recommended,
     tseslint.configs.recommended,
     {
+        files: ["**/*.ts"],
+        languageOptions: {
+            parserOptions: {
+                // Type-aware rules (no-floating-promises et al.) need the type checker,
+                // which requires the parser to resolve each file to a tsconfig.
+                // vitest.config.ts is outside tsconfig's include, so it rides the
+                // default project rather than failing to resolve.
+                projectService: {
+                    allowDefaultProject: ["vitest.config.ts"],
+                },
+                tsconfigRootDir: import.meta.dirname,
+            },
+        },
         rules: {
             "@typescript-eslint/naming-convention": [
                 "error",
@@ -52,7 +65,18 @@ export default tseslint.config(
                 {args: "after-used", argsIgnorePattern: "^_"},
             ],
             "semi": ["error", "always"],
-            "@typescript-eslint/no-explicit-any": "off"
+            "@typescript-eslint/no-explicit-any": "off",
+
+            // Robustness: an unhandled promise rejection crashes the process, so a
+            // dropped `.catch`/`await` on an async call must be an error.
+            "@typescript-eslint/no-floating-promises": "error",
+            "@typescript-eslint/no-misused-promises": "error",
+            "@typescript-eslint/await-thenable": "error",
+            "@typescript-eslint/require-await": "error",
+            "@typescript-eslint/no-unnecessary-condition": "error",
+
+            // Each `!` is a latent crash if the value is actually null/undefined.
+            "@typescript-eslint/no-non-null-assertion": "warn",
         },
     }
 );

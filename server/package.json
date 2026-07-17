@@ -52,7 +52,6 @@
   "scripts": {
     "serve": "nodemon -r tsconfig-paths/register src/index.ts",
     "typecheck": "tsc --noEmit",
-    "typecheck:src": "tsc --noEmit -p tsconfig.src.json",
     "lint": "npx eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
