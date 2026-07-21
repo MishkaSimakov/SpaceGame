@@ -68,7 +68,7 @@ function registerHandlebarsHelpers() {
         let result = "";
 
         const values = Object.values(args);
-        for (let i = 0; i < values.length; ++i) {
+        for (const [i, value] of values.entries()) {
             let separator: string;
             if (i + 1 === values.length) {
                 separator = "";
@@ -78,7 +78,7 @@ function registerHandlebarsHelpers() {
                 separator = "\n\n\n";
             }
 
-            result += values[i].emit() + separator;
+            result += value.emit() + separator;
         }
 
         return result;

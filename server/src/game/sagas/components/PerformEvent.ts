@@ -42,6 +42,8 @@ import {showCards} from "./ShowCards";
 import {dice} from "./Random";
 import {moveDamage} from "./MoveDamage";
 
+import * as assert from "node:assert";
+
 function* putTopThreeCardsInAnyOrder(state: GameState) {
     const topThreeCards = yield* popCards(CardType.Event, 3);
 
@@ -53,9 +55,13 @@ function* putTopThreeCardsInAnyOrder(state: GameState) {
         'permuteTopThreeEventCardsResponse'
     );
 
+    assert.ok(order.length === 3);
+
     const newOrderedCards: Card[] = [];
-    for (let i = 0; i < 3; ++i) {
-        newOrderedCards.push(topThreeCards[order[i]]);
+    for (const index of order) {
+        const card = topThreeCards[index];
+        assert.ok(card !== undefined);
+        newOrderedCards.push(card);
     }
 
     yield* put(pushCardsToStack(newOrderedCards.reverse()));
@@ -134,29 +140,41 @@ const eventsPerformFunctions: Record<EventType, (state: GameState, event: EventC
         yield* put(destructSpaceshipModules(player.id, positions, CardDestination.discard, CardDestination.hand));
     },
     [EventType.AttackRight]: function* (state: GameState) {
-        const victim = StateGetters.getPlayerIndexByOffset(state, 1);
+        const victimIndex = StateGetters.getPlayerIndexByOffset(state, 1);
+        const victim = state.players[victimIndex];
 
-        yield* put(beginFight(StateGetters.currentPlayer(state).id, state.players[victim].id, "event card (attack right)"));
+        assert.ok(victim !== undefined);
+
+        yield* put(beginFight(StateGetters.currentPlayer(state).id, victim.id, "event card (attack right)"));
         yield* fight();
     },
     [EventType.AttackLeft]: function* (state: GameState) {
-        const victim = StateGetters.getPlayerIndexByOffset(state, -1);
+        const victimIndex = StateGetters.getPlayerIndexByOffset(state, -1);
+        const victim = state.players[victimIndex];
 
-        yield* put(beginFight(StateGetters.currentPlayer(state).id, state.players[victim].id, "event card (attack left)"));
+        assert.ok(victim !== undefined);
+
+        yield* put(beginFight(StateGetters.currentPlayer(state).id, victim.id, "event card (attack left)"));
         yield* fight();
     },
     [EventType.AttackNextToRight]: function* (state: GameState) {
         const offset = state.players.length > 2 ? 2 : 1;
-        const victim = StateGetters.getPlayerIndexByOffset(state, offset);
+        const victimIndex = StateGetters.getPlayerIndexByOffset(state, offset);
+        const victim = state.players[victimIndex];
 
-        yield* put(beginFight(StateGetters.currentPlayer(state).id, state.players[victim].id, "event card (attack next to right)"));
+        assert.ok(victim !== undefined);
+
+        yield* put(beginFight(StateGetters.currentPlayer(state).id, victim.id, "event card (attack next to right)"));
         yield* fight();
     },
     [EventType.AttackNextToLeft]: function* (state: GameState) {
         const offset = state.players.length > 2 ? -2 : -1;
-        const victim = StateGetters.getPlayerIndexByOffset(state, offset);
+        const victimIndex = StateGetters.getPlayerIndexByOffset(state, offset);
+        const victim = state.players[victimIndex];
 
-        yield* put(beginFight(StateGetters.currentPlayer(state).id, state.players[victim].id, "event card (attack next to left)"));
+        assert.ok(victim !== undefined);
+
+        yield* put(beginFight(StateGetters.currentPlayer(state).id, victim.id, "event card (attack next to left)"));
         yield* fight();
     },
     [EventType.AttackAny]: function* (state: GameState) {
@@ -165,7 +183,8 @@ const eventsPerformFunctions: Record<EventType, (state: GameState, event: EventC
             'choosePlayerForAttackResponse'
         );
 
-        yield* put(beginFight(StateGetters.currentPlayer(state).id, victim!, "event card (attack any)"));
+        assert.ok(victim !== undefined);
+        yield* put(beginFight(StateGetters.currentPlayer(state).id, victim, "event card (attack any)"));
         yield* fight();
     },
     [EventType.TossDiceAndTakeBuildingCards]: function* (state: GameState) {
@@ -190,7 +209,7 @@ const eventsPerformFunctions: Record<EventType, (state: GameState, event: EventC
             return;
         }
 
-        const victim = StateGetters.playerById(state, info.victimId)!;
+        const victim = StateGetters.playerByIdOrFail(state, info.victimId);
         yield* damageModule(victim, info.victimModulePosition, damage, {type: "EventCard"});
     },
     [EventType.TossDiceAndGetEnergy]: function* (state: GameState) {
@@ -236,7 +255,7 @@ const eventsPerformFunctions: Record<EventType, (state: GameState, event: EventC
             'choosePlayerToStealCardResponse'
         );
 
-        const chosenPlayer = StateGetters.playerById(state, target)!;
+        const chosenPlayer = StateGetters.playerByIdOrFail(state, target);
 
         const {chosenCardIndex} = yield* request(
             chooseCardToStealRequest(currentPlayer.id, chosenPlayer.hand),
@@ -244,6 +263,9 @@ const eventsPerformFunctions: Record<EventType, (state: GameState, event: EventC
         );
 
         const chosenCard = chosenPlayer.hand[chosenCardIndex];
+
+        assert.ok(chosenCard !== undefined);
+
         yield* put(popCardsFromHand(chosenPlayer.id, [chosenCardIndex], "event card (choose player & steal his card)"));
         yield* put(pushCardsToHand(currentPlayer.id, [chosenCard]));
     },

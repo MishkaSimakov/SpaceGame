@@ -5,6 +5,16 @@ export const StateGetters = {
         return state.players.find(p => p.id === id);
     },
 
+    playerByIdOrFail(state: GameState, id: PlayerId): Player {
+        const player = this.playerById(state, id);
+
+        if (player === undefined) {
+            throw new Error(`No player with id ${id}`);
+        }
+
+        return player;
+    },
+
     currentPlayer(state: GameState): Player {
         return this.playerById(state, state.currentPlayerId)!;
     },

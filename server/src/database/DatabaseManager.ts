@@ -21,7 +21,7 @@ export default class DatabaseManager {
         });
 
         await appDataSource.initialize()
-            .then(async () => {
+            .then(() => {
                 console.log("Data Source has been initialized!");
             })
             .catch((err) => {

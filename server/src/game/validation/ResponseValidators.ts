@@ -47,7 +47,7 @@ export const validators: ResponseValidatorsContainer = {
         draw: booleanSchema
     }),
     discardCardsResponse: (state, request) => {
-        const player = StateGetters.playerById(state, request.payload.player)!;
+        const player = StateGetters.playerByIdOrFail(state, request.payload.player);
         const outsideRangeError = `Индекс карты выходит за допустимые границы (\\not\\in [0, ${player.hand.length - 1}])`;
         const minDiscardedCards = player.hand.length - state.settings.maxCardsOnHand;
 
@@ -74,7 +74,7 @@ export const validators: ResponseValidatorsContainer = {
         z.object({
             position: vector2Schema.refine(
                 position => {
-                    const player = StateGetters.playerById(state, request.payload.player)!;
+                    const player = StateGetters.playerByIdOrFail(state, request.payload.player);
                     const module = SpaceshipGetters.getModuleByPosition(player.spaceship, position);
                     return module && ModuleGetters.isProtector(module);
                 },
@@ -83,8 +83,8 @@ export const validators: ResponseValidatorsContainer = {
         }),
 
     chooseWeaponAndTargetResponse: (state, request) => {
-        const victim = StateGetters.playerById(state, request.payload.victim)!;
-        const attacker = StateGetters.playerById(state, request.payload.player)!;
+        const victim = StateGetters.playerByIdOrFail(state, request.payload.victim);
+        const attacker = StateGetters.playerByIdOrFail(state, request.payload.player);
 
         return z.object({
             targetPosition: vector2Schema
@@ -102,8 +102,8 @@ export const validators: ResponseValidatorsContainer = {
                 )
                 .refine(
                     position => {
-                        const module = SpaceshipGetters.getModuleByPosition(attacker.spaceship, position)!;
-                        return module.energyCost <= StateGetters.playerById(state, request.payload.player)!.energy;
+                        const module = SpaceshipGetters.getModuleByPositionOrFail(attacker.spaceship, position);
+                        return module.energyCost <= StateGetters.playerByIdOrFail(state, request.payload.player).energy;
                     },
                     {error: "Недостаточно энергии для выбранного оружия."}
                 ),
@@ -118,7 +118,7 @@ export const validators: ResponseValidatorsContainer = {
             position: vector2Schema
                 .refine(
                     position => SpaceshipGetters.getModuleByPosition(
-                        StateGetters.playerById(state, request.payload.victim)!.spaceship, position
+                        StateGetters.playerByIdOrFail(state, request.payload.victim).spaceship, position
                     ) !== undefined,
                     {error: "Ожидалась позиция модуля соперника."}
                 )
@@ -128,7 +128,7 @@ export const validators: ResponseValidatorsContainer = {
             position: vector2Schema
                 .refine(
                     position => SpaceshipGetters.getModuleByPosition(
-                        StateGetters.playerById(state, request.payload.player)!.spaceship, position
+                        StateGetters.playerByIdOrFail(state, request.payload.player).spaceship, position
                     ) !== undefined,
                     {error: "Ожидалась позиция модуля."}
                 ).optional()
@@ -150,7 +150,7 @@ export const validators: ResponseValidatorsContainer = {
             position: vector2Schema
                 .refine(
                     position => {
-                        const player = StateGetters.playerById(state, request.payload.player)!;
+                        const player = StateGetters.playerByIdOrFail(state, request.payload.player);
                         const module = SpaceshipGetters.getModuleByPosition(player.spaceship, position);
                         return module && !ModuleGetters.isMain(module);
                     },
@@ -158,7 +158,7 @@ export const validators: ResponseValidatorsContainer = {
                 )
         }),
     chooseCardsForRepairSpaceshipResponse: (state, request) => {
-        const player = StateGetters.playerById(state, request.payload.player)!;
+        const player = StateGetters.playerByIdOrFail(state, request.payload.player);
         const outsideRangeError = `Индекс карты выходит за допустимые границы (\\not\\in [0, ${player.hand.length - 1}])`;
         return z.object({
             indexes: z.array(
@@ -173,7 +173,7 @@ export const validators: ResponseValidatorsContainer = {
     },
 
     chooseModulesToRepairByDiscardedCardsResponse: (state, request) => {
-        const player = StateGetters.playerById(state, request.payload.player)!;
+        const player = StateGetters.playerByIdOrFail(state, request.payload.player);
         return z.object({
             positions: vector2ArraySchema
                 .refine(
@@ -189,7 +189,7 @@ export const validators: ResponseValidatorsContainer = {
     },
 
     chooseSolarPanelsToDestroyResponse: (state, request) => {
-        const player = StateGetters.playerById(state, request.payload.player)!;
+        const player = StateGetters.playerByIdOrFail(state, request.payload.player);
         return z.object({
             positions: vector2ArraySchema
                 .refine(
@@ -208,7 +208,7 @@ export const validators: ResponseValidatorsContainer = {
     },
 
     chooseModuleToRepairByDiceResponse: (state, request) => {
-        const player = StateGetters.playerById(state, request.payload.player)!;
+        const player = StateGetters.playerByIdOrFail(state, request.payload.player);
 
         return z.object({
             position: vector2Schema
@@ -222,7 +222,7 @@ export const validators: ResponseValidatorsContainer = {
     },
 
     chooseCardsToDiscardAndTakeAnotherResponse: (state, request) => {
-        const player = StateGetters.playerById(state, request.payload.player)!;
+        const player = StateGetters.playerByIdOrFail(state, request.payload.player);
 
         return z.object({
             indexes: numberArraySchema
@@ -239,7 +239,7 @@ export const validators: ResponseValidatorsContainer = {
     },
 
     chooseModuleToMoveDamageResponse: (state, request) => {
-        const player = StateGetters.playerById(state, request.payload.player)!;
+        const player = StateGetters.playerByIdOrFail(state, request.payload.player);
 
         return z.object({
             move: z.object({
@@ -272,7 +272,7 @@ export const validators: ResponseValidatorsContainer = {
                 })
                 .refine(
                     ({victimId, victimModulePosition}) => {
-                        const victim = StateGetters.playerById(state, victimId)!;
+                        const victim = StateGetters.playerByIdOrFail(state, victimId);
                         const module = SpaceshipGetters.getModuleByPosition(victim.spaceship, victimModulePosition);
                         return module && !ModuleGetters.isMain(module);
                     },
@@ -285,7 +285,7 @@ export const validators: ResponseValidatorsContainer = {
         z.object({
             target: makeActivePlayerIdSchema(state)
                 .refine(id => id !== request.payload.player, {error: "Нельзя выбрать самого себя."})
-                .refine(id => StateGetters.playerById(state, id)!.hand.length > 0, {error: "У выбранного игрока должны быть карты на руках."})
+                .refine(id => StateGetters.playerByIdOrFail(state, id).hand.length > 0, {error: "У выбранного игрока должны быть карты на руках."})
         }),
 
     chooseCardToStealResponse: (state, request) =>
@@ -310,7 +310,7 @@ export const validators: ResponseValidatorsContainer = {
             position: vector2Schema
                 .refine(
                     position => {
-                        const victim = StateGetters.playerById(state, request.payload.victim)!;
+                        const victim = StateGetters.playerByIdOrFail(state, request.payload.victim);
                         const module = SpaceshipGetters.getModuleByPosition(victim.spaceship, position);
                         return module && !ModuleGetters.isMain(module);
                     },

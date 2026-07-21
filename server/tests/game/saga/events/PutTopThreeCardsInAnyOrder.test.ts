@@ -1,3 +1,5 @@
+import * as assert from "node:assert";
+
 import {expect, test} from "vitest";
 
 import {EventType} from "@common/Types";
@@ -15,7 +17,8 @@ test('basicTest', async () => {
 
     attachReducers(bus, state);
 
-    const event = state.stack.event.find(c => c.type === EventType.PutTopThreeCardsInAnyOrder)!;
+    const event = state.stack.event.find(c => c.type === EventType.PutTopThreeCardsInAnyOrder);
+    assert.ok(event !== undefined);
     state.stack.event = state.stack.event.filter(c => c !== event);
 
     const topThreeCards = state.stack.event.slice(-3);

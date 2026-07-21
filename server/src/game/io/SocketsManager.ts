@@ -42,34 +42,36 @@ export default class SocketsManager implements ISocketsManager {
     private getSocket(socketId: string): Socket | undefined;
     private getSocket(playerId: PlayerId): Socket | undefined;
     private getSocket(value: PlayerId | string): Socket | undefined {
-        const socketId = (typeof value === 'string') ? value : this.players[value].socketId;
+        const socketId = (typeof value === 'string') ? value : this.players[value]?.socketId;
 
         return socketId ? this.io.sockets.sockets.get(socketId) : undefined;
     }
 
     isOnline(playerId: PlayerId): boolean {
-        return this.players[playerId] && this.players[playerId].online;
+        return this.players[playerId] !== undefined && this.players[playerId].online;
     }
 
     onPlayerConnect(playerId: PlayerId, socketId: string) {
-        if (!(playerId in this.players)) {
+        const player = this.players[playerId];
+        if (!player) {
             throw new Error("Unknown player id connected to the game");
         }
 
-        this.players[playerId].online = true;
-        this.players[playerId].socketId = socketId;
+        player.online = true;
+        player.socketId = socketId;
 
         this.listeners.forEach(({type, callback}) =>
             this.getSocket(playerId)?.on(type, (payload: any) => callback(playerId, payload)));
     }
 
     onPlayerDisconnect(playerId: PlayerId) {
-        if (!(playerId in this.players)) {
+        const player = this.players[playerId];
+        if (!player) {
             throw new Error("Unknown player id disconnected from the game");
         }
 
-        this.players[playerId].online = false;
-        this.players[playerId].socketId = undefined;
+        player.online = false;
+        player.socketId = undefined;
     }
 
     async emit(playerId: PlayerId, settings: EmitSettings, event: string, ...args: any[]) {
@@ -77,7 +79,7 @@ export default class SocketsManager implements ISocketsManager {
             // generate function that must be called when player connected
             const emitFunction = (socket: Socket) => {
                 if (settings.withAcknowledgement) {
-                    const acknowledgment = async (result: any) => {
+                    const acknowledgment = (result: any) => {
                         if (settings.ensureSending) {
                             this.currentEmitFunction = undefined;
                             this.currentEmitPlayerId = undefined;

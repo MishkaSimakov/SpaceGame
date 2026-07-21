@@ -16,18 +16,18 @@ type DamageType =
     | { type: "Player", attacker: Player }
 
 export function* damageModule(victim: Player, position: Vector2, damage: number, type: DamageType) {
-    const module = SpaceshipGetters.getModuleByPosition(victim.spaceship, position)!;
+    const module = SpaceshipGetters.getModuleByPositionOrFail(victim.spaceship, position);
     const info = SpaceshipGetters.damageInfo(victim.spaceship, module, damage);
 
     const isDarkMatterGeneratorDestroyed = info.destroyed.some(
-        m => SpaceshipGetters.getModuleByPosition(victim.spaceship, m.position)!.type === ModuleType.DarkMatterGenerator
+        m => SpaceshipGetters.getModuleByPositionOrFail(victim.spaceship, m.position).type === ModuleType.DarkMatterGenerator
     );
     const isMainModuleDestroyed = info.destroyed.some(
-        m => SpaceshipGetters.getModuleByPosition(victim.spaceship, m.position)!.type === ModuleType.MainModule
+        m => SpaceshipGetters.getModuleByPositionOrFail(victim.spaceship, m.position).type === ModuleType.MainModule
     );
 
     if (isMainModuleDestroyed) {
-        info.destroyed = info.destroyed.filter(m => SpaceshipGetters.getModuleByPosition(victim.spaceship, m.position)!.type !== ModuleType.MainModule);
+        info.destroyed = info.destroyed.filter(m => SpaceshipGetters.getModuleByPositionOrFail(victim.spaceship, m.position).type !== ModuleType.MainModule);
     }
 
     if (isMainModuleDestroyed || info.shouldDeactivateProtector) {
@@ -39,7 +39,7 @@ export function* damageModule(victim: Player, position: Vector2, damage: number,
     }
 
     for (const destroyed of info.destroyed) {
-        const destroyedModule = SpaceshipGetters.getModuleByPosition(victim.spaceship, destroyed.position)!;
+        const destroyedModule = SpaceshipGetters.getModuleByPositionOrFail(victim.spaceship, destroyed.position);
 
         yield* put(removeSpaceshipModules(victim.id, [destroyed.position]));
 
@@ -51,7 +51,7 @@ export function* damageModule(victim: Player, position: Vector2, damage: number,
     }
 
     // update victim state
-    victim = StateGetters.playerById(yield* select(), victim.id)!;
+    victim = StateGetters.playerByIdOrFail(yield* select(), victim.id);
 
     if (info.destroyed.length !== 0) {
         const unconnectedModules = SpaceshipGetters.getUnconnectedModules(victim.spaceship);
@@ -72,7 +72,7 @@ export function* damageModule(victim: Player, position: Vector2, damage: number,
     }
 
     // update victim state
-    victim = StateGetters.playerById(yield* select(), victim.id)!;
+    victim = StateGetters.playerByIdOrFail(yield* select(), victim.id);
 
     if (victim.energy > SpaceshipGetters.getTotalCapacity(victim.spaceship)) {
         yield* put(changePlayerEnergy(

@@ -21,9 +21,9 @@ export default class GamesManager {
     constructor(io: Server) {
         this.io = io;
 
-        io.on('connection', async (socket: Socket) => {
-            let game: Game;
-            let player: Readonly<Player>;
+        io.on('connection', (socket: Socket) => {
+            let game: Game | undefined;
+            let player: Readonly<Player> | undefined;
 
             socket.on('init', async (payload: SocketInitPayload) => {
                 const result = await this.joinGame(payload.token, payload.gameId);
@@ -181,6 +181,7 @@ export default class GamesManager {
             return game;
         } catch (err) {
             await this.handleGameError(gameEntity, err);
+            return undefined;
         }
     }
 
@@ -209,12 +210,17 @@ export default class GamesManager {
 
         // this should be done as early as possible so that no one connect to this game
         const game = this.activeGames[gameDB.id];
-        delete this.activeGames[gameDB.id];
 
-        try {
-            await game.deactivate();
-        } catch (deactivationError) {
-            console.warn("💀 failed even to deactivate the game:", deactivationError);
+        if (game !== undefined) {
+            delete this.activeGames[gameDB.id];
+
+            try {
+                await game.deactivate();
+            } catch (deactivationError) {
+                console.warn("💀 failed to deactivate game:", deactivationError);
+            }
+        } else {
+            console.warn(`failed to find game ${gameDB.id} during error handling.`);
         }
 
         gameDB.status = GameStatus.ERROR;

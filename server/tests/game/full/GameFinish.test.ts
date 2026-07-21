@@ -20,7 +20,7 @@ test('finishWhenTimeIsOver', async () => {
         if (event === 'rebuildSpaceshipRequest') {
             clock.advanceTime(6000);
 
-            const player = StateGetters.playerById(game.state, playerId)!;
+            const player = StateGetters.playerByIdOrFail(game.state, playerId);
             game.sagaInput.put(
                 rebuildSpaceshipResponse(SpaceshipGetters.mapForRebuildSpaceshipResponse(player.spaceship))
             );
@@ -36,7 +36,9 @@ test('finishWhenDeactivated', async () => {
     const {game} = mockGame(2);
 
     setImmediate(() => {
-        game.deactivate();
+        game.deactivate().catch(error => {
+            expect.fail(error);
+        });
     });
 
     const result = await game.activate();

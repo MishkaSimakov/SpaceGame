@@ -1,3 +1,5 @@
+import * as assert from "node:assert";
+
 import {expect, test} from "vitest";
 
 import {SpaceshipGetters} from "@common/getters/Spaceship";
@@ -14,7 +16,9 @@ test('simple', async () => {
 
     const attacker = state.players[0];
     const victim = state.players[1];
-    const expectedHealth = SpaceshipGetters.getMainModule(victim.spaceship)!.totalHealth - 1;
+    const mainModule = SpaceshipGetters.getMainModule(victim.spaceship);
+    assert.ok(mainModule !== undefined);
+    const expectedHealth = mainModule.totalHealth - 1;
 
     const bus = new TestBus(state);
 
@@ -26,7 +30,9 @@ test('simple', async () => {
     );
 
     // test
-    expect(SpaceshipGetters.getMainModule(state.players[1].spaceship)!.health).toEqual(expectedHealth);
+    const damagedMain = SpaceshipGetters.getMainModule(state.players[1].spaceship);
+    assert.ok(damagedMain !== undefined);
+    expect(damagedMain.health).toEqual(expectedHealth);
 });
 
 test('damageModuleReducesEnergyWhenCapacityDecreases', async () => {
@@ -37,7 +43,8 @@ test('damageModuleReducesEnergyWhenCapacityDecreases', async () => {
     let victim = state.players[1];
     const bus = new TestBus(state);
 
-    const mainModule = SpaceshipGetters.getMainModule(victim.spaceship)!;
+    const mainModule = SpaceshipGetters.getMainModule(victim.spaceship);
+    assert.ok(mainModule !== undefined);
     mainModule.capacity = 25;
     mainModule.health = 10;
     mainModule.connectors = {top: 0, right: 1, bottom: 0, left: 0};
@@ -84,7 +91,8 @@ test('damageModuleNoEnergyAdjustmentWhenWithinCapacity', async () => {
     let victim = state.players[1];
     const bus = new TestBus(state);
 
-    const mainModule = SpaceshipGetters.getMainModule(victim.spaceship)!;
+    const mainModule = SpaceshipGetters.getMainModule(victim.spaceship);
+    assert.ok(mainModule !== undefined);
     mainModule.capacity = 25;
     mainModule.health = 10;
     mainModule.connectors = {top: 0, right: 1, bottom: 0, left: 0};
@@ -131,7 +139,8 @@ test('damageModuleNoDestructionNoEnergyAdjustment', async () => {
     let victim = state.players[1];
     const bus = new TestBus(state);
 
-    const mainModule = SpaceshipGetters.getMainModule(victim.spaceship)!;
+    const mainModule = SpaceshipGetters.getMainModule(victim.spaceship);
+    assert.ok(mainModule !== undefined);
     mainModule.capacity = 25;
     mainModule.health = 10;
     mainModule.connectors = {top: 0, right: 1, bottom: 0, left: 0};
@@ -162,7 +171,9 @@ test('damageModuleNoDestructionNoEnergyAdjustment', async () => {
     expect(victim.energy).toEqual(30);
     expect(attacker.hand.length).toEqual(0);
     expect(victim.hand.length).toEqual(0);
-    expect(SpaceshipGetters.getModuleByPosition(victim.spaceship, {x: 1, y: 0})!.health).toEqual(1);
+    const damaged = SpaceshipGetters.getModuleByPosition(victim.spaceship, {x: 1, y: 0});
+    assert.ok(damaged !== undefined);
+    expect(damaged.health).toEqual(1);
 });
 
 test('damageFromNuclearReactor', async () => {
@@ -173,7 +184,8 @@ test('damageFromNuclearReactor', async () => {
     let victim = state.players[1];
     const bus = new TestBus(state);
 
-    const mainModule = SpaceshipGetters.getMainModule(victim.spaceship)!;
+    const mainModule = SpaceshipGetters.getMainModule(victim.spaceship);
+    assert.ok(mainModule !== undefined);
     mainModule.connectors = {top: 1, right: 1, bottom: 1, left: 1};
 
     const reactor = fakeModule(ModuleType.NuclearReactor, {
@@ -207,7 +219,8 @@ test('damageFromNuclearReactorChain', async () => {
     let victim = state.players[1];
     const bus = new TestBus(state);
 
-    const mainModule = SpaceshipGetters.getMainModule(victim.spaceship)!;
+    const mainModule = SpaceshipGetters.getMainModule(victim.spaceship);
+    assert.ok(mainModule !== undefined);
     mainModule.connectors = {top: 1, right: 1, bottom: 1, left: 1};
 
     const firstReactor = fakeModule(ModuleType.NuclearReactor, {
@@ -259,7 +272,8 @@ test('healthIsRestoredWhenGoesToDiscards', async () => {
     let victim = state.players[1];
     const bus = new TestBus(state);
 
-    const mainModule = SpaceshipGetters.getMainModule(victim.spaceship)!;
+    const mainModule = SpaceshipGetters.getMainModule(victim.spaceship);
+    assert.ok(mainModule !== undefined);
     mainModule.connectors = {top: 1, right: 1, bottom: 1, left: 1};
 
     const protector = fakeModule(ModuleType.QuantumProtector, {

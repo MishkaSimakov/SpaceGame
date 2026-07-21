@@ -29,7 +29,7 @@ export class CancellableRaceProtocol {
         const readyParticipant = this.findReadyParticipant();
 
         if (readyParticipant !== undefined) {
-            await this.performWinner(readyParticipant);
+            this.performWinner(readyParticipant);
             return;
         }
 
@@ -46,31 +46,37 @@ export class CancellableRaceProtocol {
         // Wait for the first participant to settle (either fulfilled or rejected)
         const winner = await Promise.race(wrapped);
 
-        await this.performWinner(winner);
+        this.performWinner(winner);
     }
 
-    private async performWinner(winner: RaceWinnerStatus) {
+    private performWinner(winnerStatus: RaceWinnerStatus) {
+        const winner = this.participants[winnerStatus.index];
+
+        if (!winner) {
+            throw new RangeError(`Race winner index ${winnerStatus.index} is outside of range.`);
+        }
+
         // Cancel all other participants
-        for (let i = 0; i < this.participants.length; i++) {
-            if (i === winner.index) {
+        for (const [i, participant] of this.participants.entries()) {
+            if (i === winnerStatus.index) {
                 continue;
             }
 
             // cancel does not throw
-            this.participants[i].cancel();
+            participant.cancel();
         }
 
-        if (!winner.ok) {
-            throw winner.error;
+        if (!winnerStatus.ok) {
+            throw winnerStatus.error;
         }
 
-        this.participants[winner.index].proceed();
+        winner.proceed();
     }
 
     private findReadyParticipant(): RaceWinnerStatus | undefined {
-        for (let index = 0; index < this.participants.length; ++index) {
+        for (const [index, participant] of this.participants.entries()) {
             try {
-                if (this.participants[index].isReady()) {
+                if (participant.isReady()) {
                     return {ok: true, index};
                 }
             } catch (error) {

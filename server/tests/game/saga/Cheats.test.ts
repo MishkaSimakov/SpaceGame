@@ -1,3 +1,5 @@
+import * as assert from "node:assert";
+
 import {expect, test} from "vitest";
 
 import {runSaga} from "@src/game/sagas/runner/RunSaga";
@@ -23,7 +25,8 @@ test('cheatChangeCurrentPlayerEnergy', async () => {
     // register listeners
     bus.on('rebuildSpaceshipRequest', (action) => {
         // issue some cheats
-        const player = StateGetters.playerById(state, action.payload.player)!;
+        const player = StateGetters.playerById(state, action.payload.player);
+        assert.ok(player !== undefined);
         bus.put(cheatChangeEnergy(player.id, 10));
 
         // issue rebuildSpaceshipResponse
@@ -32,5 +35,7 @@ test('cheatChangeCurrentPlayerEnergy', async () => {
 
     await runSaga(bus.env, rebuildSpaceship);
 
-    expect(StateGetters.playerById(state, player.id)!.energy).toEqual(10);
+    const updatedPlayer = StateGetters.playerById(state, player.id);
+    assert.ok(updatedPlayer !== undefined);
+    expect(updatedPlayer.energy).toEqual(10);
 });

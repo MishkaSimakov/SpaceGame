@@ -5,7 +5,7 @@ import GamesManager from "./game/GamesManager";
 import ServerManager from "./http/ServerManager";
 
 export default class App {
-    private static instance: App;
+    private static instance?: App;
 
     databaseManager?: DatabaseManager;
     gamesManager?: GamesManager;

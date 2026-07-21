@@ -73,7 +73,10 @@ export default tseslint.config(
             "@typescript-eslint/no-misused-promises": "error",
             "@typescript-eslint/await-thenable": "error",
             "@typescript-eslint/require-await": "error",
-            "@typescript-eslint/no-unnecessary-condition": "error",
+            "@typescript-eslint/no-unnecessary-condition": [
+                "error",
+                {allowConstantLoopConditions: "only-allowed-literals"},
+            ],
 
             // Each `!` is a latent crash if the value is actually null/undefined.
             "@typescript-eslint/no-non-null-assertion": "warn",

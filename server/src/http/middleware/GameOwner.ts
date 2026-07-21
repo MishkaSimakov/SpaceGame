@@ -8,13 +8,24 @@ export type AuthenticatedGameRequest = AuthenticatedRequest & {
     }
 };
 
-export const gameOwner = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    const gameId: string = req.params.gameId;
-
-    if (!gameId) {
-        req.flash('error', 'Что-то пошло не так!');
-        return res.redirect('/');
+function getGameId(params: string | string[]): string {
+    if (typeof params === "string") {
+        return params;
     }
+
+    if (params.length !== 1) {
+        throw new Error("Wrong path.");
+    }
+
+    return params[0];
+}
+
+export const gameOwner = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    if (!("gameId" in req.params)) {
+        throw new Error("Game id is not specified in the request parameters.");
+    }
+
+    const gameId = getGameId(req.params.gameId);
 
     const game = await GameDBEntity.findOne({
         where: {

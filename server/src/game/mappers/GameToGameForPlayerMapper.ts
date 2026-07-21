@@ -1,6 +1,8 @@
+import * as assert from "node:assert";
+
 import {PlayerGetters} from "@common/getters/Player";
 import {StateGetters} from "@common/getters/State";
-import {GameForPlayerDTO, GameState, Player} from "@common/Types";
+import {GameForPlayerDTO, GameState, PlayerId} from "@common/Types";
 
 import Game from "../Game";
 import {getTimeDecreasingPlayerId} from "../sagas/components/Time";
@@ -12,23 +14,30 @@ function getPlayersTime(state: GameState, currentTime: number) {
             time: p.time
         }));
 
-    if (state.timeRecords.length === 0) {
+    const lastRecord = state.timeRecords.length > 0 ? state.timeRecords[state.timeRecords.length - 1] : undefined;
+
+    if (!lastRecord) {
         return playersTime;
     }
 
-    const lastRecord = state.timeRecords[state.timeRecords.length - 1];
-
-    const record = playersTime.find(v => v.player === lastRecord.playerId)!;
+    const record = playersTime.find(v => v.player === lastRecord.playerId);
+    assert.ok(record);
     record.time -= (currentTime - lastRecord.time);
 
     return playersTime;
 }
 
-export function getDTO(game: Game, forPlayer: Player): GameForPlayerDTO {
+export function getDTO(game: Game, forPlayerId: PlayerId): GameForPlayerDTO {
+    const forPlayer = game.getPlayerById(forPlayerId);
+
+    if (forPlayer === undefined) {
+        throw new Error("Invalid player id passed into getDTO.");
+    }
+
     return {
         isPaused: game.gameClock.isPaused(),
         currentTurnPlayerId: StateGetters.currentPlayer(game.state).id,
-        player: game.getPlayerById(forPlayer.id),
+        player: forPlayer,
 
         otherPlayers: game.state.players
             .filter(p => p.id !== forPlayer.id)

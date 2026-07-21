@@ -1,3 +1,5 @@
+import * as assert from "node:assert";
+
 import {Request, Response} from "express";
 
 import {GameSettings} from "@common/Types";
@@ -23,10 +25,14 @@ export const create = async (req: AuthenticatedRequest, res: Response) => {
         }
 
         const selectedUsers = result.data.map(id => {
-            return users.find(u => u.id === id)!;
+            const user = users.find(u => u.id === id);
+            assert.ok(user);
+            return user;
         });
 
-        const gameId = await App.getInstance().gamesManager!.createGame(name, req.user, selectedUsers, settings);
+        const gamesManager = App.getInstance().gamesManager;
+        assert.ok(gamesManager);
+        const gameId = await gamesManager.createGame(name, req.user, selectedUsers, settings);
 
         return res.json({gameId: gameId});
     } catch (error) {

@@ -1,3 +1,5 @@
+import * as assert from "node:assert";
+
 import {StateGetters} from "@common/getters/State";
 import {message, playerRebuiltSpaceship, rebuildSpaceshipRequest} from "@common/Actions";
 
@@ -22,7 +24,8 @@ export function* rebuildSpaceship() {
     const playerModules = [...currentPlayer.spaceship.modules, ...handModules];
 
     const newModules = response.newSpaceship.map(m => {
-        const playerModule = playerModules.find(c => c.id === m.id)!;
+        const playerModule = playerModules.find(c => c.id === m.id);
+        assert.ok(playerModule);
 
         playerModule.x = m.position.x;
         playerModule.y = m.position.y;

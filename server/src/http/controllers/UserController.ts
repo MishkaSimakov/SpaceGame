@@ -1,3 +1,5 @@
+import * as assert from "node:assert";
+
 import {Request, Response} from "express";
 import {User} from "@src/database/entity/user";
 import bcrypt from "bcrypt";
@@ -94,12 +96,13 @@ export const home = async (req: AuthenticatedRequest, res: Response) => {
         archivedGames: user.games
             .filter(g => g.finishedAt)
             .map(game => {
+                assert.ok(game.winner);
                 return {
                     id: game.id,
                     name: game.name,
                     winner: {
-                        id: game.winner!.id,
-                        login: game.winner!.login
+                        id: game.winner.id,
+                        login: game.winner.login
                     },
                     players: game.players.map(p => {
                         return {
@@ -113,11 +116,11 @@ export const home = async (req: AuthenticatedRequest, res: Response) => {
     });
 };
 
-export const showLoginPage = async (req: Request, res: Response) => {
+export const showLoginPage = (req: Request, res: Response) => {
     render(res, 'auth/login');
 };
 
-export const showRegisterPage = async (req: Request, res: Response) => {
+export const showRegisterPage = (req: Request, res: Response) => {
     render(res, 'auth/register');
 };
 
@@ -150,7 +153,7 @@ export const showUserPage = async (req: Request, res: Response) => {
 
     render(res, 'user', {
         archivedGames: user.games
-            ?.filter(game => game.isFinished())
+            .filter(game => game.isFinished())
             .map(game => {
                 return {
                     id: game.id,
@@ -166,6 +169,6 @@ export const showUserPage = async (req: Request, res: Response) => {
                         };
                     })
                 };
-            }) || []
+            })
     });
 };

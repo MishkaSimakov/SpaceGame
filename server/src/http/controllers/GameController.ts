@@ -1,13 +1,15 @@
+import * as assert from "node:assert";
+
 import {Request, Response} from "express";
 
 import {GameSettings} from "@common/Types";
 
 import App from "../../App";
-import {User} from "../../database/entity/user";
+import {User} from "@src/database/entity/user";
 import {AuthenticatedRequest} from "../middleware/auth";
 import {AuthenticatedGameRequest} from "../middleware/GameOwner";
 import {Game as GameDBEntity, GameStatus} from "../../database/entity/game";
-import {defaultSettings, defaultTimeControlSettings} from "../../game/DefaultSettings";
+import {defaultSettings, defaultTimeControlSettings} from "@src/game/DefaultSettings";
 import {FileActionsStorage} from "@src/game/FileActionsStorage";
 import {createGameValidator} from "@src/http/validation/CreateGameValidator";
 import {render} from "@src/helpers/Render";
@@ -17,7 +19,7 @@ export const create = async (req: AuthenticatedRequest, res: Response) => {
         const users = await User.find();
 
         const {data, error} = createGameValidator(users).safeParse(req.body);
-        if (error || !data) {
+        if (error) {
             // TODO: display zod error
             console.log(error);
             req.flash('error', 'Что-то не так с параметрами игры.');
@@ -25,7 +27,9 @@ export const create = async (req: AuthenticatedRequest, res: Response) => {
         }
 
         const selectedUsers = data.players.map(id => {
-            return users.find(u => u.id === id)!;
+            const user = users.find(u => u.id === id);
+            assert.ok(user);
+            return user;
         });
 
         const gameSettings: GameSettings = {
@@ -37,15 +41,22 @@ export const create = async (req: AuthenticatedRequest, res: Response) => {
         };
 
         if (data.withTimeControl) {
+            assert.ok(data.loseWhenTimeout !== undefined);
+            assert.ok(data.startTime !== undefined);
+            assert.ok(data.defaultTimeIncrease !== undefined);
+            assert.ok(data.fightTimeIncrease !== undefined);
+
             gameSettings.timeControlSettings = {
-                loseWhenTimeout: data.loseWhenTimeout!,
-                startTime: data.startTime! * 1000,
-                defaultTimeIncrease: data.defaultTimeIncrease! * 1000,
-                fightTimeIncrease: data.fightTimeIncrease! * 1000
+                loseWhenTimeout: data.loseWhenTimeout,
+                startTime: data.startTime * 1000,
+                defaultTimeIncrease: data.defaultTimeIncrease * 1000,
+                fightTimeIncrease: data.fightTimeIncrease * 1000
             };
         }
 
-        await App.getInstance().gamesManager!.createGame(data.name, req.user, selectedUsers, gameSettings);
+        const gamesManager = App.getInstance().gamesManager;
+        assert.ok(gamesManager);
+        await gamesManager.createGame(data.name, req.user, selectedUsers, gameSettings);
 
         return res.redirect('/');
     } catch (err) {
@@ -69,10 +80,7 @@ export const joinGame = async (req: AuthenticatedGameRequest, res: Response) => 
         return res.redirect('/');
     }
 
-    if (
-        game.players.find(p => p.id === req.user.id) === undefined
-        && !game.settings
-    ) {
+    if (game.players.find(p => p.id === req.user.id) === undefined) {
         req.flash('error', 'Вы не можете присоединиться к данной игре.');
         return res.redirect('/');
     }
@@ -97,8 +105,8 @@ export const showCreatePage = async (req: AuthenticatedRequest, res: Response) =
     });
 };
 
-export const showRules = async (req: Request, res: Response) => {
-    return render(res, 'game/rules');
+export const showRules = (req: Request, res: Response) => {
+    render(res, 'game/rules');
 };
 
 export const showStatusPage = async (req: AuthenticatedGameRequest, res: Response) => {
@@ -118,18 +126,23 @@ export const showStatusPage = async (req: AuthenticatedGameRequest, res: Respons
         return res.redirect('/');
     }
 
+    const gamesManager = App.getInstance().gamesManager;
+    assert.ok(gamesManager);
+
     return render(res, 'game/status', {
         game: {
             ...game,
             settings: game.settings,
             actions: new FileActionsStorage(game.logFilepath).getActionsWithStorageInfo(),
-            isActive: App.getInstance().gamesManager!.isActive(game.id)
+            isActive: gamesManager.isActive(game.id)
         }
     });
 };
 
 export const deleteGame = async (req: AuthenticatedGameRequest, res: Response) => {
-    await App.getInstance().gamesManager!.deactivateGame(req.params.gameId);
+    const gamesManager = App.getInstance().gamesManager;
+    assert.ok(gamesManager);
+    await gamesManager.deactivateGame(req.params.gameId);
 
     await GameDBEntity.delete({
         id: req.params.gameId
@@ -139,15 +152,20 @@ export const deleteGame = async (req: AuthenticatedGameRequest, res: Response) =
 };
 
 export const deactivateGame = async (req: AuthenticatedGameRequest, res: Response) => {
-    await App.getInstance().gamesManager!.deactivateGame(req.params.gameId);
+    const gamesManager = App.getInstance().gamesManager;
+    assert.ok(gamesManager);
+    await gamesManager.deactivateGame(req.params.gameId);
     return res.redirect('/');
 };
 
 export const deleteAllGames = async (req: Request, res: Response) => {
     const games = await GameDBEntity.find();
 
+    const gamesManager = App.getInstance().gamesManager;
+    assert.ok(gamesManager);
+
     for (const game of games) {
-        await App.getInstance().gamesManager!.deactivateGame(game.id);
+        await gamesManager.deactivateGame(game.id);
 
         await GameDBEntity.delete({
             id: game.id
@@ -169,7 +187,9 @@ export const createGame = async (req: AuthenticatedRequest, res: Response) => {
             isPublic: true,
         };
 
-        const gameId = await App.getInstance().gamesManager!.createGame("Игра", req.user, users, gameSettings);
+        const gamesManager = App.getInstance().gamesManager;
+        assert.ok(gamesManager);
+        const gameId = await gamesManager.createGame("Игра", req.user, users, gameSettings);
 
         return res.redirect(`/game/${gameId}`);
     } catch {

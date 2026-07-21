@@ -33,8 +33,8 @@ function* getCombatants() {
     const victimId = fight.isFirstPlayerTurn ? fight.second : fight.first;
 
     return {
-        attacker: StateGetters.playerById(state, attackerId)!,
-        victim: StateGetters.playerById(state, victimId)!
+        attacker: StateGetters.playerByIdOrFail(state, attackerId),
+        victim: StateGetters.playerByIdOrFail(state, victimId)
     };
 }
 
@@ -45,7 +45,7 @@ function* chooseProtectors(victim: Player) {
     );
 
     if (position) {
-        const protector = SpaceshipGetters.getModuleByPosition(victim.spaceship, position)!;
+        const protector = SpaceshipGetters.getModuleByPositionOrFail(victim.spaceship, position);
 
         yield* put(activateProtector(victim.id, position));
         yield* put(changePlayerEnergy(victim.id, -protector.energyCost, "use protector"));
@@ -87,7 +87,7 @@ function* tryDamageByEventCard() {
 
     yield* damageModule(victim, position, 1, {type: "EventCard"});
 
-    const module = SpaceshipGetters.getModuleByPosition(victim.spaceship, position)!;
+    const module = SpaceshipGetters.getModuleByPositionOrFail(victim.spaceship, position);
     yield* put(message(attacker.id, `атакует ${module.name}, используя карточку действия (-1❤)`));
 }
 
@@ -147,9 +147,9 @@ function* damageByWeapon() {
             'chooseWeaponAndTargetResponse'
         );
 
-        const weapon = SpaceshipGetters.getModuleByPosition(attacker.spaceship, weaponPosition)!;
+        const weapon = SpaceshipGetters.getModuleByPositionOrFail(attacker.spaceship, weaponPosition);
 
-        const target = SpaceshipGetters.getModuleByPosition(victim.spaceship, targetPosition)!;
+        const target = SpaceshipGetters.getModuleByPositionOrFail(victim.spaceship, targetPosition);
         yield* put(message(attacker.id, `атаковал ${target.name} (-${weapon.energyCost}⚡ -${weapon.strength}❤️)`));
 
         yield* put(changePlayerEnergy(attacker.id, -weapon.energyCost, "used weapon in fight"));
@@ -170,7 +170,7 @@ function* damageByWeapon() {
                     'chooseTargetResponse'
                 );
 
-                const target = SpaceshipGetters.getModuleByPosition(victim.spaceship, position)!;
+                const target = SpaceshipGetters.getModuleByPositionOrFail(victim.spaceship, position);
                 yield* put(message(attacker.id, `атаковал ${target.name}, используя оружие второй раз (-${weapon.energyCost * 2}⚡ -${weapon.strength}❤️)`));
 
                 yield* put(changePlayerEnergy(attacker.id, -weapon.energyCost * 2, "used weapon in fight second time"));
