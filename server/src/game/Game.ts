@@ -107,11 +107,6 @@ export default class Game {
 
         this.registerCheatsSocketListeners();
         this.registerPauseSocketListeners();
-
-        // temporary
-        // setInterval(() => {
-        //     this.syncPlayersData();
-        // }, 1000);
     }
 
     private exitReplay() {
@@ -555,24 +550,32 @@ export default class Game {
     }
 
     onPlayerConnect(id: PlayerId, socketId: string) {
-        this.sockets.onPlayerConnect(id, socketId);
+        try {
+            this.sockets.onPlayerConnect(id, socketId);
 
-        if (this.isDeactivated.get()) {
-            this.sockets.emit(id, {
-                withAcknowledgement: false,
-                ensureSending: false
-            }, 'gameFinished', `фатальная ошибка`).catch(error => {
-                console.error(`Failed to send game finish to ${id}.`, error);
-            });
-            return;
+            if (this.isDeactivated.get()) {
+                this.sockets.emit(id, {
+                    withAcknowledgement: false,
+                    ensureSending: false
+                }, 'gameFinished', `фатальная ошибка`).catch(error => {
+                    console.error(`Failed to send game finish to ${id}.`, error);
+                });
+                return;
+            }
+
+            this.syncPlayersData();
+            this.sockets.tryToEmitEvent(id);
+        } catch (error) {
+            this.abortHandle.abort(error);
         }
-
-        this.syncPlayersData();
-        this.sockets.tryToEmitEvent(id);
     }
 
     onPlayerDisconnect(id: PlayerId) {
-        this.sockets.onPlayerDisconnect(id);
-        this.syncPlayersData();
+        try {
+            this.sockets.onPlayerDisconnect(id);
+            this.syncPlayersData();
+        } catch (error) {
+            this.abortHandle.abort(error);
+        }
     }
 }
