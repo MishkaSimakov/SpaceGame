@@ -9,6 +9,10 @@ export type CardEventsHandler = {
     onDragMove(id: CardId): void;
     onDragEnd(id: CardId): void;
 
+    /** The pointer has rested on this card long enough to be asking what it does. */
+    onDescribe(id: CardId): void;
+    onStopDescribing(id: CardId): void;
+
     /** Whether this card is on the field, and so has a chunk that could be picked up. */
     isOnField(id: CardId): boolean;
 };
@@ -18,11 +22,17 @@ export type CardEventsHandler = {
  *
  * Holding a card picks up its whole chunk — that is what the outline is announcing. The click that
  * would otherwise fire on release is swallowed, so a hold never also rotates the card.
+ *
+ * Resting the pointer on a card asks for its description. Touching the card takes the request back:
+ * from there on the pointer is playing rather than reading, and the description would only be in
+ * the way of what it is about to do.
  */
 export class CardEvents {
     private readonly selectChunkDuration = 500;
+    private readonly describeDuration = 700;
 
     private holdTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
+    private describeTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
     private isChunkSelected = false;
     private swallowNextClick = false;
 
@@ -65,6 +75,16 @@ export class CardEvents {
             }
 
             handler.onCardClick(this.id);
+        });
+
+        this.shape.on('pointerover', () => {
+            this.describeTimeout = setTimeout(() => handler.onDescribe(this.id), this.describeDuration);
+        });
+
+        this.shape.on('pointerleave pointerdown dragstart', () => {
+            clearTimeout(this.describeTimeout);
+
+            handler.onStopDescribing(this.id);
         });
 
         this.shape.on('dragstart', () => handler.onDragStart(this.id));

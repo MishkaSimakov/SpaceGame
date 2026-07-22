@@ -61,7 +61,9 @@ export default class Game {
         graphics.add(this.controlsScene);
         graphics.add(this.popupsScene);
 
-        this.cardsManager = new CardsManager(this.getGameId(), this.spaceshipsScene, this.handScene);
+        this.cardsManager = new CardsManager(
+            this.getGameId(), this.spaceshipsScene, this.handScene, this.popupsScene
+        );
 
         this.socketManager = new SocketManager(this);
 
@@ -143,7 +145,7 @@ export default class Game {
 
     private redraw(newMessages: Message[]) {
         this.controlsScene.updateData(newMessages);
-        this.cardsManager.setData(this.currentPlayer, this.otherPlayers);
+        this.cardsManager.setData(this.currentPlayer, this.otherPlayers, this.settings);
     }
 
     panToPlayer(id: PlayerId) {

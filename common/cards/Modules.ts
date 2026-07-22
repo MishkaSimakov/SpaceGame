@@ -1,4 +1,4 @@
-import {MainModuleType, ModuleCard, ModuleType} from "../Types";
+import {GameSettings, MainModuleType, ModuleCard, ModuleType} from "../Types";
 
 export type ModuleInfo = {
     configurations: {
@@ -11,6 +11,14 @@ export type ModuleInfo = {
     health: number,
 
     // optional
+    /**
+     * What the card does beyond its stats, in prose. Cards without one are fully described by their
+     * stats.
+     *
+     * Every cost and amount an ability names is a setting a game can be created with, so the text is
+     * written against the settings of the game being played rather than fixed here.
+     */
+    description?: (settings: GameSettings) => string,
     capacity?: number,
     strength?: number,
     energyCost?: number,
@@ -20,6 +28,9 @@ export type ModuleInfo = {
 export const mainModulesInfo: Record<MainModuleType, ModuleInfo> = {
     [MainModuleType.DrawAnotherEventCard]: {
         name: "Командный модуль I",
+        description: settings => "Сразу после вытягивания карты действия вы можете потратить "
+            + `${settings.energyToDragAnotherEventCardByMainModule} энергии, чтобы скинуть текущую `
+            + "карту действий, а затем вытянуть новую.",
         health: 13,
         energyIncrease: 1,
         capacity: 5,
@@ -29,6 +40,7 @@ export const mainModulesInfo: Record<MainModuleType, ModuleInfo> = {
     },
     [MainModuleType.DrawAdditionalModuleCard]: {
         name: "Командный модуль II",
+        description: settings => `Во время вашего хода в фазе строительства вы можете, заплатив ${settings.energyToDragAdditionalCardByMainModule} энергии, взять 1 карту из стопки строительства (используется 1 раз за ход).`,
         health: 13,
         energyIncrease: 1,
         capacity: 5,
@@ -38,6 +50,7 @@ export const mainModulesInfo: Record<MainModuleType, ModuleInfo> = {
     },
     [MainModuleType.MoveDamage]: {
         name: "Командный модуль III",
+        description: settings => `Перед своим ходом вы можете перенести до ${settings.damageMovedByMainModule} урона с одного модуля на другой за ${settings.energyToMoveDamageByMainModule} энергии.`,
         health: 13,
         energyIncrease: 1,
         capacity: 5,
@@ -47,6 +60,7 @@ export const mainModulesInfo: Record<MainModuleType, ModuleInfo> = {
     },
     [MainModuleType.UseModuleSecondTime]: {
         name: "Командный модуль IV",
+        description: () => "Во время своей атаки или в фазе использования модулей вы можете использовать одни из ваших модулей 2 раз за удвоенное количество энергии.",
         health: 13,
         energyIncrease: 1,
         capacity: 5,
@@ -56,6 +70,7 @@ export const mainModulesInfo: Record<MainModuleType, ModuleInfo> = {
     },
     [MainModuleType.AttackOrRunaway]: {
         name: "Командный модуль V",
+        description: settings => `Перед своим ходом вы можете, заплатив ${settings.energyToAttackByMainModule} энергии, напасть на любого игрока. Во время боя перед атакой вы можете заплатить ${settings.mainModuleRunawayEnergyCost} энергии, чтобы сбежать из боя.`,
         health: 13,
         energyIncrease: 1,
         capacity: 5,

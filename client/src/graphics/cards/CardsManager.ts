@@ -1,4 +1,13 @@
-import {ModuleCard, ModuleType, OtherPlayer, Player, PlayerId, Spaceship, Vector2} from "@common/Types";
+import {
+    GameSettings,
+    ModuleCard,
+    ModuleType,
+    OtherPlayer,
+    Player,
+    PlayerId,
+    Spaceship,
+    Vector2
+} from "@common/Types";
 import {CardGetters} from "@common/getters/Card";
 import {getDistance} from "@common/helpers/Vector";
 import Color from "@common/helpers/Color";
@@ -9,8 +18,10 @@ import {DD} from "../engine/Drag";
 import {Group} from "../engine/Group";
 import Scene from "../engine/Scene";
 import {Line} from "../engine/shapes/Line";
+import {BoundingRect} from "../engine/types";
 import SpaceshipsScene from "../scenes/Spaceships";
 import {CardShape} from "../shapes/CardShape";
+import {CardDescriptionPopup} from "./CardDescriptionPopup";
 import {CardEvents} from "./CardEvents";
 import {FieldCard} from "./CardInfo";
 import {ChooseModuleManager} from "./ChooseModuleManager";
@@ -50,8 +61,10 @@ export class CardsManager {
     private readonly spaceshipsScene: SpaceshipsScene;
     private readonly handScene: Scene;
     private readonly handManager: HandManager;
+    private readonly descriptionPopup: CardDescriptionPopup;
 
     private board: Board | undefined = undefined;
+    private settings: GameSettings | undefined = undefined;
 
     private shapes = new Map<CardId, CardShape>();
     private events = new Map<CardId, CardEvents>();
@@ -60,13 +73,18 @@ export class CardsManager {
 
     private dragState: DragState | undefined = undefined;
     private selectedChunk: ChunkId | undefined = undefined;
+    private describedCard: CardId | undefined = undefined;
 
     /** A state that arrived mid-gesture. Applied once the gesture finishes. */
-    private pending: { player: Player, otherPlayers: OtherPlayer[] } | undefined = undefined;
+    private pending: {
+        player: Player,
+        otherPlayers: OtherPlayer[],
+        settings: GameSettings
+    } | undefined = undefined;
 
     private choosing: ChooseModuleManager[] = [];
 
-    constructor(gameId: string, spaceshipsScene: SpaceshipsScene, handScene: Scene) {
+    constructor(gameId: string, spaceshipsScene: SpaceshipsScene, handScene: Scene, popupsScene: Scene) {
         this.gameId = gameId;
 
         this.spaceshipsScene = spaceshipsScene;
@@ -74,6 +92,9 @@ export class CardsManager {
 
         this.cardSize = Math.max(this.spaceshipsScene.width() / 10, 75);
         this.handManager = new HandManager(this.handScene, this.cardSize);
+
+        // a description has to cover the board and the hand alike, so it is drawn above both
+        this.descriptionPopup = new CardDescriptionPopup(popupsScene);
 
         window["cardsManager"] = this;
     }
@@ -117,13 +138,16 @@ export class CardsManager {
         return this.board;
     }
 
-    setData(player: Player, otherPlayers: OtherPlayer[]) {
+    setData(player: Player, otherPlayers: OtherPlayer[], settings: GameSettings) {
         // A drag is a gesture in flight; reconciling under it would move cards out from under the
         // pointer. The state is authoritative but it can wait until the player lets go.
         if (this.dragState !== undefined) {
-            this.pending = {player, otherPlayers};
+            this.pending = {player, otherPlayers, settings};
             return;
         }
+
+        // what an ability costs is set per game, and a description quotes those costs
+        this.settings = settings;
 
         if (this.board === undefined) {
             // What was stored is only a hint: reconcile below overrules it wherever the game has
@@ -173,6 +197,22 @@ export class CardsManager {
         return {x: position.x * this.cardSize, y: position.y * this.cardSize};
     }
 
+    /**
+     * A rectangle drawn in `scene`, in the frame every scene shares.
+     *
+     * Cards live in two scenes — the board's, which the player pans and zooms, and the hand's, which
+     * stands still — and anything drawn against a card from a third scene has to be told where the
+     * card really is.
+     */
+    private toScreen(rect: BoundingRect, scene: Scene): BoundingRect {
+        const transform = scene.getTransform();
+
+        const topLeft = transform.point({x: rect.left, y: rect.top});
+        const bottomRight = transform.point({x: rect.right, y: rect.bottom});
+
+        return new BoundingRect(topLeft.y, topLeft.x, bottomRight.y, bottomRight.x);
+    }
+
     /** The pointer, in the board's card units. */
     private pointerInModel(): Vector2 {
         const absolute = this.spaceshipsScene.getGraphics().getPointerPosition();
@@ -202,6 +242,11 @@ export class CardsManager {
         const liveCards = new Set(board.getCards().map(info => CardGetters.id(info.card)));
         for (const [id, shape] of Array.from(this.shapes)) {
             if (!liveCards.has(id)) {
+                // the card is gone, and with it anything the pointer was being told about it
+                if (this.describedCard === id) {
+                    this.onStopDescribing();
+                }
+
                 shape.destroy();
                 this.shapes.delete(id);
                 this.events.delete(id);
@@ -452,8 +497,34 @@ export class CardsManager {
             onChunkDeselect: () => this.onChunkDeselect(),
             onDragStart: (id: CardId) => this.onDragStart(id),
             onDragMove: () => this.onDragMove(),
-            onDragEnd: () => this.onDragEnd()
+            onDragEnd: () => this.onDragEnd(),
+            onDescribe: (id: CardId) => this.onDescribe(id),
+            onStopDescribing: () => this.onStopDescribing()
         };
+    }
+
+    private onDescribe(id: CardId) {
+        const info = this.model().getCard(id);
+        const shape = this.shapes.get(id);
+
+        if (info === undefined || shape === undefined || this.settings === undefined) {
+            return;
+        }
+
+        // a card the layout has hidden has no rectangle to hang a description off
+        const rect = shape.getClientRect();
+
+        if (rect === undefined) {
+            return;
+        }
+
+        this.describedCard = id;
+        this.descriptionPopup.show(info.card, this.settings, this.toScreen(rect, shape.getScene()));
+    }
+
+    private onStopDescribing() {
+        this.describedCard = undefined;
+        this.descriptionPopup.hide();
     }
 
     private onCardClick(id: CardId) {
@@ -774,10 +845,10 @@ export class CardsManager {
 
         // a state that arrived while the player was still holding a card
         if (this.pending !== undefined) {
-            const {player, otherPlayers} = this.pending;
+            const {player, otherPlayers, settings} = this.pending;
             this.pending = undefined;
 
-            this.setData(player, otherPlayers);
+            this.setData(player, otherPlayers, settings);
         }
     }
 }
