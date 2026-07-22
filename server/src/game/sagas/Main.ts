@@ -25,6 +25,7 @@ function* shiftTurn() {
         currentPlayerIndex %= state.players.length;
 
         const player = state.players[currentPlayerIndex];
+        assert.ok(player !== undefined);
 
         if (player.skipNextTurn) {
             yield* put(setPlayerSkipNextTurn(player.id, false));
@@ -71,7 +72,7 @@ export function* gameSaga() {
                 assert.equal(error.type, 'playerLost');
 
                 const currentPlayer = StateGetters.currentPlayer(yield* select());
-                const lostPlayer = StateGetters.playerById(yield* select(), error.payload.player)!;
+                const lostPlayer = StateGetters.playerByIdOrFail(yield* select(), error.payload.player);
 
                 if (currentPlayer.id === lostPlayer.id) {
                     yield* addTimeRecord(currentPlayer.id, TimeRecordType.DEFAULT_TURN_ENDED);

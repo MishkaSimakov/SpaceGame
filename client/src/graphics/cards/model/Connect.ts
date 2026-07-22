@@ -1,5 +1,5 @@
 import {ModuleCard, Spaceship, Vector2} from "@common/Types";
-import {directions, opposites, SpaceshipGetters} from "@common/getters/Spaceship";
+import {directions, SpaceshipGetters} from "@common/getters/Spaceship";
 import {getDistance} from "@common/helpers/Vector";
 
 import {ChunkId} from "./Chunk";
@@ -92,7 +92,7 @@ export function hasBadConnection(ship: Spaceship): boolean {
                 continue;
             }
 
-            if (SpaceshipGetters.getConnectorInDirection(module, key) !== SpaceshipGetters.getConnectorInDirection(moduleInDirection, opposites[key])) {
+            if (SpaceshipGetters.getConnectorInDirection(module, key) !== SpaceshipGetters.getConnectorInDirection(moduleInDirection, value.opposite)) {
                 return true;
             }
         }

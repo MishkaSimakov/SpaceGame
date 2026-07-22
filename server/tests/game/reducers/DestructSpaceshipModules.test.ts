@@ -1,3 +1,5 @@
+import * as assert from "node:assert";
+
 import {expect, test} from "vitest";
 
 import {CardDestination, ModuleType, Spaceship} from "@common/Types";
@@ -23,14 +25,16 @@ function initSpaceship(spaceship: Spaceship) {
     spaceship.modules.push(firstModule, secondModule);
 }
 
-test('destructOneSpaceshipModule', async () => {
+test('destructOneSpaceshipModule', () => {
     const state = fakeGameState(2);
     const player = state.players[0];
 
     initSpaceship(player.spaceship);
 
     // destruct module
-    reducers.destructSpaceshipModules!(state, {
+    const destructSpaceshipModules = reducers.destructSpaceshipModules;
+    assert.ok(destructSpaceshipModules !== undefined);
+    destructSpaceshipModules(state, {
         player: player.id,
         positions: [{x: -2, y: 0}],
         destructedCardsDestiny: CardDestination.hand,
@@ -50,14 +54,16 @@ test('destructOneSpaceshipModule', async () => {
     expect(returned.module.type).toEqual(ModuleType.QuantumProtector);
 });
 
-test('destructOneSpaceshipModuleWithChainDestruction', async () => {
+test('destructOneSpaceshipModuleWithChainDestruction', () => {
     const state = fakeGameState(2);
     const player = state.players[0];
 
     initSpaceship(player.spaceship);
 
     // destruct module
-    reducers.destructSpaceshipModules!(state, {
+    const destructSpaceshipModules = reducers.destructSpaceshipModules;
+    assert.ok(destructSpaceshipModules !== undefined);
+    destructSpaceshipModules(state, {
         player: player.id,
         positions: [{x: -1, y: 0}],
         destructedCardsDestiny: CardDestination.discard,

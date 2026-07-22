@@ -22,6 +22,8 @@ function getLastRecordByType(records: TimeRecord[], type: TimeRecordType) {
             return records[i];
         }
     }
+
+    return undefined;
 }
 
 function getLastRecordByTypes(records: TimeRecord[], types: TimeRecordType[]) {
@@ -30,6 +32,8 @@ function getLastRecordByTypes(records: TimeRecord[], types: TimeRecordType[]) {
             return records[i];
         }
     }
+
+    return undefined;
 }
 
 export function getTimeDecreasingPlayerId(state: GameState): PlayerId | undefined {
@@ -61,7 +65,7 @@ export function getPlayerTime(state: GameState, playerId: PlayerId, currentTime:
     }
 
     const lastRecord = playerRecords[playerRecords.length - 1];
-    const recordedTime = StateGetters.playerById(state, playerId)!.time;
+    const recordedTime = StateGetters.playerByIdOrFail(state, playerId).time;
 
     if (lastRecord.type === TimeRecordType.DEFAULT_TURN_STARTED || lastRecord.type === TimeRecordType.DEFAULT_TURN_CONTINUED || lastRecord.type === TimeRecordType.FIGHT_TURN_STARTED) {
         return recordedTime - (currentTime - lastRecord.time);

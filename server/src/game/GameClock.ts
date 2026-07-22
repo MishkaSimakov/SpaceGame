@@ -27,9 +27,9 @@ export class GameClock {
     }
 
     resume() {
-        assert.ok(this.isPaused());
+        assert.ok(this.pausedAt !== undefined);
 
-        this.shift = this.wallClock.getTime() - this.pausedAt!;
+        this.shift = this.wallClock.getTime() - this.pausedAt;
         this.pausedAt = undefined;
     }
 

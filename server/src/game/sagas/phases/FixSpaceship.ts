@@ -28,7 +28,7 @@ function* useRepairModule(repairModuleCost: number, secondTime: boolean): Genera
     yield* put(changeModuleHealth(currentPlayer.id, position, 1, "used repair module"));
     yield* put(changePlayerEnergy(currentPlayer.id, -repairModuleCost, "used repair module"));
 
-    const module = SpaceshipGetters.getModuleByPosition(currentPlayer.spaceship, position)!;
+    const module = SpaceshipGetters.getModuleByPositionOrFail(currentPlayer.spaceship, position);
 
     if (!secondTime) {
         yield* put(message(currentPlayer.id, `чинит ${module.name}, используя ремонтный модуль (-${repairModuleCost}⚡)`));
@@ -53,7 +53,7 @@ function* tryUseModuleSecondTime(repairModuleCost: number) {
             'useModuleSecondTimeResponse'
         );
 
-        if (!useSecondTime) return;
+        if (!useSecondTime.use) return;
 
         yield* put(playerUseModuleSecondTime(currentPlayer.id));
 

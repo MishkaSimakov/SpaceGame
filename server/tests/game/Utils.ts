@@ -108,7 +108,9 @@ export function fakeGameState(playersCount: number): GameState {
     const state = getInitialGameState(users, settings);
 
     for (const player of state.players) {
-        const mainModule = state.mainModulesStack.pop()!;
+        const mainModule = state.mainModulesStack.pop();
+        assert.ok(mainModule !== undefined);
+
         mainModule.x = 0;
         mainModule.y = 0;
         player.spaceship.modules.push(mainModule);

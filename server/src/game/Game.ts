@@ -27,6 +27,7 @@ import {CancellableRaceProtocol, IParticipant} from "@src/game/CancellableRacePr
 import {Observable} from "@common/Observable";
 import {StateGetters} from "@common/getters/State";
 import {GameClock, TimeoutHandle} from "@src/game/GameClock";
+import {AbortHandle} from "@src/game/sagas/runner/AbortHandle";
 
 
 export type GameResult = { type: "deactivated" } | { type: "finished", winner: PlayerId };
@@ -68,6 +69,7 @@ export default class Game {
     // resolved when game must be deactivated
     isDeactivated: Observable<boolean>;
 
+    abortHandle: AbortHandle;
     sagaInput: Channel<Action>;
     sagaOutput: Channel<Action>;
 
@@ -99,16 +101,12 @@ export default class Game {
         this.wallClock = clock;
         this.gameClock = new GameClock(this.wallClock);
 
+        this.abortHandle = new AbortHandle();
         this.sagaInput = new Channel();
         this.sagaOutput = new Channel();
 
         this.registerCheatsSocketListeners();
         this.registerPauseSocketListeners();
-
-        // temporary
-        // setInterval(() => {
-        //     this.syncPlayersData();
-        // }, 1000);
     }
 
     private exitReplay() {
@@ -182,14 +180,21 @@ export default class Game {
                 this.sockets.emit(action.payload.player, {
                     withAcknowledgement: false,
                     ensureSending: true
-                }, action.type, action.payload);
+                }, action.type, action.payload).catch(error => {
+                    console.error(`Failed to send info to ${action.payload.player}.`, error);
+                });
             }
         } else if (action.type === 'time') {
             response = pastResponse ?? timeResult(this.gameClock.getTime());
         } else if (action.type === 'message') {
-            const name = this.users.find(u => u.id === action.payload.player)!.login;
+            const user = this.users.find(u => u.id === action.payload.player);
+
+            if (user == undefined) {
+                throw new Error("Invalid user index in action payload.");
+            }
+
             this.playerGameLog.push({
-                text: `${name}: ${action.payload.text}`
+                text: `${user.login}: ${action.payload.text}`
             });
         } else {
             throw new Error("Unknown saga output type.");
@@ -233,14 +238,16 @@ export default class Game {
         this.replayActions.outputs = pastActions.filter(a => a.purpose === ActionPurpose.SAGA_OUTPUT);
         this.replayActions.inputs = pastActions.filter(a => a.purpose === ActionPurpose.SAGA_INPUT);
 
-        if (pastActions.length) {
-            const last = pastActions[pastActions.length - 1];
-            this.gameClock.setTime(last.storedAtGameTime);
+        const lastAction = pastActions.at(-1);
+
+        if (lastAction) {
+            this.gameClock.setTime(lastAction.storedAtGameTime);
         } else {
             this.exitReplay();
         }
 
         const env: Environment = {
+            abortHandle: this.abortHandle,
             output: this.sagaOutput,
             input: this.sagaInput,
             state: this.state
@@ -248,7 +255,9 @@ export default class Game {
 
         try {
             const handler = (action: Action) => {
-                this.processAction(action);
+                this.processAction(action).catch(error => {
+                    this.abortHandle.abort(error);
+                });
                 this.sagaOutput.take(handler.bind(this));
             };
 
@@ -272,6 +281,10 @@ export default class Game {
 
         const winner = this.state.players.filter(p => !p.lose)[0];
 
+        if (!winner) {
+            throw new Error("Failed to locate winner in the game.");
+        }
+
         // game has finished
         // notify players about this
         for (const player of this.state.players) {
@@ -292,50 +305,65 @@ export default class Game {
     private registerCheatsSocketListeners() {
         for (const cheatName of Object.keys(Actions).filter(a => a.startsWith('cheat'))) {
             this.sockets.on(cheatName, (player: PlayerId, payload: any) => {
-                // TODO: catch errors
-                const validator = cheatsValidators[cheatName as keyof typeof cheatsValidators] as (state: GameState) => ZodType;
-                const validationResult = validator(structuredClone(this.state)).safeParse(payload);
+                // Validation errors are returned in validationResult.error. If anything gets thrown,
+                // then this is a serious problem.
+                try {
+                    const validator = cheatsValidators[cheatName as keyof typeof cheatsValidators] as (state: GameState) => ZodType;
+                    const validationResult = validator(structuredClone(this.state)).safeParse(payload);
 
-                if (validationResult.error) {
-                    const errors = validationResult.error.issues.map(issue => issue.message);
+                    if (validationResult.error) {
+                        const errors = validationResult.error.issues.map(issue => issue.message);
 
-                    this.sockets.emit(player, {
-                        withAcknowledgement: false,
-                        ensureSending: false
-                    }, 'errors', errors);
+                        this.sockets.emit(player, {
+                            withAcknowledgement: false,
+                            ensureSending: false
+                        }, 'errors', errors).catch(error => {
+                            console.error(`Failed to send errors to ${player}.`, error);
+                        });
 
-                    return;
+                        return;
+                    }
+
+                    const action = constructAction(cheatName, validationResult.data) as Action<any, any>;
+
+                    this.storage.appendAction(action, ActionPurpose.SAGA_INPUT, this.gameClock.getTime());
+                    this.sagaInput.put(action);
+                    this.syncPlayersData();
+                } catch (error) {
+                    this.abortHandle.abort(error);
                 }
-
-                const action = constructAction(cheatName, validationResult.data) as Action<any, any>;
-
-                this.storage.appendAction(action, ActionPurpose.SAGA_INPUT, this.gameClock.getTime());
-                this.sagaInput.put(action);
-                this.syncPlayersData();
             });
         }
     }
 
     private registerPauseSocketListeners() {
         this.sockets.on('playerRequestsPause', () => {
-            if (!this.gameClock.isPaused()) {
-                console.log("⏯️ paused");
-                this.gameClock.pause();
-                this.syncPlayersData();
+            try {
+                if (!this.gameClock.isPaused()) {
+                    console.log("⏯️ paused");
+                    this.gameClock.pause();
+                    this.syncPlayersData();
+                }
+            } catch (error) {
+                this.abortHandle.abort(error);
             }
         });
 
         this.sockets.on('playerRequestsResume', () => {
-            if (this.gameClock.isPaused()) {
-                console.log("⏯️ resumed");
-                this.gameClock.resume();
-                this.syncPlayersData();
+            try {
+                if (this.gameClock.isPaused()) {
+                    console.log("⏯️ resumed");
+                    this.gameClock.resume();
+                    this.syncPlayersData();
+                }
+            } catch (error) {
+                this.abortHandle.abort(error);
             }
         });
     }
 
-    getPlayerById(id: number): Player {
-        return StateGetters.playerById(this.state, id)!;
+    getPlayerById(id: number): Player | undefined {
+        return StateGetters.playerById(this.state, id);
     }
 
     syncPlayersData() {
@@ -345,7 +373,9 @@ export default class Game {
             this.sockets.emit(player.id, {
                 withAcknowledgement: false,
                 ensureSending: false
-            }, 'setGameData', getDTO(this, player));
+            }, 'setGameData', getDTO(this, player.id)).catch(error => {
+                console.error(`Failed to send game data to ${player}.`, error);
+            });
         }
     }
 
@@ -394,35 +424,30 @@ export default class Game {
                         ensureSending: true
                     }, request.type, {...this.requestPayload, errors});
 
-                    console.log(response);
-
                     if (!isAction(response)) {
                         errors = ["Ответ должен быть в формате действия."];
                         continue;
                     }
 
-                    try {
-                        const validator = validators[responseType as keyof typeof validators] as (state: GameState, request: unknown) => ZodType;
-                        const validationResult = validator(structuredClone(this.game.state), request).safeParse(response.payload);
+                    const validator = validators[responseType as keyof typeof validators] as (state: GameState, request: unknown) => ZodType;
+                    const validationResult = validator(structuredClone(this.game.state), request).safeParse(response.payload);
 
-                        if (validationResult.error) {
-                            errors = validationResult.error.issues.map(issue => issue.message);
-                            continue;
-                        }
-
-                        // action comes from a user, payload is validated, but time and uuid are untrusted
-                        // constructAction replaces time and uuid
-                        this.response = constructAction(responseType, response.payload);
-
-                        return;
-                    } catch {
-                        errors = ["Произошла ошибка при валидации вашего ответа."];
+                    if (validationResult.error) {
+                        errors = validationResult.error.issues.map(issue => issue.message);
+                        continue;
                     }
+
+                    // action comes from a user, payload is validated, but time and uuid are untrusted
+                    // constructAction replaces time and uuid
+                    this.response = constructAction(responseType, response.payload);
+
+                    return;
                 }
             }
 
             proceed(): void {
-                result = this.response!;
+                assert.ok(this.response);
+                result = this.response;
             }
 
             cancel(): void {
@@ -433,8 +458,8 @@ export default class Game {
         class TimeoutParticipant implements IParticipant {
             private readonly game: Game;
             private readonly remainingTime: number | undefined;
+            private readonly player: PlayerId;
             private timeout: TimeoutHandle | undefined = undefined;
-            private player: PlayerId;
 
             constructor(game: Game, player: PlayerId) {
                 this.game = game;
@@ -495,7 +520,9 @@ export default class Game {
             }
 
             cancel(): void {
-                this.game.isDeactivated.unsubscribe(this.listenerId!);
+                if (this.listenerId !== undefined) {
+                    this.game.isDeactivated.unsubscribe(this.listenerId);
+                }
             }
         }
 
@@ -516,27 +543,39 @@ export default class Game {
             await this.sockets.emit(player.id, {
                 withAcknowledgement: false,
                 ensureSending: false
-            }, 'gameFinished', `фатальная ошибка`);
+            }, 'gameFinished', `фатальная ошибка`).catch(error => {
+                console.error(`Failed to send game finish to ${player}.`, error);
+            });
         }
     }
 
     onPlayerConnect(id: PlayerId, socketId: string) {
-        this.sockets.onPlayerConnect(id, socketId);
+        try {
+            this.sockets.onPlayerConnect(id, socketId);
 
-        if (this.isDeactivated.get()) {
-            this.sockets.emit(id, {
-                withAcknowledgement: false,
-                ensureSending: false
-            }, 'gameFinished', `фатальная ошибка`);
-            return;
+            if (this.isDeactivated.get()) {
+                this.sockets.emit(id, {
+                    withAcknowledgement: false,
+                    ensureSending: false
+                }, 'gameFinished', `фатальная ошибка`).catch(error => {
+                    console.error(`Failed to send game finish to ${id}.`, error);
+                });
+                return;
+            }
+
+            this.syncPlayersData();
+            this.sockets.tryToEmitEvent(id);
+        } catch (error) {
+            this.abortHandle.abort(error);
         }
-
-        this.syncPlayersData();
-        this.sockets.tryToEmitEvent(id);
     }
 
     onPlayerDisconnect(id: PlayerId) {
-        this.sockets.onPlayerDisconnect(id);
-        this.syncPlayersData();
+        try {
+            this.sockets.onPlayerDisconnect(id);
+            this.syncPlayersData();
+        } catch (error) {
+            this.abortHandle.abort(error);
+        }
     }
 }

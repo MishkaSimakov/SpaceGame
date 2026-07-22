@@ -54,7 +54,7 @@ function registerHandlebarsHelpers() {
         return Object.values(args).map(def => def.emit()).join('\n\n');
     });
 
-    Handlebars.registerHelper('formatForDocstring', function (description: string) {
+    Handlebars.registerHelper('formatForDocstring', function (description: string | undefined) {
         return description?.split('\n')
             .filter(part => part.length > 0)
             .join('\n * ');
@@ -85,7 +85,7 @@ export function typescript() {
             });
         }
 
-        for (const metaArgument of action.meta ?? []) {
+        for (const metaArgument of action.meta) {
             parsedAction.meta.push({
                 name: metaArgument.name,
                 typedName: generateArgument(metaArgument.name, {

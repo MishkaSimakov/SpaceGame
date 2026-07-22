@@ -47,6 +47,10 @@ export function loadData() {
     validateSchema({}, typesData, `Invalid types schema in ${typesFilepath}`);
 
     for (const action of actionsData) {
+        if (!Array.isArray(action.payload)) {
+            throw new Error(`Invalid action payload for action ${action.name}.`);
+        }
+
         for (const argument of action.payload) {
             validateSchema(
                 argument.type, typesData,
@@ -54,7 +58,11 @@ export function loadData() {
             );
         }
 
-        for (const metaArgument of action.meta ?? []) {
+        if (!("meta" in action)) {
+            action.meta = [];
+        }
+
+        for (const metaArgument of action.meta) {
             validateSchema(
                 metaArgument.type, typesData,
                 `Invalid type schema for action meta (${action.name}:${metaArgument.name}) in ${actionsFilepath}`

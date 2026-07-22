@@ -1,3 +1,5 @@
+import * as assert from "node:assert";
+
 import * as Actions from "@common/Actions";
 import {
     changePlayerEnergy,
@@ -112,13 +114,14 @@ export const cheatsPerformers: CheatsPerformersContainer = {
             rotation: 0,
         };
 
-        let spaceship = StateGetters.playerById(yield* select(), cheat.target)!.spaceship;
-        const oldMainModule = SpaceshipGetters.getMainModule(spaceship)!;
+        let spaceship = StateGetters.playerByIdOrFail(yield* select(), cheat.target).spaceship;
+        const oldMainModule = SpaceshipGetters.getMainModule(spaceship);
+        assert.ok(oldMainModule);
 
         yield* put(removeSpaceshipModules(cheat.target, [ModuleGetters.position(oldMainModule)]));
 
         // update spaceship after main module was removed
-        spaceship = StateGetters.playerById(yield* select(), cheat.target)!.spaceship;
+        spaceship = StateGetters.playerByIdOrFail(yield* select(), cheat.target).spaceship;
 
         const unconnectedModules = SpaceshipGetters.getUnconnectedModules(spaceship);
 
@@ -129,7 +132,7 @@ export const cheatsPerformers: CheatsPerformersContainer = {
         yield* put(playerRebuiltSpaceship(
             cheat.target,
             {modules: [module]},
-            StateGetters.playerById(yield* select(), cheat.target)!.hand
+            StateGetters.playerByIdOrFail(yield* select(), cheat.target).hand
         ));
     }
 };

@@ -1,3 +1,5 @@
+import * as assert from "node:assert";
+
 import {
     isDiscriminatorForm,
     isElementsForm,
@@ -69,8 +71,9 @@ function generateWithState(schema: Schema, state: GenerationState): ASTNode {
 
     if (isRefForm(schema)) {
         if (!(schema.ref in generatedDefinitions)) {
+            assert.ok(rootSchema.definitions);
             generateDefinition(schema.ref, {
-                ...rootSchema.definitions![schema.ref],
+                ...rootSchema.definitions[schema.ref],
                 definitions: rootSchema.definitions
             }, generatedDefinitions);
         }

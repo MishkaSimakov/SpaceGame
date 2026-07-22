@@ -5,7 +5,7 @@ import {render} from "@src/helpers/Render";
 import {createUserSettingsValidator} from "@src/http/validation/UserSettingsValidator";
 import {defaultUserSettings} from "@common/UserSettings";
 
-export const show = async (req: AuthenticatedRequest, res: Response) => {
+export const show = (req: AuthenticatedRequest, res: Response) => {
     render(res, 'settings', {
         settings: req.user.settings,
         defaultSettings: defaultUserSettings,

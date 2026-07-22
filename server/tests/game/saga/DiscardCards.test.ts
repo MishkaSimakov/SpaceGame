@@ -1,3 +1,5 @@
+import * as assert from "node:assert";
+
 import {expect, test} from "vitest";
 
 import {ModuleGetters} from "@common/getters/Module";
@@ -16,7 +18,9 @@ test('doesntDiscardWhenNotEnoughCards', async () => {
     const cardsCount = 4;
 
     for (let i = 0; i < cardsCount; ++i) {
-        player.hand.push(ModuleGetters.asCard(state.stack.module.pop()!));
+        const module = state.stack.module.pop();
+        assert.ok(module !== undefined);
+        player.hand.push(ModuleGetters.asCard(module));
     }
 
     const bus = new TestBus(state);
@@ -41,7 +45,9 @@ test('discardCardsWhenThereAreTooMany', async () => {
     const cardsCount = 6;
 
     for (let i = 0; i < cardsCount; ++i) {
-        player.hand.push(ModuleGetters.asCard(state.stack.module.pop()!));
+        const module = state.stack.module.pop();
+        assert.ok(module !== undefined);
+        player.hand.push(ModuleGetters.asCard(module));
     }
 
     const expectedCards = [player.hand[0], player.hand[5]];

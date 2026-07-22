@@ -13,6 +13,10 @@
     "experimentalDecorators": true,
     "resolveJsonModule": true,
     "strict": true,
+    // TODO: implement someday...
+    // "noUncheckedIndexedAccess": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
     "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {

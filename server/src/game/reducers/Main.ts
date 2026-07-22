@@ -20,7 +20,7 @@ export const reducers: ReducersType = {
         Object.assign(state, payload.state);
     },
     playerRebuiltSpaceship(state: GameState, payload) {
-        const player = StateGetters.playerById(state, payload.player)!;
+        const player = StateGetters.playerByIdOrFail(state, payload.player);
 
         player.spaceship = payload.newSpaceship;
         player.hand = payload.newHand;
@@ -46,7 +46,7 @@ export const reducers: ReducersType = {
     },
 
     changePlayerEnergy(state: GameState, payload) {
-        const player = StateGetters.playerById(state, payload.player)!;
+        const player = StateGetters.playerByIdOrFail(state, payload.player);
         const capacity = SpaceshipGetters.getTotalCapacity(player.spaceship);
 
         player.energy += payload.delta;
@@ -54,13 +54,13 @@ export const reducers: ReducersType = {
     },
 
     setPlayerSkipNextTurn(state: GameState, payload) {
-        const player = StateGetters.playerById(state, payload.player)!;
+        const player = StateGetters.playerByIdOrFail(state, payload.player);
         player.skipNextTurn = payload.skip;
     },
 
     destructSpaceshipModules(state: GameState, payload) {
-        const player = StateGetters.playerById(state, payload.player)!;
-        const destructed = payload.positions.map(p => SpaceshipGetters.getModuleByPosition(player.spaceship, p)!);
+        const player = StateGetters.playerByIdOrFail(state, payload.player);
+        const destructed = payload.positions.map(p => SpaceshipGetters.getModuleByPositionOrFail(player.spaceship, p));
 
         SpaceshipModifiers.removeModule(player.spaceship, destructed);
 
@@ -86,14 +86,14 @@ export const reducers: ReducersType = {
     },
 
     changeModuleHealth(state: GameState, payload) {
-        const player = StateGetters.playerById(state, payload.player)!;
-        const module = SpaceshipGetters.getModuleByPosition(player.spaceship, payload.position)!;
+        const player = StateGetters.playerByIdOrFail(state, payload.player);
+        const module = SpaceshipGetters.getModuleByPositionOrFail(player.spaceship, payload.position);
 
         module.health = Math.min(module.health + payload.delta, module.totalHealth);
     },
 
     deactivateProtectorIfActive(state: GameState, payload) {
-        const player = StateGetters.playerById(state, payload.player)!;
+        const player = StateGetters.playerByIdOrFail(state, payload.player);
 
         player.spaceship.activatedProtector = undefined;
     },
@@ -105,7 +105,7 @@ export const reducers: ReducersType = {
     },
 
     activateProtector(state: GameState, payload) {
-        const player = StateGetters.playerById(state, payload.player)!;
+        const player = StateGetters.playerByIdOrFail(state, payload.player);
         const protector = SpaceshipGetters.getModuleByPosition(player.spaceship, payload.position);
 
         assert.ok(player.spaceship.activatedProtector === undefined);
@@ -122,7 +122,7 @@ export const reducers: ReducersType = {
     },
 
     removeSpaceshipModules(state: GameState, payload) {
-        const player = StateGetters.playerById(state, payload.player)!;
+        const player = StateGetters.playerByIdOrFail(state, payload.player);
 
         for (const position of payload.positions) {
             assert.ok(SpaceshipGetters.getModuleByPosition(player.spaceship, position));
@@ -132,7 +132,7 @@ export const reducers: ReducersType = {
     },
 
     playerLost(state: GameState, payload) {
-        const player = StateGetters.playerById(state, payload.player)!;
+        const player = StateGetters.playerByIdOrFail(state, payload.player);
 
         assert.ok(!player.lose);
 
@@ -152,12 +152,12 @@ export const reducers: ReducersType = {
     changePlayerTime(state: GameState, payload) {
         assert.ok(state.settings.timeControlSettings);
 
-        const player = StateGetters.playerById(state, payload.player)!;
+        const player = StateGetters.playerByIdOrFail(state, payload.player);
         player.time += payload.delta;
     },
 
     playerUseModuleSecondTime(state: GameState, payload) {
-        const player = StateGetters.playerById(state, payload.player)!;
+        const player = StateGetters.playerByIdOrFail(state, payload.player);
 
         assert.ok(!player.usedModuleSecondTimeOnThisTurn);
 
@@ -176,7 +176,7 @@ export const reducers: ReducersType = {
     // # Cards manipulations
     // ## hand
     popCardsFromHand(state: GameState, payload) {
-        const player = StateGetters.playerById(state, payload.player)!;
+        const player = StateGetters.playerByIdOrFail(state, payload.player);
 
         assert.ok(player.hand.length > Math.max(...payload.indexes));
 
@@ -185,7 +185,7 @@ export const reducers: ReducersType = {
         });
     },
     pushCardsToHand(state: GameState, payload) {
-        const player = StateGetters.playerById(state, payload.player)!;
+        const player = StateGetters.playerByIdOrFail(state, payload.player);
 
         player.hand.push(...payload.cards);
     },

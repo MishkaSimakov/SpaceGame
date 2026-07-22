@@ -1,3 +1,5 @@
+import * as assert from "node:assert";
+
 import {initGameState} from "@common/Actions";
 import {GameState} from "@common/Types";
 
@@ -23,7 +25,8 @@ export function* init() {
         }
 
         // initialize spaceship
-        const mainModule = state.mainModulesStack.pop()!;
+        const mainModule = state.mainModulesStack.pop();
+        assert.ok(mainModule);
         mainModule.x = 0;
         mainModule.y = 0;
         player.spaceship.modules.push(mainModule);

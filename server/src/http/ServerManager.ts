@@ -1,4 +1,5 @@
 import initRoutes from "./routes";
+import {render} from "@src/helpers/Render";
 
 import express from 'express';
 import http, {Server as HTTPServer} from 'http';
@@ -46,7 +47,8 @@ export default class ServerManager {
         this.server.use(flash());
         this.server.use(cookieParser());
         this.server.use((req, res, next) => {
-            (res as any).view = this.edge!.createRenderer();
+            assert.ok(this.edge);
+            (res as any).view = this.edge.createRenderer();
 
             next();
         });
@@ -56,19 +58,20 @@ export default class ServerManager {
         this.server.use(serveStatic(this.staticBasePath));
         this.server.use(express.urlencoded({extended: false}));
 
+        initRoutes(this.server);
+
+        this.server.use((req, res) => {
+            res.status(404);
+            render(res, 'error', {code: 404});
+        });
+
         // Express only treats a middleware as an error handler if it declares all four parameters,
         // so the unused ones have to stay in the signature.
         this.server.use((err: unknown, _req: any, res: any, _next: any) => {
             console.error(err);
-            res.status(500).json({message: "Internal server error"});
-        });
 
-        initRoutes(this.server);
-
-        this.server.get('*', (req, res) => {
-            res.status(404).render('error', {
-                code: 404
-            });
+            res.status(500);
+            render(res, 'error', {code: 500});
         });
     }
 
@@ -86,7 +89,8 @@ export default class ServerManager {
     }
 
     runServer() {
-        this.httpServer!.listen(3000, () => {
+        assert.ok(this.httpServer);
+        this.httpServer.listen(3000, () => {
             console.log('Server started!');
         });
     }

@@ -3,18 +3,11 @@ import {ModuleGetters} from "./Module";
 
 export type Direction = "left" | "top" | "right" | "bottom";
 
-export const directions: Record<string, Vector2> = {
-    'left': {x: -1, y: 0},
-    'top': {x: 0, y: -1},
-    'right': {x: 1, y: 0},
-    'bottom': {x: 0, y: 1}
-}
-
-export const opposites: Record<string, string> = {
-    'left': 'right',
-    'top': 'bottom',
-    'right': 'left',
-    'bottom': 'top'
+export const directions: Record<string, Vector2 & { opposite: string }> = {
+    'left': {x: -1, y: 0, opposite: 'right'},
+    'top': {x: 0, y: -1, opposite: 'bottom'},
+    'right': {x: 1, y: 0, opposite: 'left'},
+    'bottom': {x: 0, y: 1, opposite: 'top'}
 }
 
 function getMainModule(ship: Spaceship): ModuleCard | undefined {
@@ -49,17 +42,18 @@ function canConnectModule(ship: Spaceship, module: ModuleCard, x?: number, y?: n
 
     let hasConnection = false;
 
-    for (let [key, value] of Object.entries(directions)) {
-        let module_in_direction = getModuleByPosition(ship, x + value.x, y + value.y);
+    for (const [key, value] of Object.entries(directions)) {
+        const module_in_direction = getModuleByPosition(ship, x + value.x, y + value.y);
 
         if (!module_in_direction) continue;
 
-        if (getConnectorInDirection(module, key) !== getConnectorInDirection(module_in_direction, opposites[key])) {
+        if (getConnectorInDirection(module, key) !== getConnectorInDirection(module_in_direction, value.opposite)) {
             return false;
         }
 
-        if (getConnectorInDirection(module, key) !== 0)
+        if (getConnectorInDirection(module, key) !== 0) {
             hasConnection = true;
+        }
     }
 
     return hasConnection || ModuleGetters.isMain(module);
@@ -69,6 +63,10 @@ function getConnectorInDirection(module: ModuleCard, direction: string): number 
     const directions = ["right", "top", "left", "bottom"];
 
     let index = directions.indexOf(direction);
+    if (index === -1) {
+        throw new Error(`Direction ${direction} is invalid.`);
+    }
+
     index = (index + module.rotation) % 4;
 
     return module.connectors[directions[index] as keyof typeof module.connectors];
@@ -79,19 +77,28 @@ function getModuleByPosition(ship: Spaceship, position: Vector2): ModuleCard | u
 function getModuleByPosition(ship: Spaceship, x: (number | Vector2), y?: number): ModuleCard | undefined {
     if (typeof x == "number") {
         return ship.modules.filter(card => card.x === x && card.y === y)[0];
-    } else if (x && x.x !== undefined && x.y !== undefined) {
+    } else {
         return ship.modules.filter(card => card.x === x.x && card.y === x.y)[0];
     }
+}
+
+function getModuleByPositionOrFail(ship: Spaceship, position: Vector2): ModuleCard {
+    const module = getModuleByPosition(ship, position);
+
+    if (module === undefined) {
+        throw new Error(`No module at position (${position.x}, ${position.y})`);
+    }
+
+    return module;
 }
 
 function getPossibleConnectionsFor(ship: Spaceship, module: ModuleCard): number[][] {
     let possible_connections = []
 
-    for (let i in ship.modules) {
-        let spaceship_module = ship.modules[i];
-        for (let direction in directions) {
-            const x = spaceship_module.x + directions[direction].x;
-            const y = spaceship_module.y + directions[direction].y;
+    for (const spaceship_module of ship.modules) {
+        for (const direction of Object.values(directions)) {
+            const x = spaceship_module.x + direction.x;
+            const y = spaceship_module.y + direction.y;
 
             if (!getModuleByPosition(ship, x, y) && canConnectModule(ship, module, x, y)) {
                 possible_connections.push([x, y]);
@@ -294,11 +301,21 @@ function damageInfoInternal(
     return {
         destroyed: Array.from(destroyed).map(([p, b]) => {
             const [x, y] = p.split(',').map(Number);
+
+            if (x == undefined || y == undefined) {
+                throw new Error("Failed to unpack coordinates.");
+            }
+
             return {position: {x, y}, byNuclearReactor: b};
         }),
 
         damaged: Array.from(damaged).map(([p, d]) => {
             const [x, y] = p.split(',').map(Number);
+
+            if (x == undefined || y == undefined) {
+                throw new Error("Failed to unpack coordinates.");
+            }
+
             return {position: {x, y}, damage: d};
         }),
 
@@ -374,6 +391,7 @@ export const SpaceshipGetters = {
     canConnectModule,
     getConnectorInDirection,
     getModuleByPosition,
+    getModuleByPositionOrFail,
     getPossibleConnectionsFor,
     getPossibleRotationsFor,
     getModulesConnectedTo,
