@@ -1,10 +1,7 @@
 import {expect, test} from "vitest";
 
-import {PlayerId} from "@common/Types";
 import {GameResult} from "@src/game/Game";
-import {GameClock} from "@src/game/GameClock";
 
-import {MockClock} from "./MockClock";
 import {mockGame} from "./MockGame";
 
 /*
